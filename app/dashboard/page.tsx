@@ -1,0 +1,81 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { Plus } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useUserQuizzesQuery, useDeleteQuizMutation } from '@/lib/hooks/use-quiz-queries';
+import { DashboardHeader } from '@/components/dashboard/dashboard-header';
+import { QuizCard } from '@/components/dashboard/quiz-card';
+import { LoadingPage, Button, EmptyState } from '@/components/ui';
+import { ProtectedRoute } from '@/components/protected-route';
+
+function DashboardContent() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { data: quizzes, isLoading } = useUserQuizzesQuery(user?.uid);
+  const deleteQuizMutation = useDeleteQuizMutation();
+
+  const handleDelete = async (quizId: string) => {
+    if (!user) return;
+    try {
+      await deleteQuizMutation.mutateAsync({ quizId, userId: user.uid });
+    } catch (error) {
+      console.error('Error deleting quiz:', error);
+      alert('Erro ao excluir quiz');
+    }
+  };
+
+  const handleNewQuiz = () => {
+    router.push('/builder');
+  };
+
+  if (isLoading) {
+    return <LoadingPage />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader />
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Page Title */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Meus Quizzes</h1>
+          <p className="text-gray-500 mt-2">
+            Gerencie seus quizzes de recomendação e veja seus leads.
+          </p>
+        </div>
+
+        {/* Quiz Grid */}
+        {quizzes && quizzes.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {quizzes.map((quiz) => (
+              <QuizCard key={quiz.id} quiz={quiz} onDelete={handleDelete} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 shadow-sm">
+            <EmptyState
+              icon={<Plus size={32} />}
+              title="Nenhum quiz criado ainda"
+              description="Comece uma conversa com nossa IA para criar seu primeiro quiz."
+              action={
+                <Button size="lg" onClick={handleNewQuiz}>
+                  Criar com IA
+                </Button>
+              }
+            />
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
+  );
+}
