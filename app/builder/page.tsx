@@ -5,26 +5,45 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Eye } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
+import { useAutoSave } from '@/lib/hooks/use-auto-save';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ProtectedRoute } from '@/components/protected-route';
 import { QuizService } from '@/lib/services/quiz-service';
-import { useState } from 'react';
+import { ChatInterface } from '@/components/chat/chat-interface';
+import { SaveIndicator } from '@/components/builder/save-indicator';
+import { useState, useEffect } from 'react';
 
 function BuilderContent() {
   const router = useRouter();
   const { user } = useAuth();
-  const { quiz, updateQuizField } = useQuizBuilderStore();
+  const { quiz, updateQuizField, setQuiz } = useQuizBuilderStore();
   const [isSaving, setIsSaving] = useState(false);
+
+  // Initialize quiz with ID if it doesn't have one
+  useEffect(() => {
+    if (!quiz.id) {
+      setQuiz({ ...quiz, id: crypto.randomUUID() });
+    }
+  }, []);
+
+  // Auto-save hook with 30-second debounce
+  const { forceSave, cancelPendingSave } = useAutoSave({
+    userId: user?.uid,
+    enabled: true,
+    debounceMs: 30000, // 30 seconds
+  });
 
   const handleSave = async () => {
     if (!user) return;
 
     try {
       setIsSaving(true);
-      await QuizService.saveQuiz(quiz, user.uid);
+      // Cancel pending auto-save and force immediate save
+      cancelPendingSave();
+      await forceSave();
       alert('Quiz salvo com sucesso!');
     } catch (error) {
       console.error('Error saving quiz:', error);
@@ -63,6 +82,7 @@ function BuilderContent() {
             </div>
 
             <div className="flex items-center gap-3">
+              <SaveIndicator />
               <Button
                 variant="outline"
                 size="sm"
@@ -93,26 +113,15 @@ function BuilderContent() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Side - Chat/AI Interface */}
-          <Card>
+          <Card className="flex flex-col">
             <CardHeader>
               <CardTitle>Criar com IA</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Converse com nossa IA para criar e editar seu quiz
+              </p>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-muted-foreground">
-                  Converse com nossa IA para criar e editar seu quiz.
-                </p>
-
-                {/* Placeholder for chat interface */}
-                <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                  <p className="text-muted-foreground">
-                    Interface de chat em desenvolvimento
-                  </p>
-                  <p className="text-sm text-muted-foreground/80 mt-2">
-                    Em breve você poderá conversar com a IA aqui
-                  </p>
-                </div>
-              </div>
+            <CardContent className="flex-1 p-0">
+              <ChatInterface />
             </CardContent>
           </Card>
 
@@ -165,7 +174,7 @@ function BuilderContent() {
                           {idx + 1}. {q.text}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {q.options.length} opções
+                          {q.options?.length || 0} opções
                         </p>
                       </div>
                     ))}

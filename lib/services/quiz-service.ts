@@ -22,37 +22,35 @@ export class QuizService {
    * Save a quiz (create or update)
    */
   static async saveQuiz(quiz: QuizDraft, userId: string): Promise<string> {
-    if (!quiz.title || !quiz.questions?.length || !quiz.outcomes?.length) {
-      throw new Error('Quiz must have title, at least one question, and at least one outcome');
+    // Only require a title for saving (allow saving drafts)
+    if (!quiz.title) {
+      throw new Error('Quiz must have a title');
     }
 
     const quizId = quiz.id || crypto.randomUUID();
     const now = Date.now();
 
-    const fullQuiz: Quiz = {
+    const quizData: any = {
       id: quizId,
       title: quiz.title,
       description: quiz.description || '',
       coverImageUrl: quiz.coverImageUrl,
       primaryColor: quiz.primaryColor || '#4F46E5',
-      questions: quiz.questions as any, // Type assertion - validated above
-      outcomes: quiz.outcomes as any, // Type assertion - validated above
+      questions: quiz.questions || [],
+      outcomes: quiz.outcomes || [],
       createdAt: quiz.createdAt || now,
       updatedAt: now,
       isPublished: quiz.isPublished || false,
       stats: quiz.stats || { views: 0, starts: 0, completions: 0 },
-      conversationHistory: quiz.conversationHistory,
+      conversationHistory: quiz.conversationHistory || [],
       ownerId: userId,
     };
 
-    // Validate with Zod
-    const validated = QuizSchema.parse(fullQuiz);
-
     const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
     await setDoc(quizRef, {
-      ...validated,
-      createdAt: Timestamp.fromMillis(validated.createdAt),
-      updatedAt: Timestamp.fromMillis(validated.updatedAt),
+      ...quizData,
+      createdAt: Timestamp.fromMillis(quizData.createdAt),
+      updatedAt: Timestamp.fromMillis(quizData.updatedAt),
     });
 
     return quizId;

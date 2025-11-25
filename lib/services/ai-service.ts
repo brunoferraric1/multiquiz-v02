@@ -266,9 +266,9 @@ Extract and return the updated quiz structure. Preserve existing IDs when possib
    */
   loadHistory(messages: ChatMessage[]) {
     this.conversationHistory = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...messages.map((msg) => ({
-        role: msg.role === 'user' ? 'user' : ('assistant' as const),
+      { role: 'system' as const, content: SYSTEM_PROMPT },
+      ...messages.map((msg): OpenRouterMessage => ({
+        role: msg.role === 'user' ? ('user' as const) : ('assistant' as const),
         content: msg.content,
       })),
     ];
