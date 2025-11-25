@@ -34,7 +34,6 @@ export class QuizService {
       id: quizId,
       title: quiz.title,
       description: quiz.description || '',
-      coverImageUrl: quiz.coverImageUrl,
       primaryColor: quiz.primaryColor || '#4F46E5',
       questions: quiz.questions || [],
       outcomes: quiz.outcomes || [],
@@ -46,11 +45,21 @@ export class QuizService {
       ownerId: userId,
     };
 
+    // Add optional fields only if they have values
+    if (quiz.coverImageUrl) {
+      quizData.coverImageUrl = quiz.coverImageUrl;
+    }
+
+    // Remove undefined values (Firestore doesn't accept them)
+    const cleanedData = Object.fromEntries(
+      Object.entries(quizData).filter(([_, value]) => value !== undefined)
+    );
+
     const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
     await setDoc(quizRef, {
-      ...quizData,
-      createdAt: Timestamp.fromMillis(quizData.createdAt),
-      updatedAt: Timestamp.fromMillis(quizData.updatedAt),
+      ...cleanedData,
+      createdAt: Timestamp.fromMillis(cleanedData.createdAt as number),
+      updatedAt: Timestamp.fromMillis(cleanedData.updatedAt as number),
     });
 
     return quizId;

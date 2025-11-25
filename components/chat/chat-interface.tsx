@@ -22,9 +22,18 @@ export function ChatInterface() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Load conversation history into AI service on mount
+  // Send welcome message if chat is empty
   useEffect(() => {
     if (chatHistory.length > 0) {
       aiService.loadHistory(chatHistory);
+    } else {
+      // Add welcome message
+      const welcomeMessage = {
+        role: 'assistant' as const,
+        content: 'Olá! Sou seu assistente de criação de quizzes. Vamos criar algo incrível juntos!\n\nPara começar, me conte: sobre qual **tema** você quer criar um quiz?\n\n*Exemplo: "Quero criar um quiz sobre café", "Um quiz de personalidade sobre viagens", etc.*',
+        timestamp: Date.now(),
+      };
+      addChatMessage(welcomeMessage);
     }
   }, []);
 
@@ -40,6 +49,31 @@ export function ChatInterface() {
   const quiz = useQuizBuilderStore((state) => state.quiz);
   const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
   const setQuiz = useQuizBuilderStore((state) => state.setQuiz);
+
+  const shouldExtractQuizStructure = (userMessage: string, assistantResponse: string): boolean => {
+    // Check if user message contains confirmation keywords
+    const confirmationKeywords = [
+      'sim', 'confirmo', 'confirma', 'pode ir', 'perfeito', 'ok', 'okay',
+      'isso', 'exato', 'correto', 'certo', 'concordo', 'legal', 'ótimo',
+      'maravilha', 'beleza', 'show', 'top', 'segue', 'vamos', 'vai'
+    ];
+
+    const userMessageLower = userMessage.toLowerCase();
+    const hasConfirmation = confirmationKeywords.some(keyword =>
+      userMessageLower.includes(keyword)
+    );
+
+    // Also check if assistant's response suggests they've updated something
+    const assistantLower = assistantResponse.toLowerCase();
+    const suggestsUpdate =
+      assistantLower.includes('vou atualizar') ||
+      assistantLower.includes('vou adicionar') ||
+      assistantLower.includes('adicionei') ||
+      assistantLower.includes('atualizei') ||
+      assistantLower.includes('criei');
+
+    return hasConfirmation || suggestsUpdate;
+  };
 
   const handleSendMessage = async (content: string) => {
     // Add user message
@@ -65,8 +99,10 @@ export function ChatInterface() {
       };
       addChatMessage(assistantMessage);
 
-      // Try to extract quiz structure after AI response
-      await extractQuizStructure();
+      // Only extract quiz structure if user confirmed something or bot suggests update
+      if (shouldExtractQuizStructure(content, response)) {
+        await extractQuizStructure();
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       setError(error instanceof Error ? error.message : 'Erro ao comunicar com a IA');
