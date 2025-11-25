@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -16,15 +17,16 @@ export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerPr
 
   return (
     <div
-      className={`animate-spin rounded-full border-2 border-gray-200 border-t-brand-600 ${sizes[size]} ${className}`}
+      className={`animate-spin rounded-full border-2 border-primary/20 border-t-primary ${sizes[size]} ${className}`}
     />
   );
 }
 
 export function LoadingPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center">
       <LoadingSpinner size="lg" />
     </div>
   );
 }
+

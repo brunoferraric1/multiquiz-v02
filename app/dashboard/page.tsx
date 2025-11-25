@@ -6,8 +6,10 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useUserQuizzesQuery, useDeleteQuizMutation } from '@/lib/hooks/use-quiz-queries';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 import { QuizCard } from '@/components/dashboard/quiz-card';
-import { LoadingPage, Button, EmptyState } from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { ProtectedRoute } from '@/components/protected-route';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 function DashboardContent() {
   const router = useRouter();
@@ -30,18 +32,22 @@ function DashboardContent() {
   };
 
   if (isLoading) {
-    return <LoadingPage />;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <DashboardHeader />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Page Title */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Meus Quizzes</h1>
-          <p className="text-gray-500 mt-2">
+          <h1 className="text-3xl font-bold">Meus Quizzes</h1>
+          <p className="text-muted-foreground mt-2">
             Gerencie seus quizzes de recomendação e veja seus leads.
           </p>
         </div>
@@ -54,7 +60,7 @@ function DashboardContent() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 shadow-sm">
+          <div className="rounded-lg border-2 border-dashed">
             <EmptyState
               icon={<Plus size={32} />}
               title="Nenhum quiz criado ainda"
@@ -79,3 +85,4 @@ export default function DashboardPage() {
     </ProtectedRoute>
   );
 }
+
