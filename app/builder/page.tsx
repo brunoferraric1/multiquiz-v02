@@ -1,231 +1,38 @@
 
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Eye } from 'lucide-react';
-import { useAuth } from '@/lib/hooks/use-auth';
+import { useEffect } from 'react';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
-import { useAutoSave } from '@/lib/hooks/use-auto-save';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { ProtectedRoute } from '@/components/protected-route';
-import { QuizService } from '@/lib/services/quiz-service';
-import { ChatInterface } from '@/components/chat/chat-interface';
-import { SaveIndicator } from '@/components/builder/save-indicator';
-import { useState, useEffect } from 'react';
+import BuilderContent from './builder-content';
 
-function BuilderContent() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const { quiz, updateQuizField, setQuiz } = useQuizBuilderStore();
-  const [isSaving, setIsSaving] = useState(false);
+function NewQuizInitializer() {
+  const { reset, setQuiz, quiz } = useQuizBuilderStore();
 
-  // Initialize quiz with ID if it doesn't have one
+  // Reset store and initialize a new quiz when component mounts
   useEffect(() => {
-    if (!quiz.id) {
-      setQuiz({ ...quiz, id: crypto.randomUUID() });
-    }
-  }, []);
+    // Reset to clean state
+    reset();
 
-  // Auto-save hook with 30-second debounce
-  const { forceSave, cancelPendingSave } = useAutoSave({
-    userId: user?.uid,
-    enabled: true,
-    debounceMs: 30000, // 30 seconds
-  });
+    // Initialize with a new ID
+    setQuiz({
+      id: crypto.randomUUID(),
+      title: '',
+      description: '',
+      questions: [],
+      outcomes: [],
+      primaryColor: '#4F46E5',
+      isPublished: false,
+    });
+  }, [reset, setQuiz]);
 
-  const handleSave = async () => {
-    if (!user) return;
-
-    try {
-      setIsSaving(true);
-      // Cancel pending auto-save and force immediate save
-      cancelPendingSave();
-      await forceSave();
-      alert('Quiz salvo com sucesso!');
-    } catch (error) {
-      console.error('Error saving quiz:', error);
-      alert('Erro ao salvar quiz');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleBack = () => {
-    if (confirm('Tem certeza que deseja sair? Alterações não salvas serão perdidas.')) {
-      router.push('/dashboard');
-    }
-  };
-
-  return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="bg-card border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBack}
-                className="gap-2"
-              >
-                <ArrowLeft size={16} />
-                Voltar
-              </Button>
-              <div className="border-l border-border h-6" />
-              <h1 className="text-lg font-semibold">
-                {quiz.title || 'Novo Quiz'}
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <SaveIndicator />
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => {
-                  // TODO: Implement preview
-                  alert('Preview em desenvolvimento');
-                }}
-              >
-                <Eye size={16} />
-                Visualizar
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={isSaving}
-                className="gap-2"
-              >
-                <Save size={16} />
-                {isSaving ? 'Salvando...' : 'Salvar'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Side - Chat/AI Interface */}
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle>Criar com IA</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Converse com nossa IA para criar e editar seu quiz
-              </p>
-            </CardHeader>
-            <CardContent className="flex-1 p-0">
-              <ChatInterface />
-            </CardContent>
-          </Card>
-
-          {/* Right Side - Visual Builder */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Editor Visual</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Quiz Title Input */}
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Título do Quiz
-                  </label>
-                  <Input
-                    type="text"
-                    value={quiz.title}
-                    onChange={(e) => updateQuizField('title', e.target.value)}
-                    placeholder="Digite o título do seu quiz"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Descrição
-                  </label>
-                  <Textarea
-                    value={quiz.description}
-                    onChange={(e) => updateQuizField('description', e.target.value)}
-                    placeholder="Descreva seu quiz"
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              {/* Questions Section */}
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3">
-                  Perguntas ({quiz.questions?.length || 0})
-                </h3>
-                {quiz.questions && quiz.questions.length > 0 ? (
-                  <div className="space-y-2">
-                    {quiz.questions.map((q, idx) => (
-                      <div
-                        key={q.id}
-                        className="p-3 border rounded-lg bg-muted/50"
-                      >
-                        <p className="text-sm font-medium">
-                          {idx + 1}. {q.text}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {q.options?.length || 0} opções
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                    <p className="text-muted-foreground text-sm">
-                      Nenhuma pergunta criada ainda
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Outcomes Section */}
-              <div>
-                <h3 className="text-lg font-medium mb-3">
-                  Resultados ({quiz.outcomes?.length || 0})
-                </h3>
-                {quiz.outcomes && quiz.outcomes.length > 0 ? (
-                  <div className="space-y-2">
-                    {quiz.outcomes.map((outcome) => (
-                      <div
-                        key={outcome.id}
-                        className="p-3 border rounded-lg bg-muted/50"
-                      >
-                        <p className="text-sm font-medium">
-                          {outcome.title}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                    <p className="text-muted-foreground text-sm">
-                      Nenhum resultado criado ainda
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    </div>
-  );
+  return <BuilderContent isEditMode={false} />;
 }
 
 export default function BuilderPage() {
   return (
     <ProtectedRoute>
-      <BuilderContent />
+      <NewQuizInitializer />
     </ProtectedRoute>
   );
 }

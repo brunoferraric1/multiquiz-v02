@@ -1,10 +1,19 @@
 import { type ChatMessage } from '@/types';
 import { User, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+import { useMemo } from 'react';
 
 interface ChatMessageProps {
   message: ChatMessage;
 }
+
+// Configure marked options
+marked.setOptions({
+  breaks: true, // Convert \n to <br>
+  gfm: true, // GitHub Flavored Markdown
+});
 
 export function ChatMessageComponent({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
@@ -12,6 +21,17 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
     hour: '2-digit',
     minute: '2-digit',
   });
+
+  // Parse and sanitize markdown content
+  const htmlContent = useMemo(() => {
+    if (isUser) {
+      // Don't parse markdown for user messages, just preserve line breaks
+      return message.content.replace(/\n/g, '<br>');
+    }
+    // Parse markdown for AI messages
+    const rawHtml = marked.parse(message.content, { async: false }) as string;
+    return DOMPurify.sanitize(rawHtml);
+  }, [message.content, isUser]);
 
   return (
     <div
@@ -40,9 +60,10 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
             {timestamp}
           </span>
         </div>
-        <div className="text-sm whitespace-pre-wrap break-words">
-          {message.content}
-        </div>
+        <div
+          className="text-sm break-words prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-strong:font-semibold prose-strong:text-primary"
+          dangerouslySetInnerHTML={{ __html: htmlContent }}
+        />
       </div>
     </div>
   );
