@@ -105,8 +105,11 @@ export function ChatInterface() {
       setIsLoading(true);
       setError(null);
 
-      // Call AI service to get response
-      const response = await aiService.sendMessage(content);
+      // Call AI service to get response + structured extraction in a single round-trip
+      const { text: response, extraction } = await aiService.sendMessageWithExtraction(
+        content,
+        quiz
+      );
 
       // Add assistant response
       const assistantMessage = {
@@ -119,14 +122,27 @@ export function ChatInterface() {
       // Stop blocking the input once the assistant reply arrives
       setIsLoading(false);
 
-      // Only extract quiz structure if user confirmed something or bot suggests update
-      const shouldExtract = shouldExtractQuizStructure(content, response);
-      console.log('Should extract quiz structure?', shouldExtract, 'User message:', content);
+      // Apply extracted quiz updates immediately if present
+      if (extraction && Object.keys(extraction).length > 0) {
+        const updatedQuiz = { ...quiz };
 
-      if (shouldExtract) {
-        console.log('Triggering extraction...');
-        // Run extraction in the background to avoid blocking the chat UI
-        void extractQuizStructure();
+        if (extraction.title) updatedQuiz.title = extraction.title;
+        if (extraction.description) updatedQuiz.description = extraction.description;
+        if (extraction.coverImageUrl) updatedQuiz.coverImageUrl = extraction.coverImageUrl;
+        if (extraction.questions) updatedQuiz.questions = extraction.questions;
+        if (extraction.outcomes) updatedQuiz.outcomes = extraction.outcomes;
+
+        setQuiz(updatedQuiz);
+      } else {
+        // Fallback: only extract if we believe the user confirmed and we got no tool payload
+        const shouldExtract = shouldExtractQuizStructure(content, response);
+        console.log('Should extract quiz structure (fallback)?', shouldExtract, 'User message:', content);
+
+        if (shouldExtract) {
+          console.log('Triggering extraction fallback...');
+          // Run extraction in the background to avoid blocking the chat UI
+          void extractQuizStructure();
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);

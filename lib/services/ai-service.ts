@@ -112,6 +112,151 @@ export class AIService {
   }
 
   /**
+   * Send a message and ask the model to also emit a structured quiz delta via tool call.
+   * Returns both the assistant text and any extracted quiz structure (same shape as extractQuizStructure).
+   */
+  async sendMessageWithExtraction(
+    message: string,
+    currentQuiz?: QuizDraft
+  ): Promise<{ text: string; extraction?: AIExtractionResult }> {
+    this.conversationHistory.push({
+      role: 'user',
+      content: message,
+    });
+
+    const tools = [
+      {
+        type: 'function',
+        function: {
+          name: 'update_quiz',
+          description:
+            'Extraia a estrutura confirmada do quiz (título, descrição, resultados e perguntas) em português. Só inclua itens confirmados ou claramente aceitos.',
+          parameters: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'Título do quiz' },
+              description: { type: 'string', description: 'Descrição do quiz' },
+              coverImageUrl: { type: 'string', description: 'URL opcional da capa' },
+              questions: {
+                type: 'array',
+                description: 'Perguntas confirmadas. Preserve ordem.',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string', description: 'UUID da pergunta (use existente se fornecido)' },
+                    text: { type: 'string' },
+                    imageUrl: { type: 'string' },
+                    options: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', description: 'UUID da opção (use existente se fornecido)' },
+                          text: { type: 'string' },
+                          targetOutcomeId: {
+                            type: 'string',
+                            description: 'UUID do resultado destino. Use existentes quando possível.',
+                          },
+                        },
+                        required: ['text', 'targetOutcomeId'],
+                      },
+                    },
+                  },
+                  required: ['text', 'options'],
+                },
+              },
+              outcomes: {
+                type: 'array',
+                description: 'Resultados confirmados. Preserve IDs existentes.',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string', description: 'UUID do resultado (use existente se fornecido)' },
+                    title: { type: 'string' },
+                    description: { type: 'string' },
+                    imageUrl: { type: 'string' },
+                    ctaText: { type: 'string' },
+                    ctaUrl: { type: 'string' },
+                  },
+                  required: ['title'],
+                },
+              },
+            },
+          },
+        },
+      },
+    ];
+
+    // Lightweight hint so the model can preserve existing IDs/order when provided
+    const stateHint = currentQuiz
+      ? `Estado atual (resumo): ${JSON.stringify({
+          title: currentQuiz.title,
+          description: currentQuiz.description,
+          questions: currentQuiz.questions?.map((q) => ({ id: q.id, text: q.text })),
+          outcomes: currentQuiz.outcomes?.map((o) => ({ id: o.id, title: o.title })),
+        })}`
+      : '';
+
+    try {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${API_KEY}`,
+          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
+          'X-Title': 'MultiQuiz v2',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            ...this.conversationHistory,
+            stateHint
+              ? ({ role: 'assistant', content: `Contexto para você manter IDs/ordem: ${stateHint}` } as OpenRouterMessage)
+              : undefined,
+          ].filter((m): m is OpenRouterMessage => Boolean(m)),
+          tools,
+          tool_choice: 'auto',
+          max_tokens: 800,
+          temperature: 0.6,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const choice = data.choices?.[0]?.message || {};
+      const assistantMessage = (choice.content || '').trim();
+      const toolCall = choice.tool_calls?.[0];
+
+      let extraction: AIExtractionResult | undefined;
+      if (toolCall?.function?.arguments) {
+        try {
+          const parsed = JSON.parse(toolCall.function.arguments);
+          extraction = this.normalizeExtraction(parsed, currentQuiz || {});
+          console.log('Tool extraction parsed:', extraction);
+        } catch (err) {
+          console.error('Failed to parse tool_call arguments', err, toolCall?.function?.arguments);
+        }
+      }
+
+      this.conversationHistory.push({
+        role: 'assistant',
+        content: assistantMessage || 'Entendi! Atualizei o quiz.',
+      });
+
+      return {
+        text: assistantMessage || 'Entendi! Atualizei o quiz.',
+        extraction,
+      };
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      throw new Error('Falha ao comunicar com o assistente de IA');
+    }
+  }
+
+  /**
    * Send a message to the AI and get a response
    */
   async sendMessage(message: string): Promise<string> {
