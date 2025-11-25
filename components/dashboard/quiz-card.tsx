@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Play, Trash2, Share2, Check, Edit, Globe, Lock } from 'lucide-react';
+import { Play, Trash2, Share2, Check, Edit, Globe, Lock, Loader2 } from 'lucide-react';
 import type { Quiz } from '@/types';
 import {
   Card,
@@ -15,15 +15,26 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface QuizCardProps {
   quiz: Quiz;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
+  isDeleting?: boolean;
 }
 
-export function QuizCard({ quiz, onDelete }: QuizCardProps) {
+export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting_Internal, setIsDeleting_Internal] = useState(false);
 
   const handleCopyLink = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -37,6 +48,21 @@ export function QuizCard({ quiz, onDelete }: QuizCardProps) {
 
   const handleEdit = () => {
     router.push(`/builder/${quiz.id}`);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting_Internal(true);
+    try {
+      await onDelete(quiz.id);
+      // Only close dialog after successful deletion
+      setShowDeleteDialog(false);
+    } catch (error: any) {
+      // Keep dialog open on error so user can retry
+      console.error('Failed to delete quiz:', error);
+      const errorMessage = error?.message || 'Erro desconhecido';
+      alert(`Erro ao excluir quiz: ${errorMessage}`);
+      setIsDeleting_Internal(false);
+    }
   };
 
   return (
@@ -142,15 +168,59 @@ export function QuizCard({ quiz, onDelete }: QuizCardProps) {
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              if (confirm('Tem certeza que deseja excluir este quiz?')) {
-                onDelete(quiz.id);
-              }
+              e.preventDefault();
+              setShowDeleteDialog(true);
             }}
-            title="Excluir"
+            disabled={isDeleting}
+            title={isDeleting ? "Excluindo..." : "Excluir"}
           >
             <Trash2 size={18} />
           </Button>
       </CardFooter>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={(open) => {
+        // Prevent closing the dialog while deleting
+        if (!isDeleting_Internal) {
+          setShowDeleteDialog(open);
+        }
+      }}>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>Excluir Quiz</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir o quiz &quot;{quiz.title}&quot;?
+              <br />
+              <br />
+              Esta ação não pode ser desfeita e todos os dados associados serão permanentemente removidos.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting_Internal}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting_Internal}
+              className="min-w-[100px]"
+            >
+              {isDeleting_Internal ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

@@ -20,22 +20,35 @@ export function ChatInterface() {
   const [aiService] = useState(() => new AIService());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const prevChatLength = useRef(chatHistory.length);
 
-  // Load conversation history into AI service on mount
-  // Send welcome message if chat is empty
+  // Load conversation history into AI service when it changes
   useEffect(() => {
     if (chatHistory.length > 0) {
       aiService.loadHistory(chatHistory);
-    } else {
-      // Add welcome message
+    }
+  }, [chatHistory, aiService]);
+
+  // Send welcome message when chat becomes empty (new quiz or cleared chat)
+  useEffect(() => {
+    const WELCOME_MESSAGE = 'Olá! Sou o seu Arquiteto de Quizzes. Vamos criar algo incrível para engajar sua audiência. Para começar, sobre o que será o seu quiz?';
+
+    // Check if chat is empty and the last message wasn't already the welcome message
+    const isEmptyChat = chatHistory.length === 0;
+    const lastMessage = chatHistory[chatHistory.length - 1];
+    const lastMessageIsWelcome = lastMessage?.content === WELCOME_MESSAGE;
+
+    if (isEmptyChat && !lastMessageIsWelcome) {
       const welcomeMessage = {
         role: 'assistant' as const,
-        content: 'Olá! Sou seu assistente de criação de quizzes. Vamos criar algo incrível juntos!\n\nPara começar, me conte: sobre qual **tema** você quer criar um quiz?\n\n*Exemplo: "Quero criar um quiz sobre café", "Um quiz de personalidade sobre viagens", etc.*',
+        content: WELCOME_MESSAGE,
         timestamp: Date.now(),
       };
       addChatMessage(welcomeMessage);
     }
-  }, []);
+
+    prevChatLength.current = chatHistory.length;
+  }, [chatHistory.length, chatHistory, addChatMessage]);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -53,9 +66,12 @@ export function ChatInterface() {
   const shouldExtractQuizStructure = (userMessage: string, assistantResponse: string): boolean => {
     // Check if user message contains confirmation keywords
     const confirmationKeywords = [
-      'sim', 'confirmo', 'confirma', 'pode ir', 'perfeito', 'ok', 'okay',
-      'isso', 'exato', 'correto', 'certo', 'concordo', 'legal', 'ótimo',
-      'maravilha', 'beleza', 'show', 'top', 'segue', 'vamos', 'vai'
+      'sim', 'confirmo', 'confirma', 'pode ir', 'pode usar', 'pode', 'usar',
+      'perfeito', 'ok', 'okay', 'ótimo', 'otimo', 'está ótimo', 'esta otimo',
+      'isso', 'exato', 'correto', 'certo', 'concordo', 'legal',
+      'maravilha', 'beleza', 'show', 'top', 'segue', 'vamos', 'vai',
+      'esses', 'essas', 'esse', 'essa', 'ficou bom', 'ficou ótimo',
+      'aprovo', 'aprovado', 'pode seguir', 'continua', 'próximo', 'proximo'
     ];
 
     const userMessageLower = userMessage.toLowerCase();
@@ -70,7 +86,8 @@ export function ChatInterface() {
       assistantLower.includes('vou adicionar') ||
       assistantLower.includes('adicionei') ||
       assistantLower.includes('atualizei') ||
-      assistantLower.includes('criei');
+      assistantLower.includes('criei') ||
+      assistantLower.includes('vamos aos');
 
     return hasConfirmation || suggestsUpdate;
   };
@@ -100,7 +117,11 @@ export function ChatInterface() {
       addChatMessage(assistantMessage);
 
       // Only extract quiz structure if user confirmed something or bot suggests update
-      if (shouldExtractQuizStructure(content, response)) {
+      const shouldExtract = shouldExtractQuizStructure(content, response);
+      console.log('Should extract quiz structure?', shouldExtract, 'User message:', content);
+
+      if (shouldExtract) {
+        console.log('Triggering extraction...');
         await extractQuizStructure();
       }
     } catch (error) {

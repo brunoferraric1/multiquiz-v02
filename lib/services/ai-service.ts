@@ -146,7 +146,7 @@ export class AIService {
           messages: [
             {
               role: 'system',
-              content: `You are a quiz structure extractor. Extract quiz information from conversations and return ONLY valid JSON.
+              content: `You are a quiz structure extractor. Extract quiz information from Portuguese conversations and return ONLY valid JSON.
 
 Your response must be a valid JSON object with this structure:
 {
@@ -171,7 +171,7 @@ Your response must be a valid JSON object with this structure:
     {
       "id": "uuid",
       "title": "string",
-      "description": "string",
+      "description": "string (can be empty)",
       "imageUrl": "string (optional)",
       "ctaText": "string (optional)",
       "ctaUrl": "string (optional)"
@@ -179,11 +179,26 @@ Your response must be a valid JSON object with this structure:
   ]
 }
 
+EXAMPLE - If conversation mentions:
+"Ideias de títulos:
+- Expresso Audacioso
+- Cappuccino Aconchegante"
+
+Extract as:
+{
+  "outcomes": [
+    {"id": "uuid1", "title": "Expresso Audacioso", "description": ""},
+    {"id": "uuid2", "title": "Cappuccino Aconchegante", "description": ""}
+  ]
+}
+
 IMPORTANT:
 - Return ONLY the JSON object, no explanations or markdown
 - Use UUIDs for all IDs (generate them if needed)
 - Preserve existing IDs when updating
-- If no changes detected, return empty object: {}`,
+- If no changes detected, return empty object: {}
+- For outcomes without descriptions, use empty string ""
+- Look carefully for outcome titles in quotes, bullets, or numbered lists`,
             },
             {
               role: 'user',
@@ -208,8 +223,15 @@ IMPORTANT:
         .replace(/```\n?/g, '')
         .trim();
 
+      console.log('Extraction raw response:', rawContent);
+
       const extracted = JSON.parse(jsonContent);
-      return this.normalizeExtraction(extracted, currentQuiz);
+      console.log('Extraction parsed JSON:', extracted);
+
+      const normalized = this.normalizeExtraction(extracted, currentQuiz);
+      console.log('Extraction normalized result:', normalized);
+
+      return normalized;
     } catch (error) {
       console.error('Extraction Error:', error);
       return {}; // Return empty object on error
@@ -228,7 +250,7 @@ IMPORTANT:
       .map((msg) => `${msg.role}: ${msg.content}`)
       .join('\n');
 
-    return `Extract quiz structure from this conversation.
+    return `Extract quiz structure from this Portuguese conversation about creating a quiz.
 
 CURRENT QUIZ STATE:
 ${JSON.stringify(
@@ -247,7 +269,27 @@ ${JSON.stringify(
 CONVERSATION:
 ${conversationText}
 
-Extract and return the updated quiz structure. Preserve existing IDs when possible.`;
+EXTRACTION INSTRUCTIONS:
+1. Look for confirmed quiz elements in the conversation:
+   - Title and description (título e descrição)
+   - Outcomes/Results (resultados) - these are the possible end results users can get
+   - Questions (perguntas) with their options (opções)
+
+2. When extracting outcomes:
+   - Each outcome needs: title, description (can be empty string for now)
+   - Look for phrases like "Ideias de títulos", "Resultados", outcome titles in quotes or lists
+   - CTAs and URLs are optional
+
+3. When extracting questions:
+   - Each question needs: text, and multiple options
+   - Each option needs to link to a targetOutcomeId
+
+4. IMPORTANT: If the user confirmed outcomes but they're not in the current state (outcomesCount: 0),
+   you MUST extract them from the conversation.
+
+5. Preserve existing IDs when updating. Generate new UUIDs for new items.
+
+Extract and return the updated quiz structure.`;
   }
 
   /**
@@ -284,13 +326,13 @@ Extract and return the updated quiz structure. Preserve existing IDs when possib
     }
 
     // Normalize outcomes
-    if (Array.isArray(extracted.outcomes)) {
+    if (Array.isArray(extracted.outcomes) && extracted.outcomes.length > 0) {
       result.outcomes = extracted.outcomes.map((o: any, idx: number) => {
         const existingOutcome = currentQuiz.outcomes?.[idx];
         return {
           id: o.id || existingOutcome?.id || crypto.randomUUID(),
-          title: o.title,
-          description: o.description,
+          title: o.title || 'Resultado sem título',
+          description: o.description || '',
           imageUrl: o.imageUrl,
           ctaText: o.ctaText,
           ctaUrl: o.ctaUrl,

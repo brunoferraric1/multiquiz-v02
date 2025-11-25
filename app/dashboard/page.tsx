@@ -17,14 +17,13 @@ function DashboardContent() {
   const { data: quizzes, isLoading } = useUserQuizzesQuery(user?.uid);
   const deleteQuizMutation = useDeleteQuizMutation();
 
-  const handleDelete = async (quizId: string) => {
-    if (!user) return;
-    try {
-      await deleteQuizMutation.mutateAsync({ quizId, userId: user.uid });
-    } catch (error) {
-      console.error('Error deleting quiz:', error);
-      alert('Erro ao excluir quiz');
+  const handleDelete = async (quizId: string): Promise<void> => {
+    if (!user) {
+      alert('Você precisa estar autenticado para excluir um quiz');
+      throw new Error('User not authenticated');
     }
+
+    await deleteQuizMutation.mutateAsync({ quizId, userId: user.uid });
   };
 
   const handleNewQuiz = () => {
@@ -56,7 +55,12 @@ function DashboardContent() {
         {quizzes && quizzes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {quizzes.map((quiz) => (
-              <QuizCard key={quiz.id} quiz={quiz} onDelete={handleDelete} />
+              <QuizCard
+                key={quiz.id}
+                quiz={quiz}
+                onDelete={handleDelete}
+                isDeleting={deleteQuizMutation.isPending}
+              />
             ))}
           </div>
         ) : (

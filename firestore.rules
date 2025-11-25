@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user owns the quiz
+    function isOwner(quizId) {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/quizzes/$(quizId)).data.ownerId == request.auth.uid;
+    }
+
+    // Quizzes collection
+    match /quizzes/{quizId} {
+      // Allow anyone to read published quizzes
+      allow read: if resource.data.isPublished == true ||
+                     (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+
+      // Allow authenticated users to create quizzes
+      allow create: if isAuthenticated() &&
+                       request.resource.data.ownerId == request.auth.uid;
+
+      // Allow owners to update their quizzes
+      allow update: if isAuthenticated() &&
+                       resource.data.ownerId == request.auth.uid &&
+                       request.resource.data.ownerId == request.auth.uid;
+
+      // Allow owners to delete their quizzes
+      allow delete: if isAuthenticated() &&
+                       resource.data.ownerId == request.auth.uid;
+    }
+
+    // Leads/submissions collection
+    match /submissions/{submissionId} {
+      // Allow authenticated users to read their own submissions
+      allow read: if isAuthenticated();
+
+      // Allow anyone to create submissions (for quiz completions)
+      allow create: if true;
+
+      // Allow quiz owners to read submissions for their quizzes
+      allow read: if isAuthenticated() &&
+                     isOwner(resource.data.quizId);
+    }
+  }
+}

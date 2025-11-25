@@ -128,9 +128,14 @@ export class QuizService {
    * Delete a quiz
    */
   static async deleteQuiz(quizId: string, userId: string): Promise<void> {
+    if (!db) {
+      throw new Error('Firebase database not initialized');
+    }
+
     try {
       // Verify ownership before deleting
       const quiz = await this.getQuizById(quizId, userId);
+
       if (!quiz || quiz.ownerId !== userId) {
         throw new Error('Unauthorized to delete this quiz');
       }
