@@ -17,6 +17,32 @@ import { QuizSchema } from '@/types';
 
 const QUIZZES_COLLECTION = 'quizzes';
 
+/**
+ * Recursively removes all undefined values from an object
+ * This is necessary because Firestore doesn't accept undefined values
+ */
+function removeUndefinedDeep(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => removeUndefinedDeep(item));
+  }
+
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = removeUndefinedDeep(value);
+      }
+    }
+    return cleaned;
+  }
+
+  return obj;
+}
+
 export class QuizService {
   /**
    * Save a quiz (create or update)
@@ -50,10 +76,8 @@ export class QuizService {
       quizData.coverImageUrl = quiz.coverImageUrl;
     }
 
-    // Remove undefined values (Firestore doesn't accept them)
-    const cleanedData = Object.fromEntries(
-      Object.entries(quizData).filter(([_, value]) => value !== undefined)
-    );
+    // Recursively remove all undefined values (Firestore doesn't accept them)
+    const cleanedData = removeUndefinedDeep(quizData);
 
     const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
     await setDoc(quizRef, {
