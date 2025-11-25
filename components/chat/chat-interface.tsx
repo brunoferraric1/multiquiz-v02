@@ -178,32 +178,27 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-[600px]">
-      {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b">
-        <div>
-          <h3 className="font-medium">Chat com IA</h3>
-          <p className="text-xs text-muted-foreground">
-            {chatHistory.length} mensagens
-          </p>
-        </div>
+    <div className="flex flex-col h-full bg-card border rounded-lg">
+      {/* Minimal Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0">
+        <h2 className="text-lg font-semibold">Criador com IA</h2>
         {chatHistory.length > 0 && (
           <Button
             variant="ghost"
             size="sm"
             onClick={handleClearChat}
-            className="gap-2"
+            className="gap-2 text-muted-foreground hover:text-foreground"
           >
-            <Trash2 size={14} />
+            <Trash2 size={16} />
             Limpar
           </Button>
         )}
       </div>
 
-      {/* Messages List */}
+      {/* Messages List - Scrollable */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-3"
+        className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0"
       >
         {chatHistory.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
@@ -240,12 +235,14 @@ export function ChatInterface() {
         )}
       </div>
 
-      {/* Chat Input */}
-      <ChatInput
-        onSend={handleSendMessage}
-        disabled={isLoading}
-        placeholder="Descreva o quiz que você quer criar..."
-      />
+      {/* Chat Input - Fixed at bottom */}
+      <div className="flex-shrink-0">
+        <ChatInput
+          onSend={handleSendMessage}
+          disabled={isLoading}
+          placeholder="Digite sua mensagem..."
+        />
+      </div>
     </div>
   );
 }
