@@ -44,6 +44,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             <button
               onClick={onClose}
               className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              style={{ cursor: 'pointer' }}
             >
               <X size={20} />
             </button>

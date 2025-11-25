@@ -48,7 +48,8 @@ export function DashboardHeader() {
           {/* Logout */}
           <button
             onClick={handleLogout}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            style={{ cursor: 'pointer' }}
             title="Sair"
           >
             <LogOut size={20} />

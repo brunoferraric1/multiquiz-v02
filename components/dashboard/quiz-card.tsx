@@ -90,6 +90,7 @@ export function QuizCard({ quiz, onDelete }: QuizCardProps) {
                 router.push(`/preview/${quiz.id}`);
               }}
               className="p-2 text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-full transition-colors"
+              style={{ cursor: 'pointer' }}
               title="Pré-visualizar"
             >
               <Play size={18} className="ml-0.5" />
@@ -102,8 +103,9 @@ export function QuizCard({ quiz, onDelete }: QuizCardProps) {
               className={`p-2 rounded-full transition-colors ${
                 quiz.isPublished
                   ? 'text-gray-500 hover:text-brand-600 hover:bg-gray-100'
-                  : 'text-gray-300 cursor-not-allowed'
+                  : 'text-gray-300'
               }`}
+              style={{ cursor: quiz.isPublished ? 'pointer' : 'not-allowed' }}
               title={quiz.isPublished ? 'Copiar Link' : 'Publique para compartilhar'}
             >
               {copied ? (
@@ -120,6 +122,7 @@ export function QuizCard({ quiz, onDelete }: QuizCardProps) {
                 handleEdit();
               }}
               className="p-2 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-full transition-colors"
+              style={{ cursor: 'pointer' }}
               title="Editar"
             >
               <Edit size={18} />
@@ -135,6 +138,7 @@ export function QuizCard({ quiz, onDelete }: QuizCardProps) {
               }
             }}
             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+            style={{ cursor: 'pointer' }}
             title="Excluir"
           >
             <Trash2 size={18} />
