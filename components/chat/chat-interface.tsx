@@ -116,17 +116,22 @@ export function ChatInterface() {
       };
       addChatMessage(assistantMessage);
 
+      // Stop blocking the input once the assistant reply arrives
+      setIsLoading(false);
+
       // Only extract quiz structure if user confirmed something or bot suggests update
       const shouldExtract = shouldExtractQuizStructure(content, response);
       console.log('Should extract quiz structure?', shouldExtract, 'User message:', content);
 
       if (shouldExtract) {
         console.log('Triggering extraction...');
-        await extractQuizStructure();
+        // Run extraction in the background to avoid blocking the chat UI
+        void extractQuizStructure();
       }
     } catch (error) {
       console.error('Error sending message:', error);
       setError(error instanceof Error ? error.message : 'Erro ao comunicar com a IA');
+      setIsLoading(false);
 
       // Add error message to chat
       const errorMessage = {
@@ -135,8 +140,6 @@ export function ChatInterface() {
         timestamp: Date.now(),
       };
       addChatMessage(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
   };
 

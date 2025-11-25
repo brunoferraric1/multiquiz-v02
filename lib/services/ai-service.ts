@@ -3,6 +3,8 @@ import type { ChatMessage, AIExtractionResult, QuizDraft } from '@/types';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
 const MODEL = process.env.NEXT_PUBLIC_AI_MODEL || 'x-ai/grok-4.1-fast:free';
+const EXTRACTION_MODEL =
+  process.env.NEXT_PUBLIC_AI_EXTRACTION_MODEL || 'openai/gpt-4o-mini';
 
 type OpenRouterMessage = {
   role: 'user' | 'assistant' | 'system';
@@ -19,31 +21,27 @@ ESTILO DE CONVERSA:
 - NÃO envie listas longas de perguntas ou opções de uma vez
 - Conduza a conversa passo a passo, esperando confirmação do usuário
 
-FORMATAÇÃO E ESTRUTURA DAS RESPOSTAS:
-- Use markdown para formatar suas respostas
-- Use **negrito** para destacar informações importantes
-- NUNCA use aspas para itens de lista
-- Sempre use quebras de linha entre diferentes seções
+REGRAS CRÍTICAS DE FORMATAÇÃO (SIGA RIGOROSAMENTE):
 
-**Para listas de opções ou itens:**
-- SEMPRE use bullet points (-) em linhas separadas
-- NUNCA coloque múltiplos itens na mesma linha
-- Deixe uma linha em branco ANTES e DEPOIS de cada lista
-- Exemplo CORRETO:
+1. **SEMPRE use quebras de linha duplas** entre seções diferentes
+2. **NUNCA escreva tudo em um parágrafo único** - separe em parágrafos
+3. **SEMPRE use listas com bullets (-)** quando apresentar múltiplas opções
+4. **DEIXE uma linha em branco ANTES e DEPOIS de cada lista**
+5. **NUNCA coloque múltiplos itens na mesma linha separados por vírgula**
 
-Opções sugeridas:
+Formato CORRETO para listas:
 
-- Opção 1 → Resultado A
-- Opção 2 → Resultado B
-- Opção 3 → Resultado C
+Títulos dos resultados atualizados (4 no total):
 
-Confirma ou ajusta?
+- Clássico e Elegante → Convites sóbrios com tipografia refinada
+- Romântico Floral → Detalhes com flores e tons pastéis
+- Moderno Minimalista → Linhas limpas e cores neutras
+- Rústico → Papéis texturizados e elementos naturais
 
-**Exemplo INCORRETO (NÃO faça assim):**
-Opções: Opção 1 → Resultado A, Opção 2 → Resultado B
+Formato INCORRETO (NUNCA faça assim):
+Títulos: Clássico e Elegante → Convites sóbrios, Romântico Floral → Detalhes com flores, Moderno → Linhas limpas
 
 **Para perguntas do quiz:**
-Use este formato exato:
 
 **Pergunta 1:** Texto da pergunta aqui?
 
@@ -52,8 +50,6 @@ Opções:
 - Primeira opção → Resultado correspondente
 - Segunda opção → Resultado correspondente
 - Terceira opção → Resultado correspondente
-
-Confirma ou ajusta?
 
 FLUXO DE CRIAÇÃO DO QUIZ (siga esta ordem):
 
@@ -79,12 +75,24 @@ FLUXO DE CRIAÇÃO DO QUIZ (siga esta ordem):
 - Para cada pergunta, sugira as opções de resposta
 - SEMPRE espere aprovação antes de continuar
 
-REGRAS IMPORTANTES:
+REGRAS IMPORTANTES SOBRE CONFIRMAÇÕES:
+
+**Quando NÃO pedir confirmação (execute direto):**
+- Comandos explícitos e diretos do usuário (ex: "troque X para Y", "mude X", "adicione Y", "remova Z")
+- Ajustes simples solicitados pelo usuário (ex: "remova 'vintage'", "mude o nome para X")
+- Mudanças específicas já definidas pelo usuário
+
+**Quando pedir confirmação:**
+- Ao sugerir novas ideias ou opções
+- Antes de criar novos elementos (perguntas, resultados)
+- Ao fazer mudanças significativas na estrutura
+
+**Regras gerais:**
 - NUNCA crie o quiz completo de uma vez
-- SEMPRE espere confirmação do usuário antes de passar para a próxima etapa
-- Se o usuário confirmar algo (ex: "sim", "confirmo", "pode ir", "perfeito"), você pode atualizar o sidebar
+- Se o usuário confirmar algo (ex: "sim", "confirmo", "pode ir", "perfeito"), execute a ação
 - Mantenha as mensagens curtas e objetivas
 - Seja criativo mas não verboso
+- Para comandos diretos, execute e confirme que foi feito (não peça aprovação antes)
 
 Formato do Quiz:
 - **Perguntas**: Cada pergunta tem múltiplas opções de resposta
@@ -124,7 +132,7 @@ export class AIService {
         body: JSON.stringify({
           model: MODEL,
           messages: this.conversationHistory,
-          max_tokens: 400,
+          max_tokens: 600,
           temperature: 0.7,
         }),
       });
@@ -168,7 +176,7 @@ export class AIService {
           'X-Title': 'MultiQuiz v2 - Extraction',
         },
         body: JSON.stringify({
-          model: MODEL,
+          model: EXTRACTION_MODEL,
           messages: [
             {
               role: 'system',
@@ -231,8 +239,8 @@ IMPORTANT:
               content: extractionPrompt,
             },
           ],
-          max_tokens: 2000,
-          temperature: 0.3,
+          max_tokens: 800,
+          temperature: 0.2,
         }),
       });
 
@@ -271,7 +279,7 @@ IMPORTANT:
     conversationHistory: ChatMessage[],
     currentQuiz: QuizDraft
   ): string {
-    const recentMessages = conversationHistory.slice(-10); // Last 10 messages
+    const recentMessages = conversationHistory.slice(-6); // Keep context small for faster parsing
     const conversationText = recentMessages
       .map((msg) => `${msg.role}: ${msg.content}`)
       .join('\n');
