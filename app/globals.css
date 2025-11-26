@@ -29,6 +29,8 @@
   --color-border: #3d4454;
   --color-input: #2d3548;
   --color-ring: #fbbf24;
+  --cursor-interactive: pointer;
+  --cursor-not-allowed: not-allowed;
 
   /* Border radius */
   --radius-lg: 0.5rem;
@@ -47,7 +49,7 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-/* Cursor pointer for interactive elements */
+/* Cursor state tokens for interactive elements */
 button,
 [role="button"],
 a,
@@ -56,10 +58,10 @@ input[type="submit"],
 input[type="reset"],
 select,
 [onclick] {
-  cursor: pointer;
+  cursor: var(--cursor-interactive);
 }
 
 button:disabled,
 [role="button"][aria-disabled="true"] {
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }

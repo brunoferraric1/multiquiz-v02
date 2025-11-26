@@ -8,4 +8,4 @@ export * from './loading-spinner';
 export * from './dialog';
 export * from './avatar';
 export * from './empty-state';
-
+export * from './upload';

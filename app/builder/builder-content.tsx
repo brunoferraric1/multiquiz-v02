@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatInterface } from '@/components/chat/chat-interface';
 import { SaveIndicator } from '@/components/builder/save-indicator';
+import { Upload } from '@/components/ui/upload';
 import {
   Sheet,
   SheetContent,
@@ -26,10 +27,13 @@ type ActiveSheet =
   | { type: 'question'; id: string }
   | { type: 'outcome'; id: string };
 
+const fieldLabelClass = 'text-sm font-medium text-muted-foreground';
+
 export default function BuilderContent({ isEditMode = false }: { isEditMode?: boolean }) {
   const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   void isEditMode;
 
   const { forceSave, cancelPendingSave } = useAutoSave({
@@ -66,6 +70,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     }
   }, [activeSheet, activeOutcome, activeQuestion]);
 
+  useEffect(() => {
+    if (!quiz.coverImageUrl) {
+      setCoverFile(null);
+    }
+  }, [quiz.coverImageUrl]);
+
   const handleAddQuestion = () => {
     const newQuestion: Partial<Question> = {
       id: crypto.randomUUID(),
@@ -94,6 +104,21 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     if (newOutcome.id) {
       setActiveSheet({ type: 'outcome', id: newOutcome.id });
     }
+  };
+
+  const handleCoverImageChange = (file: File | null) => {
+    setCoverFile(file);
+
+    if (!file) {
+      updateQuizField('coverImageUrl', '');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      updateQuizField('coverImageUrl', reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleQuestionTextChange = (value: string) => {
@@ -147,6 +172,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const introDescription = quiz.description
     ? quiz.description
     : 'Conte mais sobre o que torna esse quiz especial.';
+  const coverImagePreview = quiz.coverImageUrl ? quiz.coverImageUrl : undefined;
 
   const sheetOpen = Boolean(activeSheet);
 
@@ -356,7 +382,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               </SheetHeader>
               <div className="mt-6 space-y-4">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                  <p className={fieldLabelClass}>
                     Título
                   </p>
                   <Input
@@ -366,7 +392,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                  <p className={fieldLabelClass}>
                     Descrição
                   </p>
                   <Textarea
@@ -377,17 +403,17 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                    Imagem (URL)
+                  <p className={fieldLabelClass}>
+                    Imagem principal
                   </p>
-                  <Input
-                    value={quiz.coverImageUrl ?? ''}
-                    onChange={(event) => updateQuizField('coverImageUrl', event.target.value)}
-                    placeholder="https://example.com/capa.jpg"
+                  <Upload
+                    file={coverFile}
+                    previewUrl={coverImagePreview}
+                    onFileChange={handleCoverImageChange}
                   />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                  <p className={fieldLabelClass}>
                     Texto do CTA
                   </p>
                   <Input
@@ -397,7 +423,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                  <p className={fieldLabelClass}>
                     URL do CTA
                   </p>
                   <Input
@@ -421,7 +447,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               </SheetHeader>
               <div className="mt-6 space-y-5">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                  <p className={fieldLabelClass}>
                     Texto da pergunta
                   </p>
                   <Textarea
@@ -483,7 +509,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               </SheetHeader>
               <div className="mt-6 space-y-4">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                  <p className={fieldLabelClass}>
                     Título
                   </p>
                   <Input
@@ -493,7 +519,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                  <p className={fieldLabelClass}>
                     Descrição
                   </p>
                   <Textarea
