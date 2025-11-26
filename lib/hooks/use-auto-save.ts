@@ -19,6 +19,8 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedRef = useRef<string>('');
+  const lastSavedCoverRef = useRef<string | undefined>(undefined);
+  const savingCoverRef = useRef<boolean>(false);
 
   const saveToFirestore = useCallback(async () => {
     if (!userId || !quiz.id) {
@@ -90,6 +92,43 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
       }
     };
   }, [quiz, chatHistory, enabled, userId, debounceMs, saveToFirestore]);
+
+  // Immediate save when cover image changes to a NEW Unsplash URL (important user action)
+  useEffect(() => {
+    if (!enabled || !userId || !quiz.id) return;
+
+    const currentCover = quiz.coverImageUrl;
+    
+    // Only save if:
+    // 1. There's a cover image
+    // 2. It's an Unsplash URL (not a manual upload or other source)
+    // 3. It's different from what we last saved
+    // 4. We're not already in the middle of saving a cover
+    const isUnsplashUrl = currentCover?.includes('unsplash.com');
+    const isDifferentFromLastSaved = currentCover !== lastSavedCoverRef.current;
+    
+    if (currentCover && isUnsplashUrl && isDifferentFromLastSaved && !savingCoverRef.current) {
+      console.log('Cover image changed to new Unsplash URL, triggering immediate save...', {
+        newCover: currentCover?.slice(0, 60),
+        lastSaved: lastSavedCoverRef.current?.slice(0, 60),
+      });
+      
+      // Mark that we're saving this cover to prevent duplicate saves
+      savingCoverRef.current = true;
+      lastSavedCoverRef.current = currentCover;
+      
+      // Cancel any pending debounced save and save immediately
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      // Use a small delay to ensure the state has fully propagated
+      setTimeout(async () => {
+        await saveToFirestore();
+        savingCoverRef.current = false;
+      }, 100);
+    }
+  }, [quiz.coverImageUrl, quiz.id, enabled, userId, saveToFirestore]);
 
   // Force save on unmount (when user leaves the page)
   useEffect(() => {

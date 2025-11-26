@@ -21,6 +21,12 @@ export function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const prevChatLength = useRef(chatHistory.length);
+  
+  // Request counter to implement "latest request wins" pattern for cover suggestions
+  // This prevents flickering when multiple requests are made in quick succession
+  const coverRequestIdRef = useRef(0);
+  // Track if main flow already triggered a cover suggestion (to avoid duplicate from extraction)
+  const coverSuggestionTriggeredRef = useRef(false);
 
   // Load conversation history into AI service when it changes
   useEffect(() => {
@@ -115,22 +121,36 @@ export function ChatInterface() {
     options?: { force?: boolean }
   ) => {
     const effectivePrompt = buildCoverPrompt(prompt);
+    console.log('[Cover] maybeSuggestCover called', { prompt: prompt?.slice(0, 30), force: options?.force });
 
-    if (!effectivePrompt || isCoverSuggesting) return;
+    if (!effectivePrompt) {
+      console.log('[Cover] Skipped: no effective prompt');
+      return;
+    }
 
     const latestQuiz = useQuizBuilderStore.getState().quiz;
     const currentCover = incomingCoverUrl || latestQuiz.coverImageUrl;
-    const coverBeforeRequest = currentCover;
     const isAutoCover = Boolean(currentCover && (currentCover.includes('unsplash.com') || currentCover.includes('source.unsplash.com')));
     const coverIsSuggested = currentCover && currentCover === lastSuggestedCoverUrl;
     const promptChanged = effectivePrompt && effectivePrompt !== lastCoverPrompt;
 
     const hasManualCover = Boolean(currentCover && !isAutoCover && !coverIsSuggested);
-    if (hasManualCover && !options?.force) return;
+    if (hasManualCover && !options?.force) {
+      console.log('[Cover] Skipped: has manual cover', { currentCover: currentCover?.slice(0, 40) });
+      return;
+    }
 
     const alreadyUpToDate = Boolean(currentCover && !options?.force && coverIsSuggested && !promptChanged);
-    if (alreadyUpToDate) return;
+    if (alreadyUpToDate) {
+      console.log('[Cover] Skipped: already up to date');
+      return;
+    }
 
+    // Increment request ID - this request will only apply if it's still the latest when it completes
+    coverRequestIdRef.current += 1;
+    const thisRequestId = coverRequestIdRef.current;
+    
+    console.log('[Cover] Request started', { requestId: thisRequestId, prompt: effectivePrompt.slice(0, 50) });
     setIsCoverSuggesting(true);
 
     try {
@@ -140,27 +160,38 @@ export function ChatInterface() {
         body: JSON.stringify({ prompt: effectivePrompt }),
       });
 
+      console.log('[Cover] Response received', { ok: response.ok, status: response.status });
+
       if (!response.ok) {
         throw new Error(`Erro ao sugerir capa (${response.status})`);
       }
 
       const data = (await response.json()) as { url?: string };
+      console.log('[Cover] Data parsed', { hasUrl: !!data?.url, url: data?.url?.slice(0, 50) });
 
-      // Avoid overriding if the user changed the cover while we were fetching
-      const currentQuiz = useQuizBuilderStore.getState().quiz;
-      if (currentQuiz.coverImageUrl && currentQuiz.coverImageUrl !== coverBeforeRequest && !options?.force) {
+      // "Latest request wins" - only apply if this is still the most recent request
+      if (thisRequestId !== coverRequestIdRef.current) {
+        console.log('[Cover] Discarded (superseded)', { thisRequestId, currentRequestId: coverRequestIdRef.current });
         return;
       }
 
       if (data?.url) {
+        const currentQuiz = useQuizBuilderStore.getState().quiz;
+        console.log('[Cover] Applying to quiz', { quizId: currentQuiz.id });
         setQuiz({ ...currentQuiz, coverImageUrl: data.url });
         setLastCoverPrompt(effectivePrompt);
         setLastSuggestedCoverUrl(data.url);
+        console.log('[Cover] Applied successfully', { url: data.url.slice(0, 60) });
+      } else {
+        console.log('[Cover] No URL in response');
       }
     } catch (error) {
-      console.error('Erro ao buscar sugestão de capa', error);
+      console.error('[Cover] Error:', error);
     } finally {
-      setIsCoverSuggesting(false);
+      // Only clear the loading state if this is still the latest request
+      if (thisRequestId === coverRequestIdRef.current) {
+        setIsCoverSuggesting(false);
+      }
     }
   };
 
@@ -229,7 +260,20 @@ export function ChatInterface() {
       const shouldApplyExtraction =
         extraction && (shouldExtractQuizStructure(content, response) || forceCoverRefresh);
 
+      // Reset flag at start of each message processing
+      coverSuggestionTriggeredRef.current = false;
+
+      console.log('[Flow] Message processed', {
+        forceCoverRefresh,
+        hasCoverPrompt: !!coverPrompt,
+        hasExtraction: !!extraction,
+        extractionKeys: extraction ? Object.keys(extraction) : [],
+        shouldApplyExtraction,
+        combinedCoverPrompt: combinedCoverPrompt?.slice(0, 30),
+      });
+
       if (shouldApplyExtraction && Object.keys(extraction || {}).length > 0) {
+        console.log('[Flow] Taking extraction branch');
         const updatedQuiz = { ...quiz };
 
         if (extraction.title) updatedQuiz.title = extraction.title;
@@ -241,8 +285,20 @@ export function ChatInterface() {
         if (extraction.outcomes) updatedQuiz.outcomes = extraction.outcomes;
 
         setQuiz(updatedQuiz);
-        const finalCoverPrompt = combinedCoverPrompt || (forceCoverRefresh ? content : undefined);
+        
+        // Auto-suggest cover when title/description are confirmed
+        // Priority: 1) AI-provided coverPrompt, 2) extraction.coverImagePrompt, 3) generate from title/desc
+        const finalTitle = updatedQuiz.title || quiz.title;
+        const finalDescription = updatedQuiz.description || quiz.description;
+        const hasTitleOrDescription = finalTitle && finalTitle !== 'Meu Novo Quiz';
+        
+        const finalCoverPrompt = combinedCoverPrompt || 
+          (forceCoverRefresh ? content : undefined) ||
+          (hasTitleOrDescription ? `${finalTitle} ${finalDescription}`.trim() : undefined);
+        
+        console.log('[Flow] finalCoverPrompt for extraction branch:', finalCoverPrompt?.slice(0, 40));
         if (finalCoverPrompt) {
+          coverSuggestionTriggeredRef.current = true;
           void maybeSuggestCover(finalCoverPrompt, updatedQuiz.coverImageUrl, {
             force:
               forceCoverRefresh ||
@@ -251,6 +307,7 @@ export function ChatInterface() {
           });
         }
       } else {
+        console.log('[Flow] Taking else branch (fallback)');
         // Fallback: only extract if we believe the user confirmed and we got no tool payload
         const shouldExtract = shouldExtractQuizStructure(content, response);
         console.log('Should extract quiz structure (fallback)?', shouldExtract, 'User message:', content);
@@ -262,6 +319,11 @@ export function ChatInterface() {
         }
 
         if (combinedCoverPrompt || forceCoverRefresh) {
+          console.log('[Flow] Calling maybeSuggestCover from else branch', { 
+            combinedCoverPrompt: combinedCoverPrompt?.slice(0, 30), 
+            forceCoverRefresh 
+          });
+          coverSuggestionTriggeredRef.current = true;
           // User asked to fix the image even without confirmation flow
           void maybeSuggestCover(combinedCoverPrompt || content, quiz.coverImageUrl, {
             force: true,
@@ -306,7 +368,26 @@ export function ChatInterface() {
         if (extracted.outcomes) updatedQuiz.outcomes = extracted.outcomes;
 
         setQuiz(updatedQuiz);
-        void maybeSuggestCover(extracted.coverImagePrompt, updatedQuiz.coverImageUrl);
+
+        // Auto-suggest cover image when title/description are set
+        // User shouldn't need to explicitly ask - it should happen automatically
+        if (!coverSuggestionTriggeredRef.current) {
+          const finalTitle = updatedQuiz.title || quiz.title;
+          const finalDescription = updatedQuiz.description || quiz.description;
+          const hasTitleOrDescription = finalTitle && finalTitle !== 'Meu Novo Quiz';
+          
+          // Use AI-provided coverImagePrompt if available, otherwise generate from title/description
+          const coverPromptToUse = extracted.coverImagePrompt || 
+            (hasTitleOrDescription ? `${finalTitle} ${finalDescription}`.trim() : undefined);
+          
+          if (coverPromptToUse) {
+            console.log('[Extraction] Auto-triggering cover suggestion', {
+              source: extracted.coverImagePrompt ? 'AI provided' : 'generated from title/desc',
+              prompt: coverPromptToUse?.slice(0, 50),
+            });
+            void maybeSuggestCover(coverPromptToUse, updatedQuiz.coverImageUrl);
+          }
+        }
       }
     } catch (error) {
       console.error('Error extracting quiz structure:', error);
