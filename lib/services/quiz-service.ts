@@ -75,6 +75,12 @@ export class QuizService {
     if (quiz.coverImageUrl) {
       quizData.coverImageUrl = quiz.coverImageUrl;
     }
+    if (quiz.ctaText) {
+      quizData.ctaText = quiz.ctaText;
+    }
+    if (quiz.ctaUrl) {
+      quizData.ctaUrl = quiz.ctaUrl;
+    }
 
     // Recursively remove all undefined values (Firestore doesn't accept them)
     const cleanedData = removeUndefinedDeep(quizData);

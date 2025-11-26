@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Trash2 } from 'lucide-react';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
-import { Button } from '@/components/ui/button';
 import { ChatMessageComponent } from './chat-message';
 import { ChatInput } from './chat-input';
 import { TypingIndicator } from './typing-indicator';
@@ -12,7 +10,6 @@ import { AIService } from '@/lib/services/ai-service';
 export function ChatInterface() {
   const chatHistory = useQuizBuilderStore((state) => state.chatHistory);
   const addChatMessage = useQuizBuilderStore((state) => state.addChatMessage);
-  const setChatHistory = useQuizBuilderStore((state) => state.setChatHistory);
   const setExtracting = useQuizBuilderStore((state) => state.setExtracting);
   const setError = useQuizBuilderStore((state) => state.setError);
 
@@ -197,30 +194,9 @@ export function ChatInterface() {
     }
   };
 
-  const handleClearChat = () => {
-    if (confirm('Tem certeza que deseja limpar o histórico de chat?')) {
-      setChatHistory([]);
-      aiService.clearHistory();
-    }
-  };
-
   return (
     <div className="flex flex-col h-full bg-card border rounded-lg">
-      {/* Minimal Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0">
-        <h2 className="text-lg font-semibold">Criador com IA</h2>
-        {chatHistory.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearChat}
-            className="gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <Trash2 size={16} />
-            Limpar
-          </Button>
-        )}
-      </div>
+      {/* Header removed as requested */}
 
       {/* Messages List - Scrollable */}
       <div

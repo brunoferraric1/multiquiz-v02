@@ -5,6 +5,9 @@ import type { QuizBuilderState, QuizDraft, ChatMessage, Question, Outcome, Quiz 
 const initialQuizState: QuizDraft = {
   title: 'Meu Novo Quiz',
   description: '',
+  coverImageUrl: '',
+  ctaText: '',
+  ctaUrl: '',
   questions: [],
   outcomes: [],
   primaryColor: '#4F46E5',

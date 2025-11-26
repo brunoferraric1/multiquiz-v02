@@ -42,6 +42,8 @@ export const QuizSchema = z.object({
   title: z.string().min(1),
   description: z.string(),
   coverImageUrl: z.string().url().optional(),
+  ctaText: z.string().optional(),
+  ctaUrl: z.string().url().optional(),
   primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
   questions: z.array(QuestionSchema),
   outcomes: z.array(OutcomeSchema),

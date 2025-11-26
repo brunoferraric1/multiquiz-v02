@@ -1,42 +1,138 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Eye } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, Eye, ImageIcon, Plus, Save } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
+import type { AnswerOption, Outcome, Question } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatInterface } from '@/components/chat/chat-interface';
 import { SaveIndicator } from '@/components/builder/save-indicator';
-import { useState } from 'react';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
-interface BuilderContentProps {
-  isEditMode?: boolean;
-}
+type ActiveSheet =
+  | { type: 'introduction' }
+  | { type: 'question'; id: string }
+  | { type: 'outcome'; id: string };
 
-export default function BuilderContent({ isEditMode = false }: BuilderContentProps) {
-  const router = useRouter();
+export default function BuilderContent({ isEditMode = false }: { isEditMode?: boolean }) {
   const { user } = useAuth();
-  const { quiz, updateQuizField } = useQuizBuilderStore();
   const [isSaving, setIsSaving] = useState(false);
+  const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
+  void isEditMode;
 
-  // Auto-save hook with 30-second debounce
   const { forceSave, cancelPendingSave } = useAutoSave({
     userId: user?.uid,
     enabled: true,
-    debounceMs: 30000, // 30 seconds
+    debounceMs: 30000,
   });
+
+  const quiz = useQuizBuilderStore((state) => state.quiz);
+  const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
+  const addQuestion = useQuizBuilderStore((state) => state.addQuestion);
+  const updateQuestion = useQuizBuilderStore((state) => state.updateQuestion);
+  const addOutcome = useQuizBuilderStore((state) => state.addOutcome);
+  const updateOutcome = useQuizBuilderStore((state) => state.updateOutcome);
+
+  const questions = quiz.questions ?? [];
+  const outcomes = quiz.outcomes ?? [];
+
+  const activeQuestion =
+    activeSheet?.type === 'question'
+      ? questions.find((question) => question.id === activeSheet.id)
+      : undefined;
+  const activeOutcome =
+    activeSheet?.type === 'outcome'
+      ? outcomes.find((outcome) => outcome.id === activeSheet.id)
+      : undefined;
+
+  useEffect(() => {
+    if (activeSheet?.type === 'question' && !activeQuestion) {
+      setActiveSheet(null);
+    }
+    if (activeSheet?.type === 'outcome' && !activeOutcome) {
+      setActiveSheet(null);
+    }
+  }, [activeSheet, activeOutcome, activeQuestion]);
+
+  const handleAddQuestion = () => {
+    const newQuestion: Partial<Question> = {
+      id: crypto.randomUUID(),
+      text: 'Nova pergunta',
+      options: [
+        {
+          id: crypto.randomUUID(),
+          text: 'Nova opção',
+          targetOutcomeId: outcomes[0]?.id ?? crypto.randomUUID(),
+        },
+      ],
+    };
+    addQuestion(newQuestion);
+    if (newQuestion.id) {
+      setActiveSheet({ type: 'question', id: newQuestion.id });
+    }
+  };
+
+  const handleAddOutcome = () => {
+    const newOutcome: Partial<Outcome> = {
+      id: crypto.randomUUID(),
+      title: 'Novo resultado',
+      description: '',
+    };
+    addOutcome(newOutcome);
+    if (newOutcome.id) {
+      setActiveSheet({ type: 'outcome', id: newOutcome.id });
+    }
+  };
+
+  const handleQuestionTextChange = (value: string) => {
+    if (!activeQuestion?.id) return;
+    updateQuestion(activeQuestion.id, { text: value });
+  };
+
+  const handleOptionTextChange = (optionId: string, value: string) => {
+    if (!activeQuestion?.id) return;
+    const updatedOptions: AnswerOption[] = (activeQuestion.options ?? []).map((option) =>
+      option.id === optionId ? { ...option, text: value } : option
+    );
+    updateQuestion(activeQuestion.id, { options: updatedOptions });
+  };
+
+  const handleAddOption = () => {
+    if (!activeQuestion?.id) return;
+    const fallbackOutcomeId = outcomes[0]?.id ?? crypto.randomUUID();
+    const updatedOptions: AnswerOption[] = [
+      ...(activeQuestion.options ?? []),
+      {
+        id: crypto.randomUUID(),
+        text: '',
+        targetOutcomeId: fallbackOutcomeId,
+      },
+    ];
+    updateQuestion(activeQuestion.id, { options: updatedOptions });
+  };
+
+  const handleOutcomeFieldChange = (field: keyof Outcome, value: string) => {
+    if (!activeOutcome?.id) return;
+    updateOutcome(activeOutcome.id, { [field]: value });
+  };
 
   const handleSave = async () => {
     if (!user) return;
 
     try {
       setIsSaving(true);
-      // Cancel pending auto-save and force immediate save
       cancelPendingSave();
       await forceSave();
       alert('Quiz salvo com sucesso!');
@@ -48,9 +144,14 @@ export default function BuilderContent({ isEditMode = false }: BuilderContentPro
     }
   };
 
+  const introDescription = quiz.description
+    ? quiz.description
+    : 'Conte mais sobre o que torna esse quiz especial.';
+
+  const sheetOpen = Boolean(activeSheet);
+
   return (
     <div className="h-screen flex flex-col">
-      {/* Header */}
       <header className="bg-card border-b shrink-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -68,9 +169,7 @@ export default function BuilderContent({ isEditMode = false }: BuilderContentPro
                 </Link>
               </Button>
               <div className="border-l border-border h-6" />
-              <h1 className="text-lg font-semibold">
-                {quiz.title || 'Novo Quiz'}
-              </h1>
+              <h1 className="text-lg font-semibold">{quiz.title || 'Novo Quiz'}</h1>
             </div>
 
             <div className="flex items-center gap-3">
@@ -80,7 +179,6 @@ export default function BuilderContent({ isEditMode = false }: BuilderContentPro
                 size="sm"
                 className="gap-2"
                 onClick={() => {
-                  // TODO: Implement preview
                   alert('Preview em desenvolvimento');
                 }}
               >
@@ -101,111 +199,315 @@ export default function BuilderContent({ isEditMode = false }: BuilderContentPro
         </div>
       </header>
 
-      {/* Main Content - Takes remaining height */}
       <main className="flex-1 overflow-hidden min-h-0">
         <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-            {/* Left Side - Chat/AI Interface */}
-            <div className="h-full min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 h-full">
+            <div className="h-full min-h-0 lg:col-span-3">
               <ChatInterface />
             </div>
 
-            {/* Right Side - Visual Builder */}
-            <div className="h-full min-h-0">
+            <div className="h-full min-h-0 lg:col-span-2">
               <Card className="flex flex-col h-full">
                 <CardHeader className="flex-shrink-0">
-                  <CardTitle>Estrutura do Quiz</CardTitle>
+                  <CardTitle className="text-lg font-semibold">Estrutura do Quiz</CardTitle>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto min-h-0">
-                  {/* Quiz Title Input */}
-                  <div className="space-y-4 mb-6">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Título do Quiz
-                      </label>
-                      <Input
-                        type="text"
-                        value={quiz.title}
-                        onChange={(e) => updateQuizField('title', e.target.value)}
-                        placeholder="Digite o título do seu quiz"
-                      />
+
+                <CardContent className="flex flex-col gap-10 overflow-y-auto min-h-0 p-6 pt-0">
+                  <section className="space-y-3">
+                    <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                      Introdução
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSheet({ type: 'introduction' })}
+                      className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
+                          {quiz.coverImageUrl ? (
+                            <img
+                              src={quiz.coverImageUrl}
+                              alt="Capa do quiz"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center">
+                              <ImageIcon className="h-5 w-5" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-foreground">
+                            {quiz.title || 'Meu Novo Quiz'}
+                          </p>
+                          <p className="text-xs text-muted-foreground leading-relaxed max-h-12 overflow-hidden">
+                            {introDescription}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </section>
+
+                  <section className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                        Perguntas ({questions.length})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleAddQuestion}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
+                        aria-label="Adicionar pergunta"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Descrição
-                      </label>
-                      <Textarea
-                        value={quiz.description}
-                        onChange={(e) => updateQuizField('description', e.target.value)}
-                        placeholder="Descreva seu quiz"
-                        rows={3}
-                      />
+                    <div className="space-y-3">
+                      {questions.length === 0 && (
+                        <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+                          Adicione a primeira pergunta do quiz
+                        </div>
+                      )}
+                      {questions.map((question, index) => (
+                        <button
+                          key={question.id ?? index}
+                          type="button"
+                          onClick={() =>
+                            question.id && setActiveSheet({ type: 'question', id: question.id })
+                          }
+                          className="w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-semibold text-muted-foreground">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-foreground">
+                                {question.text || 'Pergunta sem texto'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {(question.options?.length ?? 0)} opções
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                  </div>
+                  </section>
 
-                  {/* Questions Section */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-3">
-                      Perguntas ({quiz.questions?.length || 0})
-                    </h3>
-                    {quiz.questions && quiz.questions.length > 0 ? (
-                      <div className="space-y-2">
-                        {quiz.questions.map((q, idx) => (
-                          <div
-                            key={q.id}
-                            className="p-3 border rounded-lg bg-muted/50"
-                          >
-                            <p className="text-sm font-medium">
-                              {idx + 1}. {q.text}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {q.options?.length || 0} opções
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                        <p className="text-muted-foreground text-sm">
-                          Nenhuma pergunta criada ainda
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  <section className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                        Resultados ({outcomes.length})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleAddOutcome}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
+                        aria-label="Adicionar resultado"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
 
-                  {/* Outcomes Section */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">
-                      Resultados ({quiz.outcomes?.length || 0})
-                    </h3>
-                    {quiz.outcomes && quiz.outcomes.length > 0 ? (
-                      <div className="space-y-2">
-                        {quiz.outcomes.map((outcome) => (
-                          <div
-                            key={outcome.id}
-                            className="p-3 border rounded-lg bg-muted/50"
+                    <div className="space-y-3">
+                      {outcomes.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+                          Nenhum resultado definido
+                        </div>
+                      ) : (
+                        outcomes.map((outcome, index) => (
+                          <button
+                            key={outcome.id ?? index}
+                            type="button"
+                            onClick={() =>
+                              outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })
+                            }
+                            className="w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                           >
-                            <p className="text-sm font-medium">
-                              {outcome.title}
+                            <p className="text-sm font-semibold text-foreground">
+                              {outcome.title || 'Resultado sem título'}
                             </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                        <p className="text-muted-foreground text-sm">
-                          Nenhum resultado criado ainda
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                            <p className="text-xs text-muted-foreground">
+                              {outcome.description || 'Sem descrição'}
+                            </p>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </section>
                 </CardContent>
               </Card>
             </div>
           </div>
         </div>
       </main>
+
+      <Sheet open={sheetOpen} onOpenChange={(open) => !open && setActiveSheet(null)}>
+        <SheetContent className="max-w-lg">
+          {activeSheet?.type === 'introduction' && (
+            <>
+              <SheetHeader>
+                <SheetTitle>Introdução</SheetTitle>
+                <SheetDescription>
+                  Atualize o título e a descrição para deixar o quiz alinhado com sua proposta.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-6 space-y-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    Título
+                  </p>
+                  <Input
+                    value={quiz.title ?? ''}
+                    onChange={(event) => updateQuizField('title', event.target.value)}
+                    placeholder="Título do seu quiz"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    Descrição
+                  </p>
+                  <Textarea
+                    value={quiz.description ?? ''}
+                    onChange={(event) => updateQuizField('description', event.target.value)}
+                    placeholder="Descreva o que o participante vai viver"
+                    rows={4}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    Imagem (URL)
+                  </p>
+                  <Input
+                    value={quiz.coverImageUrl ?? ''}
+                    onChange={(event) => updateQuizField('coverImageUrl', event.target.value)}
+                    placeholder="https://example.com/capa.jpg"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    Texto do CTA
+                  </p>
+                  <Input
+                    value={quiz.ctaText ?? ''}
+                    onChange={(event) => updateQuizField('ctaText', event.target.value)}
+                    placeholder="Quer saber mais?"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    URL do CTA
+                  </p>
+                  <Input
+                    type="url"
+                    value={quiz.ctaUrl ?? ''}
+                    onChange={(event) => updateQuizField('ctaUrl', event.target.value)}
+                    placeholder="https://seusite.com/cta"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeSheet?.type === 'question' && activeQuestion && (
+            <>
+              <SheetHeader>
+                <SheetTitle>Pergunta {questions.findIndex((q) => q.id === activeQuestion.id) + 1}</SheetTitle>
+                <SheetDescription>
+                  Edite o enunciado e as opções dessa pergunta. Você pode adicionar manualmente novas opções abaixo.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-6 space-y-5">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    Texto da pergunta
+                  </p>
+                  <Textarea
+                    value={activeQuestion.text ?? ''}
+                    onChange={(event) => handleQuestionTextChange(event.target.value)}
+                    placeholder="Escreva a pergunta aqui"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                      Opções
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleAddOption}
+                      className="flex items-center gap-1 text-xs font-semibold text-primary"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Adicionar opção
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(activeQuestion.options ?? []).map((option, index) => (
+                      <div key={option.id} className="space-y-1">
+                        <p className="text-xs font-semibold text-muted-foreground">
+                          Opção {index + 1}
+                        </p>
+                        <Input
+                          value={option.text ?? ''}
+                          onChange={(event) =>
+                            handleOptionTextChange(option.id, event.target.value)
+                          }
+                          placeholder="Texto da opção"
+                        />
+                      </div>
+                    ))}
+                    {(activeQuestion.options ?? []).length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Nenhuma opção foi adicionada ainda.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeSheet?.type === 'outcome' && activeOutcome && (
+            <>
+              <SheetHeader>
+                <SheetTitle>Resultado</SheetTitle>
+                <SheetDescription>
+                  Defina o título e a descrição desse resultado para mostrar o impacto que o participante teve.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-6 space-y-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    Título
+                  </p>
+                  <Input
+                    value={activeOutcome.title ?? ''}
+                    onChange={(event) => handleOutcomeFieldChange('title', event.target.value)}
+                    placeholder="Título do resultado"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    Descrição
+                  </p>
+                  <Textarea
+                    value={activeOutcome.description ?? ''}
+                    onChange={(event) => handleOutcomeFieldChange('description', event.target.value)}
+                    placeholder="Descreva esse resultado"
+                    rows={4}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
