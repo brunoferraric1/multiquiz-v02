@@ -5,6 +5,8 @@ const API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
 const MODEL = process.env.NEXT_PUBLIC_AI_MODEL || 'x-ai/grok-4.1-fast:free';
 const EXTRACTION_MODEL =
   process.env.NEXT_PUBLIC_AI_EXTRACTION_MODEL || 'openai/gpt-4o-mini';
+const PLACEHOLDER_KEYWORDS = ['string', 'texto', 'description', 'descricao', 'url', 'cta', 'imagem', 'image', 'link'];
+const NULLISH_VALUES = new Set(['none', 'null', 'undefined', 'n/a', 'na']);
 const DEFAULT_ASSISTANT_FALLBACK = `Tudo certo! Atualizei o quiz.
 
 Próximo passo:
@@ -26,7 +28,16 @@ ANTES DE SUGERIR TÍTULO/DESCRIÇÃO, GARANTA QUE SABE:
 - Tom de voz desejado (ex: descontraído, técnico, inspirador)
 Sempre proponha CTA da introdução (texto curto + URL de destino). Inclua \`ctaText\` e, se souber, \`ctaUrl\` no tool call. Se não souber a URL, sugira um placeholder e peça confirmação.
 Quando o usuário pedir para trocar a capa/imagem ou descrever a imagem desejada, use SEMPRE a ferramenta \`set_cover_image\` com o prompt exato nas palavras do usuário (respeite "sem rosto", "sem pessoas" se solicitado). Não peça confirmação extra.
-Quando já tiver objetivo + audiência + tom, inclua \`coverImagePrompt\` (5-8 palavras, evite pessoas se não pedirem) no tool call \`update_quiz\`.
+Quando já tiver objetivo + audiência + tom, inclua \`coverImagePrompt\` no tool call \`update_quiz\`.
+
+REGRAS CRÍTICAS PARA coverImagePrompt:
+- Use 5-10 palavras descrevendo OBJETOS VISUAIS CONCRETOS que aparecem na foto
+- Pense: "O que literalmente estaria DENTRO desta foto?"
+- BOM: "xícara café expresso grãos barista latte art mesa madeira"
+- BOM: "convite casamento envelope lacre cera flores flat lay"
+- RUIM: "tema café conceito ilustração estilo moderno" (muito abstrato)
+- RUIM: "quiz casamento papelaria elegante" (meta-palavras)
+- Evite: quiz, tema, conceito, ilustração, imagem, estilo, moderno, elegante
 Se o usuário não forneceu esses pontos, faça as 2 perguntas abaixo em bullets ANTES de sugerir qualquer título/descrição:
 - Qual é o objetivo principal do quiz?
 - Quem é a audiência (perfil + nível de maturidade no tema)?
@@ -200,7 +211,8 @@ export class AIService {
               coverImageUrl: { type: 'string', description: 'URL opcional da capa' },
               coverImagePrompt: {
                 type: 'string',
-                description: 'Prompt curto para sugerir imagem de capa (5-8 palavras) quando houver contexto suficiente',
+                description:
+                  'Descrição visual concreta para buscar foto de capa (5-10 palavras). Foque em OBJETOS VISUAIS que aparecem na foto (ex: "xícara de café grãos espresso barista"), NÃO em conceitos abstratos. Pode usar português ou inglês.',
               },
               ctaText: { type: 'string', description: 'Texto do CTA principal do quiz' },
               ctaUrl: { type: 'string', description: 'URL do CTA principal do quiz' },
@@ -257,13 +269,14 @@ export class AIService {
         function: {
           name: 'set_cover_image',
           description:
-            'Quando o usuário pedir para trocar a capa, forneça o prompt exato para sugerir uma nova imagem de capa. Sempre respeite restrições como "sem rosto" ou "sem pessoas".',
+            'Quando o usuário pedir para trocar a capa, forneça uma descrição VISUAL CONCRETA para buscar a foto. Sempre respeite restrições como "sem rosto" ou "sem pessoas".',
           parameters: {
             type: 'object',
             properties: {
               prompt: {
                 type: 'string',
-                description: 'Descrição curta (5-12 palavras) da imagem desejada para a capa',
+                description:
+                  'Descrição visual concreta (5-12 palavras) focando em OBJETOS que aparecem na foto. Ex: para quiz de café use "xícara de café expresso grãos barista latte art", NÃO "tema café conceito ilustração".',
               },
             },
             required: ['prompt'],
@@ -584,12 +597,23 @@ Extract and return the updated quiz structure.`;
   ): AIExtractionResult {
     const result: AIExtractionResult = {};
 
-    if (extracted.title) result.title = extracted.title;
-    if (extracted.description) result.description = extracted.description;
-    if (extracted.coverImageUrl) result.coverImageUrl = extracted.coverImageUrl;
-    if (extracted.coverImagePrompt) result.coverImagePrompt = extracted.coverImagePrompt;
-    if (extracted.ctaText) result.ctaText = extracted.ctaText;
-    if (extracted.ctaUrl) result.ctaUrl = extracted.ctaUrl;
+    const sanitizedTitle = this.sanitizeOptionalString(extracted.title);
+    if (sanitizedTitle) result.title = sanitizedTitle;
+
+    const sanitizedDescription = this.sanitizeOptionalString(extracted.description);
+    if (sanitizedDescription) result.description = sanitizedDescription;
+
+    const sanitizedCoverUrl = this.sanitizeOptionalString(extracted.coverImageUrl);
+    if (sanitizedCoverUrl) result.coverImageUrl = sanitizedCoverUrl;
+
+    const sanitizedCoverPrompt = this.sanitizeOptionalString(extracted.coverImagePrompt);
+    if (sanitizedCoverPrompt) result.coverImagePrompt = sanitizedCoverPrompt;
+
+    const sanitizedCtaText = this.sanitizeOptionalString(extracted.ctaText);
+    if (sanitizedCtaText) result.ctaText = sanitizedCtaText;
+
+    const sanitizedCtaUrl = this.sanitizeOptionalString(extracted.ctaUrl);
+    if (sanitizedCtaUrl) result.ctaUrl = sanitizedCtaUrl;
 
     // Normalize questions
     if (Array.isArray(extracted.questions)) {
@@ -598,7 +622,7 @@ Extract and return the updated quiz structure.`;
         return {
           id: q.id || existingQuestion?.id || crypto.randomUUID(),
           text: q.text,
-          imageUrl: q.imageUrl,
+          imageUrl: this.sanitizeOptionalString(q.imageUrl),
           options: (q.options || []).map((opt: any, optIdx: number) => {
             const existingOption = existingQuestion?.options?.[optIdx];
             return {
@@ -619,14 +643,41 @@ Extract and return the updated quiz structure.`;
           id: o.id || existingOutcome?.id || crypto.randomUUID(),
           title: o.title || 'Resultado sem título',
           description: o.description || '',
-          imageUrl: o.imageUrl,
-          ctaText: o.ctaText,
-          ctaUrl: o.ctaUrl,
+          imageUrl: this.sanitizeOptionalString(o.imageUrl),
+          ctaText: this.sanitizeOptionalString(o.ctaText),
+          ctaUrl: this.sanitizeOptionalString(o.ctaUrl),
         };
       });
     }
 
     return result;
+  }
+
+  private sanitizeOptionalString(value: unknown): string | undefined {
+    if (typeof value !== 'string') return undefined;
+
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed;
+    }
+
+    const normalized = trimmed
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
+    if (NULLISH_VALUES.has(normalized)) return undefined;
+
+    const containsOptional = normalized.includes('optional') || normalized.includes('opcional');
+    const containsPlaceholderKeyword = PLACEHOLDER_KEYWORDS.some((keyword) => normalized.includes(keyword));
+
+    if ((containsOptional && containsPlaceholderKeyword) || (containsPlaceholderKeyword && normalized.length <= 6)) {
+      return undefined;
+    }
+
+    return trimmed;
   }
 
   /**

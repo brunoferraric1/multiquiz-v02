@@ -99,37 +99,14 @@ export function ChatInterface() {
     const title = currentQuiz.title || '';
     const description = currentQuiz.description || '';
 
+    // Combine available context - the AI translation endpoint will handle
+    // converting this to optimal English Unsplash keywords
     const basePieces = [rawPrompt?.trim(), title, description].filter(Boolean) as string[];
     const base = basePieces.join(' ').trim();
-    const lowerBase = base.toLowerCase();
 
-    const weddingTags =
-      'papelaria de casamento, convite de casamento, envelopes com lacre de cera, fitas de cetim, flores delicadas, flat lay, papel texturizado, luz natural suave, sem pessoas, sem arquitetura';
-    const stationeryTags =
-      'papelaria artesanal, convites elegantes, envelopes, lacres de cera, fitas, flat lay, sem pessoas, sem arquitetura';
-    const actionFigureTags =
-      'action figure, colecionável, toy figurine, product photo, diorama, tabletop, luz de estúdio, fundo neutro, sem rosto humano, sem pessoas, spider-man figure';
-
-    if (lowerBase.includes('casamento')) {
-      return `${base}, ${weddingTags}`;
-    }
-
-    if (lowerBase.includes('papelaria')) {
-      return `${base}, ${stationeryTags}`;
-    }
-
-    if (
-      lowerBase.includes('boneco') ||
-      lowerBase.includes('action figure') ||
-      lowerBase.includes('ação') ||
-      lowerBase.includes('acao') ||
-      lowerBase.includes('aranha')
-    ) {
-      return `${base}, ${actionFigureTags}`;
-    }
-
-    const fallbackBase = base || 'capa de quiz temática';
-    return `${fallbackBase}, ilustração temática, elementos do assunto em destaque, sem pessoas, sem arquitetura, sem estradas, sem rosto humano`;
+    // Return just the base context - no more hardcoded category tags
+    // The image-suggestion API now uses AI to translate to optimal search terms
+    return base || 'abstract minimal background';
   };
 
   const maybeSuggestCover = async (
@@ -143,16 +120,16 @@ export function ChatInterface() {
 
     const latestQuiz = useQuizBuilderStore.getState().quiz;
     const currentCover = incomingCoverUrl || latestQuiz.coverImageUrl;
+    const coverBeforeRequest = currentCover;
     const isAutoCover = Boolean(currentCover && (currentCover.includes('unsplash.com') || currentCover.includes('source.unsplash.com')));
     const coverIsSuggested = currentCover && currentCover === lastSuggestedCoverUrl;
     const promptChanged = effectivePrompt && effectivePrompt !== lastCoverPrompt;
 
-    const shouldForce = Boolean(
-      options?.force ||
-        (promptChanged && (coverIsSuggested || isAutoCover))
-    );
-    const hasCover = Boolean(currentCover);
-    if (hasCover && !shouldForce) return;
+    const hasManualCover = Boolean(currentCover && !isAutoCover && !coverIsSuggested);
+    if (hasManualCover && !options?.force) return;
+
+    const alreadyUpToDate = Boolean(currentCover && !options?.force && coverIsSuggested && !promptChanged);
+    if (alreadyUpToDate) return;
 
     setIsCoverSuggesting(true);
 
@@ -169,9 +146,11 @@ export function ChatInterface() {
 
       const data = (await response.json()) as { url?: string };
 
-      // Avoid overriding if the user added a cover while we were fetching
+      // Avoid overriding if the user changed the cover while we were fetching
       const currentQuiz = useQuizBuilderStore.getState().quiz;
-      if (currentQuiz.coverImageUrl && !options?.force) return;
+      if (currentQuiz.coverImageUrl && currentQuiz.coverImageUrl !== coverBeforeRequest && !options?.force) {
+        return;
+      }
 
       if (data?.url) {
         setQuiz({ ...currentQuiz, coverImageUrl: data.url });
