@@ -9,3 +9,6 @@ export * from './dialog';
 export * from './avatar';
 export * from './empty-state';
 export * from './upload';
+export * from './select';
+export * from './popover';
+export * from './emoji-picker';

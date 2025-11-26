@@ -6,13 +6,15 @@ import { ArrowLeft, Eye, ImageIcon, Plus, Rocket } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
-import type { AnswerOption, Outcome, Question } from '@/types';
+import { compressImage } from '@/lib/utils';
+import type { Outcome, Question } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatInterface } from '@/components/chat/chat-interface';
 import { SaveIndicator } from '@/components/builder/save-indicator';
+import { EditQuestionModal } from '@/components/builder/edit-question-modal';
 import { Upload } from '@/components/ui/upload';
 import {
   Sheet,
@@ -24,7 +26,6 @@ import {
 
 type ActiveSheet =
   | { type: 'introduction' }
-  | { type: 'question'; id: string }
   | { type: 'outcome'; id: string };
 
 const fieldLabelClass = 'text-sm font-medium text-muted-foreground';
@@ -34,6 +35,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const router = useRouter();
   const [isPublishing, setIsPublishing] = useState(false);
   const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [outcomeFile, setOutcomeFile] = useState<File | null>(null);
   void isEditMode;
@@ -54,23 +56,19 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const questions = quiz.questions ?? [];
   const outcomes = quiz.outcomes ?? [];
 
-  const activeQuestion =
-    activeSheet?.type === 'question'
-      ? questions.find((question) => question.id === activeSheet.id)
-      : undefined;
+  const editingQuestion = editingQuestionId
+    ? questions.find((question) => question.id === editingQuestionId)
+    : null;
   const activeOutcome =
     activeSheet?.type === 'outcome'
       ? outcomes.find((outcome) => outcome.id === activeSheet.id)
       : undefined;
 
   useEffect(() => {
-    if (activeSheet?.type === 'question' && !activeQuestion) {
-      setActiveSheet(null);
-    }
     if (activeSheet?.type === 'outcome' && !activeOutcome) {
       setActiveSheet(null);
     }
-  }, [activeSheet, activeOutcome, activeQuestion]);
+  }, [activeSheet, activeOutcome]);
 
   useEffect(() => {
     if (!quiz.coverImageUrl) {
@@ -87,19 +85,20 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const handleAddQuestion = () => {
     const newQuestion: Partial<Question> = {
       id: crypto.randomUUID(),
-      text: 'Nova pergunta',
-      options: [
-        {
-          id: crypto.randomUUID(),
-          text: 'Nova opção',
-          targetOutcomeId: outcomes[0]?.id ?? crypto.randomUUID(),
-        },
-      ],
+      text: '',
+      options: [],
     };
     addQuestion(newQuestion);
     if (newQuestion.id) {
-      setActiveSheet({ type: 'question', id: newQuestion.id });
+      setEditingQuestionId(newQuestion.id);
     }
+  };
+
+  const handleQuestionSave = (updatedQuestion: Partial<Question>) => {
+    if (updatedQuestion.id) {
+      updateQuestion(updatedQuestion.id, updatedQuestion);
+    }
+    setEditingQuestionId(null);
   };
 
   const handleAddOutcome = () => {
@@ -114,65 +113,61 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     }
   };
 
-  const handleCoverImageChange = (file: File | null) => {
+  const handleCoverImageChange = async (file: File | null) => {
     setCoverFile(file);
+    const persistCoverChange = async (value: string) => {
+      updateQuizField('coverImageUrl', value);
+      await forceSave();
+    };
 
     if (!file) {
-      updateQuizField('coverImageUrl', '');
+      await persistCoverChange('');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateQuizField('coverImageUrl', reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressedDataUrl = await compressImage(file);
+      await persistCoverChange(compressedDataUrl);
+    } catch (error) {
+      console.error('Error compressing cover image:', error);
+      // Fallback to original file if compression fails
+      const reader = new FileReader();
+      reader.onload = () => {
+        updateQuizField('coverImageUrl', reader.result as string);
+        void forceSave();
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleOutcomeImageChange = (file: File | null) => {
+  const handleOutcomeImageChange = async (file: File | null) => {
     setOutcomeFile(file);
 
     if (!activeOutcome?.id) return;
+    const outcomeId = activeOutcome.id;
 
     if (!file) {
-      updateOutcome(activeOutcome.id, { imageUrl: '' });
+      updateOutcome(outcomeId, { imageUrl: '' });
+      await forceSave();
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateOutcome(activeOutcome.id, { imageUrl: reader.result as string });
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressedDataUrl = await compressImage(file);
+      updateOutcome(outcomeId, { imageUrl: compressedDataUrl });
+      await forceSave();
+    } catch (error) {
+      console.error('Error compressing outcome image:', error);
+      // Fallback to original file if compression fails
+      const reader = new FileReader();
+      reader.onload = () => {
+        updateOutcome(outcomeId, { imageUrl: reader.result as string });
+        void forceSave();
+      };
+      reader.readAsDataURL(file);
+    }
   };
-
-  const handleQuestionTextChange = (value: string) => {
-    if (!activeQuestion?.id) return;
-    updateQuestion(activeQuestion.id, { text: value });
-  };
-
-  const handleOptionTextChange = (optionId: string, value: string) => {
-    if (!activeQuestion?.id) return;
-    const updatedOptions: AnswerOption[] = (activeQuestion.options ?? []).map((option) =>
-      option.id === optionId ? { ...option, text: value } : option
-    );
-    updateQuestion(activeQuestion.id, { options: updatedOptions });
-  };
-
-  const handleAddOption = () => {
-    if (!activeQuestion?.id) return;
-    const fallbackOutcomeId = outcomes[0]?.id ?? crypto.randomUUID();
-    const updatedOptions: AnswerOption[] = [
-      ...(activeQuestion.options ?? []),
-      {
-        id: crypto.randomUUID(),
-        text: '',
-        targetOutcomeId: fallbackOutcomeId,
-      },
-    ];
-    updateQuestion(activeQuestion.id, { options: updatedOptions });
-  };
-
+  
   const handleOutcomeFieldChange = (field: keyof Outcome, value: string) => {
     if (!activeOutcome?.id) return;
     updateOutcome(activeOutcome.id, { [field]: value });
@@ -343,7 +338,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                           key={question.id ?? index}
                           type="button"
                           onClick={() =>
-                            question.id && setActiveSheet({ type: 'question', id: question.id })
+                            question.id && setEditingQuestionId(question.id)
                           }
                           className="w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                         >
@@ -480,68 +475,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             </>
           )}
 
-          {activeSheet?.type === 'question' && activeQuestion && (
-            <>
-              <SheetHeader>
-                <SheetTitle>Pergunta {questions.findIndex((q) => q.id === activeQuestion.id) + 1}</SheetTitle>
-                <SheetDescription>
-                  Edite o enunciado e as opções dessa pergunta. Você pode adicionar manualmente novas opções abaixo.
-                </SheetDescription>
-              </SheetHeader>
-              <div className="mt-6 space-y-5">
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    Texto da pergunta
-                  </p>
-                  <Textarea
-                    value={activeQuestion.text ?? ''}
-                    onChange={(event) => handleQuestionTextChange(event.target.value)}
-                    placeholder="Escreva a pergunta aqui"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                      Opções
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleAddOption}
-                      className="flex items-center gap-1 text-xs font-semibold text-primary"
-                    >
-                      <Plus className="h-3 w-3" />
-                      Adicionar opção
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {(activeQuestion.options ?? []).map((option, index) => (
-                      <div key={option.id} className="space-y-1">
-                        <p className="text-xs font-semibold text-muted-foreground">
-                          Opção {index + 1}
-                        </p>
-                        <Input
-                          value={option.text ?? ''}
-                          onChange={(event) =>
-                            handleOptionTextChange(option.id, event.target.value)
-                          }
-                          placeholder="Texto da opção"
-                        />
-                      </div>
-                    ))}
-                    {(activeQuestion.options ?? []).length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Nenhuma opção foi adicionada ainda.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
           {activeSheet?.type === 'outcome' && activeOutcome && (
             <>
               <SheetHeader>
@@ -608,6 +541,18 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           )}
         </SheetContent>
       </Sheet>
+
+      <EditQuestionModal
+        open={editingQuestionId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingQuestionId(null);
+          }
+        }}
+        question={editingQuestion}
+        outcomes={outcomes}
+        onSave={handleQuestionSave}
+      />
     </div>
   );
 }
