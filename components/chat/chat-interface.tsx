@@ -268,7 +268,7 @@ export function ChatInterface() {
             force:
               forceCoverRefresh ||
               Boolean(coverPrompt) ||
-              (extraction.coverImagePrompt && extraction.coverImagePrompt !== lastCoverPrompt),
+              Boolean(extraction.coverImagePrompt && extraction.coverImagePrompt !== lastCoverPrompt),
           });
         }
       } else {

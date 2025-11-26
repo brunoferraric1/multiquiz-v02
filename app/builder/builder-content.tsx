@@ -201,17 +201,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             <div className="flex items-center gap-3">
               <SaveIndicator />
               <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => {
-                  alert('Preview em desenvolvimento');
-                }}
-              >
-                <Eye size={16} />
-                Visualizar
-              </Button>
-              <Button
                 size="sm"
                 onClick={handleSave}
                 disabled={isSaving}
@@ -235,7 +224,20 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             <div className="h-full min-h-0 lg:col-span-2">
               <Card className="flex flex-col h-full">
                 <CardHeader className="flex-shrink-0">
-                  <CardTitle className="text-lg font-semibold">Estrutura do Quiz</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-semibold">Estrutura do Quiz</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => {
+                        alert('Preview em desenvolvimento');
+                      }}
+                    >
+                      <Eye size={16} />
+                      Visualizar
+                    </Button>
+                  </div>
                 </CardHeader>
 
                 <CardContent className="flex flex-col gap-10 overflow-y-auto min-h-0 p-6 pt-0">
