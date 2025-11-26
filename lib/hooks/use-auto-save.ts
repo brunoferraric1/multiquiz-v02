@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { QuizService } from '@/lib/services/quiz-service';
 import type { Quiz } from '@/types';
@@ -12,6 +13,7 @@ interface UseAutoSaveOptions {
 }
 
 export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseAutoSaveOptions) {
+  const queryClient = useQueryClient();
   const quiz = useQuizBuilderStore((state) => state.quiz);
   const chatHistory = useQuizBuilderStore((state) => state.chatHistory);
   const setSaving = useQuizBuilderStore((state) => state.setSaving);
@@ -58,6 +60,11 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
 
       await QuizService.saveQuiz(quizToSave, userId);
 
+      // Only invalidate the quizzes LIST (for dashboard) - NOT the current quiz
+      // Invalidating the current quiz would cause an infinite loop:
+      // loadQuiz → save → invalidate → refetch → loadQuiz → ...
+      queryClient.invalidateQueries({ queryKey: ['quizzes', userId] });
+
       // Update the last saved snapshot
       lastSavedRef.current = currentSnapshot;
 
@@ -69,7 +76,7 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
     } finally {
       setSaving(false);
     }
-  }, [userId, quiz, chatHistory, setSaving, setError]);
+  }, [userId, quiz, chatHistory, setSaving, setError, queryClient]);
 
   // Debounced auto-save effect
   useEffect(() => {

@@ -78,6 +78,7 @@ ANTES DE SUGERIR TÍTULO/DESCRIÇÃO, GARANTA QUE SABE:
 - Tom de voz desejado (ex: descontraído, técnico, inspirador)
 Sempre proponha CTA da introdução (texto curto + URL de destino). Inclua \`ctaText\` e, se souber, \`ctaUrl\` no tool call. Se não souber a URL, sugira um placeholder e peça confirmação.
 Quando o usuário pedir para trocar a capa/imagem ou descrever a imagem desejada, use SEMPRE a ferramenta \`set_cover_image\` com o prompt exato nas palavras do usuário (respeite "sem rosto", "sem pessoas" se solicitado). Não peça confirmação extra.
+IMPORTANTE: Se o usuário pedir "outra imagem", "imagem diferente", ou simplesmente "muda a imagem" sem especificar, CRIE um prompt NOVO e DIFERENTE do anterior, mantendo o tema do quiz mas variando os elementos visuais (ex: ângulo diferente, cenário diferente, objetos complementares). NUNCA repita o mesmo prompt anterior.
 Quando já tiver objetivo + audiência + tom, inclua \`coverImagePrompt\` no tool call \`update_quiz\`.
 
 REGRAS CRÍTICAS PARA coverImagePrompt:

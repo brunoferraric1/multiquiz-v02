@@ -270,11 +270,16 @@ const pickBestPhoto = (photos: UnsplashPhoto[], prompt: string): UnsplashPhoto |
     .sort((a, b) => b.score - a.score);
 
   if (ranked.length > 0) {
-    return ranked[0]?.photo;
+    // Pick randomly from top 5 results to provide variety when user asks for different images
+    const topN = Math.min(5, ranked.length);
+    const randomIndex = Math.floor(Math.random() * topN);
+    console.info('Image selection:', { totalRanked: ranked.length, topN, selectedIndex: randomIndex });
+    return ranked[randomIndex]?.photo;
   }
 
-  // As a last resort, return the first landscape photo or the first result
-  return pool[0] || photos[0];
+  // As a last resort, return a random landscape photo or random result
+  const randomFallbackIndex = Math.floor(Math.random() * pool.length);
+  return pool[randomFallbackIndex] || photos[0];
 };
 
 /**
