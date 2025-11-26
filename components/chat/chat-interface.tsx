@@ -31,7 +31,15 @@ export function ChatInterface() {
 
   // Send welcome message when chat becomes empty (new quiz or cleared chat)
   useEffect(() => {
-    const WELCOME_MESSAGE = 'Olá! Sou o seu Arquiteto de Quizzes. Vamos criar algo incrível para engajar sua audiência. Para começar, sobre o que será o seu quiz?';
+    const WELCOME_MESSAGE = [
+      'Olá! Sou o seu Arquiteto de Quizzes. Vamos criar algo incrível para engajar sua audiência.',
+      '',
+      'Para começar, me conta rapidinho:',
+      '',
+      '- Tema do quiz',
+      '- Objetivo principal (ex: gerar leads, educar, segmentar)',
+      '- Quem é a audiência (perfil + nível de maturidade no tema)',
+    ].join('\n');
 
     // Check if chat is empty and the last message wasn't already the welcome message
     const isEmptyChat = chatHistory.length === 0;

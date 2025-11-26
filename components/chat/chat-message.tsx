@@ -61,7 +61,7 @@ export function ChatMessageComponent({ message }: ChatMessageProps) {
           </span>
         </div>
         <div
-          className="text-sm break-words prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-strong:font-semibold prose-strong:text-primary"
+          className="text-sm break-words prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-strong:font-semibold prose-strong:text-primary prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4 prose-li:my-1 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-4 [&_ol]:pl-4 [&_li]:my-1"
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
       </div>
