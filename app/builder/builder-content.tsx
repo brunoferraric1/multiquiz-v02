@@ -35,6 +35,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [isPublishing, setIsPublishing] = useState(false);
   const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [outcomeFile, setOutcomeFile] = useState<File | null>(null);
   void isEditMode;
 
   const { forceSave, cancelPendingSave } = useAutoSave({
@@ -77,6 +78,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     }
   }, [quiz.coverImageUrl]);
 
+  useEffect(() => {
+    if (!activeOutcome?.imageUrl) {
+      setOutcomeFile(null);
+    }
+  }, [activeOutcome?.imageUrl, activeOutcome?.id]);
+
   const handleAddQuestion = () => {
     const newQuestion: Partial<Question> = {
       id: crypto.randomUUID(),
@@ -118,6 +125,23 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     const reader = new FileReader();
     reader.onload = () => {
       updateQuizField('coverImageUrl', reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleOutcomeImageChange = (file: File | null) => {
+    setOutcomeFile(file);
+
+    if (!activeOutcome?.id) return;
+
+    if (!file) {
+      updateOutcome(activeOutcome.id, { imageUrl: '' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      updateOutcome(activeOutcome.id, { imageUrl: reader.result as string });
     };
     reader.readAsDataURL(file);
   };
@@ -529,6 +553,16 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               <div className="mt-6 space-y-4">
                 <div className="space-y-1">
                   <p className={fieldLabelClass}>
+                    Imagem do resultado
+                  </p>
+                  <Upload
+                    file={outcomeFile}
+                    previewUrl={activeOutcome.imageUrl || undefined}
+                    onFileChange={handleOutcomeImageChange}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className={fieldLabelClass}>
                     Título
                   </p>
                   <Input
@@ -546,6 +580,27 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                     onChange={(event) => handleOutcomeFieldChange('description', event.target.value)}
                     placeholder="Descreva esse resultado"
                     rows={4}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className={fieldLabelClass}>
+                    Texto do CTA
+                  </p>
+                  <Input
+                    value={activeOutcome.ctaText ?? ''}
+                    onChange={(event) => handleOutcomeFieldChange('ctaText', event.target.value)}
+                    placeholder="Quer saber mais?"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className={fieldLabelClass}>
+                    URL do CTA
+                  </p>
+                  <Input
+                    type="url"
+                    value={activeOutcome.ctaUrl ?? ''}
+                    onChange={(event) => handleOutcomeFieldChange('ctaUrl', event.target.value)}
+                    placeholder="https://seusite.com/cta"
                   />
                 </div>
               </div>

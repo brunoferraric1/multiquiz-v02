@@ -65,3 +65,8 @@ button:disabled,
 [role="button"][aria-disabled="true"] {
   cursor: var(--cursor-not-allowed);
 }
+
+/* Override global border-color for upload component hover state */
+[data-upload-area]:hover {
+  border-color: #fbbf24 !important;
+}

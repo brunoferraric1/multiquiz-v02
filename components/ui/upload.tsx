@@ -33,7 +33,8 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
     return (
       <div ref={ref} className={cn("space-y-2", className)} {...props}>
         <div
-          className="group relative flex h-32 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/60 px-4 text-center transition hover:border-[color:var(--color-primary)] hover:bg-muted/70 focus-visible:border-[color:var(--color-primary)]"
+          data-upload-area
+          className="group relative flex h-32 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/60 px-4 text-center transition hover:bg-muted/70 focus-visible:border-[#fbbf24]"
           onClick={handleButtonClick}
           onDrop={handleDrop}
           onDragOver={(event) => event.preventDefault()}
