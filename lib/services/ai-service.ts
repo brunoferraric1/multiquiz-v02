@@ -7,11 +7,61 @@ const EXTRACTION_MODEL =
   process.env.NEXT_PUBLIC_AI_EXTRACTION_MODEL || 'openai/gpt-4o-mini';
 const PLACEHOLDER_KEYWORDS = ['string', 'texto', 'description', 'descricao', 'url', 'cta', 'imagem', 'image', 'link'];
 const NULLISH_VALUES = new Set(['none', 'null', 'undefined', 'n/a', 'na']);
-const DEFAULT_ASSISTANT_FALLBACK = `Tudo certo! Atualizei o quiz.
+/**
+ * Generate a contextual fallback message based on what was actually changed
+ */
+function generateContextualResponse(
+  extraction?: AIExtractionResult,
+  coverPrompt?: string
+): string {
+  const changes: string[] = [];
 
-Próximo passo:
-- Quer ajustar os resultados (títulos/descrições/CTAs)?
-- Ou já começamos pelas perguntas (recomendo 5-8)?`;
+  // Check for cover image change
+  if (coverPrompt) {
+    changes.push(`✅ Atualizei a capa do quiz com uma imagem de "${coverPrompt}"`);
+  }
+
+  // Check extraction changes
+  if (extraction) {
+    if (extraction.title) {
+      changes.push(`✅ Título atualizado para: "${extraction.title}"`);
+    }
+    if (extraction.description) {
+      changes.push(`✅ Descrição atualizada`);
+    }
+    if (extraction.ctaText) {
+      changes.push(`✅ CTA atualizado para: "${extraction.ctaText}"`);
+    }
+    if (extraction.ctaUrl) {
+      changes.push(`✅ URL do CTA atualizada`);
+    }
+    if (extraction.coverImageUrl) {
+      changes.push(`✅ Imagem de capa atualizada`);
+    }
+    if (extraction.questions && extraction.questions.length > 0) {
+      if (extraction.questions.length === 1) {
+        changes.push(`✅ Pergunta adicionada/atualizada: "${extraction.questions[0].text}"`);
+      } else {
+        changes.push(`✅ ${extraction.questions.length} perguntas atualizadas`);
+      }
+    }
+    if (extraction.outcomes && extraction.outcomes.length > 0) {
+      if (extraction.outcomes.length === 1) {
+        changes.push(`✅ Resultado atualizado: "${extraction.outcomes[0].title}"`);
+      } else {
+        changes.push(`✅ ${extraction.outcomes.length} resultados atualizados`);
+      }
+    }
+  }
+
+  // If no specific changes detected, return a generic but shorter message
+  if (changes.length === 0) {
+    return 'Pronto! Fiz a alteração. O que mais você quer ajustar?';
+  }
+
+  // Build the response with actual changes
+  return `${changes.join('\n')}\n\nO que mais você quer ajustar?`;
+}
 
 type OpenRouterMessage = {
   role: 'user' | 'assistant' | 'system';
@@ -350,13 +400,16 @@ export class AIService {
         }
       }
 
+      // Generate contextual response if model didn't provide text but took action
+      const finalMessage = assistantMessage || generateContextualResponse(extraction, coverPromptFromTool);
+
       this.conversationHistory.push({
         role: 'assistant',
-        content: assistantMessage || DEFAULT_ASSISTANT_FALLBACK,
+        content: finalMessage,
       });
 
       return {
-        text: assistantMessage || DEFAULT_ASSISTANT_FALLBACK,
+        text: finalMessage,
         extraction,
         coverPrompt: coverPromptFromTool,
       };

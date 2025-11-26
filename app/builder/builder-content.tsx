@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Eye, ImageIcon, Plus, Save } from 'lucide-react';
+import { ArrowLeft, Eye, ImageIcon, Plus, Rocket } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
@@ -31,7 +31,8 @@ const fieldLabelClass = 'text-sm font-medium text-muted-foreground';
 
 export default function BuilderContent({ isEditMode = false }: { isEditMode?: boolean }) {
   const { user } = useAuth();
-  const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
+  const [isPublishing, setIsPublishing] = useState(false);
   const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   void isEditMode;
@@ -153,19 +154,37 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     updateOutcome(activeOutcome.id, { [field]: value });
   };
 
-  const handleSave = async () => {
+  const handleBack = async () => {
+    if (!user) {
+      router.push('/dashboard');
+      return;
+    }
+
+    try {
+      cancelPendingSave();
+      await forceSave();
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error saving quiz before leaving:', error);
+      // Navigate anyway - data is likely already auto-saved
+      router.push('/dashboard');
+    }
+  };
+
+  const handlePublish = async () => {
     if (!user) return;
 
     try {
-      setIsSaving(true);
+      setIsPublishing(true);
       cancelPendingSave();
+      updateQuizField('isPublished', true);
       await forceSave();
-      alert('Quiz salvo com sucesso!');
+      alert('Quiz publicado com sucesso! 🎉');
     } catch (error) {
-      console.error('Error saving quiz:', error);
-      alert('Erro ao salvar quiz');
+      console.error('Error publishing quiz:', error);
+      alert('Erro ao publicar quiz');
     } finally {
-      setIsSaving(false);
+      setIsPublishing(false);
     }
   };
 
@@ -187,12 +206,10 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 variant="ghost"
                 size="sm"
                 className="gap-2"
-                asChild
+                onClick={handleBack}
               >
-                <Link href="/dashboard" className="flex items-center gap-2">
-                  <ArrowLeft size={16} />
-                  Voltar
-                </Link>
+                <ArrowLeft size={16} />
+                Voltar
               </Button>
               <div className="border-l border-border h-6" />
               <h1 className="text-lg font-semibold">{quiz.title || 'Novo Quiz'}</h1>
@@ -202,12 +219,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               <SaveIndicator />
               <Button
                 size="sm"
-                onClick={handleSave}
-                disabled={isSaving}
+                onClick={handlePublish}
+                disabled={isPublishing || quiz.isPublished}
                 className="gap-2"
               >
-                <Save size={16} />
-                {isSaving ? 'Salvando...' : 'Salvar'}
+                <Rocket size={16} />
+                {isPublishing ? 'Publicando...' : quiz.isPublished ? 'Publicado' : 'Publicar'}
               </Button>
             </div>
           </div>

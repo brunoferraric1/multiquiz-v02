@@ -308,16 +308,8 @@ export function ChatInterface() {
         }
       } else {
         console.log('[Flow] Taking else branch (fallback)');
-        // Fallback: only extract if we believe the user confirmed and we got no tool payload
-        const shouldExtract = shouldExtractQuizStructure(content, response);
-        console.log('Should extract quiz structure (fallback)?', shouldExtract, 'User message:', content);
-
-        if (shouldExtract) {
-          console.log('Triggering extraction fallback...');
-          // Run extraction in the background to avoid blocking the chat UI
-          void extractQuizStructure();
-        }
-
+        
+        // Handle cover image change first (if tool provided a prompt)
         if (combinedCoverPrompt || forceCoverRefresh) {
           console.log('[Flow] Calling maybeSuggestCover from else branch', { 
             combinedCoverPrompt: combinedCoverPrompt?.slice(0, 30), 
@@ -328,6 +320,18 @@ export function ChatInterface() {
           void maybeSuggestCover(combinedCoverPrompt || content, quiz.coverImageUrl, {
             force: true,
           });
+        }
+
+        // Fallback extraction: only if we believe the user confirmed AND no tool action was taken
+        // Skip extraction if coverPrompt was provided - the tool already handled the action
+        const toolHandledAction = Boolean(coverPrompt);
+        const shouldExtract = !toolHandledAction && shouldExtractQuizStructure(content, response);
+        console.log('Should extract quiz structure (fallback)?', shouldExtract, 'User message:', content, 'Tool handled:', toolHandledAction);
+
+        if (shouldExtract) {
+          console.log('Triggering extraction fallback...');
+          // Run extraction in the background to avoid blocking the chat UI
+          void extractQuizStructure();
         }
       }
     } catch (error) {

@@ -128,6 +128,8 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
               title: quiz.title,
               description: quiz.description,
               coverImageUrl: quiz.coverImageUrl,
+              ctaText: quiz.ctaText,
+              ctaUrl: quiz.ctaUrl,
               primaryColor: quiz.primaryColor,
               questions: quiz.questions,
               outcomes: quiz.outcomes,
