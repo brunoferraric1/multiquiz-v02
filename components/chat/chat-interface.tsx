@@ -14,6 +14,9 @@ export function ChatInterface() {
   const setError = useQuizBuilderStore((state) => state.setError);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isCoverSuggesting, setIsCoverSuggesting] = useState(false);
+  const [lastCoverPrompt, setLastCoverPrompt] = useState('');
+  const [lastSuggestedCoverUrl, setLastSuggestedCoverUrl] = useState('');
   const [aiService] = useState(() => new AIService());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -68,6 +71,120 @@ export function ChatInterface() {
   const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
   const setQuiz = useQuizBuilderStore((state) => state.setQuiz);
 
+  const isCoverComplaint = (message: string) => {
+    const text = message.toLowerCase();
+    const complaintKeywords = [
+      'imagem',
+      'image',
+      'capa',
+      'cover',
+      'foto',
+      'photo',
+      'figur',
+      'figure',
+      'troca',
+      'mudar',
+      'change',
+      'swap',
+      'sem relação',
+      'off topic',
+      'errada',
+      'wrong',
+    ];
+    return complaintKeywords.some((word) => text.includes(word));
+  };
+
+  const buildCoverPrompt = (rawPrompt?: string) => {
+    const currentQuiz = useQuizBuilderStore.getState().quiz;
+    const title = currentQuiz.title || '';
+    const description = currentQuiz.description || '';
+
+    const basePieces = [rawPrompt?.trim(), title, description].filter(Boolean) as string[];
+    const base = basePieces.join(' ').trim();
+    const lowerBase = base.toLowerCase();
+
+    const weddingTags =
+      'papelaria de casamento, convite de casamento, envelopes com lacre de cera, fitas de cetim, flores delicadas, flat lay, papel texturizado, luz natural suave, sem pessoas, sem arquitetura';
+    const stationeryTags =
+      'papelaria artesanal, convites elegantes, envelopes, lacres de cera, fitas, flat lay, sem pessoas, sem arquitetura';
+    const actionFigureTags =
+      'action figure, colecionável, toy figurine, product photo, diorama, tabletop, luz de estúdio, fundo neutro, sem rosto humano, sem pessoas, spider-man figure';
+
+    if (lowerBase.includes('casamento')) {
+      return `${base}, ${weddingTags}`;
+    }
+
+    if (lowerBase.includes('papelaria')) {
+      return `${base}, ${stationeryTags}`;
+    }
+
+    if (
+      lowerBase.includes('boneco') ||
+      lowerBase.includes('action figure') ||
+      lowerBase.includes('ação') ||
+      lowerBase.includes('acao') ||
+      lowerBase.includes('aranha')
+    ) {
+      return `${base}, ${actionFigureTags}`;
+    }
+
+    const fallbackBase = base || 'capa de quiz temática';
+    return `${fallbackBase}, ilustração temática, elementos do assunto em destaque, sem pessoas, sem arquitetura, sem estradas, sem rosto humano`;
+  };
+
+  const maybeSuggestCover = async (
+    prompt?: string,
+    incomingCoverUrl?: string,
+    options?: { force?: boolean }
+  ) => {
+    const effectivePrompt = buildCoverPrompt(prompt);
+
+    if (!effectivePrompt || isCoverSuggesting) return;
+
+    const latestQuiz = useQuizBuilderStore.getState().quiz;
+    const currentCover = incomingCoverUrl || latestQuiz.coverImageUrl;
+    const isAutoCover = Boolean(currentCover && (currentCover.includes('unsplash.com') || currentCover.includes('source.unsplash.com')));
+    const coverIsSuggested = currentCover && currentCover === lastSuggestedCoverUrl;
+    const promptChanged = effectivePrompt && effectivePrompt !== lastCoverPrompt;
+
+    const shouldForce = Boolean(
+      options?.force ||
+        (promptChanged && (coverIsSuggested || isAutoCover))
+    );
+    const hasCover = Boolean(currentCover);
+    if (hasCover && !shouldForce) return;
+
+    setIsCoverSuggesting(true);
+
+    try {
+      const response = await fetch('/api/image-suggestion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: effectivePrompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao sugerir capa (${response.status})`);
+      }
+
+      const data = (await response.json()) as { url?: string };
+
+      // Avoid overriding if the user added a cover while we were fetching
+      const currentQuiz = useQuizBuilderStore.getState().quiz;
+      if (currentQuiz.coverImageUrl && !options?.force) return;
+
+      if (data?.url) {
+        setQuiz({ ...currentQuiz, coverImageUrl: data.url });
+        setLastCoverPrompt(effectivePrompt);
+        setLastSuggestedCoverUrl(data.url);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar sugestão de capa', error);
+    } finally {
+      setIsCoverSuggesting(false);
+    }
+  };
+
   const shouldExtractQuizStructure = (userMessage: string, assistantResponse: string): boolean => {
     // Check if user message contains confirmation keywords
     const confirmationKeywords = [
@@ -111,7 +228,7 @@ export function ChatInterface() {
       setError(null);
 
       // Call AI service to get response + structured extraction in a single round-trip
-      const { text: response, extraction } = await aiService.sendMessageWithExtraction(
+      const { text: response, extraction, coverPrompt } = await aiService.sendMessageWithExtraction(
         content,
         quiz
       );
@@ -127,17 +244,33 @@ export function ChatInterface() {
       // Stop blocking the input once the assistant reply arrives
       setIsLoading(false);
 
-      // Apply extracted quiz updates immediately if present
-      if (extraction && Object.keys(extraction).length > 0) {
+      const forceCoverRefresh = isCoverComplaint(content);
+      const combinedCoverPrompt = coverPrompt || extraction?.coverImagePrompt;
+      // Apply extracted quiz updates immediately if present AND confirmed OR when user explicitly asks to change cover
+      const shouldApplyExtraction =
+        extraction && (shouldExtractQuizStructure(content, response) || forceCoverRefresh);
+
+      if (shouldApplyExtraction && Object.keys(extraction || {}).length > 0) {
         const updatedQuiz = { ...quiz };
 
         if (extraction.title) updatedQuiz.title = extraction.title;
         if (extraction.description) updatedQuiz.description = extraction.description;
         if (extraction.coverImageUrl) updatedQuiz.coverImageUrl = extraction.coverImageUrl;
+        if (extraction.ctaText) updatedQuiz.ctaText = extraction.ctaText;
+        if (extraction.ctaUrl) updatedQuiz.ctaUrl = extraction.ctaUrl;
         if (extraction.questions) updatedQuiz.questions = extraction.questions;
         if (extraction.outcomes) updatedQuiz.outcomes = extraction.outcomes;
 
         setQuiz(updatedQuiz);
+        const finalCoverPrompt = combinedCoverPrompt || (forceCoverRefresh ? content : undefined);
+        if (finalCoverPrompt) {
+          void maybeSuggestCover(finalCoverPrompt, updatedQuiz.coverImageUrl, {
+            force:
+              forceCoverRefresh ||
+              Boolean(coverPrompt) ||
+              (extraction.coverImagePrompt && extraction.coverImagePrompt !== lastCoverPrompt),
+          });
+        }
       } else {
         // Fallback: only extract if we believe the user confirmed and we got no tool payload
         const shouldExtract = shouldExtractQuizStructure(content, response);
@@ -147,6 +280,13 @@ export function ChatInterface() {
           console.log('Triggering extraction fallback...');
           // Run extraction in the background to avoid blocking the chat UI
           void extractQuizStructure();
+        }
+
+        if (combinedCoverPrompt || forceCoverRefresh) {
+          // User asked to fix the image even without confirmation flow
+          void maybeSuggestCover(combinedCoverPrompt || content, quiz.coverImageUrl, {
+            force: true,
+          });
         }
       }
     } catch (error) {
@@ -181,10 +321,13 @@ export function ChatInterface() {
         if (extracted.title) updatedQuiz.title = extracted.title;
         if (extracted.description) updatedQuiz.description = extracted.description;
         if (extracted.coverImageUrl) updatedQuiz.coverImageUrl = extracted.coverImageUrl;
+        if (extracted.ctaText) updatedQuiz.ctaText = extracted.ctaText;
+        if (extracted.ctaUrl) updatedQuiz.ctaUrl = extracted.ctaUrl;
         if (extracted.questions) updatedQuiz.questions = extracted.questions;
         if (extracted.outcomes) updatedQuiz.outcomes = extracted.outcomes;
 
         setQuiz(updatedQuiz);
+        void maybeSuggestCover(extracted.coverImagePrompt, updatedQuiz.coverImageUrl);
       }
     } catch (error) {
       console.error('Error extracting quiz structure:', error);

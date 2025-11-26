@@ -266,7 +266,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                           <p className="text-sm font-semibold text-foreground">
                             {quiz.title || 'Meu Novo Quiz'}
                           </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed max-h-12 overflow-hidden">
+                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
                             {introDescription}
                           </p>
                         </div>

@@ -24,6 +24,9 @@ ANTES DE SUGERIR TÍTULO/DESCRIÇÃO, GARANTA QUE SABE:
 - Objetivo do quiz (ex: gerar leads, educar, entreter, segmentar)
 - Audiência (ex: persona, nível de maturidade no tema, setor)
 - Tom de voz desejado (ex: descontraído, técnico, inspirador)
+Sempre proponha CTA da introdução (texto curto + URL de destino). Inclua \`ctaText\` e, se souber, \`ctaUrl\` no tool call. Se não souber a URL, sugira um placeholder e peça confirmação.
+Quando o usuário pedir para trocar a capa/imagem ou descrever a imagem desejada, use SEMPRE a ferramenta \`set_cover_image\` com o prompt exato nas palavras do usuário (respeite "sem rosto", "sem pessoas" se solicitado). Não peça confirmação extra.
+Quando já tiver objetivo + audiência + tom, inclua \`coverImagePrompt\` (5-8 palavras, evite pessoas se não pedirem) no tool call \`update_quiz\`.
 Se o usuário não forneceu esses pontos, faça as 2 perguntas abaixo em bullets ANTES de sugerir qualquer título/descrição:
 - Qual é o objetivo principal do quiz?
 - Quem é a audiência (perfil + nível de maturidade no tema)?
@@ -176,7 +179,7 @@ export class AIService {
   async sendMessageWithExtraction(
     message: string,
     currentQuiz?: QuizDraft
-  ): Promise<{ text: string; extraction?: AIExtractionResult }> {
+  ): Promise<{ text: string; extraction?: AIExtractionResult; coverPrompt?: string }> {
     this.conversationHistory.push({
       role: 'user',
       content: message,
@@ -195,6 +198,12 @@ export class AIService {
               title: { type: 'string', description: 'Título do quiz' },
               description: { type: 'string', description: 'Descrição do quiz' },
               coverImageUrl: { type: 'string', description: 'URL opcional da capa' },
+              coverImagePrompt: {
+                type: 'string',
+                description: 'Prompt curto para sugerir imagem de capa (5-8 palavras) quando houver contexto suficiente',
+              },
+              ctaText: { type: 'string', description: 'Texto do CTA principal do quiz' },
+              ctaUrl: { type: 'string', description: 'URL do CTA principal do quiz' },
               questions: {
                 type: 'array',
                 description: 'Perguntas confirmadas. Preserve ordem.',
@@ -243,6 +252,24 @@ export class AIService {
           },
         },
       },
+      {
+        type: 'function',
+        function: {
+          name: 'set_cover_image',
+          description:
+            'Quando o usuário pedir para trocar a capa, forneça o prompt exato para sugerir uma nova imagem de capa. Sempre respeite restrições como "sem rosto" ou "sem pessoas".',
+          parameters: {
+            type: 'object',
+            properties: {
+              prompt: {
+                type: 'string',
+                description: 'Descrição curta (5-12 palavras) da imagem desejada para a capa',
+              },
+            },
+            required: ['prompt'],
+          },
+        },
+      },
     ];
 
     // Lightweight hint so the model can preserve existing IDs/order when provided
@@ -286,16 +313,27 @@ export class AIService {
       const data = await response.json();
       const choice = data.choices?.[0]?.message || {};
       const assistantMessage = (choice.content || '').trim();
-      const toolCall = choice.tool_calls?.[0];
 
       let extraction: AIExtractionResult | undefined;
-      if (toolCall?.function?.arguments) {
+      let coverPromptFromTool: string | undefined;
+      const toolCalls = choice.tool_calls ?? [];
+
+      for (const call of toolCalls) {
+        const toolName = call.function?.name;
+        const rawArgs = call.function?.arguments;
+        if (!toolName || !rawArgs) continue;
+
         try {
-          const parsed = JSON.parse(toolCall.function.arguments);
-          extraction = this.normalizeExtraction(parsed, currentQuiz || {});
-          console.log('Tool extraction parsed:', extraction);
+          const parsed = JSON.parse(rawArgs);
+          if (toolName === 'update_quiz') {
+            extraction = this.normalizeExtraction(parsed, currentQuiz || {});
+            console.log('Tool extraction parsed:', extraction);
+          } else if (toolName === 'set_cover_image') {
+            coverPromptFromTool = typeof parsed.prompt === 'string' ? parsed.prompt : undefined;
+            console.log('Cover prompt from tool:', coverPromptFromTool);
+          }
         } catch (err) {
-          console.error('Failed to parse tool_call arguments', err, toolCall?.function?.arguments);
+          console.error('Failed to parse tool_call arguments', err, rawArgs);
         }
       }
 
@@ -307,6 +345,7 @@ export class AIService {
       return {
         text: assistantMessage || DEFAULT_ASSISTANT_FALLBACK,
         extraction,
+        coverPrompt: coverPromptFromTool,
       };
     } catch (error) {
       console.error('AI Service Error:', error);
@@ -390,6 +429,9 @@ Your response must be a valid JSON object with this structure:
   "title": "string (optional)",
   "description": "string (optional)",
   "coverImageUrl": "string (optional)",
+  "coverImagePrompt": "string (optional)",
+  "ctaText": "string (optional)",
+  "ctaUrl": "string (optional)",
   "questions": [
     {
       "id": "uuid",
@@ -526,6 +568,10 @@ EXTRACTION INSTRUCTIONS:
 
 5. Preserve existing IDs when updating. Generate new UUIDs for new items.
 
+6. Se houver contexto de título + descrição + objetivo + audiência + tom, gere "coverImagePrompt" curto (5-8 palavras, em português, evite rostos/pessoas se não forem pedidos explicitamente).
+
+7. Se houver CTA sugerido na introdução, inclua "ctaText" e, se possível, "ctaUrl" (placeholder permitido) no JSON.
+
 Extract and return the updated quiz structure.`;
   }
 
@@ -541,6 +587,9 @@ Extract and return the updated quiz structure.`;
     if (extracted.title) result.title = extracted.title;
     if (extracted.description) result.description = extracted.description;
     if (extracted.coverImageUrl) result.coverImageUrl = extracted.coverImageUrl;
+    if (extracted.coverImagePrompt) result.coverImagePrompt = extracted.coverImagePrompt;
+    if (extracted.ctaText) result.ctaText = extracted.ctaText;
+    if (extracted.ctaUrl) result.ctaUrl = extracted.ctaUrl;
 
     // Normalize questions
     if (Array.isArray(extracted.questions)) {

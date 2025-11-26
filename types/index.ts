@@ -74,6 +74,9 @@ export type AIExtractionResult = {
   title?: string;
   description?: string;
   coverImageUrl?: string;
+  coverImagePrompt?: string;
+  ctaText?: string;
+  ctaUrl?: string;
   questions?: Partial<Question>[];
   outcomes?: Partial<Outcome>[];
 };
