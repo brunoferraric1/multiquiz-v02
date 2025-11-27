@@ -475,13 +475,16 @@ export function ChatInterface() {
           (hasTitleOrDescription ? `${finalTitle} ${finalDescription}`.trim() : undefined);
         
         console.log('[Flow] finalCoverPrompt for extraction branch:', finalCoverPrompt?.slice(0, 40));
-        if (finalCoverPrompt) {
+        const coverPromptChanged = finalCoverPrompt && finalCoverPrompt !== lastCoverPrompt;
+        const shouldForceCover =
+          forceCoverRefresh ||
+          Boolean(coverPrompt) ||
+          Boolean(extraction.coverImagePrompt && extraction.coverImagePrompt !== lastCoverPrompt);
+
+        if (finalCoverPrompt && (shouldForceCover || coverPromptChanged || !latestQuiz.coverImageUrl)) {
           coverSuggestionTriggeredRef.current = true;
           void maybeSuggestCover(finalCoverPrompt, updatedQuiz.coverImageUrl, {
-            force:
-              forceCoverRefresh ||
-              Boolean(coverPrompt) ||
-              Boolean(extraction.coverImagePrompt && extraction.coverImagePrompt !== lastCoverPrompt),
+            force: shouldForceCover,
           });
         }
       } else {
@@ -545,21 +548,28 @@ export function ChatInterface() {
 
         setQuiz(updatedQuiz);
 
-        // Auto-suggest cover image when title/description are set
-        // User shouldn't need to explicitly ask - it should happen automatically
+        // Auto-suggest cover image when:
+        // 1. Main flow hasn't already triggered it
+        // 2. AI provided a coverImagePrompt (initial setup or explicit user request)
+        // 3. OR there's no cover yet and we have title/description (initial setup)
         if (!coverSuggestionTriggeredRef.current) {
           const finalTitle = updatedQuiz.title || latestQuiz.title;
           const finalDescription = updatedQuiz.description || latestQuiz.description;
           const hasTitleOrDescription = finalTitle && finalTitle !== 'Meu Novo Quiz';
+          const hasNoCoverYet = !latestQuiz.coverImageUrl;
           
-          // Use AI-provided coverImagePrompt if available, otherwise generate from title/description
+          // Use AI-provided coverImagePrompt if available
           const coverPromptToUse = extracted.coverImagePrompt || 
-            (hasTitleOrDescription ? `${finalTitle} ${finalDescription}`.trim() : undefined);
+            (hasNoCoverYet && hasTitleOrDescription ? `${finalTitle} ${finalDescription}`.trim() : undefined);
           
-          if (coverPromptToUse) {
+          // Only trigger if:
+          // - AI explicitly provided a prompt (user asked or initial setup), OR
+          // - No cover exists yet and we have context (initial setup)
+          if (coverPromptToUse && (extracted.coverImagePrompt || hasNoCoverYet)) {
             console.log('[Extraction] Auto-triggering cover suggestion', {
-              source: extracted.coverImagePrompt ? 'AI provided' : 'generated from title/desc',
+              source: extracted.coverImagePrompt ? 'AI provided' : 'generated from title/desc (initial setup)',
               prompt: coverPromptToUse?.slice(0, 50),
+              hasNoCoverYet,
             });
             void maybeSuggestCover(coverPromptToUse, updatedQuiz.coverImageUrl);
           }

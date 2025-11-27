@@ -20,7 +20,7 @@ type UnsplashPhoto = {
 
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-const QUERY_TRANSLATION_MODEL = 'openai/gpt-4o-mini';
+const QUERY_TRANSLATION_MODEL = 'google/gemini-2.5-flash-lite';
 
 const DEFAULT_FALLBACK =
   'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80';

@@ -1,0 +1,76 @@
+'use client';
+
+import { Play, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+
+type QuizIntroProps = {
+  title: string;
+  description: string;
+  coverImageUrl?: string;
+  primaryColor?: string;
+  questionCount: number;
+  outcomeCount: number;
+  mode: 'preview' | 'live';
+  onStart: () => void;
+  ctaText?: string;
+};
+
+export function QuizIntro({
+  title,
+  description,
+  coverImageUrl,
+  primaryColor,
+  questionCount,
+  outcomeCount,
+  mode,
+  onStart,
+  ctaText,
+}: QuizIntroProps) {
+  const canStart = questionCount > 0 && outcomeCount > 0;
+  const startButtonText = ctaText || (mode === 'preview' ? 'Começar prévia' : 'Começar quiz');
+
+  return (
+    <div className="space-y-5 text-center">
+      <div className="flex justify-center">
+        <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-muted/60 shadow-sm">
+          {coverImageUrl ? (
+            <div className="flex justify-center items-center h-48">
+              <img
+                src={coverImageUrl}
+                alt="Capa do quiz"
+                className="max-h-full max-w-full object-contain"
+              />
+            </div>
+          ) : (
+            <div className="flex h-44 items-center justify-center text-sm text-muted-foreground">
+              Adicione uma imagem de capa para o quiz
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
+        <Badge variant="secondary" className="flex items-center gap-2 bg-secondary/60">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          {mode === 'preview' ? 'Pré-visualização' : 'Quiz ao vivo'}
+        </Badge>
+      </div>
+
+      <div className="space-y-2">
+        <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
+        <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+      </div>
+
+      <div className="space-y-4">
+        <Button onClick={onStart} disabled={!canStart} className="w-full justify-center gap-2">
+          <Play className="h-4 w-4" />
+          {startButtonText}
+        </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          {questionCount} perguntas • Leva ~1 minuto para responder
+        </p>
+      </div>
+    </div>
+  );
+}

@@ -1,4 +1,4 @@
-import type { ChatMessage, AIExtractionResult, QuizDraft } from '@/types';
+import type { ChatMessage, AIExtractionResult, QuizDraft, Question, Outcome } from '@/types';
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
@@ -560,7 +560,7 @@ IMPORTANT:
               content: extractionPrompt,
             },
           ],
-          max_tokens: 800,
+          max_tokens: 4000,
           temperature: 0.2,
         }),
       });
@@ -580,7 +580,62 @@ IMPORTANT:
 
       console.log('Extraction raw response:', rawContent);
 
-      const extracted = JSON.parse(jsonContent);
+      // Handle empty or invalid responses
+      if (!jsonContent || jsonContent.trim().length < 2) {
+        console.warn('Extraction returned empty or too short response');
+        return {};
+      }
+
+      let extracted: any;
+      try {
+        extracted = JSON.parse(jsonContent);
+      } catch (parseError) {
+        console.warn('Primary extraction parse failed, attempting repair...', parseError);
+        console.log('Original content to repair:', jsonContent);
+        let repairedContent = repairJsonString(jsonContent);
+        console.log('After initial repair:', repairedContent);
+        let parsedSuccessfully = false;
+
+        for (let attempt = 0; attempt < 5 && !parsedSuccessfully; attempt += 1) {
+          try {
+            extracted = JSON.parse(repairedContent);
+            parsedSuccessfully = true;
+          } catch (retryError) {
+            console.log(`Repair attempt ${attempt + 1} failed, trying adjustments...`);
+            
+            // Try inserting comma from error position
+            const adjusted = insertCommaFromError(repairedContent, retryError);
+            if (adjusted && adjusted !== repairedContent) {
+              repairedContent = adjusted;
+              console.log('After comma insertion:', repairedContent);
+              continue;
+            }
+            
+            // Try running repair again (catches issues repair might have missed)
+            const reRepaired = repairJsonString(repairedContent);
+            if (reRepaired !== repairedContent) {
+              repairedContent = reRepaired;
+              console.log('After re-repair:', repairedContent);
+              continue;
+            }
+            
+            // Last resort: try to extract a valid JSON subset
+            const lastValidJson = extractValidJsonSubset(repairedContent);
+            if (lastValidJson && lastValidJson !== repairedContent) {
+              repairedContent = lastValidJson;
+              console.log('After extracting valid subset:', repairedContent);
+              continue;
+            }
+            
+            throw retryError;
+          }
+        }
+
+        if (!parsedSuccessfully) {
+          console.error('All repair attempts failed, returning empty result');
+          return {};
+        }
+      }
       console.log('Extraction parsed JSON:', extracted);
 
       const normalized = this.normalizeExtraction(extracted, currentQuiz);
@@ -605,50 +660,36 @@ IMPORTANT:
       .map((msg) => `${msg.role}: ${msg.content}`)
       .join('\n');
 
-    return `Extract quiz structure from this Portuguese conversation about creating a quiz.
+    return `Extract ONLY THE CHANGES from this Portuguese conversation about a quiz.
 
-CURRENT QUIZ STATE:
-${JSON.stringify(
-  {
-    title: currentQuiz.title,
-    description: currentQuiz.description,
-    questionsCount: currentQuiz.questions?.length || 0,
-    outcomesCount: currentQuiz.outcomes?.length || 0,
-    existingQuestionIds: currentQuiz.questions?.map((q) => q.id) || [],
-    existingOutcomeIds: currentQuiz.outcomes?.map((o) => o.id) || [],
-  },
-  null,
-  2
-)}
+CRITICAL: Return ONLY fields that were ADDED or MODIFIED in the conversation. Do NOT return unchanged data.
+
+CURRENT QUIZ STATE (for reference - DO NOT repeat unchanged data):
+- Title: ${currentQuiz.title || 'not set'}
+- Description: ${currentQuiz.description || 'not set'}  
+- Questions: ${currentQuiz.questions?.length || 0} existing
+- Outcomes: ${currentQuiz.outcomes?.length || 0} existing
 
 CONVERSATION:
 ${conversationText}
 
-EXTRACTION INSTRUCTIONS:
-1. Look for confirmed quiz elements in the conversation:
-   - Title and description (título e descrição)
-   - Outcomes/Results (resultados) - these are the possible end results users can get
-   - Questions (perguntas) with their options (opções)
+EXTRACTION RULES:
+1. ONLY extract what was CHANGED or ADDED in this conversation
+2. If user updated outcomes descriptions → return ONLY the outcomes array with updates
+3. If user confirmed a new question → return ONLY that question in questions array
+4. If nothing changed → return empty object {}
+5. NEVER return the full quiz - only the delta/changes
 
-2. When extracting outcomes:
-   - Each outcome needs: title, description (can be empty string for now)
-   - Look for phrases like "Ideias de títulos", "Resultados", outcome titles in quotes or lists
-   - CTAs and URLs are optional
+WHEN EXTRACTING:
+- Outcomes: Include id (use existing if updating), title, description, ctaText, ctaUrl
+- Questions: Include id, text, options array (each option needs id, text, targetOutcomeId)
+- Use existing IDs when updating, generate new UUIDs only for NEW items
 
-3. When extracting questions:
-   - Each question needs: text, and multiple options
-   - Each option needs to link to a targetOutcomeId
+EXISTING IDs (use these when updating existing items):
+- Outcome IDs: ${JSON.stringify(currentQuiz.outcomes?.map((o) => ({ id: o.id, title: o.title })) || [])}
+- Question IDs: ${JSON.stringify(currentQuiz.questions?.map((q) => ({ id: q.id, text: q.text?.slice(0, 30) })) || [])}
 
-4. IMPORTANT: If the user confirmed outcomes but they're not in the current state (outcomesCount: 0),
-   you MUST extract them from the conversation.
-
-5. Preserve existing IDs when updating. Generate new UUIDs for new items.
-
-6. Se houver contexto de título + descrição + objetivo + audiência + tom, gere "coverImagePrompt" curto (5-8 palavras, em português, evite rostos/pessoas se não forem pedidos explicitamente).
-
-7. Se houver CTA sugerido na introdução, inclua "ctaText" e, se possível, "ctaUrl" (placeholder permitido) no JSON.
-
-Extract and return the updated quiz structure.`;
+Return minimal JSON with ONLY the changes.`;
   }
 
   /**
@@ -661,56 +702,86 @@ Extract and return the updated quiz structure.`;
     const result: AIExtractionResult = {};
 
     const sanitizedTitle = this.sanitizeOptionalString(extracted.title);
-    if (sanitizedTitle) result.title = sanitizedTitle;
+    if (sanitizedTitle && sanitizedTitle !== currentQuiz.title) {
+      result.title = sanitizedTitle;
+    }
 
     const sanitizedDescription = this.sanitizeOptionalString(extracted.description);
-    if (sanitizedDescription) result.description = sanitizedDescription;
+    if (sanitizedDescription && sanitizedDescription !== currentQuiz.description) {
+      result.description = sanitizedDescription;
+    }
 
     const sanitizedCoverUrl = this.sanitizeOptionalString(extracted.coverImageUrl);
-    if (sanitizedCoverUrl) result.coverImageUrl = sanitizedCoverUrl;
+    if (sanitizedCoverUrl && sanitizedCoverUrl !== currentQuiz.coverImageUrl) {
+      result.coverImageUrl = sanitizedCoverUrl;
+    }
 
     const sanitizedCoverPrompt = this.sanitizeOptionalString(extracted.coverImagePrompt);
-    if (sanitizedCoverPrompt) result.coverImagePrompt = sanitizedCoverPrompt;
+    if (sanitizedCoverPrompt) {
+      result.coverImagePrompt = sanitizedCoverPrompt;
+    }
 
     const sanitizedCtaText = this.sanitizeOptionalString(extracted.ctaText);
-    if (sanitizedCtaText) result.ctaText = sanitizedCtaText;
+    if (sanitizedCtaText && sanitizedCtaText !== currentQuiz.ctaText) {
+      result.ctaText = sanitizedCtaText;
+    }
 
     const sanitizedCtaUrl = this.sanitizeOptionalString(extracted.ctaUrl);
-    if (sanitizedCtaUrl) result.ctaUrl = sanitizedCtaUrl;
+    if (sanitizedCtaUrl && sanitizedCtaUrl !== currentQuiz.ctaUrl) {
+      result.ctaUrl = sanitizedCtaUrl;
+    }
 
     // Normalize questions
     if (Array.isArray(extracted.questions)) {
-      result.questions = extracted.questions.map((q: any, idx: number) => {
-        const existingQuestion = currentQuiz.questions?.[idx];
-        return {
-          id: q.id || existingQuestion?.id || crypto.randomUUID(),
-          text: q.text,
-          imageUrl: this.sanitizeOptionalString(q.imageUrl),
-          options: (q.options || []).map((opt: any, optIdx: number) => {
-            const existingOption = existingQuestion?.options?.[optIdx];
-            return {
-              id: opt.id || existingOption?.id || crypto.randomUUID(),
-              text: opt.text,
-              targetOutcomeId: opt.targetOutcomeId,
-            };
-          }),
-        };
-      });
+      const normalizedQuestions = extracted.questions
+        .map((q: any, idx: number): Partial<Question> => {
+          const existingQuestion = currentQuiz.questions?.[idx];
+          return {
+            id: q.id || existingQuestion?.id || crypto.randomUUID(),
+            text: q.text,
+            imageUrl: this.sanitizeOptionalString(q.imageUrl),
+            options: (q.options || []).map((opt: any, optIdx: number) => {
+              const existingOption = existingQuestion?.options?.[optIdx];
+              return {
+                id: opt.id || existingOption?.id || crypto.randomUUID(),
+                text: opt.text,
+                targetOutcomeId: opt.targetOutcomeId,
+              };
+            }),
+          };
+        })
+        .filter((question: Partial<Question>): question is Partial<Question> => Boolean(question?.text));
+
+      if (
+        normalizedQuestions.length > 0 &&
+        JSON.stringify(normalizedQuestions) !== JSON.stringify(currentQuiz.questions || [])
+      ) {
+        result.questions = normalizedQuestions;
+      }
     }
 
     // Normalize outcomes
     if (Array.isArray(extracted.outcomes) && extracted.outcomes.length > 0) {
-      result.outcomes = extracted.outcomes.map((o: any, idx: number) => {
-        const existingOutcome = currentQuiz.outcomes?.[idx];
-        return {
-          id: o.id || existingOutcome?.id || crypto.randomUUID(),
-          title: o.title || 'Resultado sem título',
-          description: o.description || '',
-          imageUrl: this.sanitizeOptionalString(o.imageUrl),
-          ctaText: this.sanitizeOptionalString(o.ctaText),
-          ctaUrl: this.sanitizeOptionalString(o.ctaUrl),
-        };
-      });
+      const normalizedOutcomes = extracted.outcomes
+        .map((o: any, idx: number): Partial<Outcome> => {
+          const existingOutcome = currentQuiz.outcomes?.[idx];
+          return {
+            id: o.id || existingOutcome?.id || crypto.randomUUID(),
+            title: o.title || 'Resultado sem título',
+            description: o.description || '',
+            imageUrl: this.sanitizeOptionalString(o.imageUrl),
+            ctaText: this.sanitizeOptionalString(o.ctaText),
+            ctaUrl: this.sanitizeOptionalString(o.ctaUrl),
+          };
+        })
+        .filter((outcome: Partial<Outcome>): outcome is Partial<Outcome> => Boolean(outcome?.title));
+
+      if (
+        normalizedOutcomes.length > 0 &&
+        JSON.stringify(normalizedOutcomes) !== JSON.stringify(currentQuiz.outcomes || [])
+      ) {
+        result.outcomes = normalizedOutcomes;
+      }
     }
 
     return result;
@@ -762,4 +833,140 @@ Extract and return the updated quiz structure.`;
   clearHistory() {
     this.conversationHistory = [{ role: 'system', content: SYSTEM_PROMPT }];
   }
+
 }
+
+const repairJsonString = (json: string): string => {
+  let repaired = '';
+  let insideString = false;
+  let prevChar = '';
+
+  for (const char of json) {
+    if (char === '"' && prevChar !== '\\') {
+      insideString = !insideString;
+    }
+
+    if (insideString && char === '\n') {
+      repaired += '\\n';
+      prevChar = 'n';
+      continue;
+    }
+
+    if (insideString && char === '\r') {
+      repaired += '\\r';
+      prevChar = 'r';
+      continue;
+    }
+
+    repaired += char;
+    prevChar = char;
+  }
+
+  if (insideString) {
+    repaired += '"';
+  }
+
+  const balance = (text: string, openChar: string, closeChar: string) => {
+    const openCount = text.split(openChar).length - 1;
+    const closeCount = text.split(closeChar).length - 1;
+    if (openCount > closeCount) {
+      return text + closeChar.repeat(openCount - closeCount);
+    }
+    return text;
+  };
+
+  repaired = balance(repaired, '{', '}');
+  repaired = balance(repaired, '[', ']');
+
+  // Remove trailing commas before closing braces/brackets (run twice to catch nested cases)
+  repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
+  repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
+
+  // Remove orphan closing braces/brackets that appear after commas or other braces
+  // Pattern: },} or }, } or },  } etc -> }
+  repaired = repaired.replace(/}(\s*,?\s*)}(?=\s*[\],])/g, '}');
+  // Pattern: ],] or ], ] etc -> ]
+  repaired = repaired.replace(/](\s*,?\s*)](?=\s*[\],}])/g, ']');
+  
+  // Remove duplicate closing braces (no comma between)
+  // Run multiple times to handle deeply nested issues
+  for (let i = 0; i < 3; i++) {
+    repaired = repaired.replace(/}(\s*)}/g, '}');
+    repaired = repaired.replace(/](\s*)]/g, ']');
+  }
+
+  // Clean up any remaining },} patterns (with comma)
+  repaired = repaired.replace(/},\s*}/g, '}');
+  repaired = repaired.replace(/],\s*]/g, ']');
+  
+  // Fix pattern like: "value"},}] -> "value"}]
+  repaired = repaired.replace(/"(\s*),?\s*}\s*,?\s*}/g, '"}');
+  repaired = repaired.replace(/"(\s*),?\s*}\s*,?\s*]/g, '"}]');
+
+  // Insert missing commas between object/array entries when closing and opening braces are adjacent
+  repaired = repaired.replace(/}(?=\s*\{)/g, '},');
+  repaired = repaired.replace(/](?=\s*\{)/g, '],');
+  repaired = repaired.replace(/}(?=\s*\[)/g, '},');
+  repaired = repaired.replace(/](?=\s*\[)/g, '],');
+
+  return repaired;
+};
+
+/**
+ * Try to extract a valid JSON subset from truncated content.
+ * Looks for the last complete object/array and truncates there.
+ */
+const extractValidJsonSubset = (json: string): string | null => {
+  // If it doesn't start with { or [, wrap it
+  let content = json.trim();
+  if (!content.startsWith('{') && !content.startsWith('[')) {
+    return null;
+  }
+
+  // Try to find a point where we can cut and still have valid JSON
+  // Work backwards from the end, trying to close at various points
+  for (let i = content.length - 1; i > 10; i--) {
+    const char = content[i];
+    if (char === '}' || char === ']' || char === '"') {
+      const candidate = content.slice(0, i + 1);
+      // Try to balance and parse
+      const repaired = repairJsonString(candidate);
+      try {
+        JSON.parse(repaired);
+        return repaired;
+      } catch {
+        // Continue searching backwards
+      }
+    }
+  }
+
+  return null;
+};
+
+const insertCommaFromError = (json: string, error: unknown): string | null => {
+  const message = error instanceof Error ? error.message : '';
+  const match = /position\s+(\d+)/i.exec(message);
+  if (!match) {
+    return null;
+  }
+
+  let index = Number(match[1]);
+  if (!Number.isFinite(index) || index <= 0 || index > json.length) {
+    return null;
+  }
+
+  while (index > 0 && /\s/.test(json[index - 1])) {
+    index -= 1;
+  }
+
+  if (index <= 0) {
+    return null;
+  }
+
+  const charBefore = json[index - 1];
+  if (!charBefore || charBefore === '[' || charBefore === '{' || charBefore === ',' || charBefore === ':') {
+    return null;
+  }
+
+  return `${json.slice(0, index)},${json.slice(index)}`;
+};

@@ -16,6 +16,8 @@ import { ChatInterface } from '@/components/chat/chat-interface';
 import { SaveIndicator } from '@/components/builder/save-indicator';
 import { EditQuestionModal } from '@/components/builder/edit-question-modal';
 import { Upload } from '@/components/ui/upload';
+import { QuizPlayer } from '@/components/quiz/quiz-player';
+
 import {
   Sheet,
   SheetContent,
@@ -38,6 +40,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [outcomeFile, setOutcomeFile] = useState<File | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   void isEditMode;
 
   const { forceSave, cancelPendingSave } = useAutoSave({
@@ -214,6 +217,47 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
   const sheetOpen = Boolean(activeSheet);
 
+  if (isPreviewOpen) {
+    return (
+      <div className="h-screen flex flex-col">
+        <header className="bg-card border-b shrink-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setIsPreviewOpen(false)}
+                >
+                  <ArrowLeft size={16} />
+                  Voltar para o editor
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <SaveIndicator />
+                <Button
+                  size="sm"
+                  onClick={handlePublish}
+                  disabled={isPublishing || quiz.isPublished}
+                  className="gap-2"
+                >
+                  <Rocket size={16} />
+                  {isPublishing ? 'Publicando...' : quiz.isPublished ? 'Publicado' : 'Publicar'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 bg-muted/40 overflow-auto">
+          <QuizPlayer quiz={quiz} mode="preview" onExit={() => setIsPreviewOpen(false)} />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col">
       <header className="bg-card border-b shrink-0 z-10">
@@ -266,9 +310,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       variant="outline"
                       size="sm"
                       className="gap-2"
-                      onClick={() => {
-                        alert('Preview em desenvolvimento');
-                      }}
+                      onClick={() => setIsPreviewOpen(true)}
                     >
                       <Eye size={16} />
                       Visualizar
@@ -407,6 +449,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           </div>
         </div>
       </main>
+
+
 
       <Sheet open={sheetOpen} onOpenChange={(open) => !open && setActiveSheet(null)}>
         <SheetContent className="max-w-lg">
