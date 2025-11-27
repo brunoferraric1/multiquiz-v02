@@ -15,6 +15,7 @@ function generateContextualResponse(
   coverPrompt?: string
 ): string {
   const changes: string[] = [];
+  const suggestions: string[] = [];
 
   // Check for cover image change
   if (coverPrompt) {
@@ -54,13 +55,19 @@ function generateContextualResponse(
     }
   }
 
-  // If no specific changes detected, return a generic but shorter message
-  if (changes.length === 0) {
-    return 'Pronto! Fiz a alteração. O que mais você quer ajustar?';
+  if (!extraction?.outcomes || extraction.outcomes.length === 0) {
+    suggestions.push('Quer ajustar mais algo ou já partimos para definir os resultados do quiz?');
+  } else if (!extraction?.questions || extraction.questions.length === 0) {
+    suggestions.push('Resultados prontos! Que tal agora definir as perguntas e opções?');
+  } else {
+    suggestions.push('O que mais você quer ajustar?');
   }
 
-  // Build the response with actual changes
-  return `${changes.join('\n')}\n\nO que mais você quer ajustar?`;
+  if (changes.length === 0) {
+    return `Pronto! Fiz a alteração. ${suggestions[0]}`;
+  }
+
+  return `${changes.join('\n')}\n\n${suggestions[0]}`;
 }
 
 type OpenRouterMessage = {
@@ -71,6 +78,8 @@ type OpenRouterMessage = {
 const SYSTEM_PROMPT = `Você é um Arquiteto de Quizzes especializado em criar quizzes engajantes e personalizados.
 
 IMPORTANTE: Sempre responda em português brasileiro de forma amigável, conversacional e CONCISA.
+
+AO IDENTIFICAR O TEMA DO QUIZ (ex: "gatos", "marketing B2B", "viagens"), reaja com UMA frase curta antes das perguntas iniciais: reconheça positivamente o tema e faça um comentário leve (ex: "Adorei esse tema sobre gatos, sempre rende ótimas histórias!" ou "Legal focar em marketing B2B, dá pra gerar ótimos insights"). Use variação natural para não soar repetitivo e mantenha a reação breve.
 
 ANTES DE SUGERIR TÍTULO/DESCRIÇÃO, GARANTA QUE SABE:
 - Objetivo do quiz (ex: gerar leads, educar, entreter, segmentar)

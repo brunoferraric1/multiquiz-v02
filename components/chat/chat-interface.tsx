@@ -34,6 +34,45 @@ const requeueManualChanges = (changes: ManualChange[]) => {
   }));
 };
 
+const normalizeText = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const buildIntentHint = (message: string): string | undefined => {
+  const normalized = normalizeText(message);
+  const hasResults = /resultado|outcome/.test(normalized);
+  const hasQuestions = /pergunta|questao|questão/.test(normalized);
+  const hasCTA = /cta|call to action|botao|botão/.test(normalized);
+  const hasIntro = /titulo|título|descricao|descrição|introducao|introdução/.test(normalized);
+  const instructions: string[] = [];
+
+  if (hasResults && hasCTA) {
+    instructions.push('Prioridade: atualizar os CTAs dos resultados existentes exatamente como o usuário pediu. Se ele solicitou URLs vazias, deixe-as em branco e informe isso.');
+  } else if (hasResults) {
+    instructions.push('Prioridade: trabalhar nos resultados (títulos, descrições, CTAs ou imagens) antes de qualquer outro bloco.');
+  }
+
+  if (hasQuestions) {
+    instructions.push('Se os resultados já estiverem definidos, avance para criar/ajustar perguntas alinhadas a eles, mantendo o formato padrão.');
+  }
+
+  if (hasCTA && !hasResults) {
+    instructions.push('Foque nos CTAs solicitados (introdução ou botões) antes de falar de outros tópicos.');
+  }
+
+  if (!instructions.length) {
+    return undefined;
+  }
+
+  if (!hasIntro) {
+    instructions.push('Não volte para título ou descrição que já foram aprovados, a menos que o usuário peça explicitamente.');
+  }
+
+  return ['[NOTA_PRIVADA]', instructions.join(' '), '[/NOTA_PRIVADA]'].join('\n');
+};
+
 type MergeableEntity = Partial<Question> | Partial<Outcome>;
 
 const mergeEntityCollections = <T extends MergeableEntity>(
@@ -122,6 +161,7 @@ export function ChatInterface() {
   const addChatMessage = useQuizBuilderStore((state) => state.addChatMessage);
   const setExtracting = useQuizBuilderStore((state) => state.setExtracting);
   const setError = useQuizBuilderStore((state) => state.setError);
+  const consumeManualChanges = useQuizBuilderStore((state) => state.consumeManualChanges);
   const hasSeenWelcomeMessage = useQuizBuilderStore((state) => state.hasSeenWelcomeMessage);
   const setHasSeenWelcomeMessage = useQuizBuilderStore((state) => state.setHasSeenWelcomeMessage);
 
@@ -361,6 +401,7 @@ export function ChatInterface() {
   };
 
   const handleSendMessage = async (content: string) => {
+    let manualChangesForMessage: ManualChange[] = [];
     // Add user message
     const userMessage = {
       role: 'user' as const,
@@ -373,10 +414,16 @@ export function ChatInterface() {
       setIsLoading(true);
       setError(null);
 
+      manualChangesForMessage = consumeManualChanges();
+      const manualChangesInstruction = formatManualChangesInstruction(manualChangesForMessage);
+      const intentHint = buildIntentHint(content);
+      const extraNotes = [manualChangesInstruction, intentHint].filter(Boolean).join('\n\n');
+      const outboundContent = extraNotes ? `${content}\n\n${extraNotes}` : content;
+
       // Call AI service to get response + structured extraction in a single round-trip
       const currentQuizSnapshot = useQuizBuilderStore.getState().quiz;
       const { text: response, extraction, coverPrompt } = await aiService.sendMessageWithExtraction(
-        content,
+        outboundContent,
         currentQuizSnapshot
       );
 
@@ -407,6 +454,7 @@ export function ChatInterface() {
         extractionKeys: extraction ? Object.keys(extraction) : [],
         shouldApplyExtraction,
         combinedCoverPrompt: combinedCoverPrompt?.slice(0, 30),
+        manualChanges: manualChangesForMessage.length,
       });
 
       if (shouldApplyExtraction && extraction && Object.keys(extraction).length > 0) {
@@ -466,6 +514,7 @@ export function ChatInterface() {
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      requeueManualChanges(manualChangesForMessage);
       setError(error instanceof Error ? error.message : 'Erro ao comunicar com a IA');
       setIsLoading(false);
 
