@@ -69,6 +69,17 @@ export type QuizDraft = Partial<Omit<Quiz, 'questions' | 'outcomes'>> & {
   outcomes?: Partial<Outcome>[];
 };
 
+export type ManualChange = {
+  id: string;
+  scope: 'quiz' | 'question' | 'outcome';
+  field: string;
+  label: string;
+  valuePreview?: string;
+  entityId?: string;
+  entityName?: string;
+  timestamp: number;
+};
+
 // AI Extraction types
 export type AIExtractionResult = {
   title?: string;
@@ -88,6 +99,8 @@ export type QuizBuilderState = {
   isExtracting: boolean;
   isSaving: boolean;
   error: string | null;
+  hasSeenWelcomeMessage: boolean;
+  pendingManualChanges: ManualChange[];
 
   // Actions
   setQuiz: (quiz: QuizDraft) => void;
@@ -101,6 +114,8 @@ export type QuizBuilderState = {
   deleteOutcome: (id: string) => void;
   addChatMessage: (message: ChatMessage) => void;
   setChatHistory: (history: ChatMessage[]) => void;
+  setHasSeenWelcomeMessage: (value: boolean) => void;
+  consumeManualChanges: () => ManualChange[];
   setExtracting: (isExtracting: boolean) => void;
   setSaving: (isSaving: boolean) => void;
   setError: (error: string | null) => void;

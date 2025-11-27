@@ -34,24 +34,45 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
       <div ref={ref} className={cn("space-y-2", className)} {...props}>
         <div
           data-upload-area
-          className="group relative flex h-32 cursor-pointer items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/60 px-4 text-center transition hover:bg-muted/70 focus-visible:border-[#fbbf24]"
-          onClick={handleButtonClick}
+          className={cn(
+            "group relative rounded-2xl border border-dashed border-border/60 bg-muted/60 transition hover:bg-muted/70 focus-visible:border-[#fbbf24]",
+            previewUrl 
+              ? "overflow-hidden cursor-pointer" 
+              : "flex flex-col h-32 cursor-pointer items-center justify-center px-4 py-3 text-center"
+          )}
+          onClick={previewUrl ? undefined : handleButtonClick}
           onDrop={handleDrop}
           onDragOver={(event) => event.preventDefault()}
           onDragEnter={(event) => event.preventDefault()}
         >
           {previewUrl ? (
-            <img
-              src={previewUrl}
-              alt="Preview da imagem do quiz"
-              className="h-full w-full rounded-xl object-cover"
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-1 text-muted-foreground">
-              <ImageIcon className="h-6 w-6" />
-              <p className="text-xs font-semibold">Nenhuma imagem selecionada</p>
-              <p className="text-[11px]">Arraste ou solte um arquivo aqui</p>
+            <div className="relative w-full aspect-video">
+              <img
+                src={previewUrl}
+                alt="Preview da imagem do quiz"
+                className="h-full w-full object-cover"
+              />
             </div>
+          ) : (
+            <>
+              <div className="flex flex-col items-center gap-1 text-muted-foreground mb-2">
+                <ImageIcon className="h-6 w-6" />
+                <p className="text-xs font-semibold">Arraste ou solte uma imagem aqui</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs font-semibold"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleButtonClick();
+                }}
+              >
+                <UploadCloud className="mr-2 h-3 w-3" />
+                Fazer Upload de Imagem
+              </Button>
+            </>
           )}
           <input
             ref={inputRef}
@@ -62,15 +83,17 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
           />
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full text-sm font-semibold"
-          onClick={handleButtonClick}
-        >
-          <UploadCloud className="mr-2 h-4 w-4" />
-          Fazer Upload de Imagem
-        </Button>
+        {previewUrl && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full text-sm font-semibold"
+            onClick={handleButtonClick}
+          >
+            <UploadCloud className="mr-2 h-4 w-4" />
+            Trocar Imagem
+          </Button>
+        )}
 
         {file && (
           <p className="text-xs text-muted-foreground">{file.name}</p>

@@ -48,17 +48,13 @@ export class QuizService {
    * Save a quiz (create or update)
    */
   static async saveQuiz(quiz: QuizDraft, userId: string): Promise<string> {
-    // Only require a title for saving (allow saving drafts)
-    if (!quiz.title) {
-      throw new Error('Quiz must have a title');
-    }
-
     const quizId = quiz.id || crypto.randomUUID();
     const now = Date.now();
+    const normalizedTitle = quiz.title?.trim() || 'Sem título';
 
     const quizData: any = {
       id: quizId,
-      title: quiz.title,
+      title: normalizedTitle,
       description: quiz.description || '',
       primaryColor: quiz.primaryColor || '#4F46E5',
       questions: quiz.questions || [],

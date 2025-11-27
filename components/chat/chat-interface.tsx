@@ -6,12 +6,124 @@ import { ChatMessageComponent } from './chat-message';
 import { ChatInput } from './chat-input';
 import { TypingIndicator } from './typing-indicator';
 import { AIService } from '@/lib/services/ai-service';
+import type { AIExtractionResult, QuizDraft, Question, Outcome, ManualChange } from '@/types';
+
+const formatManualChangesInstruction = (changes: ManualChange[]): string | undefined => {
+  if (!changes.length) return undefined;
+
+  const bullets = changes
+    .map((change) => {
+      const entity = change.entityName ? ` (${change.entityName})` : '';
+      const preview = change.valuePreview ? ` → "${change.valuePreview}"` : '';
+      return `- ${change.label}${entity}${preview}`;
+    })
+    .join('\n');
+
+  return [
+    '[NOTA_PRIVADA]',
+    'O usuário fez ajustes manuais no editor lateral. Reconheça essas mudanças de forma positiva antes de sugerir o próximo passo. Não mencione essa nota explicitamente, apenas use o contexto naturalmente.',
+    bullets,
+    '[/NOTA_PRIVADA]',
+  ].join('\n');
+};
+
+const requeueManualChanges = (changes: ManualChange[]) => {
+  if (!changes.length) return;
+  useQuizBuilderStore.setState((state) => ({
+    pendingManualChanges: [...changes, ...state.pendingManualChanges].slice(-5),
+  }));
+};
+
+type MergeableEntity = Partial<Question> | Partial<Outcome>;
+
+const mergeEntityCollections = <T extends MergeableEntity>(
+  existing: T[] = [],
+  incoming: T[]
+): T[] => {
+  if (!incoming.length) {
+    return existing;
+  }
+
+  const merged = existing.map((entity) => ({ ...entity }));
+
+  const findMatchIndex = (item: T) => {
+    if (item.id) {
+      const byId = merged.findIndex((entity) => entity.id === item.id);
+      if (byId !== -1) {
+        return byId;
+      }
+    }
+
+    const matchableKeys: Array<'text' | 'title'> = ['text', 'title'];
+    for (const key of matchableKeys) {
+      const value = (item as Record<string, unknown>)[key];
+      if (typeof value === 'string') {
+        const byValue = merged.findIndex((entity) => (entity as Record<string, unknown>)[key] === value);
+        if (byValue !== -1) {
+          return byValue;
+        }
+      }
+    }
+
+    return -1;
+  };
+
+  incoming.forEach((item) => {
+    const matchIndex = findMatchIndex(item);
+    if (matchIndex >= 0) {
+      merged[matchIndex] = { ...merged[matchIndex], ...item } as T;
+    } else {
+      merged.push({ ...item });
+    }
+  });
+
+  return merged;
+};
+
+const applyExtractionResult = (
+  baseQuiz: QuizDraft,
+  extraction: AIExtractionResult,
+  options?: { mergeExisting?: boolean }
+): QuizDraft => {
+  const { mergeExisting = false } = options || {};
+  const nextQuiz: QuizDraft = { ...baseQuiz };
+
+  if (extraction.title) nextQuiz.title = extraction.title;
+  if (extraction.description) nextQuiz.description = extraction.description;
+  if (extraction.coverImageUrl) nextQuiz.coverImageUrl = extraction.coverImageUrl;
+  if (extraction.ctaText) nextQuiz.ctaText = extraction.ctaText;
+  if (extraction.ctaUrl) nextQuiz.ctaUrl = extraction.ctaUrl;
+
+  if (Array.isArray(extraction.questions)) {
+    if (mergeExisting) {
+      if (extraction.questions.length > 0) {
+        nextQuiz.questions = mergeEntityCollections(nextQuiz.questions || [], extraction.questions);
+      }
+    } else {
+      nextQuiz.questions = extraction.questions;
+    }
+  }
+
+  if (Array.isArray(extraction.outcomes)) {
+    if (mergeExisting) {
+      if (extraction.outcomes.length > 0) {
+        nextQuiz.outcomes = mergeEntityCollections(nextQuiz.outcomes || [], extraction.outcomes);
+      }
+    } else {
+      nextQuiz.outcomes = extraction.outcomes;
+    }
+  }
+
+  return nextQuiz;
+};
 
 export function ChatInterface() {
   const chatHistory = useQuizBuilderStore((state) => state.chatHistory);
   const addChatMessage = useQuizBuilderStore((state) => state.addChatMessage);
   const setExtracting = useQuizBuilderStore((state) => state.setExtracting);
   const setError = useQuizBuilderStore((state) => state.setError);
+  const hasSeenWelcomeMessage = useQuizBuilderStore((state) => state.hasSeenWelcomeMessage);
+  const setHasSeenWelcomeMessage = useQuizBuilderStore((state) => state.setHasSeenWelcomeMessage);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isCoverSuggesting, setIsCoverSuggesting] = useState(false);
@@ -21,6 +133,23 @@ export function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const prevChatLength = useRef(chatHistory.length);
+  const [hasHydrated, setHasHydrated] = useState(
+    useQuizBuilderStore.persist.hasHydrated()
+  );
+
+  useEffect(() => {
+    if (useQuizBuilderStore.persist.hasHydrated()) {
+      setHasHydrated(true);
+    }
+
+    const unsub = useQuizBuilderStore.persist.onFinishHydration(() => {
+      setHasHydrated(true);
+    });
+
+    return () => {
+      unsub?.();
+    };
+  }, []);
   
   // Request counter to implement "latest request wins" pattern for cover suggestions
   // This prevents flickering when multiple requests are made in quick succession
@@ -37,6 +166,10 @@ export function ChatInterface() {
 
   // Send welcome message when chat becomes empty (new quiz or cleared chat)
   useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
     const WELCOME_MESSAGE = [
       'Olá! Sou o seu Arquiteto de Quizzes. Vamos criar algo incrível para engajar sua audiência.',
       '',
@@ -52,17 +185,20 @@ export function ChatInterface() {
     const lastMessage = chatHistory[chatHistory.length - 1];
     const lastMessageIsWelcome = lastMessage?.content === WELCOME_MESSAGE;
 
-    if (isEmptyChat && !lastMessageIsWelcome) {
+    const shouldShowWelcome = isEmptyChat && !lastMessageIsWelcome && !hasSeenWelcomeMessage;
+
+    if (shouldShowWelcome) {
       const welcomeMessage = {
         role: 'assistant' as const,
         content: WELCOME_MESSAGE,
         timestamp: Date.now(),
       };
       addChatMessage(welcomeMessage);
+      setHasSeenWelcomeMessage(true);
     }
 
     prevChatLength.current = chatHistory.length;
-  }, [chatHistory.length, chatHistory, addChatMessage]);
+  }, [chatHistory.length, chatHistory, addChatMessage, hasHydrated, hasSeenWelcomeMessage, setHasSeenWelcomeMessage]);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -238,9 +374,10 @@ export function ChatInterface() {
       setError(null);
 
       // Call AI service to get response + structured extraction in a single round-trip
+      const currentQuizSnapshot = useQuizBuilderStore.getState().quiz;
       const { text: response, extraction, coverPrompt } = await aiService.sendMessageWithExtraction(
         content,
-        quiz
+        currentQuizSnapshot
       );
 
       // Add assistant response
@@ -272,24 +409,17 @@ export function ChatInterface() {
         combinedCoverPrompt: combinedCoverPrompt?.slice(0, 30),
       });
 
-      if (shouldApplyExtraction && Object.keys(extraction || {}).length > 0) {
+      if (shouldApplyExtraction && extraction && Object.keys(extraction).length > 0) {
         console.log('[Flow] Taking extraction branch');
-        const updatedQuiz = { ...quiz };
-
-        if (extraction.title) updatedQuiz.title = extraction.title;
-        if (extraction.description) updatedQuiz.description = extraction.description;
-        if (extraction.coverImageUrl) updatedQuiz.coverImageUrl = extraction.coverImageUrl;
-        if (extraction.ctaText) updatedQuiz.ctaText = extraction.ctaText;
-        if (extraction.ctaUrl) updatedQuiz.ctaUrl = extraction.ctaUrl;
-        if (extraction.questions) updatedQuiz.questions = extraction.questions;
-        if (extraction.outcomes) updatedQuiz.outcomes = extraction.outcomes;
+        const latestQuiz = useQuizBuilderStore.getState().quiz;
+        const updatedQuiz = applyExtractionResult(latestQuiz, extraction);
 
         setQuiz(updatedQuiz);
         
         // Auto-suggest cover when title/description are confirmed
         // Priority: 1) AI-provided coverPrompt, 2) extraction.coverImagePrompt, 3) generate from title/desc
-        const finalTitle = updatedQuiz.title || quiz.title;
-        const finalDescription = updatedQuiz.description || quiz.description;
+        const finalTitle = updatedQuiz.title || latestQuiz.title;
+        const finalDescription = updatedQuiz.description || latestQuiz.description;
         const hasTitleOrDescription = finalTitle && finalTitle !== 'Meu Novo Quiz';
         
         const finalCoverPrompt = combinedCoverPrompt || 
@@ -353,31 +483,24 @@ export function ChatInterface() {
     try {
       setExtracting(true);
 
-      // Get updated chat history (includes the latest messages)
-      const updatedHistory = useQuizBuilderStore.getState().chatHistory;
+      const storeState = useQuizBuilderStore.getState();
+      const latestQuiz = storeState.quiz;
+      const updatedHistory = storeState.chatHistory;
 
       // Call extraction service
-      const extracted = await aiService.extractQuizStructure(updatedHistory, quiz);
+      const extracted = await aiService.extractQuizStructure(updatedHistory, latestQuiz);
 
       // Apply extracted changes if any
       if (Object.keys(extracted).length > 0) {
-        const updatedQuiz = { ...quiz };
-
-        if (extracted.title) updatedQuiz.title = extracted.title;
-        if (extracted.description) updatedQuiz.description = extracted.description;
-        if (extracted.coverImageUrl) updatedQuiz.coverImageUrl = extracted.coverImageUrl;
-        if (extracted.ctaText) updatedQuiz.ctaText = extracted.ctaText;
-        if (extracted.ctaUrl) updatedQuiz.ctaUrl = extracted.ctaUrl;
-        if (extracted.questions) updatedQuiz.questions = extracted.questions;
-        if (extracted.outcomes) updatedQuiz.outcomes = extracted.outcomes;
+        const updatedQuiz = applyExtractionResult(latestQuiz, extracted, { mergeExisting: true });
 
         setQuiz(updatedQuiz);
 
         // Auto-suggest cover image when title/description are set
         // User shouldn't need to explicitly ask - it should happen automatically
         if (!coverSuggestionTriggeredRef.current) {
-          const finalTitle = updatedQuiz.title || quiz.title;
-          const finalDescription = updatedQuiz.description || quiz.description;
+          const finalTitle = updatedQuiz.title || latestQuiz.title;
+          const finalDescription = updatedQuiz.description || latestQuiz.description;
           const hasTitleOrDescription = finalTitle && finalTitle !== 'Meu Novo Quiz';
           
           // Use AI-provided coverImagePrompt if available, otherwise generate from title/description

@@ -1,6 +1,76 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import type { QuizBuilderState, QuizDraft, ChatMessage, Question, Outcome, Quiz } from '@/types';
+import type {
+  QuizBuilderState,
+  QuizDraft,
+  ChatMessage,
+  Question,
+  Outcome,
+  Quiz,
+  ManualChange,
+} from '@/types';
+
+const quizFieldLabels: Record<string, string> = {
+  title: 'Título',
+  description: 'Descrição',
+  coverImageUrl: 'Imagem principal',
+  ctaText: 'Texto do CTA',
+  ctaUrl: 'URL do CTA',
+};
+
+const formatValuePreview = (field: string, value: unknown): string | undefined => {
+  if (field.toLowerCase().includes('image')) {
+    return 'Imagem atualizada';
+  }
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed.length > 160 ? `${trimmed.slice(0, 157)}...` : trimmed;
+};
+
+const createManualChange = (params: {
+  scope: ManualChange['scope'];
+  field: string;
+  value: unknown;
+  entityId?: string;
+  entityName?: string;
+}): ManualChange | null => {
+  const { scope, field, value, entityId, entityName } = params;
+  const label =
+    quizFieldLabels[field] ||
+    (scope === 'question' ? `Pergunta • ${field}` : scope === 'outcome' ? `Resultado • ${field}` : field);
+  const valuePreview = formatValuePreview(field, value);
+
+  if (!valuePreview && field.toLowerCase().includes('image') === false) {
+    // Skip tracking when there's nothing meaningful to show (e.g., undefined values)
+    return null;
+  }
+
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    scope,
+    field,
+    label,
+    valuePreview,
+    entityId,
+    entityName,
+    timestamp: Date.now(),
+  };
+};
+
+const pushManualChange = (changes: ManualChange[], change: ManualChange | null): ManualChange[] => {
+  if (!change) return changes;
+  const filtered = changes.filter(
+    (item) => !(item.scope === change.scope && item.field === change.field && item.entityId === change.entityId)
+  );
+  const updated = [...filtered, change];
+  const MAX_CHANGES = 5;
+  return updated.slice(-MAX_CHANGES);
+};
 
 const initialQuizState: QuizDraft = {
   title: 'Meu Novo Quiz',
@@ -23,12 +93,18 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
         isExtracting: false,
         isSaving: false,
         error: null,
+        hasSeenWelcomeMessage: false,
+        pendingManualChanges: [],
 
         setQuiz: (quiz) => set({ quiz }),
 
         updateQuizField: (field, value) =>
           set((state) => ({
             quiz: { ...state.quiz, [field]: value },
+            pendingManualChanges: pushManualChange(
+              state.pendingManualChanges,
+              createManualChange({ scope: 'quiz', field: String(field), value })
+            ),
           })),
 
         addQuestion: (question) =>
@@ -106,6 +182,14 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
 
         setChatHistory: (history) => set({ chatHistory: history }),
 
+        setHasSeenWelcomeMessage: (value: boolean) => set({ hasSeenWelcomeMessage: value }),
+
+        consumeManualChanges: () => {
+          const changes = get().pendingManualChanges;
+          set({ pendingManualChanges: [] });
+          return changes;
+        },
+
         setExtracting: (isExtracting) => set({ isExtracting }),
 
         setSaving: (isSaving) => set({ isSaving }),
@@ -119,6 +203,8 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             isExtracting: false,
             isSaving: false,
             error: null,
+            hasSeenWelcomeMessage: false,
+            pendingManualChanges: [],
           }),
 
         loadQuiz: (quiz: Quiz) =>
@@ -140,6 +226,8 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
               ownerId: quiz.ownerId,
             },
             chatHistory: quiz.conversationHistory || [],
+            hasSeenWelcomeMessage: Boolean((quiz.conversationHistory || []).length),
+            pendingManualChanges: [],
           }),
       }),
       {
@@ -147,6 +235,8 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
         partialize: (state) => ({
           quiz: state.quiz,
           chatHistory: state.chatHistory,
+          hasSeenWelcomeMessage: state.hasSeenWelcomeMessage,
+          pendingManualChanges: state.pendingManualChanges,
         }),
       }
     ),

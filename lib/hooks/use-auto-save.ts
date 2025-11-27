@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { QuizService } from '@/lib/services/quiz-service';
-import type { Quiz } from '@/types';
+import type { QuizDraft } from '@/types';
 
 interface UseAutoSaveOptions {
   userId: string | undefined;
@@ -25,13 +25,24 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
   const savingCoverRef = useRef<boolean>(false);
 
   const saveToFirestore = useCallback(async () => {
-    if (!userId || !quiz.id) {
-      console.log('Auto-save skipped: missing userId or quiz.id');
+    if (!userId) {
+      console.log('Auto-save skipped: missing userId');
+      return;
+    }
+
+    const { quiz: currentQuiz, chatHistory: currentChatHistory } =
+      useQuizBuilderStore.getState();
+
+    if (!currentQuiz.id) {
+      console.log('Auto-save skipped: missing quiz.id');
       return;
     }
 
     // Create a snapshot to compare
-    const currentSnapshot = JSON.stringify({ quiz, chatHistory });
+    const currentSnapshot = JSON.stringify({
+      quiz: currentQuiz,
+      chatHistory: currentChatHistory,
+    });
 
     // Skip if nothing changed
     if (currentSnapshot === lastSavedRef.current) {
@@ -43,19 +54,19 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
       setSaving(true);
       console.log('Auto-saving quiz...');
 
-      const quizToSave: any = {
-        ...quiz,
-        id: quiz.id,
-        title: quiz.title || 'Sem título',
-        description: quiz.description || '',
-        questions: quiz.questions || [],
-        outcomes: quiz.outcomes || [],
-        conversationHistory: chatHistory,
+      const quizToSave: QuizDraft = {
+        ...currentQuiz,
+        id: currentQuiz.id,
+        title: currentQuiz.title || 'Sem título',
+        description: currentQuiz.description || '',
+        questions: currentQuiz.questions || [],
+        outcomes: currentQuiz.outcomes || [],
+        conversationHistory: currentChatHistory,
         ownerId: userId,
         updatedAt: Date.now(),
-        createdAt: quiz.createdAt || Date.now(),
-        isPublished: quiz.isPublished || false,
-        stats: quiz.stats || { views: 0, starts: 0, completions: 0 },
+        createdAt: currentQuiz.createdAt || Date.now(),
+        isPublished: currentQuiz.isPublished || false,
+        stats: currentQuiz.stats || { views: 0, starts: 0, completions: 0 },
       };
 
       await QuizService.saveQuiz(quizToSave, userId);
@@ -76,7 +87,7 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
     } finally {
       setSaving(false);
     }
-  }, [userId, quiz, chatHistory, setSaving, setError, queryClient]);
+  }, [userId, setSaving, setError, queryClient]);
 
   // Debounced auto-save effect
   useEffect(() => {

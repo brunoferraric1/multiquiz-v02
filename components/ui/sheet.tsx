@@ -37,14 +37,16 @@ const SheetContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-md flex-col border-l bg-background p-6 shadow-2xl duration-200",
+        "fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-md flex-col border-l bg-background shadow-2xl duration-200 overflow-hidden",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right",
         className
       )}
       {...props}
     >
-      {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full border border-border bg-background p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+      <div className="flex-1 overflow-y-auto min-h-0 p-6">
+        {children}
+      </div>
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full border border-border bg-background p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 z-10">
         <X className="h-4 w-4" />
         <span className="sr-only">Fechar painel</span>
       </DialogPrimitive.Close>
