@@ -171,45 +171,42 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
       : currentQuestionIndex + 1;
 
   return (
-    <div className="h-screen w-full overflow-y-auto bg-background px-4 py-8 sm:px-8">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-
-        <main className="rounded-3xl border border-border/60 bg-card/80 p-6 shadow-lg shadow-black/5">
-          {phase === 'intro' && (
-            <QuizIntro
-              title={title}
-              description={description}
-              coverImageUrl={coverImageUrl}
-              primaryColor={primaryColor}
-              questionCount={questions.length}
-              outcomeCount={outcomes.length}
-              mode={mode}
-              onStart={handleStart}
-              ctaText={ctaText}
-            />
-          )}
-          {phase === 'question' && currentQuestion && (
-            <QuizQuestion
-              question={currentQuestion}
-              currentQuestionIndex={currentQuestionIndex}
-              totalQuestions={questions.length}
-              primaryColor={primaryColor}
-              selectedOptionIds={currentSelectionIds}
-              onOptionSelect={handleOptionSelect}
-              onNext={goToNextQuestion}
-              onBack={goToPreviousQuestion}
-              onReset={resetQuiz}
-            />
-          )}
-          {phase === 'result' && resultOutcome && (
-            <QuizResult
-              outcome={resultOutcome}
-              mode={mode}
-              onReset={resetQuiz}
-              onExit={onExit}
-            />
-          )}
-        </main>
+    <div className="h-full w-full overflow-y-auto bg-muted/40 px-4 py-8 sm:px-8">
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
+        {phase === 'intro' && (
+          <QuizIntro
+            title={title}
+            description={description}
+            coverImageUrl={coverImageUrl}
+            primaryColor={primaryColor}
+            questionCount={questions.length}
+            outcomeCount={outcomes.length}
+            mode={mode}
+            onStart={handleStart}
+            ctaText={ctaText}
+          />
+        )}
+        {phase === 'question' && currentQuestion && (
+          <QuizQuestion
+            question={currentQuestion}
+            currentQuestionIndex={currentQuestionIndex}
+            totalQuestions={questions.length}
+            primaryColor={primaryColor}
+            selectedOptionIds={currentSelectionIds}
+            onOptionSelect={handleOptionSelect}
+            onNext={goToNextQuestion}
+            onBack={goToPreviousQuestion}
+            onReset={resetQuiz}
+          />
+        )}
+        {phase === 'result' && resultOutcome && (
+          <QuizResult
+            outcome={resultOutcome}
+            mode={mode}
+            onReset={resetQuiz}
+            onExit={onExit}
+          />
+        )}
       </div>
     </div>
   );

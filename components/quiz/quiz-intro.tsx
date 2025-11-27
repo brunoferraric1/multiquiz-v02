@@ -33,17 +33,17 @@ export function QuizIntro({
   return (
     <div className="space-y-5 text-center">
       <div className="flex justify-center">
-        <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-muted/60 shadow-sm">
+        <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
           {coverImageUrl ? (
-            <div className="flex justify-center items-center h-48">
+            <div className="aspect-w-4 aspect-h-3">
               <img
                 src={coverImageUrl}
                 alt="Capa do quiz"
-                className="max-h-full max-w-full object-contain"
+                className="h-full w-full object-cover"
               />
             </div>
           ) : (
-            <div className="flex h-44 items-center justify-center text-sm text-muted-foreground">
+            <div className="flex h-44 items-center justify-center text-sm text-muted-foreground bg-muted/60">
               Adicione uma imagem de capa para o quiz
             </div>
           )}
@@ -51,7 +51,7 @@ export function QuizIntro({
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
-        <Badge variant="secondary" className="flex items-center gap-2 bg-secondary/60">
+        <Badge variant="secondary" className="flex items-center gap-2 bg-card">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           {mode === 'preview' ? 'Pré-visualização' : 'Quiz ao vivo'}
         </Badge>
@@ -63,7 +63,7 @@ export function QuizIntro({
       </div>
 
       <div className="space-y-4">
-        <Button onClick={onStart} disabled={!canStart} className="w-full justify-center gap-2">
+        <Button onClick={onStart} disabled={!canStart} size="lg" className="justify-center gap-2">
           <Play className="h-4 w-4" />
           {startButtonText}
         </Button>

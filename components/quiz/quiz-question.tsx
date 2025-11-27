@@ -55,12 +55,12 @@ export function QuizQuestion({
         <h2 className="text-xl font-semibold leading-tight text-center">{question.text}</h2>
         {question.imageUrl && (
           <div className="flex justify-center">
-            <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-muted/60 shadow-sm">
-              <div className="flex justify-center items-center h-48">
+            <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+              <div className="aspect-w-4 aspect-h-3">
                 <img
                   src={question.imageUrl}
                   alt="Ilustração da pergunta"
-                  className="max-h-full max-w-full object-contain"
+                  className="h-full w-full object-cover"
                 />
               </div>
             </div>
