@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { Question, AnswerOption, Outcome } from '@/types';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { EmojiPicker } from '@/components/ui/emoji-picker';
+
+// UUID v4 generator with crypto.randomUUID fallback
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  // Fallback for environments without crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 interface EditQuestionModalProps {
   open: boolean;
@@ -51,7 +65,7 @@ export function EditQuestionModal({
   const handleAddOption = () => {
     const fallbackOutcomeId = outcomes[0]?.id || '';
     const newOption: AnswerOption = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       text: '',
       targetOutcomeId: fallbackOutcomeId,
     };
@@ -129,35 +143,37 @@ export function EditQuestionModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} key={question?.id}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            Editar Pergunta
-          </DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange} key={question?.id}>
+      <SheetContent className="max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Editar Pergunta</SheetTitle>
+          <SheetDescription>
+            Configure a pergunta e as opções de resposta.
+          </SheetDescription>
+        </SheetHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="mt-6 space-y-6">
           {/* Question Text Section */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">
               Pergunta
-            </label>
+            </p>
             <Textarea
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
               placeholder='Qual opção combina mais com você sobre "Meu Novo Quiz"?'
               className="w-full"
               rows={3}
+              autoFocus={false}
             />
           </div>
 
           {/* Answer Options Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">
+              <p className="text-sm font-medium text-muted-foreground">
                 Opções de Resposta
-              </label>
+              </p>
             </div>
 
             {options.length === 0 ? (
@@ -176,6 +192,7 @@ export function EditQuestionModal({
                         }
                         placeholder="Texto da opção"
                         className="flex-1"
+                        autoFocus={false}
                       />
                       <EmojiPicker
                         value={option.icon}
@@ -232,7 +249,7 @@ export function EditQuestionModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-row justify-end gap-2 sm:gap-0">
+        <div className="mt-6 flex justify-end gap-2">
           <Button
             type="button"
             variant="secondary"
@@ -249,9 +266,9 @@ export function EditQuestionModal({
           >
             Salvar Alterações
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 

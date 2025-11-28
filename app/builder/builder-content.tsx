@@ -47,6 +47,20 @@ type MobileViewMode = 'chat' | 'editor';
 
 const fieldLabelClass = 'text-sm font-medium text-muted-foreground';
 
+// UUID v4 generator with crypto.randomUUID fallback
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  // Fallback for environments without crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 export default function BuilderContent({ isEditMode = false }: { isEditMode?: boolean }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -125,7 +139,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
   const handleAddQuestion = () => {
     const newQuestion: Partial<Question> = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       text: '',
       options: [],
     };
@@ -144,7 +158,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
   const handleAddOutcome = () => {
     const newOutcome: Partial<Outcome> = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       title: 'Novo resultado',
       description: '',
     };
@@ -632,6 +646,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       value={quiz.title ?? ''}
                       onChange={(event) => updateQuizField('title', event.target.value)}
                       placeholder="Título do seu quiz"
+                      autoFocus={false}
                     />
                   </div>
                   <div className="space-y-1">
@@ -641,6 +656,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       onChange={(event) => updateQuizField('description', event.target.value)}
                       placeholder="Descreva o que o participante vai viver"
                       rows={4}
+                      autoFocus={false}
                     />
                   </div>
                   <div className="space-y-1">
@@ -657,6 +673,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       value={quiz.ctaText ?? ''}
                       onChange={(event) => updateQuizField('ctaText', event.target.value)}
                       placeholder="Quer saber mais?"
+                      autoFocus={false}
                     />
                   </div>
                   <div className="space-y-1">
@@ -666,6 +683,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       value={quiz.ctaUrl ?? ''}
                       onChange={(event) => updateQuizField('ctaUrl', event.target.value)}
                       placeholder="https://seusite.com/cta"
+                      autoFocus={false}
                     />
                   </div>
                 </div>
@@ -695,6 +713,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       value={activeOutcome.title ?? ''}
                       onChange={(event) => handleOutcomeFieldChange('title', event.target.value)}
                       placeholder="Título do resultado"
+                      autoFocus={false}
                     />
                   </div>
                   <div className="space-y-1">
@@ -704,6 +723,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       onChange={(event) => handleOutcomeFieldChange('description', event.target.value)}
                       placeholder="Descreva esse resultado"
                       rows={4}
+                      autoFocus={false}
                     />
                   </div>
                   <div className="space-y-1">
@@ -712,6 +732,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       value={activeOutcome.ctaText ?? ''}
                       onChange={(event) => handleOutcomeFieldChange('ctaText', event.target.value)}
                       placeholder="Quer saber mais?"
+                      autoFocus={false}
                     />
                   </div>
                   <div className="space-y-1">
@@ -721,6 +742,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       value={activeOutcome.ctaUrl ?? ''}
                       onChange={(event) => handleOutcomeFieldChange('ctaUrl', event.target.value)}
                       placeholder="https://seusite.com/cta"
+                      autoFocus={false}
                     />
                   </div>
                 </div>
