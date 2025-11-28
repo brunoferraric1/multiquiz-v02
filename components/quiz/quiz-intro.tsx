@@ -50,12 +50,7 @@ export function QuizIntro({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
-        <Badge variant="secondary" className="flex items-center gap-2 bg-card">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-          {mode === 'preview' ? 'Pré-visualização' : 'Quiz ao vivo'}
-        </Badge>
-      </div>
+      <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground" />
 
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>

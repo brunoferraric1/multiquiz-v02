@@ -1,6 +1,16 @@
 'use client';
 
+import emojiRegex from 'emoji-regex';
 import { X } from 'lucide-react';
+import {
+  ChangeEvent,
+  MouseEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -11,58 +21,86 @@ interface EmojiPickerProps {
 }
 
 export function EmojiPicker({ value, onChange, className }: EmojiPickerProps) {
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const text = e.target.value;
-    
-    // If input is being cleared
-    if (!text) {
-      onChange(undefined);
-      return;
-    }
-    
-    // Extract emoji from input (take the first emoji character)
-    const emojiMatch = text.match(/[\p{Emoji}]/u);
-    if (emojiMatch) {
-      onChange(emojiMatch[0]);
-    }
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [inputValue, setInputValue] = useState(value ?? '');
+  const regex = useMemo(() => emojiRegex(), []);
+
+  useEffect(() => {
+    setInputValue(value ?? '');
+  }, [value]);
+
+  const extractEmoji = (text: string) => {
+    const match = text.match(regex);
+    return match?.[0];
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Allow backspace/delete to clear
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      onChange(undefined);
-      return;
-    }
-    // Allow emoji input, but prevent regular text
-    if (e.key.length === 1 && !/[\p{Emoji}]/u.test(e.key)) {
-      e.preventDefault();
-    }
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const text = event.target.value;
+    const nextEmoji = extractEmoji(text);
+
+    setInputValue(nextEmoji ?? '');
+    onChange(nextEmoji ?? undefined);
   };
 
-  const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleClear = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setInputValue('');
     onChange(undefined);
+    inputRef.current?.focus();
   };
+
+  const handleOpenNativePicker = () => {
+    const input = inputRef.current as (HTMLInputElement & {
+      showPicker?: () => void;
+    }) | null;
+
+    if (!input) return;
+
+    input.focus();
+
+    if (typeof input.showPicker === 'function') {
+      try {
+        input.showPicker();
+        return;
+      } catch (error) {
+        try {
+          // Some browsers require explicit binding
+          input.showPicker.call(input);
+          return;
+        } catch (secondError) {
+          console.warn('Native emoji picker failed', secondError || error);
+        }
+      }
+    }
+  };
+
+  const hasEmoji = Boolean(inputValue);
 
   return (
-    <div className={cn("relative inline-flex items-center", className)}>
+    <div className={cn('relative inline-flex items-center', className)}>
       <Input
+        ref={inputRef}
         type="text"
         inputMode="text"
-        maxLength={2}
-        value={value || ''}
+        value={inputValue}
         onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
+        onClick={handleOpenNativePicker}
+        onFocus={handleOpenNativePicker}
         placeholder="😀"
-        className="w-12 h-10 text-center text-lg p-0 cursor-pointer"
-        title="Use Cmd+Ctrl+Space (Mac) ou cole um emoji"
+        className={cn(
+          'w-20 h-10 text-center text-lg px-2 pr-8 cursor-[var(--cursor-interactive)]',
+          !hasEmoji && 'opacity-50'
+        )}
+        title="Clique para abrir o teclado do sistema ou cole um emoji"
+        aria-label="Escolher emoji"
       />
       {value && (
         <button
           type="button"
           onClick={handleClear}
-          className="absolute -right-2 -top-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs hover:bg-destructive/90 cursor-pointer z-10"
+          className="absolute -right-2 -top-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs hover:bg-destructive/90 cursor-[var(--cursor-interactive)] z-10"
           title="Remover emoji"
+          aria-label="Remover emoji selecionado"
         >
           <X className="h-3 w-3" />
         </button>
@@ -70,4 +108,3 @@ export function EmojiPicker({ value, onChange, className }: EmojiPickerProps) {
     </div>
   );
 }
-

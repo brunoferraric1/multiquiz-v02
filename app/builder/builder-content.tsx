@@ -2,17 +2,19 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Eye, ImageIcon, Plus, Rocket } from 'lucide-react';
+import { ArrowLeft, Eye, ImageIcon, Plus, Rocket, X } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
 import { compressImage } from '@/lib/utils';
 import type { Outcome, Question } from '@/types';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatInterface } from '@/components/chat/chat-interface';
+import { BuilderHeader } from '@/components/builder/builder-header';
 import { SaveIndicator } from '@/components/builder/save-indicator';
 import { EditQuestionModal } from '@/components/builder/edit-question-modal';
 import { Upload } from '@/components/ui/upload';
@@ -219,38 +221,24 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
   if (isPreviewOpen) {
     return (
-      <div className="h-screen flex flex-col">
-        <header className="bg-card border-b shrink-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => setIsPreviewOpen(false)}
-                >
-                  <ArrowLeft size={16} />
-                  Voltar para o editor
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <SaveIndicator />
-                <Button
-                  size="sm"
-                  onClick={handlePublish}
-                  disabled={isPublishing || quiz.isPublished}
-                  className="gap-2"
-                >
-                  <Rocket size={16} />
-                  {isPublishing ? 'Publicando...' : quiz.isPublished ? 'Publicado' : 'Publicar'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
+      <div className="relative h-screen flex flex-col">
+        <BuilderHeader
+          quiz={quiz}
+          isPreview={true}
+          onBack={() => setIsPreviewOpen(false)}
+          onPublish={handlePublish}
+          isPublishing={isPublishing}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsPreviewOpen(false)}
+          className="absolute top-20 right-4 sm:right-6 lg:right-8 z-10 rounded-full bg-background/60 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background/80 hover:text-foreground"
+          aria-label="Fechar pré-visualização"
+        >
+          <X size={20} />
+        </Button>
         <main className="flex-1 bg-muted/40 overflow-auto">
           <QuizPlayer quiz={quiz} mode="preview" onExit={() => setIsPreviewOpen(false)} />
         </main>
@@ -260,39 +248,13 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
   return (
     <div className="h-screen flex flex-col">
-      <header className="bg-card border-b shrink-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="gap-2"
-                onClick={handleBack}
-              >
-                <ArrowLeft size={16} />
-                Voltar
-              </Button>
-              <div className="border-l border-border h-6" />
-              <h1 className="text-lg font-semibold">{quiz.title || 'Novo Quiz'}</h1>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <SaveIndicator />
-              <Button
-                size="sm"
-                onClick={handlePublish}
-                disabled={isPublishing || quiz.isPublished}
-                className="gap-2"
-              >
-                <Rocket size={16} />
-                {isPublishing ? 'Publicando...' : quiz.isPublished ? 'Publicado' : 'Publicar'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <BuilderHeader
+        quiz={quiz}
+        isPreview={false}
+        onBack={handleBack}
+        onPublish={handlePublish}
+        isPublishing={isPublishing}
+      />
 
       <main className="flex-1 overflow-hidden min-h-0">
         <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
