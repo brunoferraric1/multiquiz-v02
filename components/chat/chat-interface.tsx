@@ -380,32 +380,48 @@ export function ChatInterface() {
   };
 
   const shouldExtractQuizStructure = (userMessage: string, assistantResponse: string): boolean => {
-    // Check if user message contains confirmation keywords
+    // Normalize strings once so keyword matching works with/without accents
+    const normalizedUser = normalizeText(userMessage);
+    const normalizedAssistant = normalizeText(assistantResponse);
+
     const confirmationKeywords = [
       'sim', 'confirmo', 'confirma', 'pode ir', 'pode usar', 'pode', 'usar',
-      'perfeito', 'ok', 'okay', 'ótimo', 'otimo', 'está ótimo', 'esta otimo',
+      'perfeito', 'ok', 'okay', 'otimo', 'esta otimo', 'estou ok',
       'isso', 'exato', 'correto', 'certo', 'concordo', 'legal',
       'maravilha', 'beleza', 'show', 'top', 'segue', 'vamos', 'vai',
-      'esses', 'essas', 'esse', 'essa', 'ficou bom', 'ficou ótimo',
-      'aprovo', 'aprovado', 'pode seguir', 'continua', 'próximo', 'proximo'
+      'esses', 'essas', 'esse', 'essa', 'ficou bom', 'ficou otimo',
+      'aprovo', 'aprovado', 'pode seguir', 'continua', 'proximo'
     ];
 
-    const userMessageLower = userMessage.toLowerCase();
-    const hasConfirmation = confirmationKeywords.some(keyword =>
-      userMessageLower.includes(keyword)
+    const hasConfirmation = confirmationKeywords.some((keyword) =>
+      normalizedUser.includes(keyword)
     );
 
-    // Also check if assistant's response suggests they've updated something
-    const assistantLower = assistantResponse.toLowerCase();
-    const suggestsUpdate =
-      assistantLower.includes('vou atualizar') ||
-      assistantLower.includes('vou adicionar') ||
-      assistantLower.includes('adicionei') ||
-      assistantLower.includes('atualizei') ||
-      assistantLower.includes('criei') ||
-      assistantLower.includes('vamos aos');
+    const assistantActionKeywords = [
+      'vou atualizar', 'vou adicionar', 'adicionei', 'atualizei', 'criei', 'vamos aos',
+      'ajustei', 'ajustamos', 'ajuste realizado', 'alterei', 'alteramos', 'editei',
+      'modifiquei', 'modificamos', 'mudei', 'mudamos', 'corrigi', 'corrigimos',
+      'reformulei', 'reescrevi', 'encurtei', 'simplifiquei', 'removi'
+    ];
 
-    return hasConfirmation || suggestsUpdate;
+    const assistantIndicatesUpdate = assistantActionKeywords.some((keyword) =>
+      normalizedAssistant.includes(keyword)
+    );
+
+    const editRequestKeywords = [
+      'ajuste', 'ajustar', 'ajusta', 'ajustei', 'edite', 'editar', 'edita',
+      'modifique', 'modificar', 'modifica', 'mude', 'mudar', 'muda', 'troque', 'trocar',
+      'troca', 'altere', 'alterar', 'altera', 'reescreva', 'reescrever', 'reescreve',
+      'encurte', 'encurtar', 'encurta', 'simplifique', 'simplificar', 'simplifica',
+      'melhore', 'melhorar', 'melhora', 'corrija', 'corrigir', 'corrige', 'resuma',
+      'resumir', 'reduza', 'reduzir', 'ajuste a pergunta', 'ajuste o resultado'
+    ];
+
+    const hasEditRequest = editRequestKeywords.some((keyword) =>
+      normalizedUser.includes(keyword)
+    );
+
+    return hasConfirmation || assistantIndicatesUpdate || hasEditRequest;
   };
 
   const handleSendMessage = async (content: string) => {
