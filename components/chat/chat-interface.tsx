@@ -176,7 +176,6 @@ export function ChatInterface() {
   const [aiService] = useState(() => new AIService());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const prevChatLength = useRef(chatHistory.length);
   const [hasHydrated, setHasHydrated] = useState(
     useQuizBuilderStore.persist.hasHydrated()
   );
@@ -224,12 +223,21 @@ export function ChatInterface() {
       '- Quem é a audiência (perfil + nível de maturidade no tema)',
     ].join('\n');
 
-    // Check if chat is empty and the last message wasn't already the welcome message
-    const isEmptyChat = chatHistory.length === 0;
-    const lastMessage = chatHistory[chatHistory.length - 1];
-    const lastMessageIsWelcome = lastMessage?.content === WELCOME_MESSAGE;
+    const state = useQuizBuilderStore.getState();
+    const currentHistory = state.chatHistory;
+    const welcomeAlreadyQueued = currentHistory.some(
+      (message) => message.content === WELCOME_MESSAGE
+    );
 
-    const shouldShowWelcome = isEmptyChat && !lastMessageIsWelcome && !hasSeenWelcomeMessage;
+    if (welcomeAlreadyQueued) {
+      if (!state.hasSeenWelcomeMessage) {
+        setHasSeenWelcomeMessage(true);
+      }
+      return;
+    }
+
+    const isEmptyChat = currentHistory.length === 0;
+    const shouldShowWelcome = isEmptyChat && !state.hasSeenWelcomeMessage;
 
     if (shouldShowWelcome) {
       const welcomeMessage = {
@@ -240,14 +248,10 @@ export function ChatInterface() {
       addChatMessage(welcomeMessage);
       setHasSeenWelcomeMessage(true);
     }
-
-    prevChatLength.current = chatHistory.length;
   }, [
     chatHistory.length,
-    chatHistory,
     addChatMessage,
     hasHydrated,
-    hasSeenWelcomeMessage,
     setHasSeenWelcomeMessage,
     quiz?.id,
   ]);

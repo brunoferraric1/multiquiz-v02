@@ -329,12 +329,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     { id: 'editor', label: 'Editor', icon: PenSquare },
   ];
 
-  const chatPanel = (
-    <div className="h-full min-h-0">
-      <ChatInterface />
-    </div>
-  );
-
   const editorPanel = (
     <Card className="flex flex-col h-full">
       <CardHeader className="flex-shrink-0">
@@ -541,8 +535,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
         <main className="flex-1 overflow-hidden min-h-0">
           <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
-            <div className="flex flex-col flex-1 gap-4 lg:hidden">
-              <div className="flex justify-center">
+            <div className="flex flex-col flex-1 gap-4">
+              <div className="flex justify-center lg:hidden">
                 <div className="inline-flex gap-1 rounded-full border border-border bg-muted p-1">
                   {mobileViewOptions.map((option) => {
                     const Icon = option.icon;
@@ -568,26 +562,24 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 </div>
               </div>
 
-              <div className="relative flex-1 min-h-0 overflow-hidden rounded-3xl border border-border bg-background">
+              <div className="relative flex-1 min-h-0">
                 <div
-                  className="flex h-full transition-transform duration-300 ease-out"
-                  style={{
-                    transform: mobileView === 'chat' ? 'translateX(0)' : 'translateX(-100%)',
-                  }}
+                  className={cn(
+                    'flex h-full overflow-hidden rounded-3xl border border-border bg-background transition-transform duration-300 ease-out lg:rounded-none lg:border-none lg:bg-transparent lg:gap-8 lg:overflow-visible',
+                    mobileView === 'chat' ? 'translate-x-0' : '-translate-x-full',
+                    'lg:translate-x-0'
+                  )}
                 >
-                  <div className="w-full flex-shrink-0 min-w-full h-full">
-                    {chatPanel}
+                  <div className="w-full flex-shrink-0 min-w-full h-full lg:min-w-0 lg:flex-[3] lg:pr-0">
+                    <div className="h-full min-h-0">
+                      <ChatInterface />
+                    </div>
                   </div>
-                  <div className="w-full flex-shrink-0 min-w-full h-full">
+                  <div className="w-full flex-shrink-0 min-w-full h-full lg:min-w-0 lg:flex-[2]">
                     {editorPanel}
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="hidden lg:grid lg:grid-cols-5 lg:gap-8 h-full">
-              <div className="h-full min-h-0 lg:col-span-3">{chatPanel}</div>
-              <div className="h-full min-h-0 lg:col-span-2">{editorPanel}</div>
             </div>
           </div>
         </main>

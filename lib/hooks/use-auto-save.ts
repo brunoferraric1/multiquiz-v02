@@ -92,6 +92,12 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
     }
   }, [userId, setSaving, setError, queryClient]);
 
+  const saveToFirestoreRef = useRef(saveToFirestore);
+
+  useEffect(() => {
+    saveToFirestoreRef.current = saveToFirestore;
+  }, [saveToFirestore]);
+
   // Debounced auto-save effect
   useEffect(() => {
     if (!enabled || !userId) return;
@@ -159,9 +165,9 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
         clearTimeout(timeoutRef.current);
       }
       // Force immediate save (best effort)
-      saveToFirestore();
+      saveToFirestoreRef.current();
     };
-  }, [saveToFirestore]);
+  }, []);
 
   // Return manual save function and cancel function
   return {
