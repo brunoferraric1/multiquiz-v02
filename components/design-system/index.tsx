@@ -411,7 +411,7 @@ function LoadingSpinnerShowcase() {
       <h3 className="text-2xl font-semibold mb-6">Loading Spinner</h3>
       <div className="flex gap-4">
         <LoadingSpinner size="sm" />
-        <LoadingSpinner size="default" />
+        <LoadingSpinner size="md" />
         <LoadingSpinner size="lg" />
       </div>
     </div>
