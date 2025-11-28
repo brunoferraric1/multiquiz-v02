@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FIREBASE_CLI_EXPERIMENTS: webframeworks
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,9 +19,4 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run build
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MULTIQUIZ_V2 }}
-          channelId: live
-          projectId: multiquiz-v2
+      - run: npx firebase-tools@latest deploy --only hosting --project multiquiz-v2 --non-interactive
