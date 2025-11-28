@@ -56,13 +56,14 @@ export function BuilderHeader({
   return (
     <header className="bg-card/80 border-b border-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md shrink-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          {/* Left side - Back button + Title with Badge above */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <Button
               type="button"
               variant="ghost"
-              size="sm"
-              className="gap-2 rounded-full border border-border/60 bg-background/40 hover:bg-background/60"
+              size="icon"
+              className="h-9 w-9 sm:w-auto sm:gap-2 sm:px-3 rounded-full border border-border/60 bg-background/40 hover:bg-background/60 flex-shrink-0"
               onClick={handleBack}
             >
               <ArrowLeft size={16} />
@@ -73,22 +74,27 @@ export function BuilderHeader({
                 {isPreview ? 'Voltar ao editor' : 'Voltar ao dashboard'}
               </span>
             </Button>
-            <div className="hidden sm:block h-8 w-px bg-border/60" />
-            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 min-w-0">
-              <h1 className="text-base sm:text-lg font-semibold truncate">
+
+            <div className="hidden sm:block h-8 w-px bg-border/60 flex-shrink-0" />
+
+            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+              <div className="flex-shrink-0">
+                {statusBadge}
+              </div>
+              <h1 className="text-sm sm:text-base md:text-lg font-semibold truncate">
                 {quiz.title || 'Novo Quiz'}
               </h1>
-              {statusBadge}
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2">
+          {/* Right side - Copy URL + Publish/Unpublish */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             {quiz.isPublished && (
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={handleCopyUrl}
-                className="h-10 w-10 rounded-full border border-border/60 bg-background/40 hover:bg-background/60"
+                className="h-9 w-9 rounded-full border border-border/60 bg-background/40 hover:bg-background/60"
                 title={copied ? 'URL copiada' : 'Copiar URL do quiz'}
               >
                 {copied ? <Check size={16} /> : <Link2 size={16} />}
@@ -102,17 +108,17 @@ export function BuilderHeader({
                 variant="secondary"
                 onClick={onUnpublish}
                 disabled={isPublishing}
-                className="gap-2 rounded-full"
+                className="gap-2 rounded-full h-9"
               >
                 <EyeOff size={16} />
                 <span className="hidden sm:inline">Despublicar</span>
               </Button>
             ) : (
               <Button
-                size="sm"
+                size="icon-text"
                 onClick={onPublish}
                 disabled={isPublishing}
-                className="gap-2 rounded-full"
+                className="gap-2"
               >
                 <Rocket size={16} />
                 {isPublishing ? 'Publicando...' : 'Publicar'}
