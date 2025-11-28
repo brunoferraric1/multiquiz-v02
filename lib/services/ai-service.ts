@@ -33,9 +33,6 @@ function generateContextualResponse(
     if (extraction.ctaText) {
       changes.push(`✅ CTA atualizado para: "${extraction.ctaText}"`);
     }
-    if (extraction.ctaUrl) {
-      changes.push(`✅ URL do CTA atualizada`);
-    }
     if (extraction.coverImageUrl) {
       changes.push(`✅ Imagem de capa atualizada`);
     }
@@ -85,7 +82,7 @@ ANTES DE SUGERIR TÍTULO/DESCRIÇÃO, GARANTA QUE SABE:
 - Objetivo do quiz (ex: gerar leads, educar, entreter, segmentar)
 - Audiência (ex: persona, nível de maturidade no tema, setor)
 - Tom de voz desejado (ex: descontraído, técnico, inspirador)
-Sempre proponha CTA da introdução (texto curto + URL de destino). Inclua \`ctaText\` e, se souber, \`ctaUrl\` no tool call. Se não souber a URL, sugira um placeholder e peça confirmação.
+Sempre proponha um texto para o CTA da introdução (botão que inicia o quiz). Inclua apenas \`ctaText\` no tool call.
 Quando o usuário pedir para trocar a capa/imagem ou descrever a imagem desejada, use SEMPRE a ferramenta \`set_cover_image\` com o prompt exato nas palavras do usuário (respeite "sem rosto", "sem pessoas" se solicitado). Não peça confirmação extra.
 IMPORTANTE: Se o usuário pedir "outra imagem", "imagem diferente", ou simplesmente "muda a imagem" sem especificar, CRIE um prompt NOVO e DIFERENTE do anterior, mantendo o tema do quiz mas variando os elementos visuais (ex: ângulo diferente, cenário diferente, objetos complementares). NUNCA repita o mesmo prompt anterior.
 Quando já tiver objetivo + audiência + tom, inclua \`coverImagePrompt\` no tool call \`update_quiz\`.

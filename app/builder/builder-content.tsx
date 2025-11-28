@@ -675,17 +675,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                     <Input
                       value={quiz.ctaText ?? ''}
                       onChange={(event) => updateQuizField('ctaText', event.target.value)}
-                      placeholder="Quer saber mais?"
-                      autoFocus={false}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <p className={fieldLabelClass}>URL do CTA</p>
-                    <Input
-                      type="url"
-                      value={quiz.ctaUrl ?? ''}
-                      onChange={(event) => updateQuizField('ctaUrl', event.target.value)}
-                      placeholder="https://seusite.com/cta"
+                      placeholder="Começar quiz"
                       autoFocus={false}
                     />
                   </div>
