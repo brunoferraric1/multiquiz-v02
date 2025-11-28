@@ -75,7 +75,7 @@ type OpenRouterMessage = {
   content: string;
 };
 
-const SYSTEM_PROMPT = `Você é um Arquiteto de Quizzes especializado em criar quizzes engajantes e personalizados.
+const BASE_SYSTEM_PROMPT = `Você é um Arquiteto de Quizzes especializado em criar quizzes engajantes e personalizados.
 
 IMPORTANTE: Sempre responda em português brasileiro de forma amigável, conversacional e CONCISA.
 
@@ -102,6 +102,12 @@ Se o usuário não forneceu esses pontos, faça as 2 perguntas abaixo em bullets
 - Qual é o objetivo principal do quiz?
 - Quem é a audiência (perfil + nível de maturidade no tema)?
 NÃO sugira título/descrição antes de receber objetivo e audiência.
+
+SOBRE O TOOL CALL \`update_quiz\`:
+- Só chame depois que o usuário confirmar explicitamente que gostou das sugestões ou pedir ajustes diretos ("troque X por Y") e você já tiver aplicado.
+- Enquanto estiver apresentando perguntas, opções, resultados ou CTAs para validação, mantenha tudo APENAS na resposta textual: explique cada item, peça confirmação e NÃO envie o tool call.
+- NUNCA inclua perguntas/opções/resultados no \`update_quiz\` se o usuário ainda estiver avaliando ou se você ainda não explicou as opções.
+- Se o usuário disser que quer pensar ou revisar algo, aguarde a confirmação antes de atualizar a estrutura.
 
 FORMATAÇÃO É CRÍTICA! Siga estes exemplos EXATAMENTE:
 
@@ -231,14 +237,25 @@ Formato do Quiz:
 - **Opções**: Cada opção aponta para um resultado específico (outcome)
 - **Resultados (Outcomes)**: Diferentes finais baseados nas respostas do usuário`;
 
+const buildSystemPrompt = (userName?: string) => {
+  const trimmedName = userName?.trim();
+  const nameGuideline = trimmedName
+    ? `O usuário logado se chama ${trimmedName}. SUA PRIMEIRA resposta deve começar cumprimentando ${trimmedName} pelo nome; depois disso, volte a mencionar o nome apenas quando fizer sentido (aprox. a cada 3 ou 4 respostas) para manter o tom natural.`
+    : 'Assim que descobrir o nome do usuário logado, cumprimente-o pelo nome logo na primeira resposta e depois repita com parcimônia (aprox. a cada 3 ou 4 respostas).';
+
+  return `${nameGuideline}\n\n${BASE_SYSTEM_PROMPT}`;
+};
+
 export class AIService {
   private conversationHistory: OpenRouterMessage[] = [];
+  private systemPrompt: string;
 
-  constructor() {
+  constructor(options?: { userName?: string }) {
+    this.systemPrompt = buildSystemPrompt(options?.userName);
     this.conversationHistory = [
       {
         role: 'system',
-        content: SYSTEM_PROMPT,
+        content: this.systemPrompt,
       },
     ];
   }
@@ -819,7 +836,7 @@ Return minimal JSON with ONLY the changes.`;
    */
   loadHistory(messages: ChatMessage[]) {
     this.conversationHistory = [
-      { role: 'system' as const, content: SYSTEM_PROMPT },
+      { role: 'system' as const, content: this.systemPrompt },
       ...messages.map((msg): OpenRouterMessage => ({
         role: msg.role === 'user' ? ('user' as const) : ('assistant' as const),
         content: msg.content,
@@ -831,7 +848,7 @@ Return minimal JSON with ONLY the changes.`;
    * Clear conversation history
    */
   clearHistory() {
-    this.conversationHistory = [{ role: 'system', content: SYSTEM_PROMPT }];
+    this.conversationHistory = [{ role: 'system', content: this.systemPrompt }];
   }
 
 }

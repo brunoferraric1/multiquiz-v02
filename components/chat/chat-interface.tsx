@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { ChatMessageComponent } from './chat-message';
 import { ChatInput } from './chat-input';
@@ -71,6 +71,10 @@ const buildIntentHint = (message: string): string | undefined => {
   }
 
   return ['[NOTA_PRIVADA]', instructions.join(' '), '[/NOTA_PRIVADA]'].join('\n');
+};
+
+type ChatInterfaceProps = {
+  userName?: string;
 };
 
 type MergeableEntity = Partial<Question> | Partial<Outcome>;
@@ -156,7 +160,7 @@ const applyExtractionResult = (
   return nextQuiz;
 };
 
-export function ChatInterface() {
+export function ChatInterface({ userName }: ChatInterfaceProps) {
   const chatHistory = useQuizBuilderStore((state) => state.chatHistory);
   const addChatMessage = useQuizBuilderStore((state) => state.addChatMessage);
   const setExtracting = useQuizBuilderStore((state) => state.setExtracting);
@@ -173,7 +177,7 @@ export function ChatInterface() {
   const [isCoverSuggesting, setIsCoverSuggesting] = useState(false);
   const [lastCoverPrompt, setLastCoverPrompt] = useState('');
   const [lastSuggestedCoverUrl, setLastSuggestedCoverUrl] = useState('');
-  const [aiService] = useState(() => new AIService());
+  const aiService = useMemo(() => new AIService({ userName }), [userName]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [hasHydrated, setHasHydrated] = useState(
@@ -213,8 +217,11 @@ export function ChatInterface() {
       return;
     }
 
+    const rawName = (userName || '').trim();
+    const fallbackName = rawName || 'Criador';
+    const firstName = fallbackName.split(/\s+/)[0] || fallbackName;
     const WELCOME_MESSAGE = [
-      'Olá! Sou o seu Arquiteto de Quizzes. Vamos criar algo incrível para engajar sua audiência.',
+      `Olá, ${firstName}! Sou o seu Arquiteto de Quizzes. Vamos criar algo incrível para engajar sua audiência.`,
       '',
       'Para começar, me conta rapidinho:',
       '',
@@ -254,6 +261,7 @@ export function ChatInterface() {
     hasHydrated,
     setHasSeenWelcomeMessage,
     quiz?.id,
+    userName,
   ]);
 
   // Auto-scroll to bottom when new messages arrive

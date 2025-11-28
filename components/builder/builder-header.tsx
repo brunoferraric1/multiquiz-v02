@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { Quiz, QuizDraft } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { copyToClipboard } from '@/lib/copy-to-clipboard';
 
 interface BuilderHeaderProps {
   quiz: QuizDraft | Quiz;
@@ -34,12 +35,16 @@ export function BuilderHeader({
       ? `${window.location.origin}/quiz/${quiz.id}`
       : '';
 
+    if (!quizUrl) return;
+
     try {
-      await navigator.clipboard.writeText(quizUrl);
+      const copiedSuccessfully = await copyToClipboard(quizUrl);
+      if (!copiedSuccessfully) throw new Error('Clipboard not supported');
+
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to copy:', error);
+      console.error('Failed to copy quiz URL:', error);
     }
   };
 

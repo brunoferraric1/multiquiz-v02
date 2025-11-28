@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { copyToClipboard } from '@/lib/copy-to-clipboard';
 
 interface PublishSuccessModalProps {
   open: boolean;
@@ -31,12 +32,16 @@ export function PublishSuccessModal({
     : '';
 
   const handleCopyLink = async () => {
+    if (!quizUrl) return;
+
     try {
-      await navigator.clipboard.writeText(quizUrl);
+      const copiedSuccessfully = await copyToClipboard(quizUrl);
+      if (!copiedSuccessfully) throw new Error('Clipboard not supported');
+
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to copy:', error);
+      console.error('Failed to copy quiz link:', error);
     }
   };
 

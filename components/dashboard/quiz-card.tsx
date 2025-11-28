@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { copyToClipboard } from '@/lib/copy-to-clipboard';
 import {
   Dialog,
   DialogContent,
@@ -36,14 +37,25 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting_Internal, setIsDeleting_Internal] = useState(false);
 
-  const handleCopyLink = (e: React.MouseEvent) => {
+  const handleCopyLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!quiz.isPublished) return;
+    if (!quiz.isPublished || !quiz.id) return;
 
-    const url = `${window.location.origin}/quiz/${quiz.id}`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const url = typeof window !== 'undefined'
+      ? `${window.location.origin}/quiz/${quiz.id}`
+      : '';
+
+    if (!url) return;
+
+    try {
+      const copiedSuccessfully = await copyToClipboard(url);
+      if (!copiedSuccessfully) throw new Error('Clipboard not supported');
+
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy quiz link:', error);
+    }
   };
 
   const handleEdit = () => {
@@ -224,4 +236,3 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
     </Card>
   );
 }
-

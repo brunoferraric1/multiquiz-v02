@@ -40,6 +40,14 @@ export function EditQuestionModal({
   const [questionText, setQuestionText] = useState(question?.text || '');
   const [options, setOptions] = useState<AnswerOption[]>(question?.options || []);
 
+  // Sync state when question changes or modal opens
+  useEffect(() => {
+    if (open && question) {
+      setQuestionText(question.text || '');
+      setOptions(question.options || []);
+    }
+  }, [open, question]);
+
   const handleAddOption = () => {
     const fallbackOutcomeId = outcomes[0]?.id || '';
     const newOption: AnswerOption = {

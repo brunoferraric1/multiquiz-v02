@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type DragEvent } from 'react';
+import { useEffect, useMemo, useState, type DragEvent } from 'react';
 import {
   ArrowLeft,
   Eye,
@@ -67,6 +67,20 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     enabled: true,
     debounceMs: 30000,
   });
+
+  const resolvedUserName = useMemo(() => {
+    const fromDisplayName = user?.displayName?.trim();
+    const fromEmail = user?.email ? user.email.split('@')[0]?.trim() : '';
+    const base = fromDisplayName || fromEmail || '';
+    if (!base) return 'Criador';
+
+    const cleaned = base.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!cleaned) return 'Criador';
+
+    const firstName = cleaned.split(' ')[0] || cleaned;
+    const normalizedFirstName = firstName.charAt(0).toLocaleUpperCase('pt-BR') + firstName.slice(1);
+    return normalizedFirstName;
+  }, [user?.displayName, user?.email]);
 
   const quiz = useQuizBuilderStore((state) => state.quiz);
   const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
@@ -426,21 +440,21 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                     onDrop={handleQuestionDrop}
                     onDragEnd={handleQuestionDragEnd}
                     className={cn(
-                      'group w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                      'group w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
                       {
                         'opacity-60': isDragging,
                       }
                     )}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-semibold text-muted-foreground">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary text-sm font-semibold flex-shrink-0">
                         {index + 1}
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground">
                           {question.text || 'Pergunta sem texto'}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
                           {(question.options?.length ?? 0)} opções
                         </p>
                       </div>
@@ -504,14 +518,31 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   onClick={() =>
                     outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })
                   }
-                  className="w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
-                  <p className="text-sm font-semibold text-foreground">
-                    {outcome.title || 'Resultado sem título'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {outcome.description || 'Sem descrição'}
-                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary flex-shrink-0">
+                      {outcome.imageUrl ? (
+                        <img
+                          src={outcome.imageUrl}
+                          alt={outcome.title || 'Resultado'}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center">
+                          <ImageIcon className="h-5 w-5" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">
+                        {outcome.title || 'Resultado sem título'}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                        {outcome.description || 'Sem descrição'}
+                      </p>
+                    </div>
+                  </div>
                 </button>
               ))
             )}
@@ -564,18 +595,18 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         </div>
 
         <main className="flex-1 overflow-hidden min-h-0">
-          <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
+          <div className="h-full max-w-7xl mx-auto">
             {/* Grid Layout - Proper height constraints for scrolling */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-8 h-full">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 lg:gap-8 h-full lg:px-8 lg:py-8">
               <div className={cn(
-                "h-full min-h-0 lg:col-span-3",
+                "h-full min-h-0 lg:col-span-3 px-4 py-4 lg:px-0 lg:py-0",
                 mobileView === 'editor' && 'hidden lg:block'
               )}>
-                <ChatInterface />
+                <ChatInterface userName={resolvedUserName} />
               </div>
 
               <div className={cn(
-                "h-full min-h-0 lg:col-span-2",
+                "h-full min-h-0 lg:col-span-2 px-4 py-4 lg:px-0 lg:py-0",
                 mobileView === 'chat' && 'hidden lg:block'
               )}>
                 {editorPanel}
