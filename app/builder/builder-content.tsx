@@ -534,51 +534,48 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         />
 
         <main className="flex-1 overflow-hidden min-h-0">
-          <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
-            <div className="flex flex-col flex-1 gap-4">
-              <div className="flex justify-center lg:hidden">
-                <div className="inline-flex gap-1 rounded-full border border-border bg-muted p-1">
-                  {mobileViewOptions.map((option) => {
-                    const Icon = option.icon;
-                    const isActive = mobileView === option.id;
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => setMobileView(option.id)}
-                        className={cn(
-                          'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors cursor-[var(--cursor-interactive)]',
-                          isActive
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground'
-                        )}
-                        aria-pressed={isActive}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
+          <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
+            {/* Mobile View Toggle - Sticky on scroll */}
+            <div className="sticky top-0 z-10 flex justify-center lg:hidden mb-4 -mx-4 px-4 py-2 bg-background/80 backdrop-blur-sm">
+              <div className="inline-flex gap-1 rounded-full border border-border bg-muted p-1">
+                {mobileViewOptions.map((option) => {
+                  const Icon = option.icon;
+                  const isActive = mobileView === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setMobileView(option.id)}
+                      className={cn(
+                        'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors cursor-[var(--cursor-interactive)]',
+                        isActive
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground'
+                      )}
+                      aria-pressed={isActive}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Grid Layout - Proper height constraints for scrolling */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 flex-1 min-h-0">
+              <div className={cn(
+                "h-full min-h-0 lg:col-span-3",
+                mobileView === 'editor' && 'hidden lg:block'
+              )}>
+                <ChatInterface />
               </div>
 
-              <div className="relative flex-1 min-h-0">
-                <div
-                  className={cn(
-                    'flex h-full overflow-hidden rounded-3xl border border-border bg-background transition-transform duration-300 ease-out lg:rounded-none lg:border-none lg:bg-transparent lg:gap-8 lg:overflow-visible',
-                    mobileView === 'chat' ? 'translate-x-0' : '-translate-x-full',
-                    'lg:translate-x-0'
-                  )}
-                >
-                  <div className="w-full flex-shrink-0 min-w-full h-full lg:min-w-0 lg:flex-[3] lg:pr-0">
-                    <div className="h-full min-h-0">
-                      <ChatInterface />
-                    </div>
-                  </div>
-                  <div className="w-full flex-shrink-0 min-w-full h-full lg:min-w-0 lg:flex-[2]">
-                    {editorPanel}
-                  </div>
-                </div>
+              <div className={cn(
+                "h-full min-h-0 lg:col-span-2",
+                mobileView === 'chat' && 'hidden lg:block'
+              )}>
+                {editorPanel}
               </div>
             </div>
           </div>
