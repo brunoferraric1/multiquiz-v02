@@ -47,71 +47,72 @@ export function BuilderHeader({
     onBack();
   };
 
+  const statusBadge = quiz.isPublished ? (
+    <Badge variant="published">Publicado</Badge>
+  ) : (
+    <Badge variant="draft">Rascunho</Badge>
+  );
+
   return (
-    <header className="bg-card border-b shrink-0 z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-4">
+    <header className="bg-card/80 border-b border-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md shrink-0 z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3 min-w-0">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="gap-2"
+              className="gap-2 rounded-full border border-border/60 bg-background/40 hover:bg-background/60"
               onClick={handleBack}
             >
               <ArrowLeft size={16} />
-              {isPreview ? 'Editor' : 'Voltar'}
+              <span className="hidden sm:inline">
+                {isPreview ? 'Editor' : 'Voltar'}
+              </span>
+              <span className="sr-only sm:hidden">
+                {isPreview ? 'Voltar ao editor' : 'Voltar ao dashboard'}
+              </span>
             </Button>
-            <div className="border-l border-border h-6" />
-            <h1 className="text-lg font-semibold truncate max-w-[8rem] sm:max-w-xs md:max-w-md lg:max-w-lg">
-              {quiz.title || 'Novo Quiz'}
-            </h1>
-            {quiz.isPublished ? (
-              <Badge variant="published">Publicado</Badge>
-            ) : (
-              <Badge variant="draft">Rascunho</Badge>
-            )}
+            <div className="hidden sm:block h-8 w-px bg-border/60" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 min-w-0">
+              <h1 className="text-base sm:text-lg font-semibold truncate">
+                {quiz.title || 'Novo Quiz'}
+              </h1>
+              {statusBadge}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2">
+            {quiz.isPublished && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleCopyUrl}
+                className="h-10 w-10 rounded-full border border-border/60 bg-background/40 hover:bg-background/60"
+                title={copied ? 'URL copiada' : 'Copiar URL do quiz'}
+              >
+                {copied ? <Check size={16} /> : <Link2 size={16} />}
+                <span className="sr-only">Copiar URL do quiz</span>
+              </Button>
+            )}
+
             {quiz.isPublished ? (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCopyUrl}
-                  className="gap-2"
-                  title="Copiar URL do quiz"
-                >
-                  {copied ? (
-                    <>
-                      <Check size={16} />
-                      Copiado
-                    </>
-                  ) : (
-                    <>
-                      <Link2 size={16} />
-                      Copiar URL
-                    </>
-                  )}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={onUnpublish}
-                  disabled={isPublishing}
-                  className="gap-2"
-                >
-                  <EyeOff size={16} />
-                  Despublicar
-                </Button>
-              </>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={onUnpublish}
+                disabled={isPublishing}
+                className="gap-2 rounded-full"
+              >
+                <EyeOff size={16} />
+                <span className="hidden sm:inline">Despublicar</span>
+              </Button>
             ) : (
               <Button
                 size="sm"
                 onClick={onPublish}
                 disabled={isPublishing}
-                className="gap-2"
+                className="gap-2 rounded-full"
               >
                 <Rocket size={16} />
                 {isPublishing ? 'Publicando...' : 'Publicar'}

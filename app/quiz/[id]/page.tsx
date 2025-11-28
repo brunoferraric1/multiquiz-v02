@@ -23,18 +23,27 @@ export default function PublicQuizPage() {
 
         console.log('[PublicQuiz] Loading quiz:', quizId);
         const loadedQuiz = await QuizService.getQuizById(quizId);
-        console.log('[PublicQuiz] Loaded quiz:', loadedQuiz);
+        console.log('[PublicQuiz] Loaded quiz:', {
+          id: loadedQuiz?.id,
+          title: loadedQuiz?.title,
+          isPublished: loadedQuiz?.isPublished,
+          questionCount: loadedQuiz?.questions?.length,
+          outcomeCount: loadedQuiz?.outcomes?.length,
+        });
 
         if (!loadedQuiz) {
+          console.error('[PublicQuiz] Quiz not found');
           setError('Quiz não encontrado');
           return;
         }
 
         if (!loadedQuiz.isPublished) {
-          console.log('[PublicQuiz] Quiz is not published:', loadedQuiz.isPublished);
+          console.error('[PublicQuiz] Quiz is not published:', loadedQuiz.isPublished);
           setError('Este quiz não está publicado');
           return;
         }
+
+        console.log('[PublicQuiz] Quiz is valid and published, setting quiz state');
 
         setQuiz(loadedQuiz);
 

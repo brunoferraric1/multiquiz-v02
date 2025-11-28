@@ -24,6 +24,10 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
                        request.resource.data.ownerId == request.auth.uid;
 
+      // Allow anyone to update stats on published quizzes (for view/completion tracking)
+      allow update: if resource.data.isPublished == true &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats']);
+
       // Allow owners to update their quizzes
       allow update: if isAuthenticated() &&
                        resource.data.ownerId == request.auth.uid &&

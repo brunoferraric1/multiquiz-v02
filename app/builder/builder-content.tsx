@@ -2,7 +2,18 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type DragEvent } from 'react';
-import { ArrowLeft, Eye, ImageIcon, Plus, Rocket, X, GripVertical } from 'lucide-react';
+import {
+  ArrowLeft,
+  Eye,
+  ImageIcon,
+  Plus,
+  Rocket,
+  X,
+  GripVertical,
+  MessageSquare,
+  PenSquare,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
@@ -32,6 +43,7 @@ import {
 type ActiveSheet =
   | { type: 'introduction' }
   | { type: 'outcome'; id: string };
+type MobileViewMode = 'chat' | 'editor';
 
 const fieldLabelClass = 'text-sm font-medium text-muted-foreground';
 
@@ -47,6 +59,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<number | null>(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
+  const [mobileView, setMobileView] = useState<MobileViewMode>('chat');
   void isEditMode;
 
   const { forceSave, cancelPendingSave } = useAutoSave({
@@ -260,8 +273,22 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     try {
       setIsPublishing(true);
       cancelPendingSave();
+
+      console.log('[Publish] Before update - isPublished:', quiz.isPublished);
+      console.log('[Publish] Quiz has questions:', questions.length);
+      console.log('[Publish] Quiz has outcomes:', outcomes.length);
+
       updateQuizField('isPublished', true);
+
+      // Wait a bit for state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const currentState = useQuizBuilderStore.getState().quiz;
+      console.log('[Publish] After update - isPublished:', currentState.isPublished);
+
       await forceSave();
+
+      console.log('[Publish] Save completed, showing modal');
       setShowPublishModal(true);
     } catch (error) {
       console.error('Error publishing quiz:', error);
@@ -297,6 +324,208 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const coverImagePreview = quiz.coverImageUrl ? quiz.coverImageUrl : undefined;
 
   const sheetOpen = Boolean(activeSheet);
+  const mobileViewOptions: { id: MobileViewMode; label: string; icon: LucideIcon }[] = [
+    { id: 'chat', label: 'Chat', icon: MessageSquare },
+    { id: 'editor', label: 'Editor', icon: PenSquare },
+  ];
+
+  const chatPanel = (
+    <div className="h-full min-h-0">
+      <ChatInterface />
+    </div>
+  );
+
+  const editorPanel = (
+    <Card className="flex flex-col h-full">
+      <CardHeader className="flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold">Estrutura do Quiz</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setIsPreviewOpen(true)}
+          >
+            <Eye size={16} />
+            Visualizar
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent className="flex flex-col gap-10 overflow-y-auto min-h-0 p-6 pt-0">
+        <section className="space-y-3">
+          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            Introdução
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveSheet({ type: 'introduction' })}
+            className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
+                {quiz.coverImageUrl ? (
+                  <img
+                    src={quiz.coverImageUrl}
+                    alt="Capa do quiz"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center">
+                    <ImageIcon className="h-5 w-5" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  {quiz.title || 'Meu Novo Quiz'}
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                  {introDescription}
+                </p>
+              </div>
+            </div>
+          </button>
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+              Perguntas ({questions.length})
+            </span>
+            <button
+              type="button"
+              onClick={handleAddQuestion}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
+              aria-label="Adicionar pergunta"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {questions.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+                Adicione a primeira pergunta do quiz
+              </div>
+            )}
+            {questions.map((question, index) => {
+              const isDragging = draggedQuestionIndex === index;
+
+              return (
+                <div key={question.id ?? index} className="space-y-2">
+                  {shouldShowDropIndicator(index) && (
+                    <div
+                      className="h-0.5 rounded-full bg-primary"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    draggable={canReorderQuestions}
+                    aria-grabbed={isDragging}
+                    onClick={() =>
+                      question.id && setEditingQuestionId(question.id)
+                    }
+                    onDragStart={(event) => handleQuestionDragStart(event, index)}
+                    onDragOver={(event) => handleQuestionDragOver(event, index)}
+                    onDrop={handleQuestionDrop}
+                    onDragEnd={handleQuestionDragEnd}
+                    className={cn(
+                      'group w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                      {
+                        'opacity-60': isDragging,
+                      }
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-semibold text-muted-foreground">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-foreground">
+                          {question.text || 'Pergunta sem texto'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {(question.options?.length ?? 0)} opções
+                        </p>
+                      </div>
+                      {canReorderQuestions && (
+                        <GripVertical
+                          className="h-4 w-4 flex-shrink-0 text-muted-foreground/70 transition-opacity duration-200 group-hover:opacity-100"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </div>
+                  </button>
+                </div>
+              );
+            })}
+            {canReorderQuestions && (
+              <div
+                onDragOver={handleEndDropZoneDragOver}
+                onDrop={handleEndDropZoneDrop}
+                onDragLeave={() => {
+                  setDropIndicatorIndex((current) =>
+                    current === questions.length ? null : current
+                  );
+                }}
+                className={cn(
+                  'my-2 h-0.5 rounded-full transition-colors',
+                  shouldShowDropIndicator(questions.length)
+                    ? 'bg-primary'
+                    : 'bg-transparent'
+                )}
+                aria-hidden="true"
+              />
+            )}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+              Resultados ({outcomes.length})
+            </span>
+            <button
+              type="button"
+              onClick={handleAddOutcome}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
+              aria-label="Adicionar resultado"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {outcomes.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+                Nenhum resultado definido
+              </div>
+            ) : (
+              outcomes.map((outcome, index) => (
+                <button
+                  key={outcome.id ?? index}
+                  type="button"
+                  onClick={() =>
+                    outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })
+                  }
+                  className="w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <p className="text-sm font-semibold text-foreground">
+                    {outcome.title || 'Resultado sem título'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {outcome.description || 'Sem descrição'}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+        </section>
+      </CardContent>
+    </Card>
+  );
   return (
     <div className="relative h-screen flex flex-col">
       <div className={`h-full flex flex-col ${isPreviewOpen ? 'hidden' : ''}`}>
@@ -311,203 +540,54 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         />
 
         <main className="flex-1 overflow-hidden min-h-0">
-          <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 h-full">
-              <div className="h-full min-h-0 lg:col-span-3">
-                <ChatInterface />
-              </div>
-
-              <div className="h-full min-h-0 lg:col-span-2">
-                <Card className="flex flex-col h-full">
-                  <CardHeader className="flex-shrink-0">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg font-semibold">Estrutura do Quiz</CardTitle>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => setIsPreviewOpen(true)}
-                      >
-                        <Eye size={16} />
-                        Visualizar
-                      </Button>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="flex flex-col gap-10 overflow-y-auto min-h-0 p-6 pt-0">
-                    <section className="space-y-3">
-                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                        Introdução
-                      </div>
+          <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+            <div className="flex flex-col flex-1 gap-4 lg:hidden">
+              <div className="flex justify-center">
+                <div className="inline-flex gap-1 rounded-full border border-border bg-muted p-1">
+                  {mobileViewOptions.map((option) => {
+                    const Icon = option.icon;
+                    const isActive = mobileView === option.id;
+                    return (
                       <button
+                        key={option.id}
                         type="button"
-                        onClick={() => setActiveSheet({ type: 'introduction' })}
-                        className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        onClick={() => setMobileView(option.id)}
+                        className={cn(
+                          'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors cursor-[var(--cursor-interactive)]',
+                          isActive
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground'
+                        )}
+                        aria-pressed={isActive}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
-                            {quiz.coverImageUrl ? (
-                              <img
-                                src={quiz.coverImageUrl}
-                                alt="Capa do quiz"
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-12 w-12 items-center justify-center">
-                                <ImageIcon className="h-5 w-5" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-foreground">
-                              {quiz.title || 'Meu Novo Quiz'}
-                            </p>
-                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                              {introDescription}
-                            </p>
-                          </div>
-                        </div>
+                        <Icon className="h-4 w-4" />
+                        {option.label}
                       </button>
-                    </section>
-
-                    <section className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                          Perguntas ({questions.length})
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleAddQuestion}
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
-                          aria-label="Adicionar pergunta"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-
-                      <div className="space-y-3">
-                        {questions.length === 0 && (
-                          <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
-                            Adicione a primeira pergunta do quiz
-                          </div>
-                        )}
-                        {questions.map((question, index) => {
-                          const isDragging = draggedQuestionIndex === index;
-
-                          return (
-                            <div key={question.id ?? index} className="space-y-2">
-                              {shouldShowDropIndicator(index) && (
-                                <div
-                                  className="h-0.5 rounded-full bg-primary"
-                                  aria-hidden="true"
-                                />
-                              )}
-                              <button
-                                type="button"
-                                draggable={canReorderQuestions}
-                                aria-grabbed={isDragging}
-                                onClick={() =>
-                                  question.id && setEditingQuestionId(question.id)
-                                }
-                                onDragStart={(event) => handleQuestionDragStart(event, index)}
-                                onDragOver={(event) => handleQuestionDragOver(event, index)}
-                                onDrop={handleQuestionDrop}
-                                onDragEnd={handleQuestionDragEnd}
-                                className={cn(
-                                  'group w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-                                  {
-                                    'opacity-60': isDragging,
-                                  }
-                                )}
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-semibold text-muted-foreground">
-                                    {index + 1}
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="text-sm font-semibold text-foreground">
-                                      {question.text || 'Pergunta sem texto'}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {(question.options?.length ?? 0)} opções
-                                    </p>
-                                  </div>
-                                  {canReorderQuestions && (
-                                    <GripVertical
-                                      className="h-4 w-4 flex-shrink-0 text-muted-foreground/70 transition-opacity duration-200 group-hover:opacity-100"
-                                      aria-hidden="true"
-                                    />
-                                  )}
-                                </div>
-                              </button>
-                            </div>
-                          );
-                        })}
-                        {canReorderQuestions && (
-                          <div
-                            onDragOver={handleEndDropZoneDragOver}
-                            onDrop={handleEndDropZoneDrop}
-                            onDragLeave={() => {
-                              setDropIndicatorIndex((current) =>
-                                current === questions.length ? null : current
-                              );
-                            }}
-                            className={cn(
-                              'my-2 h-0.5 rounded-full transition-colors',
-                              shouldShowDropIndicator(questions.length)
-                                ? 'bg-primary'
-                                : 'bg-transparent'
-                            )}
-                            aria-hidden="true"
-                          />
-                        )}
-                      </div>
-                    </section>
-
-                    <section className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                          Resultados ({outcomes.length})
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleAddOutcome}
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
-                          aria-label="Adicionar resultado"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-
-                      <div className="space-y-3">
-                        {outcomes.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
-                            Nenhum resultado definido
-                          </div>
-                        ) : (
-                          outcomes.map((outcome, index) => (
-                            <button
-                              key={outcome.id ?? index}
-                              type="button"
-                              onClick={() =>
-                                outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })
-                              }
-                              className="w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                            >
-                              <p className="text-sm font-semibold text-foreground">
-                                {outcome.title || 'Resultado sem título'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {outcome.description || 'Sem descrição'}
-                              </p>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </section>
-                  </CardContent>
-                </Card>
+                    );
+                  })}
+                </div>
               </div>
+
+              <div className="relative flex-1 min-h-0 overflow-hidden rounded-3xl border border-border bg-background">
+                <div
+                  className="flex h-full transition-transform duration-300 ease-out"
+                  style={{
+                    transform: mobileView === 'chat' ? 'translateX(0)' : 'translateX(-100%)',
+                  }}
+                >
+                  <div className="w-full flex-shrink-0 min-w-full h-full">
+                    {chatPanel}
+                  </div>
+                  <div className="w-full flex-shrink-0 min-w-full h-full">
+                    {editorPanel}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden lg:grid lg:grid-cols-5 lg:gap-8 h-full">
+              <div className="h-full min-h-0 lg:col-span-3">{chatPanel}</div>
+              <div className="h-full min-h-0 lg:col-span-2">{editorPanel}</div>
             </div>
           </div>
         </main>

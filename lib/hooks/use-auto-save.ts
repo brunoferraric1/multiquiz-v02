@@ -69,6 +69,9 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
         stats: currentQuiz.stats || { views: 0, starts: 0, completions: 0 },
       };
 
+      console.log('[AutoSave] Saving quiz with isPublished:', quizToSave.isPublished);
+      console.log('[AutoSave] Quiz ID:', quizToSave.id);
+
       await QuizService.saveQuiz(quizToSave, userId);
 
       // Only invalidate the quizzes LIST (for dashboard) - NOT the current quiz

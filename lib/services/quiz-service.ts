@@ -81,12 +81,16 @@ export class QuizService {
     // Recursively remove all undefined values (Firestore doesn't accept them)
     const cleanedData = removeUndefinedDeep(quizData);
 
+    console.log('[QuizService] About to save to Firestore with isPublished:', cleanedData.isPublished);
+
     const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
     await setDoc(quizRef, {
       ...cleanedData,
       createdAt: Timestamp.fromMillis(cleanedData.createdAt as number),
       updatedAt: Timestamp.fromMillis(cleanedData.updatedAt as number),
     });
+
+    console.log('[QuizService] Successfully saved to Firestore');
 
     return quizId;
   }
