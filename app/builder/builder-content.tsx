@@ -630,7 +630,10 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         </main>
 
         <Sheet open={sheetOpen} onOpenChange={(open) => !open && setActiveSheet(null)}>
-          <SheetContent className="max-w-lg">
+          <SheetContent
+            className="max-w-lg"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
             {activeSheet?.type === 'introduction' && (
               <>
                 <SheetHeader>

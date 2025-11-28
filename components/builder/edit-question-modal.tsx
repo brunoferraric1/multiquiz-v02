@@ -144,7 +144,10 @@ export function EditQuestionModal({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} key={question?.id}>
-      <SheetContent className="max-w-lg overflow-y-auto">
+      <SheetContent
+        className="max-w-lg overflow-y-auto"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <SheetHeader>
           <SheetTitle>Editar Pergunta</SheetTitle>
           <SheetDescription>
