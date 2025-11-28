@@ -10,10 +10,11 @@ export type UploadProps = React.HTMLAttributes<HTMLDivElement> & {
   file?: File | null;
   previewUrl?: string;
   onFileChange: (file: File | null) => void;
+  accept?: string;
 };
 
 export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
-  ({ className, file, previewUrl, onFileChange, ...props }, ref) => {
+  ({ className, file, previewUrl, onFileChange, accept, ...props }, ref) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
 
     const handleSelect = (files: FileList | null) => {
@@ -77,7 +78,7 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept={accept}
             className="hidden"
             onChange={(event) => handleSelect(event.target.files)}
           />
