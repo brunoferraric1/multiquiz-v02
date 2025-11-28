@@ -109,6 +109,7 @@ export type QuizBuilderState = {
   updateQuestion: (id: string, question: Partial<Question>) => void;
   deleteQuestion: (id: string) => void;
   moveQuestion: (id: string, direction: 'up' | 'down') => void;
+  reorderQuestions: (sourceIndex: number, destinationIndex: number) => void;
   addOutcome: (outcome: Partial<Outcome>) => void;
   updateOutcome: (id: string, outcome: Partial<Outcome>) => void;
   deleteOutcome: (id: string) => void;

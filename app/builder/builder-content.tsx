@@ -1,12 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Eye, ImageIcon, Plus, Rocket, X } from 'lucide-react';
+import { useEffect, useState, type DragEvent } from 'react';
+import { ArrowLeft, Eye, ImageIcon, Plus, Rocket, X, GripVertical } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
-import { compressImage } from '@/lib/utils';
+import { cn, compressImage } from '@/lib/utils';
 import type { Outcome, Question } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [outcomeFile, setOutcomeFile] = useState<File | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<number | null>(null);
+  const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
   void isEditMode;
 
   const { forceSave, cancelPendingSave } = useAutoSave({
@@ -57,9 +59,14 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const updateQuestion = useQuizBuilderStore((state) => state.updateQuestion);
   const addOutcome = useQuizBuilderStore((state) => state.addOutcome);
   const updateOutcome = useQuizBuilderStore((state) => state.updateOutcome);
+  const reorderQuestions = useQuizBuilderStore((state) => state.reorderQuestions);
 
   const questions = quiz.questions ?? [];
   const outcomes = quiz.outcomes ?? [];
+  const canReorderQuestions = questions.length > 1;
+  const isDraggingQuestion = draggedQuestionIndex !== null;
+  const shouldShowDropIndicator = (position: number) =>
+    canReorderQuestions && isDraggingQuestion && dropIndicatorIndex === position;
 
   const editingQuestion = editingQuestionId
     ? questions.find((question) => question.id === editingQuestionId) ?? null
@@ -176,6 +183,56 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const handleOutcomeFieldChange = (field: keyof Outcome, value: string) => {
     if (!activeOutcome?.id) return;
     updateOutcome(activeOutcome.id, { [field]: value });
+  };
+
+  const resetQuestionDragState = () => {
+    setDraggedQuestionIndex(null);
+    setDropIndicatorIndex(null);
+  };
+
+  const handleQuestionDragStart = (event: DragEvent<HTMLButtonElement>, index: number) => {
+    if (!canReorderQuestions) return;
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(index));
+    setDraggedQuestionIndex(index);
+    setDropIndicatorIndex(index);
+  };
+
+  const handleQuestionDragOver = (event: DragEvent<HTMLButtonElement>, index: number) => {
+    if (draggedQuestionIndex === null) return;
+    event.preventDefault();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const offsetY = event.clientY - bounds.top;
+    const shouldPlaceBefore = offsetY < bounds.height / 2;
+    const targetIndex = shouldPlaceBefore ? index : index + 1;
+    setDropIndicatorIndex(targetIndex);
+    event.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleQuestionDrop = (event: DragEvent<HTMLButtonElement>) => {
+    if (draggedQuestionIndex === null || dropIndicatorIndex === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    reorderQuestions(draggedQuestionIndex, dropIndicatorIndex);
+    resetQuestionDragState();
+  };
+
+  const handleQuestionDragEnd = () => {
+    resetQuestionDragState();
+  };
+
+  const handleEndDropZoneDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (draggedQuestionIndex === null) return;
+    event.preventDefault();
+    setDropIndicatorIndex(questions.length);
+    event.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleEndDropZoneDrop = (event: DragEvent<HTMLDivElement>) => {
+    if (draggedQuestionIndex === null) return;
+    event.preventDefault();
+    reorderQuestions(draggedQuestionIndex, questions.length);
+    resetQuestionDragState();
   };
 
   const handleBack = async () => {
@@ -310,30 +367,76 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                             Adicione a primeira pergunta do quiz
                           </div>
                         )}
-                        {questions.map((question, index) => (
-                          <button
-                            key={question.id ?? index}
-                            type="button"
-                            onClick={() =>
-                              question.id && setEditingQuestionId(question.id)
-                            }
-                            className="w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-semibold text-muted-foreground">
-                                {index + 1}
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-sm font-semibold text-foreground">
-                                  {question.text || 'Pergunta sem texto'}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {(question.options?.length ?? 0)} opções
-                                </p>
-                              </div>
+                        {questions.map((question, index) => {
+                          const isDragging = draggedQuestionIndex === index;
+
+                          return (
+                            <div key={question.id ?? index} className="space-y-2">
+                              {shouldShowDropIndicator(index) && (
+                                <div
+                                  className="h-0.5 rounded-full bg-primary"
+                                  aria-hidden="true"
+                                />
+                              )}
+                              <button
+                                type="button"
+                                draggable={canReorderQuestions}
+                                aria-grabbed={isDragging}
+                                onClick={() =>
+                                  question.id && setEditingQuestionId(question.id)
+                                }
+                                onDragStart={(event) => handleQuestionDragStart(event, index)}
+                                onDragOver={(event) => handleQuestionDragOver(event, index)}
+                                onDrop={handleQuestionDrop}
+                                onDragEnd={handleQuestionDragEnd}
+                                className={cn(
+                                  'group w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                                  {
+                                    'opacity-60': isDragging,
+                                  }
+                                )}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-semibold text-muted-foreground">
+                                    {index + 1}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-sm font-semibold text-foreground">
+                                      {question.text || 'Pergunta sem texto'}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {(question.options?.length ?? 0)} opções
+                                    </p>
+                                  </div>
+                                  {canReorderQuestions && (
+                                    <GripVertical
+                                      className="h-4 w-4 flex-shrink-0 text-muted-foreground/70 transition-opacity duration-200 group-hover:opacity-100"
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                </div>
+                              </button>
                             </div>
-                          </button>
-                        ))}
+                          );
+                        })}
+                        {canReorderQuestions && (
+                          <div
+                            onDragOver={handleEndDropZoneDragOver}
+                            onDrop={handleEndDropZoneDrop}
+                            onDragLeave={() => {
+                              setDropIndicatorIndex((current) =>
+                                current === questions.length ? null : current
+                              );
+                            }}
+                            className={cn(
+                              'my-2 h-0.5 rounded-full transition-colors',
+                              shouldShowDropIndicator(questions.length)
+                                ? 'bg-primary'
+                                : 'bg-transparent'
+                            )}
+                            aria-hidden="true"
+                          />
+                        )}
                       </div>
                     </section>
 

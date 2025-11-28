@@ -149,6 +149,27 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             };
           }),
 
+        reorderQuestions: (sourceIndex, destinationIndex) =>
+          set((state) => {
+            const questions = [...(state.quiz.questions || [])];
+            if (
+              sourceIndex < 0 ||
+              destinationIndex < 0 ||
+              sourceIndex >= questions.length ||
+              destinationIndex > questions.length
+            ) {
+              return state;
+            }
+
+            const [movedQuestion] = questions.splice(sourceIndex, 1);
+            const insertIndex = destinationIndex > sourceIndex ? destinationIndex - 1 : destinationIndex;
+            questions.splice(insertIndex, 0, movedQuestion);
+
+            return {
+              quiz: { ...state.quiz, questions },
+            };
+          }),
+
         addOutcome: (outcome) =>
           set((state) => ({
             quiz: {
