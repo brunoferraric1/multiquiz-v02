@@ -171,7 +171,7 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
       : currentQuestionIndex + 1;
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-muted/40 px-4 py-8 sm:px-8">
+    <div className="h-full w-full overflow-y-auto px-4 py-8 sm:px-8">
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
         {phase === 'intro' && (
           <QuizIntro

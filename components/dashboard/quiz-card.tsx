@@ -85,12 +85,12 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
           {/* Status Badge */}
           <div className="absolute top-2 left-2">
             {quiz.isPublished ? (
-              <Badge variant="secondary" className="flex items-center">
-                <Globe size={10} className="mr-1" /> Publicado
+              <Badge variant="published" className="flex items-center gap-1">
+                <Globe size={10} /> Publicado
               </Badge>
             ) : (
-              <Badge variant="outline" className="flex items-center">
-                <Lock size={10} className="mr-1" /> Rascunho
+              <Badge variant="draft" className="flex items-center gap-1">
+                <Lock size={10} /> Rascunho
               </Badge>
             )}
           </div>

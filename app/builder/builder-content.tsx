@@ -17,6 +17,7 @@ import { ChatInterface } from '@/components/chat/chat-interface';
 import { BuilderHeader } from '@/components/builder/builder-header';
 import { SaveIndicator } from '@/components/builder/save-indicator';
 import { EditQuestionModal } from '@/components/builder/edit-question-modal';
+import { PublishSuccessModal } from '@/components/builder/publish-success-modal';
 import { Upload } from '@/components/ui/upload';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
 
@@ -43,6 +44,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [outcomeFile, setOutcomeFile] = useState<File | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<number | null>(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
   void isEditMode;
@@ -260,13 +262,33 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       cancelPendingSave();
       updateQuizField('isPublished', true);
       await forceSave();
-      alert('Quiz publicado com sucesso! 🎉');
+      setShowPublishModal(true);
     } catch (error) {
       console.error('Error publishing quiz:', error);
       alert('Erro ao publicar quiz');
     } finally {
       setIsPublishing(false);
     }
+  };
+
+  const handleUnpublish = async () => {
+    if (!user) return;
+
+    try {
+      setIsPublishing(true);
+      cancelPendingSave();
+      updateQuizField('isPublished', false);
+      await forceSave();
+    } catch (error) {
+      console.error('Error unpublishing quiz:', error);
+      alert('Erro ao despublicar quiz');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleShowPublishModal = () => {
+    setShowPublishModal(true);
   };
 
   const introDescription = quiz.description
@@ -283,6 +305,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           isPreview={false}
           onBack={handleBack}
           onPublish={handlePublish}
+          onUnpublish={handleUnpublish}
+          onShowPublishModal={handleShowPublishModal}
           isPublishing={isPublishing}
         />
 
@@ -613,6 +637,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           outcomes={outcomes}
           onSave={handleQuestionSave}
         />
+
+        <PublishSuccessModal
+          open={showPublishModal}
+          onOpenChange={setShowPublishModal}
+          quizId={quiz.id || ''}
+        />
       </div>
 
       {isPreviewOpen && (
@@ -623,6 +653,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               isPreview={true}
               onBack={() => setIsPreviewOpen(false)}
               onPublish={handlePublish}
+              onUnpublish={handleUnpublish}
+              onShowPublishModal={handleShowPublishModal}
               isPublishing={isPublishing}
             />
             <Button
