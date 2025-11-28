@@ -521,49 +521,52 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     </Card>
   );
   return (
-    <div className="relative h-screen flex flex-col">
+    <div className="fixed inset-0 flex flex-col">
       <div className={`h-full flex flex-col ${isPreviewOpen ? 'hidden' : ''}`}>
-        <BuilderHeader
-          quiz={quiz}
-          isPreview={false}
-          onBack={handleBack}
-          onPublish={handlePublish}
-          onUnpublish={handleUnpublish}
-          onShowPublishModal={handleShowPublishModal}
-          isPublishing={isPublishing}
-        />
+        {/* Fixed Header */}
+        <div className="flex-shrink-0">
+          <BuilderHeader
+            quiz={quiz}
+            isPreview={false}
+            onBack={handleBack}
+            onPublish={handlePublish}
+            onUnpublish={handleUnpublish}
+            onShowPublishModal={handleShowPublishModal}
+            isPublishing={isPublishing}
+          />
+        </div>
+
+        {/* Mobile View Toggle - Fixed on mobile */}
+        <div className="flex-shrink-0 flex justify-center lg:hidden px-4 py-3 bg-background">
+          <div className="inline-flex gap-1 rounded-full border border-border bg-muted p-1">
+            {mobileViewOptions.map((option) => {
+              const Icon = option.icon;
+              const isActive = mobileView === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setMobileView(option.id)}
+                  className={cn(
+                    'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors cursor-[var(--cursor-interactive)]',
+                    isActive
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground'
+                  )}
+                  aria-pressed={isActive}
+                >
+                  <Icon className="h-4 w-4" />
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <main className="flex-1 overflow-hidden min-h-0">
-          <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
-            {/* Mobile View Toggle - Sticky on scroll */}
-            <div className="sticky top-0 z-10 flex justify-center lg:hidden mb-4 -mx-4 px-4 py-2 bg-background/80 backdrop-blur-sm">
-              <div className="inline-flex gap-1 rounded-full border border-border bg-muted p-1">
-                {mobileViewOptions.map((option) => {
-                  const Icon = option.icon;
-                  const isActive = mobileView === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setMobileView(option.id)}
-                      className={cn(
-                        'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors cursor-[var(--cursor-interactive)]',
-                        isActive
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground'
-                      )}
-                      aria-pressed={isActive}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
+          <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
             {/* Grid Layout - Proper height constraints for scrolling */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 flex-1 min-h-0">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-8 h-full">
               <div className={cn(
                 "h-full min-h-0 lg:col-span-3",
                 mobileView === 'editor' && 'hidden lg:block'

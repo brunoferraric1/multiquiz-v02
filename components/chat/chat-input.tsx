@@ -51,7 +51,7 @@ export function ChatInput({ onSend, disabled = false, placeholder = 'Digite sua 
         placeholder={placeholder}
         disabled={disabled}
         className={cn(
-          'min-h-[40px] max-h-[150px] resize-none',
+          'min-h-[52px] max-h-[150px] resize-none text-base',
           'focus-visible:ring-1'
         )}
         rows={1}
@@ -60,9 +60,9 @@ export function ChatInput({ onSend, disabled = false, placeholder = 'Digite sua 
         onClick={handleSend}
         disabled={!value.trim() || disabled}
         size="icon"
-        className="flex-shrink-0"
+        className="flex-shrink-0 h-[52px] w-[52px]"
       >
-        <Send size={18} />
+        <Send size={20} />
       </Button>
     </div>
   );
