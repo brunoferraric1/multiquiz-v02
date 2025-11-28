@@ -11,8 +11,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { EmojiPicker } from '@/components/ui/emoji-picker';
 
 interface EditQuestionModalProps {
@@ -30,19 +37,8 @@ export function EditQuestionModal({
   outcomes,
   onSave,
 }: EditQuestionModalProps) {
-  const [questionText, setQuestionText] = useState('');
-  const [options, setOptions] = useState<AnswerOption[]>([]);
-
-  // Initialize form when question changes
-  useEffect(() => {
-    if (question) {
-      setQuestionText(question.text || '');
-      setOptions(question.options || []);
-    } else {
-      setQuestionText('');
-      setOptions([]);
-    }
-  }, [question]);
+  const [questionText, setQuestionText] = useState(question?.text || '');
+  const [options, setOptions] = useState<AnswerOption[]>(question?.options || []);
 
   const handleAddOption = () => {
     const fallbackOutcomeId = outcomes[0]?.id || '';
@@ -64,7 +60,10 @@ export function EditQuestionModal({
     );
   };
 
-  const handleOptionOutcomeChange = (optionId: string, targetOutcomeId: string) => {
+  const handleOptionOutcomeChange = (
+    optionId: string,
+    targetOutcomeId: string
+  ) => {
     setOptions(
       options.map((opt) =>
         opt.id === optionId ? { ...opt, targetOutcomeId } : opt
@@ -72,7 +71,10 @@ export function EditQuestionModal({
     );
   };
 
-  const handleOptionIconChange = (optionId: string, icon: string | undefined) => {
+  const handleOptionIconChange = (
+    optionId: string,
+    icon: string | undefined
+  ) => {
     setOptions(
       options.map((opt) => {
         if (opt.id === optionId) {
@@ -91,7 +93,7 @@ export function EditQuestionModal({
 
   const handleSave = () => {
     if (!question?.id) return;
-    
+
     // Ensure all options have required fields
     const validOptions = options
       .filter((opt) => opt.text.trim() !== '')
@@ -100,7 +102,7 @@ export function EditQuestionModal({
         targetOutcomeId: opt.targetOutcomeId || outcomes[0]?.id || '',
       }))
       .filter((opt) => opt.targetOutcomeId); // Only include options with valid outcome
-    
+
     onSave({
       id: question.id,
       text: questionText,
@@ -119,10 +121,12 @@ export function EditQuestionModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} key={question?.id}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Editar Pergunta</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">
+            Editar Pergunta
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -131,11 +135,12 @@ export function EditQuestionModal({
             <label className="text-sm font-medium text-foreground">
               Pergunta
             </label>
-            <Input
+            <Textarea
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
               placeholder='Qual opção combina mais com você sobre "Meu Novo Quiz"?'
               className="w-full"
+              rows={3}
             />
           </div>
 
@@ -153,11 +158,8 @@ export function EditQuestionModal({
               </div>
             ) : (
               <div className="space-y-4">
-                {options.map((option, index) => (
-                  <div
-                    key={option.id}
-                    className="space-y-2"
-                  >
+                {options.map((option) => (
+                  <div key={option.id} className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Input
                         value={option.text}
@@ -187,28 +189,24 @@ export function EditQuestionModal({
                     {outcomes.length > 0 && (
                       <Select
                         value={option.targetOutcomeId || ''}
-                        onChange={(e) =>
-                          handleOptionOutcomeChange(
-                            option.id,
-                            e.target.value
-                          )
+                        onValueChange={(value) =>
+                          handleOptionOutcomeChange(option.id, value)
                         }
-                        className="w-full"
                       >
-                        <option value="" disabled>
-                          Selecione o Resultado Associado
-                        </option>
-                        {outcomes.map((outcome) => (
-                          <option key={outcome.id} value={outcome.id || ''}>
-                            {outcome.title || 'Resultado sem título'}
-                          </option>
-                        ))}
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione o Resultado Associado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {outcomes.map((outcome) => (
+                            <SelectItem
+                              key={outcome.id}
+                              value={outcome.id || ''}
+                            >
+                              {outcome.title || 'Resultado sem título'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                       </Select>
-                    )}
-                    {outcomes.length === 0 && (
-                      <div className="text-xs text-muted-foreground py-2">
-                        Adicione resultados ao quiz para associar opções.
-                      </div>
                     )}
                   </div>
                 ))}
@@ -248,4 +246,5 @@ export function EditQuestionModal({
     </Dialog>
   );
 }
+
 

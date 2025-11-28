@@ -1,12 +1,12 @@
 'use client';
 
 import { ArrowLeft, Rocket } from 'lucide-react';
-import type { Quiz } from '@/types';
+import type { Quiz, QuizDraft } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 interface BuilderHeaderProps {
-  quiz: Partial<Quiz>;
+  quiz: QuizDraft | Quiz;
   isPreview: boolean;
   onBack: () => void;
   onPublish: () => void;

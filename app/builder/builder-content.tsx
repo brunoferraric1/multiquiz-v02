@@ -62,7 +62,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const outcomes = quiz.outcomes ?? [];
 
   const editingQuestion = editingQuestionId
-    ? questions.find((question) => question.id === editingQuestionId)
+    ? questions.find((question) => question.id === editingQuestionId) ?? null
     : null;
   const activeOutcome =
     activeSheet?.type === 'outcome'
@@ -218,347 +218,326 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const coverImagePreview = quiz.coverImageUrl ? quiz.coverImageUrl : undefined;
 
   const sheetOpen = Boolean(activeSheet);
-
-  if (isPreviewOpen) {
-    return (
-      <div className="relative h-screen flex flex-col">
+  return (
+    <div className="relative h-screen flex flex-col">
+      <div className={`h-full flex flex-col ${isPreviewOpen ? 'hidden' : ''}`}>
         <BuilderHeader
           quiz={quiz}
-          isPreview={true}
-          onBack={() => setIsPreviewOpen(false)}
+          isPreview={false}
+          onBack={handleBack}
           onPublish={handlePublish}
           isPublishing={isPublishing}
         />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsPreviewOpen(false)}
-          className="absolute top-20 right-4 sm:right-6 lg:right-8 z-10 rounded-full bg-background/60 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background/80 hover:text-foreground"
-          aria-label="Fechar pré-visualização"
-        >
-          <X size={20} />
-        </Button>
-        <main className="flex-1 bg-muted/40 overflow-auto">
-          <QuizPlayer quiz={quiz} mode="preview" onExit={() => setIsPreviewOpen(false)} />
-        </main>
-      </div>
-    );
-  }
 
-  return (
-    <div className="h-screen flex flex-col">
-      <BuilderHeader
-        quiz={quiz}
-        isPreview={false}
-        onBack={handleBack}
-        onPublish={handlePublish}
-        isPublishing={isPublishing}
-      />
+        <main className="flex-1 overflow-hidden min-h-0">
+          <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 h-full">
+              <div className="h-full min-h-0 lg:col-span-3">
+                <ChatInterface />
+              </div>
 
-      <main className="flex-1 overflow-hidden min-h-0">
-        <div className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 h-full">
-            <div className="h-full min-h-0 lg:col-span-3">
-              <ChatInterface />
-            </div>
-
-            <div className="h-full min-h-0 lg:col-span-2">
-              <Card className="flex flex-col h-full">
-                <CardHeader className="flex-shrink-0">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold">Estrutura do Quiz</CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => setIsPreviewOpen(true)}
-                    >
-                      <Eye size={16} />
-                      Visualizar
-                    </Button>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="flex flex-col gap-10 overflow-y-auto min-h-0 p-6 pt-0">
-                  <section className="space-y-3">
-                    <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                      Introdução
+              <div className="h-full min-h-0 lg:col-span-2">
+                <Card className="flex flex-col h-full">
+                  <CardHeader className="flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg font-semibold">Estrutura do Quiz</CardTitle>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => setIsPreviewOpen(true)}
+                      >
+                        <Eye size={16} />
+                        Visualizar
+                      </Button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSheet({ type: 'introduction' })}
-                      className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
-                          {quiz.coverImageUrl ? (
-                            <img
-                              src={quiz.coverImageUrl}
-                              alt="Capa do quiz"
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center">
-                              <ImageIcon className="h-5 w-5" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-foreground">
-                            {quiz.title || 'Meu Novo Quiz'}
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                            {introDescription}
-                          </p>
-                        </div>
+                  </CardHeader>
+
+                  <CardContent className="flex flex-col gap-10 overflow-y-auto min-h-0 p-6 pt-0">
+                    <section className="space-y-3">
+                      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                        Introdução
                       </div>
-                    </button>
-                  </section>
-
-                  <section className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                        Perguntas ({questions.length})
-                      </span>
                       <button
                         type="button"
-                        onClick={handleAddQuestion}
-                        className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
-                        aria-label="Adicionar pergunta"
+                        onClick={() => setActiveSheet({ type: 'introduction' })}
+                        className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                       >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    <div className="space-y-3">
-                      {questions.length === 0 && (
-                        <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
-                          Adicione a primeira pergunta do quiz
-                        </div>
-                      )}
-                      {questions.map((question, index) => (
-                        <button
-                          key={question.id ?? index}
-                          type="button"
-                          onClick={() =>
-                            question.id && setEditingQuestionId(question.id)
-                          }
-                          className="w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-semibold text-muted-foreground">
-                              {index + 1}
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-semibold text-foreground">
-                                {question.text || 'Pergunta sem texto'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {(question.options?.length ?? 0)} opções
-                              </p>
-                            </div>
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
+                            {quiz.coverImageUrl ? (
+                              <img
+                                src={quiz.coverImageUrl}
+                                alt="Capa do quiz"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center">
+                                <ImageIcon className="h-5 w-5" />
+                              </div>
+                            )}
                           </div>
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-
-                  <section className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                        Resultados ({outcomes.length})
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleAddOutcome}
-                        className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
-                        aria-label="Adicionar resultado"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    <div className="space-y-3">
-                      {outcomes.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
-                          Nenhum resultado definido
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-foreground">
+                              {quiz.title || 'Meu Novo Quiz'}
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                              {introDescription}
+                            </p>
+                          </div>
                         </div>
-                      ) : (
-                        outcomes.map((outcome, index) => (
+                      </button>
+                    </section>
+
+                    <section className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                          Perguntas ({questions.length})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleAddQuestion}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
+                          aria-label="Adicionar pergunta"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {questions.length === 0 && (
+                          <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+                            Adicione a primeira pergunta do quiz
+                          </div>
+                        )}
+                        {questions.map((question, index) => (
                           <button
-                            key={outcome.id ?? index}
+                            key={question.id ?? index}
                             type="button"
                             onClick={() =>
-                              outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })
+                              question.id && setEditingQuestionId(question.id)
                             }
                             className="w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                           >
-                            <p className="text-sm font-semibold text-foreground">
-                              {outcome.title || 'Resultado sem título'}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {outcome.description || 'Sem descrição'}
-                            </p>
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-xs font-semibold text-muted-foreground">
+                                {index + 1}
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-foreground">
+                                  {question.text || 'Pergunta sem texto'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {(question.options?.length ?? 0)} opções
+                                </p>
+                              </div>
+                            </div>
                           </button>
-                        ))
-                      )}
-                    </div>
-                  </section>
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                          Resultados ({outcomes.length})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleAddOutcome}
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
+                          aria-label="Adicionar resultado"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {outcomes.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+                            Nenhum resultado definido
+                          </div>
+                        ) : (
+                          outcomes.map((outcome, index) => (
+                            <button
+                              key={outcome.id ?? index}
+                              type="button"
+                              onClick={() =>
+                                outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })
+                              }
+                              className="w-full rounded-2xl border border-border bg-background p-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                            >
+                              <p className="text-sm font-semibold text-foreground">
+                                {outcome.title || 'Resultado sem título'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {outcome.description || 'Sem descrição'}
+                              </p>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </section>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
+        </main>
+
+        <Sheet open={sheetOpen} onOpenChange={(open) => !open && setActiveSheet(null)}>
+          <SheetContent className="max-w-lg">
+            {activeSheet?.type === 'introduction' && (
+              <>
+                <SheetHeader>
+                  <SheetTitle>Introdução</SheetTitle>
+                  <SheetDescription>
+                    Atualize o título e a descrição para deixar o quiz alinhado com sua proposta.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6 space-y-4">
+                  <div className="space-y-1">
+                    <p className={fieldLabelClass}>Título</p>
+                    <Input
+                      value={quiz.title ?? ''}
+                      onChange={(event) => updateQuizField('title', event.target.value)}
+                      placeholder="Título do seu quiz"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className={fieldLabelClass}>Descrição</p>
+                    <Textarea
+                      value={quiz.description ?? ''}
+                      onChange={(event) => updateQuizField('description', event.target.value)}
+                      placeholder="Descreva o que o participante vai viver"
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className={fieldLabelClass}>Imagem principal</p>
+                    <Upload
+                      file={coverFile}
+                      previewUrl={coverImagePreview}
+                      onFileChange={handleCoverImageChange}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className={fieldLabelClass}>Texto do CTA</p>
+                    <Input
+                      value={quiz.ctaText ?? ''}
+                      onChange={(event) => updateQuizField('ctaText', event.target.value)}
+                      placeholder="Quer saber mais?"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className={fieldLabelClass}>URL do CTA</p>
+                    <Input
+                      type="url"
+                      value={quiz.ctaUrl ?? ''}
+                      onChange={(event) => updateQuizField('ctaUrl', event.target.value)}
+                      placeholder="https://seusite.com/cta"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeSheet?.type === 'outcome' && activeOutcome && (
+              <>
+                <SheetHeader>
+                  <SheetTitle>Resultado</SheetTitle>
+                  <SheetDescription>
+                    Defina o título e a descrição desse resultado para mostrar o impacto que o participante teve.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6 space-y-4">
+                  <div className="space-y-1">
+                    <p className={fieldLabelClass}>Imagem do resultado</p>
+                    <Upload
+                      file={outcomeFile}
+                      previewUrl={activeOutcome.imageUrl || undefined}
+                      onFileChange={handleOutcomeImageChange}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className={fieldLabelClass}>Título</p>
+                    <Input
+                      value={activeOutcome.title ?? ''}
+                      onChange={(event) => handleOutcomeFieldChange('title', event.target.value)}
+                      placeholder="Título do resultado"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className={fieldLabelClass}>Descrição</p>
+                    <Textarea
+                      value={activeOutcome.description ?? ''}
+                      onChange={(event) => handleOutcomeFieldChange('description', event.target.value)}
+                      placeholder="Descreva esse resultado"
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className={fieldLabelClass}>Texto do CTA</p>
+                    <Input
+                      value={activeOutcome.ctaText ?? ''}
+                      onChange={(event) => handleOutcomeFieldChange('ctaText', event.target.value)}
+                      placeholder="Quer saber mais?"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className={fieldLabelClass}>URL do CTA</p>
+                    <Input
+                      type="url"
+                      value={activeOutcome.ctaUrl ?? ''}
+                      onChange={(event) => handleOutcomeFieldChange('ctaUrl', event.target.value)}
+                      placeholder="https://seusite.com/cta"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
+
+        <EditQuestionModal
+          open={editingQuestionId !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingQuestionId(null);
+            }
+          }}
+          question={editingQuestion}
+          outcomes={outcomes}
+          onSave={handleQuestionSave}
+        />
+      </div>
+
+      {isPreviewOpen && (
+        <div className="absolute inset-0 z-10 flex">
+          <div className="relative flex h-full w-full flex-col bg-background">
+            <BuilderHeader
+              quiz={quiz}
+              isPreview={true}
+              onBack={() => setIsPreviewOpen(false)}
+              onPublish={handlePublish}
+              isPublishing={isPublishing}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsPreviewOpen(false)}
+              className="absolute top-20 right-4 sm:right-6 lg:right-8 z-10 rounded-full bg-background/60 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background/80 hover:text-foreground"
+              aria-label="Fechar pré-visualização"
+            >
+              <X size={20} />
+            </Button>
+            <main className="flex-1 bg-muted/40 overflow-auto">
+              <QuizPlayer quiz={quiz} mode="preview" onExit={() => setIsPreviewOpen(false)} />
+            </main>
+          </div>
         </div>
-      </main>
-
-
-
-      <Sheet open={sheetOpen} onOpenChange={(open) => !open && setActiveSheet(null)}>
-        <SheetContent className="max-w-lg">
-          {activeSheet?.type === 'introduction' && (
-            <>
-              <SheetHeader>
-                <SheetTitle>Introdução</SheetTitle>
-                <SheetDescription>
-                  Atualize o título e a descrição para deixar o quiz alinhado com sua proposta.
-                </SheetDescription>
-              </SheetHeader>
-              <div className="mt-6 space-y-4">
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    Título
-                  </p>
-                  <Input
-                    value={quiz.title ?? ''}
-                    onChange={(event) => updateQuizField('title', event.target.value)}
-                    placeholder="Título do seu quiz"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    Descrição
-                  </p>
-                  <Textarea
-                    value={quiz.description ?? ''}
-                    onChange={(event) => updateQuizField('description', event.target.value)}
-                    placeholder="Descreva o que o participante vai viver"
-                    rows={4}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    Imagem principal
-                  </p>
-                  <Upload
-                    file={coverFile}
-                    previewUrl={coverImagePreview}
-                    onFileChange={handleCoverImageChange}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    Texto do CTA
-                  </p>
-                  <Input
-                    value={quiz.ctaText ?? ''}
-                    onChange={(event) => updateQuizField('ctaText', event.target.value)}
-                    placeholder="Quer saber mais?"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    URL do CTA
-                  </p>
-                  <Input
-                    type="url"
-                    value={quiz.ctaUrl ?? ''}
-                    onChange={(event) => updateQuizField('ctaUrl', event.target.value)}
-                    placeholder="https://seusite.com/cta"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {activeSheet?.type === 'outcome' && activeOutcome && (
-            <>
-              <SheetHeader>
-                <SheetTitle>Resultado</SheetTitle>
-                <SheetDescription>
-                  Defina o título e a descrição desse resultado para mostrar o impacto que o participante teve.
-                </SheetDescription>
-              </SheetHeader>
-              <div className="mt-6 space-y-4">
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    Imagem do resultado
-                  </p>
-                  <Upload
-                    file={outcomeFile}
-                    previewUrl={activeOutcome.imageUrl || undefined}
-                    onFileChange={handleOutcomeImageChange}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    Título
-                  </p>
-                  <Input
-                    value={activeOutcome.title ?? ''}
-                    onChange={(event) => handleOutcomeFieldChange('title', event.target.value)}
-                    placeholder="Título do resultado"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    Descrição
-                  </p>
-                  <Textarea
-                    value={activeOutcome.description ?? ''}
-                    onChange={(event) => handleOutcomeFieldChange('description', event.target.value)}
-                    placeholder="Descreva esse resultado"
-                    rows={4}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    Texto do CTA
-                  </p>
-                  <Input
-                    value={activeOutcome.ctaText ?? ''}
-                    onChange={(event) => handleOutcomeFieldChange('ctaText', event.target.value)}
-                    placeholder="Quer saber mais?"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className={fieldLabelClass}>
-                    URL do CTA
-                  </p>
-                  <Input
-                    type="url"
-                    value={activeOutcome.ctaUrl ?? ''}
-                    onChange={(event) => handleOutcomeFieldChange('ctaUrl', event.target.value)}
-                    placeholder="https://seusite.com/cta"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      <EditQuestionModal
-        open={editingQuestionId !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditingQuestionId(null);
-          }
-        }}
-        question={editingQuestion}
-        outcomes={outcomes}
-        onSave={handleQuestionSave}
-      />
+      )}
     </div>
   );
 }

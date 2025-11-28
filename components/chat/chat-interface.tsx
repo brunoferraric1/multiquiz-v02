@@ -165,6 +165,10 @@ export function ChatInterface() {
   const hasSeenWelcomeMessage = useQuizBuilderStore((state) => state.hasSeenWelcomeMessage);
   const setHasSeenWelcomeMessage = useQuizBuilderStore((state) => state.setHasSeenWelcomeMessage);
 
+  const quiz = useQuizBuilderStore((state) => state.quiz);
+  const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
+  const setQuiz = useQuizBuilderStore((state) => state.setQuiz);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isCoverSuggesting, setIsCoverSuggesting] = useState(false);
   const [lastCoverPrompt, setLastCoverPrompt] = useState('');
@@ -206,7 +210,7 @@ export function ChatInterface() {
 
   // Send welcome message when chat becomes empty (new quiz or cleared chat)
   useEffect(() => {
-    if (!hasHydrated) {
+    if (!hasHydrated || !quiz?.id) {
       return;
     }
 
@@ -238,7 +242,15 @@ export function ChatInterface() {
     }
 
     prevChatLength.current = chatHistory.length;
-  }, [chatHistory.length, chatHistory, addChatMessage, hasHydrated, hasSeenWelcomeMessage, setHasSeenWelcomeMessage]);
+  }, [
+    chatHistory.length,
+    chatHistory,
+    addChatMessage,
+    hasHydrated,
+    hasSeenWelcomeMessage,
+    setHasSeenWelcomeMessage,
+    quiz?.id,
+  ]);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -248,10 +260,6 @@ export function ChatInterface() {
   useEffect(() => {
     scrollToBottom();
   }, [chatHistory, isLoading]);
-
-  const quiz = useQuizBuilderStore((state) => state.quiz);
-  const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
-  const setQuiz = useQuizBuilderStore((state) => state.setQuiz);
 
   const isCoverComplaint = (message: string) => {
     const text = message.toLowerCase();
