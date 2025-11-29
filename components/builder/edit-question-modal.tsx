@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { Question, AnswerOption, Outcome } from '@/types';
 import {
   Sheet,
@@ -21,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { EmojiPicker } from '@/components/ui/emoji-picker';
+import { DrawerFooter } from '@/components/builder/drawer-footer';
 
 // UUID v4 generator with crypto.randomUUID fallback
 function generateUUID(): string {
@@ -131,6 +133,7 @@ export function EditQuestionModal({
       options: validOptions,
     });
     onOpenChange(false);
+    toast.success('Salvo');
   };
 
   const handleCancel = () => {
@@ -252,24 +255,12 @@ export function EditQuestionModal({
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleCancel}
-            className="cursor-pointer"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={!questionText.trim() || options.length === 0}
-            className="cursor-pointer"
-          >
-            Salvar Alterações
-          </Button>
-        </div>
+        <DrawerFooter
+          onSave={handleSave}
+          onCancel={handleCancel}
+          saveDisabled={!questionText.trim() || options.length === 0}
+          saveText="Salvar"
+        />
       </SheetContent>
     </Sheet>
   );

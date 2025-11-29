@@ -14,6 +14,7 @@ import {
   PenSquare,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
@@ -29,6 +30,7 @@ import { BuilderHeader } from '@/components/builder/builder-header';
 import { SaveIndicator } from '@/components/builder/save-indicator';
 import { EditQuestionModal } from '@/components/builder/edit-question-modal';
 import { PublishSuccessModal } from '@/components/builder/publish-success-modal';
+import { DrawerFooter } from '@/components/builder/drawer-footer';
 import { Upload } from '@/components/ui/upload';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
 
@@ -74,6 +76,20 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<number | null>(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
   const [mobileView, setMobileView] = useState<MobileViewMode>('chat');
+
+  // Draft state for Introduction
+  const [draftTitle, setDraftTitle] = useState('');
+  const [draftDescription, setDraftDescription] = useState('');
+  const [draftCtaText, setDraftCtaText] = useState('');
+  const [draftCoverImageUrl, setDraftCoverImageUrl] = useState('');
+
+  // Draft state for Outcome
+  const [draftOutcomeTitle, setDraftOutcomeTitle] = useState('');
+  const [draftOutcomeDescription, setDraftOutcomeDescription] = useState('');
+  const [draftOutcomeCtaText, setDraftOutcomeCtaText] = useState('');
+  const [draftOutcomeCtaUrl, setDraftOutcomeCtaUrl] = useState('');
+  const [draftOutcomeImageUrl, setDraftOutcomeImageUrl] = useState('');
+
   void isEditMode;
 
   const { forceSave, cancelPendingSave } = useAutoSave({
@@ -137,6 +153,29 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     }
   }, [activeOutcome?.imageUrl, activeOutcome?.id]);
 
+  // Sync draft state when Introduction sheet opens
+  useEffect(() => {
+    if (activeSheet?.type === 'introduction') {
+      setDraftTitle(quiz.title ?? '');
+      setDraftDescription(quiz.description ?? '');
+      setDraftCtaText(quiz.ctaText ?? '');
+      setDraftCoverImageUrl(quiz.coverImageUrl ?? '');
+      setCoverFile(null);
+    }
+  }, [activeSheet, quiz.title, quiz.description, quiz.ctaText, quiz.coverImageUrl]);
+
+  // Sync draft state when Outcome sheet opens
+  useEffect(() => {
+    if (activeSheet?.type === 'outcome' && activeOutcome) {
+      setDraftOutcomeTitle(activeOutcome.title ?? '');
+      setDraftOutcomeDescription(activeOutcome.description ?? '');
+      setDraftOutcomeCtaText(activeOutcome.ctaText ?? '');
+      setDraftOutcomeCtaUrl(activeOutcome.ctaUrl ?? '');
+      setDraftOutcomeImageUrl(activeOutcome.imageUrl ?? '');
+      setOutcomeFile(null);
+    }
+  }, [activeSheet, activeOutcome]);
+
   const handleAddQuestion = () => {
     const newQuestion: Partial<Question> = {
       id: generateUUID(),
@@ -170,26 +209,21 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
   const handleCoverImageChange = async (file: File | null) => {
     setCoverFile(file);
-    const persistCoverChange = async (value: string) => {
-      updateQuizField('coverImageUrl', value);
-      await forceSave();
-    };
 
     if (!file) {
-      await persistCoverChange('');
+      setDraftCoverImageUrl('');
       return;
     }
 
     try {
       const compressedDataUrl = await compressImage(file);
-      await persistCoverChange(compressedDataUrl);
+      setDraftCoverImageUrl(compressedDataUrl);
     } catch (error) {
       console.error('Error compressing cover image:', error);
       // Fallback to original file if compression fails
       const reader = new FileReader();
       reader.onload = () => {
-        updateQuizField('coverImageUrl', reader.result as string);
-        void forceSave();
+        setDraftCoverImageUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -198,34 +232,69 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const handleOutcomeImageChange = async (file: File | null) => {
     setOutcomeFile(file);
 
-    if (!activeOutcome?.id) return;
-    const outcomeId = activeOutcome.id;
-
     if (!file) {
-      updateOutcome(outcomeId, { imageUrl: '' });
-      await forceSave();
+      setDraftOutcomeImageUrl('');
       return;
     }
 
     try {
       const compressedDataUrl = await compressImage(file);
-      updateOutcome(outcomeId, { imageUrl: compressedDataUrl });
-      await forceSave();
+      setDraftOutcomeImageUrl(compressedDataUrl);
     } catch (error) {
       console.error('Error compressing outcome image:', error);
       // Fallback to original file if compression fails
       const reader = new FileReader();
       reader.onload = () => {
-        updateOutcome(outcomeId, { imageUrl: reader.result as string });
-        void forceSave();
+        setDraftOutcomeImageUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
-  
-  const handleOutcomeFieldChange = (field: keyof Outcome, value: string) => {
+
+  const handleSaveIntroduction = async () => {
+    updateQuizField('title', draftTitle);
+    updateQuizField('description', draftDescription);
+    updateQuizField('ctaText', draftCtaText);
+    updateQuizField('coverImageUrl', draftCoverImageUrl);
+    await forceSave();
+    setActiveSheet(null);
+    toast.success('Salvo');
+  };
+
+  const handleCancelIntroduction = () => {
+    setDraftTitle(quiz.title ?? '');
+    setDraftDescription(quiz.description ?? '');
+    setDraftCtaText(quiz.ctaText ?? '');
+    setDraftCoverImageUrl(quiz.coverImageUrl ?? '');
+    setCoverFile(null);
+    setActiveSheet(null);
+  };
+
+  const handleSaveOutcome = async () => {
     if (!activeOutcome?.id) return;
-    updateOutcome(activeOutcome.id, { [field]: value });
+
+    updateOutcome(activeOutcome.id, {
+      title: draftOutcomeTitle,
+      description: draftOutcomeDescription,
+      ctaText: draftOutcomeCtaText,
+      ctaUrl: draftOutcomeCtaUrl,
+      imageUrl: draftOutcomeImageUrl,
+    });
+    await forceSave();
+    setActiveSheet(null);
+    toast.success('Salvo');
+  };
+
+  const handleCancelOutcome = () => {
+    if (activeOutcome) {
+      setDraftOutcomeTitle(activeOutcome.title ?? '');
+      setDraftOutcomeDescription(activeOutcome.description ?? '');
+      setDraftOutcomeCtaText(activeOutcome.ctaText ?? '');
+      setDraftOutcomeCtaUrl(activeOutcome.ctaUrl ?? '');
+      setDraftOutcomeImageUrl(activeOutcome.imageUrl ?? '');
+      setOutcomeFile(null);
+    }
+    setActiveSheet(null);
   };
 
   const resetQuestionDragState = () => {
@@ -646,8 +715,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   <div className="space-y-1">
                     <p className={fieldLabelClass}>Título</p>
                     <Input
-                      value={quiz.title ?? ''}
-                      onChange={(event) => updateQuizField('title', event.target.value)}
+                      value={draftTitle}
+                      onChange={(event) => setDraftTitle(event.target.value)}
                       placeholder="Título do seu quiz"
                       autoFocus={false}
                     />
@@ -655,8 +724,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   <div className="space-y-1">
                     <p className={fieldLabelClass}>Descrição</p>
                     <Textarea
-                      value={quiz.description ?? ''}
-                      onChange={(event) => updateQuizField('description', event.target.value)}
+                      value={draftDescription}
+                      onChange={(event) => setDraftDescription(event.target.value)}
                       placeholder="Descreva o que o participante vai viver"
                       rows={4}
                       autoFocus={false}
@@ -666,20 +735,24 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                     <p className={fieldLabelClass}>Imagem principal</p>
                     <Upload
                       file={coverFile}
-                      previewUrl={coverImagePreview}
+                      previewUrl={draftCoverImageUrl || undefined}
                       onFileChange={handleCoverImageChange}
                     />
                   </div>
                   <div className="space-y-1">
                     <p className={fieldLabelClass}>Texto do CTA</p>
                     <Input
-                      value={quiz.ctaText ?? ''}
-                      onChange={(event) => updateQuizField('ctaText', event.target.value)}
+                      value={draftCtaText}
+                      onChange={(event) => setDraftCtaText(event.target.value)}
                       placeholder="Começar quiz"
                       autoFocus={false}
                     />
                   </div>
                 </div>
+                <DrawerFooter
+                  onSave={handleSaveIntroduction}
+                  onCancel={handleCancelIntroduction}
+                />
               </>
             )}
 
@@ -696,15 +769,15 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                     <p className={fieldLabelClass}>Imagem do resultado</p>
                     <Upload
                       file={outcomeFile}
-                      previewUrl={activeOutcome.imageUrl || undefined}
+                      previewUrl={draftOutcomeImageUrl || undefined}
                       onFileChange={handleOutcomeImageChange}
                     />
                   </div>
                   <div className="space-y-1">
                     <p className={fieldLabelClass}>Título</p>
                     <Input
-                      value={activeOutcome.title ?? ''}
-                      onChange={(event) => handleOutcomeFieldChange('title', event.target.value)}
+                      value={draftOutcomeTitle}
+                      onChange={(event) => setDraftOutcomeTitle(event.target.value)}
                       placeholder="Título do resultado"
                       autoFocus={false}
                     />
@@ -712,8 +785,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   <div className="space-y-1">
                     <p className={fieldLabelClass}>Descrição</p>
                     <Textarea
-                      value={activeOutcome.description ?? ''}
-                      onChange={(event) => handleOutcomeFieldChange('description', event.target.value)}
+                      value={draftOutcomeDescription}
+                      onChange={(event) => setDraftOutcomeDescription(event.target.value)}
                       placeholder="Descreva esse resultado"
                       rows={4}
                       autoFocus={false}
@@ -722,8 +795,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   <div className="space-y-1">
                     <p className={fieldLabelClass}>Texto do CTA</p>
                     <Input
-                      value={activeOutcome.ctaText ?? ''}
-                      onChange={(event) => handleOutcomeFieldChange('ctaText', event.target.value)}
+                      value={draftOutcomeCtaText}
+                      onChange={(event) => setDraftOutcomeCtaText(event.target.value)}
                       placeholder="Quer saber mais?"
                       autoFocus={false}
                     />
@@ -732,13 +805,17 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                     <p className={fieldLabelClass}>URL do CTA</p>
                     <Input
                       type="url"
-                      value={activeOutcome.ctaUrl ?? ''}
-                      onChange={(event) => handleOutcomeFieldChange('ctaUrl', event.target.value)}
+                      value={draftOutcomeCtaUrl}
+                      onChange={(event) => setDraftOutcomeCtaUrl(event.target.value)}
                       placeholder="https://seusite.com/cta"
                       autoFocus={false}
                     />
                   </div>
                 </div>
+                <DrawerFooter
+                  onSave={handleSaveOutcome}
+                  onCancel={handleCancelOutcome}
+                />
               </>
             )}
           </SheetContent>
