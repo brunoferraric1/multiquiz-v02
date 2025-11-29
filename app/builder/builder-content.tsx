@@ -700,122 +700,134 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
         <Sheet open={sheetOpen} onOpenChange={(open) => !open && setActiveSheet(null)}>
           <SheetContent
-            className="max-w-lg"
+            className="max-w-lg flex flex-col"
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             {activeSheet?.type === 'introduction' && (
               <>
-                <SheetHeader>
+                <SheetHeader className="flex-shrink-0">
                   <SheetTitle>Introdução</SheetTitle>
                   <SheetDescription>
                     Atualize o título e a descrição para deixar o quiz alinhado com sua proposta.
                   </SheetDescription>
                 </SheetHeader>
-                <div className="mt-6 space-y-4">
-                  <div className="space-y-1">
-                    <p className={fieldLabelClass}>Título</p>
-                    <Input
-                      value={draftTitle}
-                      onChange={(event) => setDraftTitle(event.target.value)}
-                      placeholder="Título do seu quiz"
-                      autoFocus={false}
-                    />
+                <div className="flex-1 overflow-y-auto relative">
+                  <div className="space-y-4 p-6">
+                    <div className="space-y-1">
+                      <p className={fieldLabelClass}>Título</p>
+                      <Input
+                        value={draftTitle}
+                        onChange={(event) => setDraftTitle(event.target.value)}
+                        placeholder="Título do seu quiz"
+                        autoFocus={false}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={fieldLabelClass}>Descrição</p>
+                      <Textarea
+                        value={draftDescription}
+                        onChange={(event) => setDraftDescription(event.target.value)}
+                        placeholder="Descreva o que o participante vai viver"
+                        rows={4}
+                        autoFocus={false}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={fieldLabelClass}>Imagem principal</p>
+                      <Upload
+                        file={coverFile}
+                        previewUrl={draftCoverImageUrl || undefined}
+                        onFileChange={handleCoverImageChange}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={fieldLabelClass}>Texto do CTA</p>
+                      <Input
+                        value={draftCtaText}
+                        onChange={(event) => setDraftCtaText(event.target.value)}
+                        placeholder="Começar quiz"
+                        autoFocus={false}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className={fieldLabelClass}>Descrição</p>
-                    <Textarea
-                      value={draftDescription}
-                      onChange={(event) => setDraftDescription(event.target.value)}
-                      placeholder="Descreva o que o participante vai viver"
-                      rows={4}
-                      autoFocus={false}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <p className={fieldLabelClass}>Imagem principal</p>
-                    <Upload
-                      file={coverFile}
-                      previewUrl={draftCoverImageUrl || undefined}
-                      onFileChange={handleCoverImageChange}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <p className={fieldLabelClass}>Texto do CTA</p>
-                    <Input
-                      value={draftCtaText}
-                      onChange={(event) => setDraftCtaText(event.target.value)}
-                      placeholder="Começar quiz"
-                      autoFocus={false}
-                    />
-                  </div>
+                  {/* Gradient overlay for fade effect */}
+                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />
                 </div>
-                <DrawerFooter
-                  onSave={handleSaveIntroduction}
-                  onCancel={handleCancelIntroduction}
-                />
+                <div className="flex-shrink-0 border-t bg-background p-6">
+                  <DrawerFooter
+                    onSave={handleSaveIntroduction}
+                    onCancel={handleCancelIntroduction}
+                  />
+                </div>
               </>
             )}
 
             {activeSheet?.type === 'outcome' && activeOutcome && (
               <>
-                <SheetHeader>
+                <SheetHeader className="flex-shrink-0">
                   <SheetTitle>Resultado</SheetTitle>
                   <SheetDescription>
                     Defina o título e a descrição desse resultado para mostrar o impacto que o participante teve.
                   </SheetDescription>
                 </SheetHeader>
-                <div className="mt-6 space-y-4">
-                  <div className="space-y-1">
-                    <p className={fieldLabelClass}>Imagem do resultado</p>
-                    <Upload
-                      file={outcomeFile}
-                      previewUrl={draftOutcomeImageUrl || undefined}
-                      onFileChange={handleOutcomeImageChange}
-                    />
+                <div className="flex-1 overflow-y-auto relative">
+                  <div className="space-y-4 p-6">
+                    <div className="space-y-1">
+                      <p className={fieldLabelClass}>Imagem do resultado</p>
+                      <Upload
+                        file={outcomeFile}
+                        previewUrl={draftOutcomeImageUrl || undefined}
+                        onFileChange={handleOutcomeImageChange}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={fieldLabelClass}>Título</p>
+                      <Input
+                        value={draftOutcomeTitle}
+                        onChange={(event) => setDraftOutcomeTitle(event.target.value)}
+                        placeholder="Título do resultado"
+                        autoFocus={false}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={fieldLabelClass}>Descrição</p>
+                      <Textarea
+                        value={draftOutcomeDescription}
+                        onChange={(event) => setDraftOutcomeDescription(event.target.value)}
+                        placeholder="Descreva esse resultado"
+                        rows={4}
+                        autoFocus={false}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={fieldLabelClass}>Texto do CTA</p>
+                      <Input
+                        value={draftOutcomeCtaText}
+                        onChange={(event) => setDraftOutcomeCtaText(event.target.value)}
+                        placeholder="Quer saber mais?"
+                        autoFocus={false}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={fieldLabelClass}>URL do CTA</p>
+                      <Input
+                        type="url"
+                        value={draftOutcomeCtaUrl}
+                        onChange={(event) => setDraftOutcomeCtaUrl(event.target.value)}
+                        placeholder="https://seusite.com/cta"
+                        autoFocus={false}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className={fieldLabelClass}>Título</p>
-                    <Input
-                      value={draftOutcomeTitle}
-                      onChange={(event) => setDraftOutcomeTitle(event.target.value)}
-                      placeholder="Título do resultado"
-                      autoFocus={false}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <p className={fieldLabelClass}>Descrição</p>
-                    <Textarea
-                      value={draftOutcomeDescription}
-                      onChange={(event) => setDraftOutcomeDescription(event.target.value)}
-                      placeholder="Descreva esse resultado"
-                      rows={4}
-                      autoFocus={false}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <p className={fieldLabelClass}>Texto do CTA</p>
-                    <Input
-                      value={draftOutcomeCtaText}
-                      onChange={(event) => setDraftOutcomeCtaText(event.target.value)}
-                      placeholder="Quer saber mais?"
-                      autoFocus={false}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <p className={fieldLabelClass}>URL do CTA</p>
-                    <Input
-                      type="url"
-                      value={draftOutcomeCtaUrl}
-                      onChange={(event) => setDraftOutcomeCtaUrl(event.target.value)}
-                      placeholder="https://seusite.com/cta"
-                      autoFocus={false}
-                    />
-                  </div>
+                  {/* Gradient overlay for fade effect */}
+                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />
                 </div>
-                <DrawerFooter
-                  onSave={handleSaveOutcome}
-                  onCancel={handleCancelOutcome}
-                />
+                <div className="flex-shrink-0 border-t bg-background p-6">
+                  <DrawerFooter
+                    onSave={handleSaveOutcome}
+                    onCancel={handleCancelOutcome}
+                  />
+                </div>
               </>
             )}
           </SheetContent>

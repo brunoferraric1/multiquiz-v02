@@ -16,12 +16,12 @@ export function DrawerFooter({
   cancelText = 'Cancelar',
 }: DrawerFooterProps) {
   return (
-    <div className="mt-6 flex justify-end gap-2">
+    <div className="flex gap-3 w-full">
       <Button
         type="button"
         variant="secondary"
         onClick={onCancel}
-        className="cursor-pointer"
+        className="cursor-pointer flex-1"
       >
         {cancelText}
       </Button>
@@ -29,7 +29,7 @@ export function DrawerFooter({
         type="button"
         onClick={onSave}
         disabled={saveDisabled}
-        className="cursor-pointer"
+        className="cursor-pointer flex-1"
       >
         {saveText}
       </Button>
