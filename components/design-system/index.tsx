@@ -221,7 +221,7 @@ function ComponentsShowcase() {
 }
 
 function ButtonShowcase() {
-  const variants = ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link'] as const
+  const variants = ['default', 'destructive', 'outline', 'outline-destructive', 'secondary', 'ghost', 'link'] as const
   const sizes = ['default', 'sm', 'lg', 'icon'] as const
 
   return (

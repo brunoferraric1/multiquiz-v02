@@ -66,9 +66,9 @@ export function BuilderHeader({
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="icon"
-              className="h-9 w-9 sm:w-auto sm:gap-2 sm:px-3 rounded-full border border-border/60 bg-background/40 hover:bg-background/60 flex-shrink-0"
+              className="h-9 w-9 sm:w-auto sm:gap-2 sm:px-3 flex-shrink-0"
               onClick={handleBack}
             >
               <ArrowLeft size={16} />
@@ -96,24 +96,24 @@ export function BuilderHeader({
           <div className="flex items-center gap-2 flex-shrink-0">
             {quiz.isPublished && (
               <Button
-                size="icon"
-                variant="ghost"
+                size="icon-text"
+                variant="outline"
                 onClick={handleCopyUrl}
-                className="h-9 w-9 rounded-full border border-border/60 bg-background/40 hover:bg-background/60"
+                className="gap-2 h-9"
                 title={copied ? 'URL copiada' : 'Copiar URL do quiz'}
               >
                 {copied ? <Check size={16} /> : <Link2 size={16} />}
-                <span className="sr-only">Copiar URL do quiz</span>
+                <span className="text-sm font-semibold">copiar</span>
               </Button>
             )}
 
             {quiz.isPublished ? (
               <Button
                 size="sm"
-                variant="secondary"
+                variant="outline-destructive"
                 onClick={onUnpublish}
                 disabled={isPublishing}
-                className="gap-2 rounded-full h-9"
+                className="gap-2 h-9"
               >
                 <EyeOff size={16} />
                 <span className="hidden sm:inline">Despublicar</span>

@@ -43,10 +43,10 @@ const SheetContent = React.forwardRef<
       )}
       {...props}
     >
-      <div className="flex-1 overflow-y-auto min-h-0 p-6">
+      <div className="flex-1 overflow-y-auto min-h-0 px-7 py-6">
         {children}
       </div>
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full border border-border bg-background p-2 sm:p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 z-10 cursor-pointer">
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full border border-border bg-background p-2 sm:p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-1 z-10 cursor-pointer">
         <X className="h-5 w-5 sm:h-4 sm:w-4" />
         <span className="sr-only">Fechar painel</span>
       </DialogPrimitive.Close>

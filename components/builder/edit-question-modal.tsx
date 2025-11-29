@@ -158,7 +158,7 @@ export function EditQuestionModal({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto relative min-h-0">
+        <div className="flex-1 overflow-y-auto relative min-h-0 px-1">
           <div className="space-y-6">
             {/* Question Text Section */}
             <div className="space-y-1">
@@ -188,10 +188,26 @@ export function EditQuestionModal({
                   Nenhuma opção adicionada ainda.
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {options.map((option) => (
-                    <div key={option.id} className="space-y-2">
-                      <div className="flex items-center gap-2">
+                    <div
+                      key={option.id}
+                      className="relative rounded-lg border border-border bg-card/50 p-4 space-y-3 hover:border-primary/30 transition-colors"
+                    >
+                      {/* Delete button in top-right corner */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                        onClick={() => handleDeleteOption(option.id)}
+                        title="Remover opção"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+
+                      {/* Option text input with emoji */}
+                      <div className="flex items-center gap-2 pr-8">
                         <Input
                           value={option.text}
                           onChange={(e) =>
@@ -207,38 +223,36 @@ export function EditQuestionModal({
                             handleOptionIconChange(option.id, emoji)
                           }
                         />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                          onClick={() => handleDeleteOption(option.id)}
-                          title="Remover opção"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
+
+                      {/* Outcome selector with label */}
                       {outcomes.length > 0 && (
-                        <Select
-                          value={option.targetOutcomeId || ''}
-                          onValueChange={(value) =>
-                            handleOptionOutcomeChange(option.id, value)
-                          }
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione o Resultado Associado" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {outcomes.map((outcome) => (
-                              <SelectItem
-                                key={outcome.id}
-                                value={outcome.id || ''}
-                              >
-                                {outcome.title || 'Resultado sem título'}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                            <span className="text-primary">→</span>
+                            Leva para o resultado:
+                          </label>
+                          <Select
+                            value={option.targetOutcomeId || ''}
+                            onValueChange={(value) =>
+                              handleOptionOutcomeChange(option.id, value)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selecione o resultado" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {outcomes.map((outcome) => (
+                                <SelectItem
+                                  key={outcome.id}
+                                  value={outcome.id || ''}
+                                >
+                                  {outcome.title || 'Resultado sem título'}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       )}
                     </div>
                   ))}

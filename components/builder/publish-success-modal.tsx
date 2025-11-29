@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Globe, Copy, Check } from 'lucide-react';
+import { Globe, Copy, Check, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -17,12 +17,14 @@ interface PublishSuccessModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   quizId: string;
+  loading?: boolean;
 }
 
 export function PublishSuccessModal({
   open,
   onOpenChange,
   quizId,
+  loading = false,
 }: PublishSuccessModalProps) {
   const [copied, setCopied] = useState(false);
 
@@ -32,6 +34,7 @@ export function PublishSuccessModal({
     : '';
 
   const handleCopyLink = async () => {
+    if (loading) return;
     if (!quizUrl) return;
 
     try {
@@ -52,40 +55,57 @@ export function PublishSuccessModal({
           <div className="mx-auto w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
             <Globe className="w-8 h-8 text-green-600 dark:text-green-500" />
           </div>
-          <DialogTitle className="text-2xl">Quiz Publicado!</DialogTitle>
-          <DialogDescription className="text-base">
-            Seu quiz está no ar e pronto para receber respostas. Compartilhe o
-            link abaixo com sua audiência.
+          <DialogTitle className="text-2xl">
+            {loading ? 'Publicando seu quiz...' : 'Quiz Publicado!'}
+          </DialogTitle>
+          <DialogDescription className="text-base text-muted-foreground">
+            {loading
+              ? 'Estamos salvando as alterações e preparando o link.'
+              : 'Seu quiz está no ar e pronto para receber respostas. Compartilhe o link abaixo com sua audiência.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
           <div className="flex items-center gap-2">
-            <Input
-              readOnly
-              value={quizUrl}
-              className="flex-1 font-mono text-sm bg-muted"
-              onClick={(e) => e.currentTarget.select()}
-            />
+            {loading ? (
+              <div className="flex flex-1 items-center gap-2 rounded-2xl border border-border/60 bg-muted px-4 py-3 text-sm text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin text-foreground/70" />
+                Preparando link...
+              </div>
+            ) : (
+              <Input
+                readOnly
+                value={quizUrl}
+                className="flex-1 font-mono text-sm bg-muted"
+                onClick={(e) => e.currentTarget.select()}
+              />
+            )}
           </div>
 
-          <Button
-            onClick={handleCopyLink}
-            className="w-full gap-2"
-            size="lg"
-          >
-            {copied ? (
-              <>
-                <Check size={20} />
-                Link Copiado!
-              </>
-            ) : (
-              <>
-                <Copy size={20} />
-                Copiar Link
-              </>
-            )}
-          </Button>
+          {loading ? (
+            <Button className="w-full gap-2" size="lg" disabled>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Preparando link...
+            </Button>
+          ) : (
+            <Button
+              onClick={handleCopyLink}
+              className="w-full gap-2"
+              size="lg"
+            >
+              {copied ? (
+                <>
+                  <Check size={20} />
+                  Link Copiado!
+                </>
+              ) : (
+                <>
+                  <Copy size={20} />
+                  Copiar Link
+                </>
+              )}
+            </Button>
+          )}
 
           <Button
             variant="ghost"

@@ -369,6 +369,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
     try {
       setIsPublishing(true);
+      setShowPublishModal(true);
       cancelPendingSave();
 
       console.log('[Publish] Before update - isPublished:', quiz.isPublished);
@@ -384,12 +385,10 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       console.log('[Publish] After update - isPublished:', currentState.isPublished);
 
       await forceSave();
-
-      console.log('[Publish] Save completed, showing modal');
-      setShowPublishModal(true);
     } catch (error) {
       console.error('Error publishing quiz:', error);
       alert('Erro ao publicar quiz');
+      setShowPublishModal(false);
     } finally {
       setIsPublishing(false);
     }
@@ -849,6 +848,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           open={showPublishModal}
           onOpenChange={setShowPublishModal}
           quizId={quiz.id || ''}
+          loading={isPublishing}
         />
       </div>
 
