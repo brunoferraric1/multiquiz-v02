@@ -700,19 +700,19 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
         <Sheet open={sheetOpen} onOpenChange={(open) => !open && setActiveSheet(null)}>
           <SheetContent
-            className="max-w-lg flex flex-col"
+            className="max-w-lg flex flex-col [&>div]:flex [&>div]:flex-col [&>div]:min-h-0"
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             {activeSheet?.type === 'introduction' && (
               <>
-                <SheetHeader className="flex-shrink-0">
-                  <SheetTitle>Introdução</SheetTitle>
+                <SheetHeader className="flex-shrink-0 pb-6">
+                  <SheetTitle className="text-2xl">Introdução</SheetTitle>
                   <SheetDescription>
                     Atualize o título e a descrição para deixar o quiz alinhado com sua proposta.
                   </SheetDescription>
                 </SheetHeader>
-                <div className="flex-1 overflow-y-auto relative">
-                  <div className="space-y-4 p-6">
+                <div className="flex-1 overflow-y-auto relative min-h-0">
+                  <div className="space-y-4">
                     <div className="space-y-1">
                       <p className={fieldLabelClass}>Título</p>
                       <Input
@@ -750,10 +750,10 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       />
                     </div>
                   </div>
-                  {/* Gradient overlay for fade effect */}
-                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+                  {/* Gradient overlay for fade effect - sticky to stay at bottom of viewport */}
+                  <div className="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
                 </div>
-                <div className="flex-shrink-0 border-t bg-background p-6">
+                <div className="flex-shrink-0 border-t bg-background py-8 mt-auto">
                   <DrawerFooter
                     onSave={handleSaveIntroduction}
                     onCancel={handleCancelIntroduction}
@@ -764,14 +764,14 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
             {activeSheet?.type === 'outcome' && activeOutcome && (
               <>
-                <SheetHeader className="flex-shrink-0">
-                  <SheetTitle>Resultado</SheetTitle>
+                <SheetHeader className="flex-shrink-0 pb-6">
+                  <SheetTitle className="text-2xl">Resultado</SheetTitle>
                   <SheetDescription>
                     Defina o título e a descrição desse resultado para mostrar o impacto que o participante teve.
                   </SheetDescription>
                 </SheetHeader>
-                <div className="flex-1 overflow-y-auto relative">
-                  <div className="space-y-4 p-6">
+                <div className="flex-1 overflow-y-auto relative min-h-0">
+                  <div className="space-y-4">
                     <div className="space-y-1">
                       <p className={fieldLabelClass}>Imagem do resultado</p>
                       <Upload
@@ -819,10 +819,10 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       />
                     </div>
                   </div>
-                  {/* Gradient overlay for fade effect */}
-                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+                  {/* Gradient overlay for fade effect - sticky to stay at bottom of viewport */}
+                  <div className="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
                 </div>
-                <div className="flex-shrink-0 border-t bg-background p-6">
+                <div className="flex-shrink-0 border-t bg-background py-8 mt-auto">
                   <DrawerFooter
                     onSave={handleSaveOutcome}
                     onCancel={handleCancelOutcome}

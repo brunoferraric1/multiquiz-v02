@@ -148,119 +148,125 @@ export function EditQuestionModal({
   return (
     <Sheet open={open} onOpenChange={onOpenChange} key={question?.id}>
       <SheetContent
-        className="max-w-lg overflow-y-auto"
+        className="max-w-lg flex flex-col [&>div]:flex [&>div]:flex-col [&>div]:min-h-0"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <SheetHeader>
-          <SheetTitle>Editar Pergunta</SheetTitle>
+        <SheetHeader className="flex-shrink-0 pb-6">
+          <SheetTitle className="text-2xl">Editar Pergunta</SheetTitle>
           <SheetDescription>
             Configure a pergunta e as opções de resposta.
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
-          {/* Question Text Section */}
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">
-              Pergunta
-            </p>
-            <Textarea
-              value={questionText}
-              onChange={(e) => setQuestionText(e.target.value)}
-              placeholder='Qual opção combina mais com você sobre "Meu Novo Quiz"?'
-              className="w-full"
-              rows={3}
-              autoFocus={false}
-            />
-          </div>
-
-          {/* Answer Options Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="flex-1 overflow-y-auto relative min-h-0">
+          <div className="space-y-6">
+            {/* Question Text Section */}
+            <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">
-                Opções de Resposta
+                Pergunta
               </p>
+              <Textarea
+                value={questionText}
+                onChange={(e) => setQuestionText(e.target.value)}
+                placeholder='Qual opção combina mais com você sobre "Meu Novo Quiz"?'
+                className="w-full"
+                rows={3}
+                autoFocus={false}
+              />
             </div>
 
-            {options.length === 0 ? (
-              <div className="text-sm text-muted-foreground py-4 text-center">
-                Nenhuma opção adicionada ainda.
+            {/* Answer Options Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Opções de Resposta
+                </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {options.map((option) => (
-                  <div key={option.id} className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={option.text}
-                        onChange={(e) =>
-                          handleOptionTextChange(option.id, e.target.value)
-                        }
-                        placeholder="Texto da opção"
-                        className="flex-1"
-                        autoFocus={false}
-                      />
-                      <EmojiPicker
-                        value={option.icon}
-                        onChange={(emoji) =>
-                          handleOptionIconChange(option.id, emoji)
-                        }
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                        onClick={() => handleDeleteOption(option.id)}
-                        title="Remover opção"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {outcomes.length > 0 && (
-                      <Select
-                        value={option.targetOutcomeId || ''}
-                        onValueChange={(value) =>
-                          handleOptionOutcomeChange(option.id, value)
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione o Resultado Associado" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {outcomes.map((outcome) => (
-                            <SelectItem
-                              key={outcome.id}
-                              value={outcome.id || ''}
-                            >
-                              {outcome.title || 'Resultado sem título'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
 
-            <button
-              type="button"
-              onClick={handleAddOption}
-              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 cursor-pointer"
-            >
-              <span className="text-lg">+</span>
-              Adicionar Opção
-            </button>
+              {options.length === 0 ? (
+                <div className="text-sm text-muted-foreground py-4 text-center">
+                  Nenhuma opção adicionada ainda.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {options.map((option) => (
+                    <div key={option.id} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={option.text}
+                          onChange={(e) =>
+                            handleOptionTextChange(option.id, e.target.value)
+                          }
+                          placeholder="Texto da opção"
+                          className="flex-1"
+                          autoFocus={false}
+                        />
+                        <EmojiPicker
+                          value={option.icon}
+                          onChange={(emoji) =>
+                            handleOptionIconChange(option.id, emoji)
+                          }
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                          onClick={() => handleDeleteOption(option.id)}
+                          title="Remover opção"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {outcomes.length > 0 && (
+                        <Select
+                          value={option.targetOutcomeId || ''}
+                          onValueChange={(value) =>
+                            handleOptionOutcomeChange(option.id, value)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione o Resultado Associado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {outcomes.map((outcome) => (
+                              <SelectItem
+                                key={outcome.id}
+                                value={outcome.id || ''}
+                              >
+                                {outcome.title || 'Resultado sem título'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleAddOption}
+                className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <span className="text-lg">+</span>
+                Adicionar Opção
+              </button>
+            </div>
           </div>
+          {/* Gradient overlay for fade effect - sticky to stay at bottom of viewport */}
+          <div className="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
         </div>
 
-        <DrawerFooter
-          onSave={handleSave}
-          onCancel={handleCancel}
-          saveDisabled={!questionText.trim() || options.length === 0}
-          saveText="Salvar"
-        />
+        <div className="flex-shrink-0 border-t bg-background py-8 mt-auto">
+          <DrawerFooter
+            onSave={handleSave}
+            onCancel={handleCancel}
+            saveDisabled={!questionText.trim() || options.length === 0}
+            saveText="Salvar"
+          />
+        </div>
       </SheetContent>
     </Sheet>
   );

@@ -16,12 +16,11 @@ function EditQuizLoader() {
   const { user } = useAuth();
   const { data: quiz, isLoading, error } = useQuizQuery(id as string, user?.uid);
   const loadQuiz = useQuizBuilderStore((state) => state.loadQuiz);
-  const reset = useQuizBuilderStore((state) => state.reset);
   
   // Track if we've already loaded this quiz to prevent infinite loops
   const loadedQuizIdRef = useRef<string | null>(null);
 
-  // On mount: invalidate cache to get fresh data, reset store
+  // On mount: invalidate cache to get fresh data
   useEffect(() => {
     if (id) {
       console.log('[EditQuiz] Entering builder, invalidating cache for quiz:', id);
@@ -29,9 +28,10 @@ function EditQuizLoader() {
       queryClient.invalidateQueries({ queryKey: ['quiz', id] });
       // Reset loaded ref so we load the fresh data
       loadedQuizIdRef.current = null;
-      reset();
+      // Note: We don't call reset() here because it would clear the conversation history
+      // before loadQuiz() runs, causing the welcome message to appear incorrectly
     }
-  }, [id, queryClient, reset]);
+  }, [id, queryClient]);
 
   useEffect(() => {
     // Only proceed if we have quiz data, user, and haven't loaded this quiz yet
