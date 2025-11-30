@@ -424,13 +424,29 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
       }
 
       const latestQuiz = useQuizBuilderStore.getState().quiz;
-      const hasOutcome = latestQuiz.outcomes?.some((outcome) => outcome.id === outcomeId);
+      const outcomes = latestQuiz.outcomes || [];
+      const hasOutcome = outcomes.some((outcome) => outcome.id === outcomeId);
       if (!hasOutcome) {
         console.warn('[Outcome Image] resultado não encontrado', outcomeId);
         return;
       }
 
-      updateOutcome(outcomeId, { imageUrl: data.url });
+      // Ensure we only accept absolute URLs; otherwise, discard to avoid broken relative paths
+      const isAbsoluteUrl = /^https?:\/\//i.test(data.url);
+      if (!isAbsoluteUrl) {
+        console.warn('[Outcome Image] URL não é absoluta, ignorando', { outcomeId, url: data.url });
+        return;
+      }
+
+      const updatedOutcomes = outcomes.map((outcome) =>
+        outcome.id === outcomeId ? { ...outcome, imageUrl: data.url } : outcome
+      );
+      useQuizBuilderStore.setState((state) => ({
+        quiz: {
+          ...state.quiz,
+          outcomes: updatedOutcomes,
+        },
+      }));
       lastOutcomeImagePromptRef.current[outcomeId] = prompt;
       lastSuggestedOutcomeImageUrlRef.current[outcomeId] = data.url;
       console.log('[Outcome Image] aplicado', { outcomeId, url: data.url });
