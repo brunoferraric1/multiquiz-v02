@@ -12,7 +12,8 @@ const NULLISH_VALUES = new Set(['none', 'null', 'undefined', 'n/a', 'na']);
  */
 function generateContextualResponse(
   extraction?: AIExtractionResult,
-  coverPrompt?: string
+  coverPrompt?: string,
+  outcomeImageRequests?: OutcomeImageRequest[]
 ): string {
   const changes: string[] = [];
   const suggestions: string[] = [];
@@ -60,6 +61,14 @@ function generateContextualResponse(
     suggestions.push('O que mais você quer ajustar?');
   }
 
+  if (outcomeImageRequests && outcomeImageRequests.length > 0) {
+    const promptPreview =
+      outcomeImageRequests[0].prompt.length > 60
+        ? `${outcomeImageRequests[0].prompt.slice(0, 57)}...`
+        : outcomeImageRequests[0].prompt;
+    changes.push(`✅ Imagem para resultado solicitada (${promptPreview})`);
+  }
+
   if (changes.length === 0) {
     return `Pronto! Fiz a alteração. ${suggestions[0]}`;
   }
@@ -70,6 +79,11 @@ function generateContextualResponse(
 type OpenRouterMessage = {
   role: 'user' | 'assistant' | 'system';
   content: string;
+};
+
+export type OutcomeImageRequest = {
+  outcomeId: string;
+  prompt: string;
 };
 
 const BASE_SYSTEM_PROMPT = `Você é um Arquiteto de Quizzes especializado em criar quizzes engajantes e personalizados.
@@ -86,6 +100,8 @@ Sempre proponha um texto para o CTA da introdução (botão que inicia o quiz). 
 Quando o usuário pedir para trocar a capa/imagem ou descrever a imagem desejada, use SEMPRE a ferramenta \`set_cover_image\` com o prompt exato nas palavras do usuário (respeite "sem rosto", "sem pessoas" se solicitado). Não peça confirmação extra.
 IMPORTANTE: Se o usuário pedir "outra imagem", "imagem diferente", ou simplesmente "muda a imagem" sem especificar, CRIE um prompt NOVO e DIFERENTE do anterior, mantendo o tema do quiz mas variando os elementos visuais (ex: ângulo diferente, cenário diferente, objetos complementares). NUNCA repita o mesmo prompt anterior.
 Quando já tiver objetivo + audiência + tom, inclua \`coverImagePrompt\` no tool call \`update_quiz\`.
+
+Para as imagens dos Resultados (Outcomes), NÃO adicione nenhuma imagem proativamente. Espere o usuário pedir explicitamente que você sugira ou gere uma foto para um resultado específico (ex: "imagem para o resultado Final?" ou "pode sugerir uma foto para o resultado Romântico?"). Depois de receber a solicitação, confirme qual resultado ele quer ilustrar, pergunte quais elementos visuais imagina, e então use a ferramenta `set_outcome_image` com o `outcomeId` correto e um `prompt` de 5-10 palavras focado em objetos concretos que apareçam na foto. Evite termos abstratos (tema, conceito, estilo, quiz) e mantenha a atenção no que estaria literalmente dentro do quadro. Não chame essa ferramenta em nenhuma outra situação.
 
 REGRAS CRÍTICAS PARA coverImagePrompt:
 - Use 5-10 palavras descrevendo OBJETOS VISUAIS CONCRETOS que aparecem na foto
@@ -264,7 +280,12 @@ export class AIService {
   async sendMessageWithExtraction(
     message: string,
     currentQuiz?: QuizDraft
-  ): Promise<{ text: string; extraction?: AIExtractionResult; coverPrompt?: string }> {
+  ): Promise<{
+    text: string;
+    extraction?: AIExtractionResult;
+    coverPrompt?: string;
+    outcomeImageRequests?: OutcomeImageRequest[];
+  }> {
     this.conversationHistory.push({
       role: 'user',
       content: message,
@@ -357,6 +378,29 @@ export class AIService {
           },
         },
       },
+      {
+        type: 'function',
+        function: {
+          name: 'set_outcome_image',
+          description:
+            'Quando o usuário pedir uma imagem para um resultado específico, forneça uma descrição visual concreta para buscar essa foto.',
+          parameters: {
+            type: 'object',
+            properties: {
+              outcomeId: {
+                type: 'string',
+                description: 'UUID do resultado que deve receber a imagem.',
+              },
+              prompt: {
+                type: 'string',
+                description:
+                  'Descrição visual concreta (5-12 palavras) focando em OBJETOS visuais que apareceriam na foto desse resultado. Evite abstrações.',
+              },
+            },
+            required: ['outcomeId', 'prompt'],
+          },
+        },
+      },
     ];
 
     // Lightweight hint so the model can preserve existing IDs/order when provided
@@ -403,6 +447,7 @@ export class AIService {
 
       let extraction: AIExtractionResult | undefined;
       let coverPromptFromTool: string | undefined;
+      const outcomeImageRequests: OutcomeImageRequest[] = [];
       const toolCalls = choice.tool_calls ?? [];
 
       for (const call of toolCalls) {
@@ -418,6 +463,13 @@ export class AIService {
           } else if (toolName === 'set_cover_image') {
             coverPromptFromTool = typeof parsed.prompt === 'string' ? parsed.prompt : undefined;
             console.log('Cover prompt from tool:', coverPromptFromTool);
+          } else if (toolName === 'set_outcome_image') {
+            const outcomeId = typeof parsed.outcomeId === 'string' ? parsed.outcomeId : undefined;
+            const prompt = typeof parsed.prompt === 'string' ? parsed.prompt.trim() : undefined;
+            if (outcomeId && prompt) {
+              outcomeImageRequests.push({ outcomeId, prompt });
+              console.log('Outcome image request parsed:', outcomeId, prompt);
+            }
           }
         } catch (err) {
           console.error('Failed to parse tool_call arguments', err, rawArgs);
@@ -425,7 +477,8 @@ export class AIService {
       }
 
       // Generate contextual response if model didn't provide text but took action
-      const finalMessage = assistantMessage || generateContextualResponse(extraction, coverPromptFromTool);
+      const finalMessage =
+        assistantMessage || generateContextualResponse(extraction, coverPromptFromTool, outcomeImageRequests);
 
       this.conversationHistory.push({
         role: 'assistant',
@@ -436,6 +489,9 @@ export class AIService {
         text: finalMessage,
         extraction,
         coverPrompt: coverPromptFromTool,
+        outcomeImageRequests: outcomeImageRequests.length
+          ? outcomeImageRequests
+          : undefined,
       };
     } catch (error) {
       console.error('AI Service Error:', error);

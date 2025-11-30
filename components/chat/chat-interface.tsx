@@ -5,7 +5,7 @@ import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { ChatMessageComponent } from './chat-message';
 import { ChatInput } from './chat-input';
 import { TypingIndicator } from './typing-indicator';
-import { AIService } from '@/lib/services/ai-service';
+import { AIService, type OutcomeImageRequest } from '@/lib/services/ai-service';
 import type { AIExtractionResult, QuizDraft, Question, Outcome, ManualChange } from '@/types';
 
 const formatManualChangesInstruction = (changes: ManualChange[]): string | undefined => {
@@ -171,6 +171,7 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
 
   const quiz = useQuizBuilderStore((state) => state.quiz);
   const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
+  const updateOutcome = useQuizBuilderStore((state) => state.updateOutcome);
   const setQuiz = useQuizBuilderStore((state) => state.setQuiz);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -203,6 +204,9 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
   const coverRequestIdRef = useRef(0);
   // Track if main flow already triggered a cover suggestion (to avoid duplicate from extraction)
   const coverSuggestionTriggeredRef = useRef(false);
+  const outcomeImageRequestIdRef = useRef<Record<string, number>>({});
+  const lastOutcomeImagePromptRef = useRef<Record<string, string>>({});
+  const lastSuggestedOutcomeImageUrlRef = useRef<Record<string, string>>({});
 
   // Load conversation history into AI service when it changes
   useEffect(() => {
@@ -391,6 +395,60 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
     }
   };
 
+  const maybeSuggestOutcomeImage = async (request: OutcomeImageRequest) => {
+    const { outcomeId, prompt } = request;
+    const nextRequestId = (outcomeImageRequestIdRef.current[outcomeId] || 0) + 1;
+    outcomeImageRequestIdRef.current[outcomeId] = nextRequestId;
+
+    try {
+      const response = await fetch('/api/image-suggestion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao sugerir imagem (${response.status})`);
+      }
+
+      const data = (await response.json()) as { url?: string };
+
+      if (!data?.url) {
+        console.warn('[Outcome Image] sem URL na resposta', { outcomeId, prompt });
+        return;
+      }
+
+      if (outcomeImageRequestIdRef.current[outcomeId] !== nextRequestId) {
+        console.log('[Outcome Image] descartado (sobrescrito)', { outcomeId });
+        return;
+      }
+
+      const latestQuiz = useQuizBuilderStore.getState().quiz;
+      const hasOutcome = latestQuiz.outcomes?.some((outcome) => outcome.id === outcomeId);
+      if (!hasOutcome) {
+        console.warn('[Outcome Image] resultado não encontrado', outcomeId);
+        return;
+      }
+
+      updateOutcome(outcomeId, { imageUrl: data.url });
+      lastOutcomeImagePromptRef.current[outcomeId] = prompt;
+      lastSuggestedOutcomeImageUrlRef.current[outcomeId] = data.url;
+      console.log('[Outcome Image] aplicado', { outcomeId, url: data.url });
+    } catch (error) {
+      console.error('[Outcome Image] erro', outcomeId, error);
+    }
+  };
+
+  const processOutcomeImageRequests = (requests?: OutcomeImageRequest[]) => {
+    if (!requests?.length) {
+      return;
+    }
+    console.log('[Outcome Image] processing', { count: requests.length });
+    requests.forEach((request) => {
+      void maybeSuggestOutcomeImage(request);
+    });
+  };
+
   const shouldExtractQuizStructure = (userMessage: string, assistantResponse: string): boolean => {
     // Normalize strings once so keyword matching works with/without accents
     const normalizedUser = normalizeText(userMessage);
@@ -458,7 +516,12 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
 
       // Call AI service to get response + structured extraction in a single round-trip
       const currentQuizSnapshot = useQuizBuilderStore.getState().quiz;
-      const { text: response, extraction, coverPrompt } = await aiService.sendMessageWithExtraction(
+      const {
+        text: response,
+        extraction,
+        coverPrompt,
+        outcomeImageRequests,
+      } = await aiService.sendMessageWithExtraction(
         outboundContent,
         currentQuizSnapshot
       );
@@ -550,6 +613,10 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
           // Run extraction in the background to avoid blocking the chat UI
           void extractQuizStructure();
         }
+      }
+
+      if (outcomeImageRequests?.length) {
+        void processOutcomeImageRequests(outcomeImageRequests);
       }
     } catch (error) {
       console.error('Error sending message:', error);
