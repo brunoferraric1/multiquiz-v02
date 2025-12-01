@@ -70,8 +70,20 @@ function NewQuizInitializer() {
       return;
     }
 
+    const cameFromBuilder = (() => {
+      if (typeof document === 'undefined') return false;
+      if (!document.referrer) return false;
+      try {
+        const referrerPathname = new URL(document.referrer).pathname;
+        return referrerPathname.startsWith('/builder');
+      } catch (error) {
+        console.error('Failed to parse referrer for builder navigation:', error);
+        return false;
+      }
+    })();
+
     const shouldPreserveExisting =
-      (navigationType === 'reload' || navigationType === 'back_forward') && Boolean(quiz?.id);
+      cameFromBuilder && (navigationType === 'reload' || navigationType === 'back_forward') && Boolean(quiz?.id);
 
     if (shouldPreserveExisting) {
       initializedRef.current = true;
