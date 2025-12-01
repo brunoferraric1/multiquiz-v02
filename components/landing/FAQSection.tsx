@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrollAnimation } from '@/lib/hooks/use-scroll-animation';
+import { ChevronDown } from 'lucide-react';
 
 const faqs = [
   {
@@ -27,19 +28,17 @@ const AccordionItem = ({ faq }: { faq: typeof faqs[0] }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <div className="border-b border-gray-200 py-6">
+        <div className="border-b border-border py-6">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex justify-between items-center w-full text-lg font-medium text-left text-gray-900"
+                className="flex justify-between items-center w-full text-lg font-medium text-left text-foreground hover:text-primary transition-colors"
             >
                 <span>{faq.question}</span>
                 <motion.div
                     animate={{ rotate: isOpen ? 180 : 0 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <ChevronDown className="h-6 w-6 text-muted-foreground" />
                 </motion.div>
             </button>
             <AnimatePresence>
@@ -49,7 +48,7 @@ const AccordionItem = ({ faq }: { faq: typeof faqs[0] }) => {
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="mt-4 text-base text-gray-500"
+                        className="mt-4 text-base text-muted-foreground"
                     >
                        {faq.answer}
                     </motion.div>
@@ -63,25 +62,26 @@ export const FAQSection = () => {
     const [ref, controls] = useScrollAnimation();
 
   return (
-    <section id="faq" className="py-20 bg-gray-50 sm:py-32">
+    <section id="faq" className="py-20 bg-background sm:py-32">
       <div ref={ref} className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div 
+        <motion.div
          initial={{ opacity: 0, y: 50 }}
          animate={controls}
          transition={{ duration: 0.5 }}
         className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+          <h2 className="text-3xl font-extrabold text-foreground sm:text-5xl">
             Frequently Asked Questions
           </h2>
-          <p className="mt-4 text-lg text-gray-500">
+          <p className="mt-4 text-lg text-muted-foreground">
             Have questions? We have answers. If you can’t find what you’re looking for, feel free to contact us.
           </p>
         </motion.div>
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={controls}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-12 max-w-3xl mx-auto">
+            className="mt-12 max-w-3xl mx-auto"
+        >
           {faqs.map((faq, i) => (
             <AccordionItem key={i} faq={faq} />
           ))}
@@ -90,3 +90,4 @@ export const FAQSection = () => {
     </section>
   );
 };
+

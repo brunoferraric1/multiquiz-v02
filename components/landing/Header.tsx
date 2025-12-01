@@ -11,31 +11,28 @@ export const LandingHeader = () => {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="fixed top-0 left-0 right-0 z-50 bg-white bg-opacity-80 backdrop-blur-md"
+      className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50"
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex h-20 items-center justify-between">
           <div className="flex-shrink-0">
-            <Link href="/" className="text-2xl font-bold text-gray-800">
+            <Link href="/" className="text-2xl font-bold text-foreground">
               MultiQuiz
             </Link>
           </div>
           <nav className="hidden md:flex md:space-x-8">
-            <Link href="#features" className="text-gray-600 hover:text-gray-900">
+            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
               Features
             </Link>
-            <Link href="#pricing" className="text-gray-600 hover:text-gray-900">
+            <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
               Pricing
             </Link>
-            <Link href="#faq" className="text-gray-600 hover:text-gray-900">
+            <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">
               FAQ
             </Link>
           </nav>
           <div className="flex items-center">
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 mr-4">
-              Log In
-            </Link>
-            <Button asChild>
+            <Button asChild className="bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors">
               <Link href="/dashboard">Get Started</Link>
             </Button>
           </div>
