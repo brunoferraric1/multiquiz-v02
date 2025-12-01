@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from "react";
-import { ImageIcon, UploadCloud } from "lucide-react";
+import { ImageIcon, UploadCloud, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
     };
 
     const handleButtonClick = () => {
+      setIsPreviewViewerOpen(false);
       inputRef.current?.click();
     };
 
@@ -30,6 +31,31 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
       event.preventDefault();
       handleSelect(event.dataTransfer.files);
     };
+
+    const [isPreviewViewerOpen, setIsPreviewViewerOpen] = React.useState(false);
+
+    React.useEffect(() => {
+      if (!isPreviewViewerOpen) {
+        return;
+      }
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          setIsPreviewViewerOpen(false);
+        }
+      };
+
+      document.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [isPreviewViewerOpen]);
+
+    React.useEffect(() => {
+      if (!previewUrl) {
+        setIsPreviewViewerOpen(false);
+      }
+    }, [previewUrl]);
 
     return (
       <div ref={ref} className={cn("space-y-2", className)} {...props}>
@@ -47,13 +73,18 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
           onDragEnter={(event) => event.preventDefault()}
         >
           {previewUrl ? (
-            <div className="relative w-full aspect-video">
+            <button
+              type="button"
+              className="relative aspect-video w-full overflow-hidden rounded-2xl border-none p-0 cursor-[var(--cursor-interactive)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              onClick={() => setIsPreviewViewerOpen(true)}
+              aria-label="Abrir imagem em tela cheia"
+            >
               <img
                 src={previewUrl}
                 alt="Preview da imagem do quiz"
-                className="h-full w-full object-cover"
+                className="block h-full w-full object-cover"
               />
-            </div>
+            </button>
           ) : (
             <>
               <div className="flex flex-col items-center gap-1 text-muted-foreground mb-2">
@@ -83,6 +114,35 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
             onChange={(event) => handleSelect(event.target.files)}
           />
         </div>
+
+        {previewUrl && isPreviewViewerOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 px-4 py-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Visualização da imagem em tamanho maior"
+            onClick={() => setIsPreviewViewerOpen(false)}
+          >
+            <div
+              className="relative max-h-full max-w-full"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="absolute right-0 top-0 inline-flex cursor-[var(--cursor-interactive)] items-center justify-center rounded-full bg-card/80 p-2 text-foreground shadow-lg transition hover:bg-card focus-visible:outline-none"
+                onClick={() => setIsPreviewViewerOpen(false)}
+                aria-label="Fechar visualização"
+              >
+                <X size={16} />
+              </button>
+              <img
+                src={previewUrl}
+                alt="Preview da imagem do quiz em tamanho maior"
+                className="max-h-[90vh] w-auto rounded-2xl object-contain shadow-2xl"
+              />
+            </div>
+          </div>
+        )}
 
         {previewUrl && (
           <Button

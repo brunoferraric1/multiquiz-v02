@@ -279,25 +279,29 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
 
   const isCoverComplaint = (message: string) => {
     const text = message.toLowerCase();
-    const complaintKeywords = [
-      'imagem',
-      'image',
-      'capa',
-      'cover',
-      'foto',
-      'photo',
-      'figur',
-      'figure',
-      'troca',
+    const coverTerms = ['capa', 'cover', 'intro', 'introdução', 'introducao'];
+    const actionTerms = [
       'mudar',
+      'trocar',
       'change',
       'swap',
+      'nova',
+      'atualiza',
+      'atualizar',
+      'corrigir',
+      'errada',
+      'ruim',
       'sem relação',
       'off topic',
-      'errada',
-      'wrong',
     ];
-    return complaintKeywords.some((word) => text.includes(word));
+    const explicitPhrases = ['imagem da capa', 'foto da capa', 'imagem de capa', 'foto de capa'];
+    const mentionsCover = coverTerms.some((term) => text.includes(term));
+    const mentionsAction = actionTerms.some((term) => text.includes(term));
+    const mentionsCoverImage = explicitPhrases.some((phrase) => text.includes(phrase));
+
+    if (!mentionsCover && !mentionsCoverImage) return false;
+    if (mentionsCoverImage) return true;
+    return mentionsCover && (mentionsAction || text.includes('imagem') || text.includes('foto'));
   };
 
   const buildCoverPrompt = (rawPrompt?: string) => {
@@ -575,7 +579,7 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
       if (shouldApplyExtraction && extraction && Object.keys(extraction).length > 0) {
         console.log('[Flow] Taking extraction branch');
         const latestQuiz = useQuizBuilderStore.getState().quiz;
-        const updatedQuiz = applyExtractionResult(latestQuiz, extraction);
+        const updatedQuiz = applyExtractionResult(latestQuiz, extraction, { mergeExisting: true });
 
         setQuiz(updatedQuiz);
         
@@ -596,7 +600,7 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
           Boolean(coverPrompt) ||
           Boolean(extraction.coverImagePrompt && extraction.coverImagePrompt !== lastCoverPrompt);
 
-        if (finalCoverPrompt && (shouldForceCover || coverPromptChanged || !latestQuiz.coverImageUrl)) {
+        if (finalCoverPrompt && (shouldForceCover || !latestQuiz.coverImageUrl)) {
           coverSuggestionTriggeredRef.current = true;
           void maybeSuggestCover(finalCoverPrompt, updatedQuiz.coverImageUrl, {
             force: shouldForceCover,

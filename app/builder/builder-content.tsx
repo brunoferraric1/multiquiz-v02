@@ -772,14 +772,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 <div className="flex-1 overflow-y-auto relative min-h-0">
                   <div className="space-y-4">
                     <div className="space-y-1">
-                      <p className={fieldLabelClass}>Imagem do resultado</p>
-                      <Upload
-                        file={outcomeFile}
-                        previewUrl={draftOutcomeImageUrl || undefined}
-                        onFileChange={handleOutcomeImageChange}
-                      />
-                    </div>
-                    <div className="space-y-1">
                       <p className={fieldLabelClass}>Título</p>
                       <Input
                         value={draftOutcomeTitle}
@@ -796,6 +788,14 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                         placeholder="Descreva esse resultado"
                         rows={4}
                         autoFocus={false}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className={fieldLabelClass}>Imagem do resultado</p>
+                      <Upload
+                        file={outcomeFile}
+                        previewUrl={draftOutcomeImageUrl || undefined}
+                        onFileChange={handleOutcomeImageChange}
                       />
                     </div>
                     <div className="space-y-1">
