@@ -350,6 +350,11 @@ export class AIService {
                     title: { type: 'string' },
                     description: { type: 'string' },
                     imageUrl: { type: 'string' },
+                    imagePrompt: {
+                      type: 'string',
+                      description:
+                        'Descrição visual para buscar foto no Unsplash (5-10 palavras). Use APENAS se quiser sugerir uma imagem automática.',
+                    },
                     ctaText: { type: 'string' },
                     ctaUrl: { type: 'string' },
                   },
@@ -407,11 +412,11 @@ export class AIService {
     // Lightweight hint so the model can preserve existing IDs/order when provided
     const stateHint = currentQuiz
       ? `Estado atual (resumo): ${JSON.stringify({
-          title: currentQuiz.title,
-          description: currentQuiz.description,
-          questions: currentQuiz.questions?.map((q) => ({ id: q.id, text: q.text })),
-          outcomes: currentQuiz.outcomes?.map((o) => ({ id: o.id, title: o.title })),
-        })}`
+        title: currentQuiz.title,
+        description: currentQuiz.description,
+        questions: currentQuiz.questions?.map((q) => ({ id: q.id, text: q.text })),
+        outcomes: currentQuiz.outcomes?.map((o) => ({ id: o.id, title: o.title })),
+      })}`
       : '';
 
     try {
@@ -673,7 +678,7 @@ IMPORTANT:
             parsedSuccessfully = true;
           } catch (retryError) {
             console.log(`Repair attempt ${attempt + 1} failed, trying adjustments...`);
-            
+
             // Try inserting comma from error position
             const adjusted = insertCommaFromError(repairedContent, retryError);
             if (adjusted && adjusted !== repairedContent) {
@@ -681,7 +686,7 @@ IMPORTANT:
               console.log('After comma insertion:', repairedContent);
               continue;
             }
-            
+
             // Try running repair again (catches issues repair might have missed)
             const reRepaired = repairJsonString(repairedContent);
             if (reRepaired !== repairedContent) {
@@ -689,7 +694,7 @@ IMPORTANT:
               console.log('After re-repair:', repairedContent);
               continue;
             }
-            
+
             // Last resort: try to extract a valid JSON subset
             const lastValidJson = extractValidJsonSubset(repairedContent);
             if (lastValidJson && lastValidJson !== repairedContent) {
@@ -697,7 +702,7 @@ IMPORTANT:
               console.log('After extracting valid subset:', repairedContent);
               continue;
             }
-            
+
             throw retryError;
           }
         }
@@ -759,6 +764,12 @@ WHEN EXTRACTING:
 EXISTING IDs (use these when updating existing items):
 - Outcome IDs: ${JSON.stringify(currentQuiz.outcomes?.map((o) => ({ id: o.id, title: o.title })) || [])}
 - Question IDs: ${JSON.stringify(currentQuiz.questions?.map((q) => ({ id: q.id, text: q.text?.slice(0, 30) })) || [])}
+
+CRITICAL IMAGE RULE:
+- NEVER invent, guess, or create placeholder URLs (like example.com, placeholder.com).
+- ONLY include "imageUrl" if the user explicitly provided a real link in the chat.
+- If you want to suggest an image for a Result/Outcome, use the "imagePrompt" field with a visual description (5-10 words) of what the image should look like.
+- If no image URL was provided by the user, leave "imageUrl" empty and provide "imagePrompt" instead.
 
 Return minimal JSON with ONLY the changes.`;
   }
@@ -841,6 +852,8 @@ Return minimal JSON with ONLY the changes.`;
             title: o.title || 'Resultado sem título',
             description: o.description || '',
             imageUrl: this.sanitizeOptionalString(o.imageUrl),
+            // @ts-ignore - imagePrompt is transient but allowed by our updated AIExtractionResult type
+            imagePrompt: this.sanitizeOptionalString(o.imagePrompt),
             ctaText: this.sanitizeOptionalString(o.ctaText),
             ctaUrl: this.sanitizeOptionalString(o.ctaUrl),
           };
@@ -879,7 +892,19 @@ Return minimal JSON with ONLY the changes.`;
     const containsOptional = normalized.includes('optional') || normalized.includes('opcional');
     const containsPlaceholderKeyword = PLACEHOLDER_KEYWORDS.some((keyword) => normalized.includes(keyword));
 
-    if ((containsOptional && containsPlaceholderKeyword) || (containsPlaceholderKeyword && normalized.length <= 6)) {
+    // Blocklist for known fake/placeholder domains often hallucinated by LLMs
+    const isFakeDomain =
+      normalized.includes('example.com') ||
+      normalized.includes('mysite.com') ||
+      normalized.includes('placeholder.com') ||
+      normalized.includes('yourdomain.com') ||
+      normalized.includes('image.com');
+
+    if (
+      (containsOptional && containsPlaceholderKeyword) ||
+      (containsPlaceholderKeyword && normalized.length <= 6) ||
+      isFakeDomain
+    ) {
       return undefined;
     }
 
@@ -959,7 +984,7 @@ const repairJsonString = (json: string): string => {
   repaired = repaired.replace(/}(\s*,?\s*)}(?=\s*[\],])/g, '}');
   // Pattern: ],] or ], ] etc -> ]
   repaired = repaired.replace(/](\s*,?\s*)](?=\s*[\],}])/g, ']');
-  
+
   // Remove duplicate closing braces (no comma between)
   // Run multiple times to handle deeply nested issues
   for (let i = 0; i < 3; i++) {
@@ -970,7 +995,7 @@ const repairJsonString = (json: string): string => {
   // Clean up any remaining },} patterns (with comma)
   repaired = repaired.replace(/},\s*}/g, '}');
   repaired = repaired.replace(/],\s*]/g, ']');
-  
+
   // Fix pattern like: "value"},}] -> "value"}]
   repaired = repaired.replace(/"(\s*),?\s*}\s*,?\s*}/g, '"}');
   repaired = repaired.replace(/"(\s*),?\s*}\s*,?\s*]/g, '"}]');

@@ -104,7 +104,7 @@ export type AIExtractionResult = {
   ctaText?: string;
   ctaUrl?: string;
   questions?: Partial<Question>[];
-  outcomes?: Partial<Outcome>[];
+  outcomes?: (Partial<Outcome> & { imagePrompt?: string })[];
 };
 
 // Store types

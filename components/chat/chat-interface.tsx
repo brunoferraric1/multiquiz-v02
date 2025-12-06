@@ -148,12 +148,15 @@ const applyExtractionResult = (
   }
 
   if (Array.isArray(extraction.outcomes)) {
+    // Strip imagePrompt before merging as it's not part of the Outcome type in the store
+    const outcomesToMerge = extraction.outcomes.map(({ imagePrompt, ...rest }) => rest);
+
     if (mergeExisting) {
-      if (extraction.outcomes.length > 0) {
-        nextQuiz.outcomes = mergeEntityCollections(nextQuiz.outcomes || [], extraction.outcomes);
+      if (outcomesToMerge.length > 0) {
+        nextQuiz.outcomes = mergeEntityCollections(nextQuiz.outcomes || [], outcomesToMerge);
       }
     } else {
-      nextQuiz.outcomes = extraction.outcomes;
+      nextQuiz.outcomes = outcomesToMerge;
     }
   }
 
@@ -198,7 +201,7 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
       unsub?.();
     };
   }, []);
-  
+
   // Request counter to implement "latest request wins" pattern for cover suggestions
   // This prevents flickering when multiple requests are made in quick succession
   const coverRequestIdRef = useRef(0);
@@ -353,7 +356,7 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
     // Increment request ID - this request will only apply if it's still the latest when it completes
     coverRequestIdRef.current += 1;
     const thisRequestId = coverRequestIdRef.current;
-    
+
     console.log('[Cover] Request started', { requestId: thisRequestId, prompt: effectivePrompt.slice(0, 50) });
     setIsCoverSuggesting(true);
 
@@ -582,17 +585,17 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
         const updatedQuiz = applyExtractionResult(latestQuiz, extraction, { mergeExisting: true });
 
         setQuiz(updatedQuiz);
-        
+
         // Auto-suggest cover when title/description are confirmed
         // Priority: 1) AI-provided coverPrompt, 2) extraction.coverImagePrompt, 3) generate from title/desc
         const finalTitle = updatedQuiz.title || latestQuiz.title;
         const finalDescription = updatedQuiz.description || latestQuiz.description;
         const hasTitleOrDescription = finalTitle && finalTitle !== 'Meu Novo Quiz';
-        
-        const finalCoverPrompt = combinedCoverPrompt || 
+
+        const finalCoverPrompt = combinedCoverPrompt ||
           (forceCoverRefresh ? content : undefined) ||
           (hasTitleOrDescription ? `${finalTitle} ${finalDescription}`.trim() : undefined);
-        
+
         console.log('[Flow] finalCoverPrompt for extraction branch:', finalCoverPrompt?.slice(0, 40));
         const coverPromptChanged = finalCoverPrompt && finalCoverPrompt !== lastCoverPrompt;
         const shouldForceCover =
@@ -606,14 +609,39 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
             force: shouldForceCover,
           });
         }
+
+        // Process outcome image prompts from extraction
+        if (extraction.outcomes?.length) {
+          extraction.outcomes.forEach((outcome) => {
+            if (outcome.imagePrompt && outcome.title) {
+              // Find the ID in the updated quiz that matches this extraction outcome
+              // (either by ID if preserved, or by title if new)
+              const match = updatedQuiz.outcomes?.find(
+                (o) => o.id === outcome.id || o.title === outcome.title
+              );
+
+              if (match?.id) {
+                console.log('[Flow] Triggering outcome image suggestion from extraction', {
+                  outcomeId: match.id,
+                  prompt: outcome.imagePrompt,
+                });
+                // We don't wait for this
+                void maybeSuggestOutcomeImage({
+                  outcomeId: match.id,
+                  prompt: outcome.imagePrompt,
+                });
+              }
+            }
+          });
+        }
       } else {
         console.log('[Flow] Taking else branch (fallback)');
-        
+
         // Handle cover image change first (if tool provided a prompt)
         if (combinedCoverPrompt || forceCoverRefresh) {
-          console.log('[Flow] Calling maybeSuggestCover from else branch', { 
-            combinedCoverPrompt: combinedCoverPrompt?.slice(0, 30), 
-            forceCoverRefresh 
+          console.log('[Flow] Calling maybeSuggestCover from else branch', {
+            combinedCoverPrompt: combinedCoverPrompt?.slice(0, 30),
+            forceCoverRefresh
           });
           coverSuggestionTriggeredRef.current = true;
           // User asked to fix the image even without confirmation flow
@@ -680,11 +708,11 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
           const finalDescription = updatedQuiz.description || latestQuiz.description;
           const hasTitleOrDescription = finalTitle && finalTitle !== 'Meu Novo Quiz';
           const hasNoCoverYet = !latestQuiz.coverImageUrl;
-          
+
           // Use AI-provided coverImagePrompt if available
-          const coverPromptToUse = extracted.coverImagePrompt || 
+          const coverPromptToUse = extracted.coverImagePrompt ||
             (hasNoCoverYet && hasTitleOrDescription ? `${finalTitle} ${finalDescription}`.trim() : undefined);
-          
+
           // Only trigger if:
           // - AI explicitly provided a prompt (user asked or initial setup), OR
           // - No cover exists yet and we have context (initial setup)
@@ -696,6 +724,27 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
             });
             void maybeSuggestCover(coverPromptToUse, updatedQuiz.coverImageUrl);
           }
+        }
+
+        // Process outcome image prompts from extraction (fallback flow)
+        if (extracted.outcomes?.length) {
+          extracted.outcomes.forEach((outcome) => {
+            if (outcome.imagePrompt && outcome.title) {
+              const match = updatedQuiz.outcomes?.find(
+                (o) => o.id === outcome.id || o.title === outcome.title
+              );
+              if (match?.id) {
+                console.log('[Extraction] Triggering outcome image suggestion', {
+                  outcomeId: match.id,
+                  prompt: outcome.imagePrompt,
+                });
+                void maybeSuggestOutcomeImage({
+                  outcomeId: match.id,
+                  prompt: outcome.imagePrompt,
+                });
+              }
+            }
+          });
         }
       }
     } catch (error) {
