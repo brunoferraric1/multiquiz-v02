@@ -889,12 +889,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   {/* Gradient overlay for fade effect - sticky to stay at bottom of viewport */}
                   <div className="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
                 </div>
-                <div className="flex-shrink-0 border-t bg-background py-8 mt-auto">
-                  <DrawerFooter
-                    onSave={handleSaveIntroduction}
-                    onCancel={handleCancelIntroduction}
-                  />
-                </div>
               </>
             )}
 
