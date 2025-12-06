@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Question, AnswerOption, Outcome } from '@/types';
+import { compressImage } from '@/lib/utils';
 import {
   Sheet,
   SheetContent,
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { EmojiPicker } from '@/components/ui/emoji-picker';
 import { DrawerFooter } from '@/components/builder/drawer-footer';
+import { Upload } from '@/components/ui/upload';
 
 // UUID v4 generator with crypto.randomUUID fallback
 function generateUUID(): string {
@@ -31,7 +33,7 @@ function generateUUID(): string {
   }
 
   // Fallback for environments without crypto.randomUUID
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
@@ -55,12 +57,16 @@ export function EditQuestionModal({
 }: EditQuestionModalProps) {
   const [questionText, setQuestionText] = useState(question?.text || '');
   const [options, setOptions] = useState<AnswerOption[]>(question?.options || []);
+  const [questionFile, setQuestionFile] = useState<File | null>(null);
+  const [draftQuestionImageUrl, setDraftQuestionImageUrl] = useState('');
 
   // Sync state when question changes or modal opens
   useEffect(() => {
     if (open && question) {
       setQuestionText(question.text || '');
       setOptions(question.options || []);
+      setDraftQuestionImageUrl(question.imageUrl ?? '');
+      setQuestionFile(null);
     }
   }, [open, question]);
 
@@ -115,6 +121,28 @@ export function EditQuestionModal({
     );
   };
 
+  const handleQuestionImageChange = async (file: File | null) => {
+    setQuestionFile(file);
+
+    if (!file) {
+      setDraftQuestionImageUrl('');
+      return;
+    }
+
+    try {
+      const compressedDataUrl = await compressImage(file);
+      setDraftQuestionImageUrl(compressedDataUrl);
+    } catch (error) {
+      console.error('Error compressing question image:', error);
+      // Fallback to original file if compression fails
+      const reader = new FileReader();
+      reader.onload = () => {
+        setDraftQuestionImageUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = () => {
     if (!question?.id) return;
 
@@ -130,6 +158,7 @@ export function EditQuestionModal({
     onSave({
       id: question.id,
       text: questionText,
+      imageUrl: draftQuestionImageUrl || undefined,
       options: validOptions,
     });
     onOpenChange(false);
@@ -141,6 +170,8 @@ export function EditQuestionModal({
     if (question) {
       setQuestionText(question.text || '');
       setOptions(question.options || []);
+      setDraftQuestionImageUrl(question.imageUrl ?? '');
+      setQuestionFile(null);
     }
     onOpenChange(false);
   };
@@ -172,6 +203,18 @@ export function EditQuestionModal({
                 className="w-full"
                 rows={3}
                 autoFocus={false}
+              />
+            </div>
+
+            {/* Question Image Section */}
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted-foreground">
+                Imagem da Pergunta
+              </p>
+              <Upload
+                file={questionFile}
+                previewUrl={draftQuestionImageUrl || undefined}
+                onFileChange={handleQuestionImageChange}
               />
             </div>
 

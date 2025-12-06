@@ -659,6 +659,15 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
                 (o) => o.id === outcome.id || o.title === outcome.title
               );
 
+              // Skip if the outcome already has an imageUrl set by the user
+              if (match?.imageUrl) {
+                console.log('[Flow] Skipping outcome image suggestion - already has image', {
+                  outcomeId: match.id,
+                  existingUrl: match.imageUrl?.slice(0, 40),
+                });
+                return;
+              }
+
               if (match?.id) {
                 console.log('[Flow] Triggering outcome image suggestion from extraction', {
                   outcomeId: match.id,
@@ -681,6 +690,15 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
               const match = updatedQuiz.questions?.find(
                 (q) => q.id === question.id || q.text === question.text
               );
+
+              // Skip if the question already has an imageUrl set by the user
+              if (match?.imageUrl) {
+                console.log('[Flow] Skipping question image suggestion - already has image', {
+                  questionId: match.id,
+                  existingUrl: match.imageUrl?.slice(0, 40),
+                });
+                return;
+              }
 
               if (match?.id) {
                 console.log('[Flow] Triggering question image suggestion from extraction', {
@@ -794,6 +812,16 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
               const match = updatedQuiz.outcomes?.find(
                 (o) => o.id === outcome.id || o.title === outcome.title
               );
+
+              // Skip if the outcome already has an imageUrl set by the user
+              if (match?.imageUrl) {
+                console.log('[Extraction] Skipping outcome image suggestion - already has image', {
+                  outcomeId: match?.id,
+                  existingUrl: match.imageUrl?.slice(0, 40),
+                });
+                return;
+              }
+
               if (match?.id) {
                 console.log('[Extraction] Triggering outcome image suggestion', {
                   outcomeId: match.id,
@@ -815,6 +843,16 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
               const match = updatedQuiz.questions?.find(
                 (q) => q.id === question.id || q.text === question.text
               );
+
+              // Skip if the question already has an imageUrl set by the user
+              if (match?.imageUrl) {
+                console.log('[Extraction] Skipping question image suggestion - already has image', {
+                  questionId: match?.id,
+                  existingUrl: match.imageUrl?.slice(0, 40),
+                });
+                return;
+              }
+
               if (match?.id) {
                 console.log('[Extraction] Triggering question image suggestion', {
                   questionId: match.id,
