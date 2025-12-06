@@ -706,7 +706,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 <button
                   key={outcome.id}
                   type="button"
-                  onClick={() => setActiveSheet({ type: 'outcome', id: outcome.id })}
+                  onClick={() => outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })}
                   className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
                   <div className="flex items-center gap-4">
