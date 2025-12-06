@@ -12,7 +12,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Quiz, QuizDraft } from '@/types';
+import type { Quiz, QuizDraft, QuizSnapshot } from '@/types';
 import { QuizSchema } from '@/types';
 
 const QUIZZES_COLLECTION = 'quizzes';
@@ -97,8 +97,13 @@ export class QuizService {
 
   /**
    * Get a quiz by ID
+   * @param version - 'draft' returns current quiz state, 'published' returns frozen published version
    */
-  static async getQuizById(quizId: string, userId?: string): Promise<Quiz | null> {
+  static async getQuizById(
+    quizId: string,
+    userId?: string,
+    version: 'draft' | 'published' = 'draft'
+  ): Promise<Quiz | null> {
     try {
       const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
       const quizDoc = await getDoc(quizRef);
@@ -114,12 +119,23 @@ export class QuizService {
         throw new Error('Unauthorized access to unpublished quiz');
       }
 
-      return {
+      const baseQuiz = {
         ...data,
         id: quizDoc.id,
         createdAt: data.createdAt?.toMillis() || Date.now(),
         updatedAt: data.updatedAt?.toMillis() || Date.now(),
+        publishedAt: data.publishedAt?.toMillis?.() || data.publishedAt || null,
       } as Quiz;
+
+      // If requesting published version and it exists, merge it into the quiz
+      if (version === 'published' && data.publishedVersion) {
+        return {
+          ...baseQuiz,
+          ...data.publishedVersion,
+        };
+      }
+
+      return baseQuiz;
     } catch (error) {
       console.error('Error fetching quiz:', error);
       throw error;
@@ -179,23 +195,84 @@ export class QuizService {
   }
 
   /**
-   * Publish/unpublish a quiz
+   * Create a snapshot of the current quiz for publishing
    */
-  static async togglePublishQuiz(quizId: string, userId: string): Promise<void> {
+  private static createSnapshot(quiz: Quiz): QuizSnapshot {
+    return {
+      title: quiz.title,
+      description: quiz.description,
+      coverImageUrl: quiz.coverImageUrl,
+      ctaText: quiz.ctaText,
+      primaryColor: quiz.primaryColor || '#4F46E5',
+      questions: quiz.questions || [],
+      outcomes: quiz.outcomes || [],
+    };
+  }
+
+  /**
+   * Publish a quiz (works for first publish and updates)
+   * Creates a snapshot of current state and sets isPublished to true
+   */
+  static async publishQuiz(quizId: string, userId: string): Promise<void> {
     try {
       const quiz = await this.getQuizById(quizId, userId);
       if (!quiz || quiz.ownerId !== userId) {
         throw new Error('Unauthorized to publish this quiz');
       }
 
+      const now = Date.now();
+      const snapshot = this.createSnapshot(quiz);
+      const cleanedSnapshot = removeUndefinedDeep(snapshot);
+
       const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
       await updateDoc(quizRef, {
-        isPublished: !quiz.isPublished,
+        isPublished: true,
+        publishedVersion: cleanedSnapshot,
+        publishedAt: Timestamp.fromMillis(now),
+        updatedAt: Timestamp.fromMillis(now),
+      });
+
+      console.log('[QuizService] Quiz published with snapshot');
+    } catch (error) {
+      console.error('Error publishing quiz:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unpublish a quiz (keeps publishedVersion intact for potential republish)
+   */
+  static async unpublishQuiz(quizId: string, userId: string): Promise<void> {
+    try {
+      const quiz = await this.getQuizById(quizId, userId);
+      if (!quiz || quiz.ownerId !== userId) {
+        throw new Error('Unauthorized to unpublish this quiz');
+      }
+
+      const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
+      await updateDoc(quizRef, {
+        isPublished: false,
         updatedAt: Timestamp.fromMillis(Date.now()),
       });
+
+      console.log('[QuizService] Quiz unpublished');
     } catch (error) {
-      console.error('Error toggling quiz publish status:', error);
+      console.error('Error unpublishing quiz:', error);
       throw error;
+    }
+  }
+
+  /**
+   * @deprecated Use publishQuiz and unpublishQuiz instead
+   */
+  static async togglePublishQuiz(quizId: string, userId: string): Promise<void> {
+    const quiz = await this.getQuizById(quizId, userId);
+    if (!quiz) throw new Error('Quiz not found');
+
+    if (quiz.isPublished) {
+      await this.unpublishQuiz(quizId, userId);
+    } else {
+      await this.publishQuiz(quizId, userId);
     }
   }
 

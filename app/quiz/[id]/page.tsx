@@ -22,7 +22,9 @@ export default function PublicQuizPage() {
         setError(null);
 
         console.log('[PublicQuiz] Loading quiz:', quizId);
-        const loadedQuiz = await QuizService.getQuizById(quizId);
+        // Request published version - this returns the frozen publishedVersion snapshot if available
+        // Falls back to current draft for backwards compatibility with older quizzes
+        const loadedQuiz = await QuizService.getQuizById(quizId, undefined, 'published');
         console.log('[PublicQuiz] Loaded quiz:', {
           id: loadedQuiz?.id,
           title: loadedQuiz?.title,

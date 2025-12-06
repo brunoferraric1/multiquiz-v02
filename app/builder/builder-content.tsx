@@ -33,6 +33,7 @@ import { PublishSuccessModal } from '@/components/builder/publish-success-modal'
 import { DrawerFooter } from '@/components/builder/drawer-footer';
 import { Upload } from '@/components/ui/upload';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
+import { QuizService } from '@/lib/services/quiz-service';
 
 import {
   Sheet,
@@ -41,6 +42,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 type ActiveSheet =
   | { type: 'introduction' }
@@ -56,7 +65,7 @@ function generateUUID(): string {
   }
 
   // Fallback for environments without crypto.randomUUID
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
@@ -76,6 +85,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<number | null>(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
   const [mobileView, setMobileView] = useState<MobileViewMode>('chat');
+  const [showUpdateConfirmModal, setShowUpdateConfirmModal] = useState(false);
 
   // Draft state for Introduction
   const [draftTitle, setDraftTitle] = useState('');
@@ -119,6 +129,44 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const addOutcome = useQuizBuilderStore((state) => state.addOutcome);
   const updateOutcome = useQuizBuilderStore((state) => state.updateOutcome);
   const reorderQuestions = useQuizBuilderStore((state) => state.reorderQuestions);
+  const publishedVersion = useQuizBuilderStore((state) => state.publishedVersion);
+  const setPublishedVersion = useQuizBuilderStore((state) => state.setPublishedVersion);
+  const loadPublishedVersion = useQuizBuilderStore((state) => state.loadPublishedVersion);
+
+  // Compute hasUnpublishedChanges
+  // Explicitly depend on stringified questions/outcomes to detect nested changes
+  const questionsJson = useMemo(() => JSON.stringify(quiz.questions), [quiz.questions]);
+  const outcomesJson = useMemo(() => JSON.stringify(quiz.outcomes), [quiz.outcomes]);
+
+  const hasUnpublishedChanges = useMemo(() => {
+    if (!quiz.isPublished) return false;
+
+    // For legacy quizzes published before draft/live separation,
+    // publishedVersion will be null. Show indicator so user can push initial snapshot.
+    if (!publishedVersion) return true;
+
+    const currentSnapshot = {
+      title: quiz.title,
+      description: quiz.description,
+      coverImageUrl: quiz.coverImageUrl,
+      ctaText: quiz.ctaText,
+      primaryColor: quiz.primaryColor,
+      questions: quiz.questions,
+      outcomes: quiz.outcomes,
+    };
+
+    return JSON.stringify(currentSnapshot) !== JSON.stringify(publishedVersion);
+  }, [
+    quiz.isPublished,
+    quiz.title,
+    quiz.description,
+    quiz.coverImageUrl,
+    quiz.ctaText,
+    quiz.primaryColor,
+    questionsJson,
+    outcomesJson,
+    publishedVersion,
+  ]);
 
   const questions = quiz.questions ?? [];
   const outcomes = quiz.outcomes ?? [];
@@ -365,49 +413,107 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   };
 
   const handlePublish = async () => {
-    if (!user) return;
+    if (!user || !quiz.id) return;
 
     try {
       setIsPublishing(true);
-      setShowPublishModal(true);
       cancelPendingSave();
 
-      console.log('[Publish] Before update - isPublished:', quiz.isPublished);
-      console.log('[Publish] Quiz has questions:', questions.length);
-      console.log('[Publish] Quiz has outcomes:', outcomes.length);
+      // First save any pending changes
+      await forceSave();
 
+      // Then publish using the new service method
+      await QuizService.publishQuiz(quiz.id, user.uid);
+
+      // Update local state with the new published version
+      const snapshot = {
+        title: quiz.title || '',
+        description: quiz.description || '',
+        coverImageUrl: quiz.coverImageUrl,
+        ctaText: quiz.ctaText,
+        primaryColor: quiz.primaryColor || '#4F46E5',
+        questions: (quiz.questions || []) as any,
+        outcomes: (quiz.outcomes || []) as any,
+      };
+      setPublishedVersion(snapshot, Date.now());
       updateQuizField('isPublished', true);
 
-      // Wait a bit for state to update
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const currentState = useQuizBuilderStore.getState().quiz;
-      console.log('[Publish] After update - isPublished:', currentState.isPublished);
-
-      await forceSave();
+      setShowPublishModal(true);
+      toast.success('Quiz publicado com sucesso!');
     } catch (error) {
       console.error('Error publishing quiz:', error);
-      alert('Erro ao publicar quiz');
-      setShowPublishModal(false);
+      toast.error('Erro ao publicar quiz');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  // Called from header - opens confirmation modal
+  const handlePublishUpdateClick = () => {
+    setShowUpdateConfirmModal(true);
+  };
+
+  // Called when user confirms in the modal
+  const handlePublishUpdateConfirm = async () => {
+    if (!user || !quiz.id) return;
+
+    setShowUpdateConfirmModal(false);
+
+    try {
+      setIsPublishing(true);
+      cancelPendingSave();
+
+      // First save any pending changes
+      await forceSave();
+
+      // Then update the published version
+      await QuizService.publishQuiz(quiz.id, user.uid);
+
+      // Update local state with the new published version
+      const snapshot = {
+        title: quiz.title || '',
+        description: quiz.description || '',
+        coverImageUrl: quiz.coverImageUrl,
+        ctaText: quiz.ctaText,
+        primaryColor: quiz.primaryColor || '#4F46E5',
+        questions: (quiz.questions || []) as any,
+        outcomes: (quiz.outcomes || []) as any,
+      };
+      setPublishedVersion(snapshot, Date.now());
+
+      toast.success('Quiz atualizado com sucesso!');
+    } catch (error) {
+      console.error('Error updating published quiz:', error);
+      toast.error('Erro ao atualizar quiz');
     } finally {
       setIsPublishing(false);
     }
   };
 
   const handleUnpublish = async () => {
-    if (!user) return;
+    if (!user || !quiz.id) return;
 
     try {
       setIsPublishing(true);
       cancelPendingSave();
+
+      await QuizService.unpublishQuiz(quiz.id, user.uid);
       updateQuizField('isPublished', false);
-      await forceSave();
+
+      toast.success('Quiz despublicado');
     } catch (error) {
       console.error('Error unpublishing quiz:', error);
-      alert('Erro ao despublicar quiz');
+      toast.error('Erro ao despublicar quiz');
     } finally {
       setIsPublishing(false);
     }
+  };
+
+  const handleDiscardChanges = () => {
+    if (!publishedVersion) return;
+
+    loadPublishedVersion();
+    toast.success('Alterações descartadas');
   };
 
   const handleShowPublishModal = () => {
@@ -643,9 +749,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             isPreview={false}
             onBack={handleBack}
             onPublish={handlePublish}
+            onPublishUpdate={handlePublishUpdateClick}
             onUnpublish={handleUnpublish}
-            onShowPublishModal={handleShowPublishModal}
+            onDiscardChanges={handleDiscardChanges}
             isPublishing={isPublishing}
+            hasUnpublishedChanges={hasUnpublishedChanges}
+            publishedVersion={publishedVersion}
           />
         </div>
 
@@ -860,9 +969,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               isPreview={true}
               onBack={() => setIsPreviewOpen(false)}
               onPublish={handlePublish}
+              onPublishUpdate={handlePublishUpdateClick}
               onUnpublish={handleUnpublish}
-              onShowPublishModal={handleShowPublishModal}
+              onDiscardChanges={handleDiscardChanges}
               isPublishing={isPublishing}
+              hasUnpublishedChanges={hasUnpublishedChanges}
+              publishedVersion={publishedVersion}
             />
             <Button
               type="button"
@@ -880,6 +992,32 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           </div>
         </div>
       )}
+
+      {/* Update Confirmation Modal */}
+      <Dialog open={showUpdateConfirmModal} onOpenChange={setShowUpdateConfirmModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atualizar quiz publicado?</DialogTitle>
+            <DialogDescription>
+              As alterações serão refletidas imediatamente no quiz ao vivo. Pessoas que estiverem fazendo o quiz poderão ver as mudanças.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowUpdateConfirmModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handlePublishUpdateConfirm}
+              disabled={isPublishing}
+            >
+              {isPublishing ? 'Atualizando...' : 'Atualizar Quiz'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

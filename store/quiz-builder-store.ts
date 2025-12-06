@@ -8,6 +8,7 @@ import type {
   Outcome,
   Quiz,
   ManualChange,
+  QuizSnapshot,
 } from '@/types';
 
 const quizFieldLabels: Record<string, string> = {
@@ -95,6 +96,8 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
         error: null,
         hasSeenWelcomeMessage: false,
         pendingManualChanges: [],
+        publishedVersion: null,
+        publishedAt: null,
 
         setQuiz: (quiz) => set({ quiz }),
 
@@ -226,6 +229,8 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             error: null,
             hasSeenWelcomeMessage: false,
             pendingManualChanges: [],
+            publishedVersion: null,
+            publishedAt: null,
           }),
 
         loadQuiz: (quiz: Quiz) =>
@@ -249,7 +254,30 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             chatHistory: quiz.conversationHistory || [],
             hasSeenWelcomeMessage: Boolean((quiz.conversationHistory || []).length),
             pendingManualChanges: [],
+            publishedVersion: quiz.publishedVersion || null,
+            publishedAt: quiz.publishedAt || null,
           }),
+
+        setPublishedVersion: (version: QuizSnapshot | null, publishedAt: number | null) =>
+          set({ publishedVersion: version, publishedAt }),
+
+        loadPublishedVersion: () => {
+          const { publishedVersion } = get();
+          if (!publishedVersion) return;
+
+          set((state) => ({
+            quiz: {
+              ...state.quiz,
+              title: publishedVersion.title,
+              description: publishedVersion.description,
+              coverImageUrl: publishedVersion.coverImageUrl,
+              ctaText: publishedVersion.ctaText,
+              primaryColor: publishedVersion.primaryColor,
+              questions: publishedVersion.questions as Partial<Question>[],
+              outcomes: publishedVersion.outcomes as Partial<Outcome>[],
+            },
+          }));
+        },
       }),
       {
         name: 'quiz-builder-storage',

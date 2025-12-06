@@ -37,6 +37,17 @@ export const QuizStatsSchema = z.object({
   completions: z.number().int().nonnegative(),
 });
 
+// Snapshot of quiz content for published version (frozen state)
+export const QuizSnapshotSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  coverImageUrl: z.string().optional(),
+  ctaText: z.string().optional(),
+  primaryColor: z.string().optional(),
+  questions: z.array(QuestionSchema),
+  outcomes: z.array(OutcomeSchema),
+});
+
 export const QuizSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1),
@@ -53,6 +64,9 @@ export const QuizSchema = z.object({
   stats: QuizStatsSchema,
   conversationHistory: z.array(ChatMessageSchema).optional(),
   ownerId: z.string(),
+  // Draft/Live separation fields
+  publishedVersion: QuizSnapshotSchema.nullable().optional(),
+  publishedAt: z.number().nullable().optional(),
 });
 
 // TypeScript types inferred from Zod schemas
@@ -61,6 +75,7 @@ export type Question = z.infer<typeof QuestionSchema>;
 export type Outcome = z.infer<typeof OutcomeSchema>;
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 export type QuizStats = z.infer<typeof QuizStatsSchema>;
+export type QuizSnapshot = z.infer<typeof QuizSnapshotSchema>;
 export type Quiz = z.infer<typeof QuizSchema>;
 
 // Partial types for draft states
@@ -101,6 +116,9 @@ export type QuizBuilderState = {
   error: string | null;
   hasSeenWelcomeMessage: boolean;
   pendingManualChanges: ManualChange[];
+  // Draft/Live separation
+  publishedVersion: QuizSnapshot | null;
+  publishedAt: number | null;
 
   // Actions
   setQuiz: (quiz: QuizDraft) => void;
@@ -122,6 +140,9 @@ export type QuizBuilderState = {
   setError: (error: string | null) => void;
   reset: () => void;
   loadQuiz: (quiz: Quiz) => void;
+  // Draft/Live separation actions
+  setPublishedVersion: (version: QuizSnapshot | null, publishedAt: number | null) => void;
+  loadPublishedVersion: () => void;
 };
 
 export type AuthUser = {
