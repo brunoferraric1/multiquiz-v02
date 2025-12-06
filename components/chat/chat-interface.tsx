@@ -111,10 +111,22 @@ const mergeEntityCollections = <T extends MergeableEntity>(
     return -1;
   };
 
+  // Helper to filter out undefined values so we don't overwrite existing data
+  const filterUndefined = (obj: T): T => {
+    const filtered: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        filtered[key] = value;
+      }
+    }
+    return filtered as T;
+  };
+
   incoming.forEach((item) => {
     const matchIndex = findMatchIndex(item);
     if (matchIndex >= 0) {
-      merged[matchIndex] = { ...merged[matchIndex], ...item } as T;
+      // Only merge non-undefined values to preserve existing imageUrl, etc.
+      merged[matchIndex] = { ...merged[matchIndex], ...filterUndefined(item) } as T;
     } else {
       merged.push({ ...item });
     }
@@ -122,6 +134,8 @@ const mergeEntityCollections = <T extends MergeableEntity>(
 
   return merged;
 };
+
+
 
 const applyExtractionResult = (
   baseQuiz: QuizDraft,
@@ -131,35 +145,68 @@ const applyExtractionResult = (
   const { mergeExisting = false } = options || {};
   const nextQuiz: QuizDraft = { ...baseQuiz };
 
+  // Phase detection for workflow enforcement:
+  // - Phase 1 (Intro): No confirmed title yet → only allow title/description/ctaText
+  // - Phase 2 (Outcomes): Has title, no outcomes yet → allow outcomes, not questions
+  // - Phase 3 (Questions): Has outcomes → allow questions
+  const hasConfirmedIntro = Boolean(
+    baseQuiz.title &&
+    baseQuiz.title !== 'Meu Novo Quiz' &&
+    baseQuiz.description
+  );
+  const hasConfirmedOutcomes = Boolean(
+    baseQuiz.outcomes &&
+    baseQuiz.outcomes.length > 0
+  );
+
+  // Always apply intro fields
   if (extraction.title) nextQuiz.title = extraction.title;
   if (extraction.description) nextQuiz.description = extraction.description;
   if (extraction.coverImageUrl) nextQuiz.coverImageUrl = extraction.coverImageUrl;
   if (extraction.ctaText) nextQuiz.ctaText = extraction.ctaText;
   if (extraction.ctaUrl) nextQuiz.ctaUrl = extraction.ctaUrl;
 
-  if (Array.isArray(extraction.questions)) {
-    // Strip imagePrompt before merging as it's not part of the Question type in the store
-    const questionsToMerge = extraction.questions.map(({ imagePrompt, ...rest }) => rest);
-
-    if (mergeExisting) {
-      if (questionsToMerge.length > 0) {
-        nextQuiz.questions = mergeEntityCollections(nextQuiz.questions || [], questionsToMerge);
-      }
+  // Only apply outcomes if intro is confirmed (Phase 2+)
+  if (Array.isArray(extraction.outcomes) && extraction.outcomes.length > 0) {
+    if (!hasConfirmedIntro) {
+      console.log('[Phase Enforcement] Skipping outcomes - intro not confirmed yet', {
+        currentTitle: baseQuiz.title,
+        hasDescription: Boolean(baseQuiz.description),
+        outcomesCount: extraction.outcomes.length,
+      });
     } else {
-      nextQuiz.questions = questionsToMerge;
+      // Strip imagePrompt before merging as it's not part of the Outcome type in the store
+      const outcomesToMerge = extraction.outcomes.map(({ imagePrompt, ...rest }) => rest);
+
+      if (mergeExisting) {
+        if (outcomesToMerge.length > 0) {
+          nextQuiz.outcomes = mergeEntityCollections(nextQuiz.outcomes || [], outcomesToMerge);
+        }
+      } else {
+        nextQuiz.outcomes = outcomesToMerge;
+      }
     }
   }
 
-  if (Array.isArray(extraction.outcomes)) {
-    // Strip imagePrompt before merging as it's not part of the Outcome type in the store
-    const outcomesToMerge = extraction.outcomes.map(({ imagePrompt, ...rest }) => rest);
-
-    if (mergeExisting) {
-      if (outcomesToMerge.length > 0) {
-        nextQuiz.outcomes = mergeEntityCollections(nextQuiz.outcomes || [], outcomesToMerge);
-      }
+  // Only apply questions if outcomes are confirmed (Phase 3)
+  if (Array.isArray(extraction.questions) && extraction.questions.length > 0) {
+    if (!hasConfirmedOutcomes) {
+      console.log('[Phase Enforcement] Skipping questions - outcomes not confirmed yet', {
+        hasIntro: hasConfirmedIntro,
+        outcomesCount: baseQuiz.outcomes?.length || 0,
+        questionsCount: extraction.questions.length,
+      });
     } else {
-      nextQuiz.outcomes = outcomesToMerge;
+      // Strip imagePrompt before merging as it's not part of the Question type in the store
+      const questionsToMerge = extraction.questions.map(({ imagePrompt, ...rest }) => rest);
+
+      if (mergeExisting) {
+        if (questionsToMerge.length > 0) {
+          nextQuiz.questions = mergeEntityCollections(nextQuiz.questions || [], questionsToMerge);
+        }
+      } else {
+        nextQuiz.questions = questionsToMerge;
+      }
     }
   }
 
@@ -175,6 +222,7 @@ const applyExtractionResult = (
 
   return nextQuiz;
 };
+
 
 export function ChatInterface({ userName }: ChatInterfaceProps) {
   const chatHistory = useQuizBuilderStore((state) => state.chatHistory);
