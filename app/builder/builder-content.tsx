@@ -12,6 +12,7 @@ import {
   GripVertical,
   MessageSquare,
   PenSquare,
+  Contact as ContactIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -32,6 +33,7 @@ import { EditQuestionModal } from '@/components/builder/edit-question-modal';
 import { PublishSuccessModal } from '@/components/builder/publish-success-modal';
 import { DrawerFooter } from '@/components/builder/drawer-footer';
 import { Upload } from '@/components/ui/upload';
+import { LeadGenSheet } from '@/components/builder/lead-gen-sheet';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
 import { QuizService } from '@/lib/services/quiz-service';
 
@@ -53,7 +55,8 @@ import {
 
 type ActiveSheet =
   | { type: 'introduction' }
-  | { type: 'outcome'; id: string };
+  | { type: 'outcome'; id: string }
+  | { type: 'lead-gen' };
 type MobileViewMode = 'chat' | 'editor';
 
 const fieldLabelClass = 'text-sm font-medium text-muted-foreground';
@@ -699,32 +702,30 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 Nenhum resultado definido
               </div>
             ) : (
-              outcomes.map((outcome, index) => (
+              outcomes.map((outcome) => (
                 <button
-                  key={outcome.id ?? index}
+                  key={outcome.id}
                   type="button"
-                  onClick={() =>
-                    outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })
-                  }
+                  onClick={() => setActiveSheet({ type: 'outcome', id: outcome.id })}
                   className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary flex-shrink-0">
+                    <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
                       {outcome.imageUrl ? (
                         <img
                           src={outcome.imageUrl}
-                          alt={outcome.title || 'Resultado'}
+                          alt="Resultado"
                           className="h-full w-full object-cover"
                         />
                       ) : (
                         <div className="flex h-12 w-12 items-center justify-center">
-                          <ImageIcon className="h-5 w-5" />
+                          <Rocket className="h-5 w-5" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1">
                       <p className="text-sm font-semibold text-foreground">
-                        {outcome.title || 'Resultado sem título'}
+                        {outcome.title || 'Novo resultado'}
                       </p>
                       <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
                         {outcome.description || 'Sem descrição'}
@@ -735,6 +736,33 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               ))
             )}
           </div>
+        </section>
+
+        <section className="space-y-3 pb-8">
+          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            Captura de Leads
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveSheet({ type: 'lead-gen' })}
+            className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary">
+                <ContactIcon className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  {quiz.leadGen?.enabled ? 'Ativado' : 'Desativado'}
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {quiz.leadGen?.enabled
+                    ? `${(quiz.leadGen.fields || []).length} campos solicitados`
+                    : 'Configure a captura de dados dos participantes'}
+                </p>
+              </div>
+            </div>
+          </button>
         </section>
       </CardContent>
     </Card>
@@ -930,14 +958,28 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   {/* Gradient overlay for fade effect - sticky to stay at bottom of viewport */}
                   <div className="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
                 </div>
-                <div className="flex-shrink-0 border-t bg-background py-8 mt-auto">
+              </>
+            )}
+            {activeSheet?.type === 'lead-gen' && (
+              <LeadGenSheet onClose={() => setActiveSheet(null)} />
+            )}
+            {activeSheet?.type !== 'lead-gen' && (
+              <div className="flex-shrink-0 border-t bg-background py-8 mt-auto">
+                {activeSheet?.type === 'outcome' && (
                   <DrawerFooter
                     onSave={handleSaveOutcome}
                     onCancel={handleCancelOutcome}
                   />
-                </div>
-              </>
+                )}
+                {activeSheet?.type === 'introduction' && (
+                  <DrawerFooter
+                    onSave={handleSaveIntroduction}
+                    onCancel={handleCancelIntroduction}
+                  />
+                )}
+              </div>
             )}
+            {/* LeadGenSheet has its own footer */}
           </SheetContent>
         </Sheet>
 

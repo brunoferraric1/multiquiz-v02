@@ -46,6 +46,13 @@ export const QuizSnapshotSchema = z.object({
   primaryColor: z.string().optional(),
   questions: z.array(QuestionSchema),
   outcomes: z.array(OutcomeSchema),
+  leadGen: z.object({
+    enabled: z.boolean(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    fields: z.array(z.enum(['name', 'email', 'phone'])),
+    ctaText: z.string().optional(),
+  }).optional(),
 });
 
 export const QuizSchema = z.object({
@@ -62,6 +69,13 @@ export const QuizSchema = z.object({
   updatedAt: z.number(),
   isPublished: z.boolean(),
   stats: QuizStatsSchema,
+  leadGen: z.object({
+    enabled: z.boolean(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    fields: z.array(z.enum(['name', 'email', 'phone'])),
+    ctaText: z.string().optional(),
+  }).optional(),
   conversationHistory: z.array(ChatMessageSchema).optional(),
   ownerId: z.string(),
   // Draft/Live separation fields
@@ -103,8 +117,15 @@ export type AIExtractionResult = {
   coverImagePrompt?: string;
   ctaText?: string;
   ctaUrl?: string;
-  questions?: Partial<Question>[];
+  questions?: (Partial<Question> & { imagePrompt?: string })[];
   outcomes?: (Partial<Outcome> & { imagePrompt?: string })[];
+  leadGen?: {
+    enabled?: boolean;
+    title?: string;
+    description?: string;
+    fields?: ('name' | 'email' | 'phone')[];
+    ctaText?: string;
+  };
 };
 
 // Store types

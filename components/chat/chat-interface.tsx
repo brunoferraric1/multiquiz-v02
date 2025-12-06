@@ -138,12 +138,15 @@ const applyExtractionResult = (
   if (extraction.ctaUrl) nextQuiz.ctaUrl = extraction.ctaUrl;
 
   if (Array.isArray(extraction.questions)) {
+    // Strip imagePrompt before merging as it's not part of the Question type in the store
+    const questionsToMerge = extraction.questions.map(({ imagePrompt, ...rest }) => rest);
+
     if (mergeExisting) {
-      if (extraction.questions.length > 0) {
-        nextQuiz.questions = mergeEntityCollections(nextQuiz.questions || [], extraction.questions);
+      if (questionsToMerge.length > 0) {
+        nextQuiz.questions = mergeEntityCollections(nextQuiz.questions || [], questionsToMerge);
       }
     } else {
-      nextQuiz.questions = extraction.questions;
+      nextQuiz.questions = questionsToMerge;
     }
   }
 
@@ -158,6 +161,16 @@ const applyExtractionResult = (
     } else {
       nextQuiz.outcomes = outcomesToMerge;
     }
+  }
+
+  if (extraction.leadGen) {
+    nextQuiz.leadGen = {
+      ...baseQuiz.leadGen,
+      ...extraction.leadGen,
+      // Ensure fields are definitely assigned if provided, not deep merged in a weird way
+      fields: extraction.leadGen.fields || baseQuiz.leadGen?.fields || [],
+      enabled: extraction.leadGen.enabled ?? baseQuiz.leadGen?.enabled ?? false,
+    };
   }
 
   return nextQuiz;
@@ -418,9 +431,11 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
         throw new Error(`Erro ao sugerir imagem (${response.status})`);
       }
 
-      const data = (await response.json()) as { url?: string };
+      const data = (await response.json()) as { imageUrl?: string; url?: string };
+      // Handle both formats just in case
+      const imageUrl = data.imageUrl || data.url;
 
-      if (!data?.url) {
+      if (!imageUrl) {
         console.warn('[Outcome Image] sem URL na resposta', { outcomeId, prompt });
         return;
       }
@@ -439,26 +454,50 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
       }
 
       // Ensure we only accept absolute URLs; otherwise, discard to avoid broken relative paths
-      const isAbsoluteUrl = /^https?:\/\//i.test(data.url);
+      const isAbsoluteUrl = /^https?:\/\//i.test(imageUrl);
       if (!isAbsoluteUrl) {
-        console.warn('[Outcome Image] URL não é absoluta, ignorando', { outcomeId, url: data.url });
+        console.warn('[Outcome Image] URL inválida recebida', imageUrl);
         return;
       }
 
-      const updatedOutcomes = outcomes.map((outcome) =>
-        outcome.id === outcomeId ? { ...outcome, imageUrl: data.url } : outcome
-      );
-      useQuizBuilderStore.setState((state) => ({
-        quiz: {
-          ...state.quiz,
-          outcomes: updatedOutcomes,
-        },
-      }));
+      updateOutcome(outcomeId, { imageUrl });
       lastOutcomeImagePromptRef.current[outcomeId] = prompt;
-      lastSuggestedOutcomeImageUrlRef.current[outcomeId] = data.url;
-      console.log('[Outcome Image] aplicado', { outcomeId, url: data.url });
+      lastSuggestedOutcomeImageUrlRef.current[outcomeId] = imageUrl;
+
     } catch (error) {
-      console.error('[Outcome Image] erro', outcomeId, error);
+      console.error('Erro ao sugerir imagem de resultado:', error);
+    }
+  };
+
+  const maybeSuggestQuestionImage = async (request: { questionId: string; prompt: string }) => {
+    const { questionId, prompt } = request;
+
+    try {
+      const response = await fetch('/api/image-suggestion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch image suggestion');
+
+      const data = (await response.json()) as { imageUrl?: string; url?: string };
+      const imageUrl = data.imageUrl || data.url;
+
+      if (imageUrl) {
+        const title = useQuizBuilderStore.getState().quiz.title; // Just to trigger a specific store selector if needed, but we use getState() so it's fine.
+        const currentQuestion = useQuizBuilderStore.getState().quiz.questions?.find(q => q.id === questionId);
+
+        if (currentQuestion) {
+          // Access store directly to update question
+          useQuizBuilderStore.getState().updateQuestion(questionId, {
+            text: currentQuestion.text || '', // text is required partial
+            imageUrl: imageUrl
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error getting question image suggestion:', error);
     }
   };
 
@@ -634,6 +673,28 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
             }
           });
         }
+
+        // Process question image prompts from extraction
+        if (extraction.questions?.length) {
+          extraction.questions.forEach((question) => {
+            if (question.imagePrompt && question.text) {
+              const match = updatedQuiz.questions?.find(
+                (q) => q.id === question.id || q.text === question.text
+              );
+
+              if (match?.id) {
+                console.log('[Flow] Triggering question image suggestion from extraction', {
+                  questionId: match.id,
+                  prompt: question.imagePrompt,
+                });
+                void maybeSuggestQuestionImage({
+                  questionId: match.id,
+                  prompt: question.imagePrompt,
+                });
+              }
+            }
+          });
+        }
       } else {
         console.log('[Flow] Taking else branch (fallback)');
 
@@ -741,6 +802,27 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
                 void maybeSuggestOutcomeImage({
                   outcomeId: match.id,
                   prompt: outcome.imagePrompt,
+                });
+              }
+            }
+          });
+        }
+
+        // Process question image prompts from extraction (fallback flow)
+        if (extracted.questions?.length) {
+          extracted.questions.forEach((question) => {
+            if (question.imagePrompt && question.text) {
+              const match = updatedQuiz.questions?.find(
+                (q) => q.id === question.id || q.text === question.text
+              );
+              if (match?.id) {
+                console.log('[Extraction] Triggering question image suggestion', {
+                  questionId: match.id,
+                  prompt: question.imagePrompt,
+                });
+                void maybeSuggestQuestionImage({
+                  questionId: match.id,
+                  prompt: question.imagePrompt,
                 });
               }
             }

@@ -83,6 +83,10 @@ const initialQuizState: QuizDraft = {
   outcomes: [],
   primaryColor: '#4F46E5',
   isPublished: false,
+  leadGen: {
+    enabled: false,
+    fields: [],
+  },
 };
 
 export const useQuizBuilderStore = create<QuizBuilderState>()(
@@ -250,6 +254,10 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
               updatedAt: quiz.updatedAt,
               stats: quiz.stats,
               ownerId: quiz.ownerId,
+              leadGen: quiz.leadGen || {
+                enabled: false,
+                fields: [],
+              },
             },
             chatHistory: quiz.conversationHistory || [],
             hasSeenWelcomeMessage: Boolean((quiz.conversationHistory || []).length),
@@ -275,6 +283,7 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
               primaryColor: publishedVersion.primaryColor,
               questions: publishedVersion.questions as Partial<Question>[],
               outcomes: publishedVersion.outcomes as Partial<Outcome>[],
+              leadGen: publishedVersion.leadGen,
             },
           }));
         },

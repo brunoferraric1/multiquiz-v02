@@ -5,6 +5,7 @@ import type { AnswerOption, Quiz, QuizDraft } from '@/types';
 import { QuizIntro } from './quiz-intro';
 import { QuizQuestion } from './quiz-question';
 import { QuizResult } from './quiz-result';
+import { QuizLeadGen } from './quiz-lead-gen';
 import { QuizProgressBar } from './quiz-progress-bar';
 
 type PlayableQuestion = {
@@ -75,10 +76,15 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
     }, []);
   }, [quiz.outcomes]);
 
-  const [phase, setPhase] = useState<'intro' | 'question' | 'result'>('intro');
+  const leadGenConfig = useMemo(() => {
+    return quiz.leadGen?.enabled && quiz.leadGen?.fields?.length ? quiz.leadGen : null;
+  }, [quiz.leadGen]);
+
+  const [phase, setPhase] = useState<'intro' | 'question' | 'lead-gen' | 'result'>('intro');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<SelectionState>({});
   const [resultOutcomeId, setResultOutcomeId] = useState<string | null>(null);
+  const [leadData, setLeadData] = useState<Record<string, string>>({});
 
   const currentQuestion = questions[currentQuestionIndex];
   const currentSelectionIds =
@@ -122,6 +128,17 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
       setCurrentQuestionIndex((prev) => prev + 1);
       return;
     }
+    // Check for Lead Gen before finalizing
+    if (leadGenConfig) {
+      setPhase('lead-gen');
+    } else {
+      finalizeQuiz();
+    }
+  };
+
+  const handleLeadGenSubmit = (data: Record<string, string>) => {
+    setLeadData(data);
+    // TODO: Send lead data to backend
     finalizeQuiz();
   };
 
@@ -167,8 +184,8 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
     phase === 'intro'
       ? 0
       : phase === 'result'
-      ? questions.length + 1
-      : currentQuestionIndex + 1;
+        ? questions.length + 1
+        : currentQuestionIndex + 1;
 
   return (
     <div className="h-full w-full overflow-y-auto px-4 py-8 sm:px-8">
@@ -197,6 +214,13 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
             onNext={goToNextQuestion}
             onBack={goToPreviousQuestion}
             onReset={resetQuiz}
+          />
+        )}
+        {phase === 'lead-gen' && leadGenConfig && (
+          <QuizLeadGen
+            config={leadGenConfig}
+            primaryColor={primaryColor}
+            onSubmit={handleLeadGenSubmit}
           />
         )}
         {phase === 'result' && resultOutcome && (
