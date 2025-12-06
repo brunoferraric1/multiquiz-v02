@@ -14,10 +14,10 @@ const tiers = [
     frequency: '/month',
     description: 'For individuals and small teams getting started.',
     features: [
-        '1 User',
-        'Up to 3 quizzes',
-        'Basic analytics',
-        'Community support',
+      '1 User',
+      'Up to 3 quizzes',
+      'Basic analytics',
+      'Community support',
     ],
     cta: 'Start for Free',
     href: '/dashboard',
@@ -29,11 +29,11 @@ const tiers = [
     frequency: '/month',
     description: 'For growing teams and businesses.',
     features: [
-        'Up to 10 users',
-        'Unlimited quizzes',
-        'Advanced analytics',
-        'Custom branding',
-        'Priority email support',
+      'Up to 10 users',
+      'Unlimited quizzes',
+      'Advanced analytics',
+      'Custom branding',
+      'Priority email support',
     ],
     cta: 'Get Started',
     href: '/dashboard',
@@ -45,11 +45,11 @@ const tiers = [
     frequency: '',
     description: 'For large organizations with custom needs.',
     features: [
-        'Unlimited users',
-        'Dedicated account manager',
-        'Single Sign-On (SSO)',
-        'Custom integrations',
-        '24/7 Phone Support',
+      'Unlimited users',
+      'Dedicated account manager',
+      'Single Sign-On (SSO)',
+      'Custom integrations',
+      '24/7 Phone Support',
     ],
     cta: 'Contact Sales',
     href: '#',
@@ -58,20 +58,20 @@ const tiers = [
 ];
 
 const cardVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.15,
-        duration: 0.7,
-        ease: [0.16, 1, 0.3, 1],
-      },
-    }),
-  };
+  hidden: { opacity: 0, y: 50 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.15,
+      duration: 0.7,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  }),
+};
 
 export const PricingSection = () => {
-    const [ref, controls] = useScrollAnimation();
+  const [ref, controls] = useScrollAnimation();
   return (
     <section id="pricing" className="py-20 bg-background sm:py-32">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -84,17 +84,17 @@ export const PricingSection = () => {
           </p>
         </div>
         <motion.div
-            ref={ref}
-            initial="hidden"
-            animate={controls}
-            className="mt-16 grid max-w-md gap-8 mx-auto lg:max-w-none lg:grid-cols-3"
+          ref={ref}
+          initial="hidden"
+          animate={controls}
+          className="mt-16 grid max-w-md gap-8 mx-auto lg:max-w-none lg:grid-cols-3"
         >
           {tiers.map((tier, i) => (
             <motion.div
-                key={tier.name}
-                custom={i}
-                variants={cardVariants}
-                className={`flex flex-col rounded-3xl overflow-hidden ${tier.featured ? 'border-2 border-primary shadow-lg' : 'border border-border'}`}
+              key={tier.name}
+              custom={i}
+              variants={cardVariants}
+              className={`flex flex-col rounded-3xl overflow-hidden ${tier.featured ? 'border-2 border-primary shadow-lg' : 'border border-border'}`}
             >
               <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
                 <div>
@@ -122,13 +122,13 @@ export const PricingSection = () => {
                   ))}
                 </ul>
                 <div className="rounded-md shadow">
-                    <Button
-                        asChild
-                        size="lg"
-                        className={`w-full font-bold ${tier.featured ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
-                    >
-                        <Link href={tier.href}>{tier.cta}</Link>
-                    </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    className={`w-full font-bold ${tier.featured ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
+                  >
+                    <Link href={tier.href}>{tier.cta}</Link>
+                  </Button>
                 </div>
               </div>
             </motion.div>
