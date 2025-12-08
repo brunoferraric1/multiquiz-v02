@@ -145,13 +145,13 @@ export function BuilderHeader({
 
             <div className="hidden sm:block h-8 w-px bg-border/60 flex-shrink-0" />
 
-            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-              <div className="flex-shrink-0">
-                {statusBadge}
-              </div>
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <h1 className="text-sm sm:text-base md:text-lg font-semibold truncate">
                 {quiz.title || 'Novo Quiz'}
               </h1>
+              <div className="flex-shrink-0">
+                {statusBadge}
+              </div>
             </div>
           </div>
 

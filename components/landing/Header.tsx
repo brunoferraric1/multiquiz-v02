@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
@@ -16,24 +17,34 @@ export const LandingHeader = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
           <div className="flex-shrink-0">
-            <Link href="/" className="text-2xl font-bold text-foreground">
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground">
+              <Image
+                src="/multiquiz-logo.svg"
+                alt="MultiQuiz Logo"
+                width={32}
+                height={32}
+                className="rounded-lg"
+              />
               MultiQuiz
             </Link>
           </div>
           <nav className="hidden md:flex md:space-x-8">
-            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
-              Features
+            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              Por que usar
             </Link>
-            <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-              Pricing
+            <Link href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              Como funciona
             </Link>
-            <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">
-              FAQ
+            <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              Planos
+            </Link>
+            <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              Dúvidas
             </Link>
           </nav>
           <div className="flex items-center">
             <Button asChild className="bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors">
-              <Link href="/dashboard">Get Started</Link>
+              <Link href="/dashboard">Começar Grátis</Link>
             </Button>
           </div>
         </div>

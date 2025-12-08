@@ -3,23 +3,28 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useScrollAnimation } from '@/lib/hooks/use-scroll-animation';
-import { BrainCircuit, Palette, BarChart3 } from 'lucide-react';
+import { BrainCircuit, Settings, Users, Palette } from 'lucide-react';
 
 const features = [
   {
-    name: 'AI-Powered Question Generation',
-    description: 'Leverage AI to generate engaging and relevant questions for your quizzes in seconds. Save time and create better quizzes.',
+    name: 'IA que Cria por Você',
+    description: 'Descreva seu quiz e a IA gera perguntas, respostas e resultados. Você só ajusta o que precisar.',
     icon: <BrainCircuit size={28} className="text-primary" />,
   },
   {
-    name: 'Customizable Quiz Design',
-    description: 'Match your brand with customizable themes, colors, and layouts. Create a seamless experience for your audience.',
-    icon: <Palette size={28} className="text-primary" />,
+    name: 'Controle Total',
+    description: 'Edite textos, reordene perguntas, personalize resultados. A IA ajuda, mas o controle é seu.',
+    icon: <Settings size={28} className="text-primary" />,
   },
   {
-    name: 'Detailed Analytics',
-    description: 'Track performance with detailed analytics. Understand your audience better and make data-driven decisions.',
-    icon: <BarChart3 size={28} className="text-primary" />,
+    name: 'Leads Qualificados',
+    description: 'Capture nome, email e WhatsApp antes do resultado. Saiba exatamente quem é seu lead.',
+    icon: <Users size={28} className="text-primary" />,
+  },
+  {
+    name: 'Sua Marca, Seu Estilo',
+    description: 'Cores, imagens e textos personalizáveis. Crie quizzes com a identidade do seu negócio.',
+    icon: <Palette size={28} className="text-primary" />,
   },
 ];
 
@@ -44,10 +49,10 @@ export const FeaturesSection = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-3xl font-extrabold text-foreground sm:text-5xl">
-            Everything you need, and then some.
+            Por que quizzes convertem mais?
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Powerful features to help you create, share, and analyze quizzes that not only engage but also convert.
+            Interatividade gera engajamento. MultiQuiz transforma visitantes passivos em leads qualificados.
           </p>
         </div>
         <div className="mt-20">
@@ -55,20 +60,20 @@ export const FeaturesSection = () => {
             ref={ref}
             initial="hidden"
             animate={controls}
-            className="grid gap-8 md:grid-cols-3"
+            className="grid gap-8 md:grid-cols-2 lg:grid-cols-4"
           >
             {features.map((feature, i) => (
               <motion.div
                 key={feature.name}
                 custom={i}
                 variants={cardVariants}
-                className="flex flex-col text-center p-8 bg-card rounded-3xl"
+                className="flex flex-col text-center p-8 bg-card rounded-3xl border border-border/50 hover:border-primary/50 transition-colors duration-300"
               >
-                <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-background mx-auto">
+                <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mx-auto mb-6">
                   {feature.icon}
                 </div>
-                <h3 className="mt-6 text-xl font-bold text-foreground">{feature.name}</h3>
-                <p className="mt-2 text-base text-muted-foreground">{feature.description}</p>
+                <h3 className="text-xl font-bold text-foreground mb-3">{feature.name}</h3>
+                <p className="text-base text-muted-foreground leading-relaxed">{feature.description}</p>
               </motion.div>
             ))}
           </motion.div>

@@ -7,80 +7,105 @@ import { ChevronDown } from 'lucide-react';
 
 const faqs = [
   {
-    question: 'How does the AI question generation work?',
-    answer: 'Our AI uses advanced language models to understand your topic and generate relevant, high-quality questions and answers, saving you hours of work.',
+    question: 'Preciso saber programar ou ter conhecimentos técnicos?',
+    answer: 'Não! O MultiQuiz foi feito para ser 100% visual. Você conversa com a IA para criar e usa nosso editor visual para ajustes finais. Nenhuma linha de código é necessária.',
   },
   {
-    question: 'Can I customize the look of my quizzes?',
-    answer: 'Yes! With our Pro plan, you can customize colors, fonts, and layouts to match your brand. You can also add your own logo.',
+    question: 'Como funciona a captura de leads?',
+    answer: 'Você pode adicionar um formulário de captura antes de mostrar o resultado do quiz. É possível coletar Nome, Email e WhatsApp, e esses dados ficam disponíveis no seu painel.',
   },
   {
-    question: 'What kind of analytics do you provide?',
-    answer: 'We provide detailed analytics on completion rates, correct answer ratios, and individual user performance. This helps you understand engagement and knowledge retention.',
+    question: 'Posso personalizar o design do meu quiz?',
+    answer: 'Sim! Você pode personalizar as cores, imagens de capa, adicionar imagens nas perguntas e nos resultados para deixar o quiz com a identidade visual da sua marca.',
   },
   {
-    question: 'Can I export the quiz results?',
-    answer: 'Yes, you can export quiz results as a CSV file to use in your own reporting and analysis tools.',
+    question: 'Os quizzes funcionam bem no celular?',
+    answer: 'Com certeza. Todos os quizzes criados no MultiQuiz são responsivos e otimizados para funcionar perfeitamente em celulares, tablets e computadores.',
+  },
+  {
+    question: 'Onde ficam salvos os dados dos leads?',
+    answer: 'Todos os dados capturados ficam armazenados de forma segura no seu painel do MultiQuiz. Futuramente teremos integrações diretas com CRMs e ferramentas de email marketing.',
   },
 ];
 
 const AccordionItem = ({ faq }: { faq: typeof faqs[0] }) => {
-    const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-    return (
-        <div className="border-b border-border py-6">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex justify-between items-center w-full text-lg font-medium text-left text-foreground hover:text-primary transition-colors"
-            >
-                <span>{faq.question}</span>
-                <motion.div
-                    animate={{ rotate: isOpen ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <ChevronDown className="h-6 w-6 text-muted-foreground" />
-                </motion.div>
-            </button>
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="mt-4 text-base text-muted-foreground"
-                    >
-                       {faq.answer}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    )
+  return (
+    <div className="border-b border-border py-4">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex justify-between items-center w-full py-4 text-lg font-medium text-left text-foreground hover:text-primary transition-colors focus:outline-none"
+      >
+        <span>{faq.question}</span>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.3 }}
+          className="flex-shrink-0 ml-4"
+        >
+          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+        </motion.div>
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <p className="pb-4 text-base text-muted-foreground leading-relaxed">
+              {faq.answer}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
 }
 
+const containerVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5 }
+  }
+};
+
+const itemsVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, delay: 0.2 }
+  }
+};
+
 export const FAQSection = () => {
-    const [ref, controls] = useScrollAnimation();
+  const [ref, controls] = useScrollAnimation();
 
   return (
     <section id="faq" className="py-20 bg-background sm:py-32">
       <div ref={ref} className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-         initial={{ opacity: 0, y: 50 }}
-         animate={controls}
-         transition={{ duration: 0.5 }}
-        className="max-w-3xl mx-auto text-center">
+          initial="hidden"
+          animate={controls}
+          variants={containerVariants}
+          className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-extrabold text-foreground sm:text-5xl">
-            Frequently Asked Questions
+            Perguntas Frequentes
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Have questions? We have answers. If you can’t find what you’re looking for, feel free to contact us.
+            Tire suas dúvidas sobre como o MultiQuiz pode ajudar você a vender mais.
           </p>
         </motion.div>
         <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={controls}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-12 max-w-3xl mx-auto"
+          initial="hidden"
+          animate={controls}
+          variants={itemsVariants}
+          className="mt-12 max-w-3xl mx-auto"
         >
           {faqs.map((faq, i) => (
             <AccordionItem key={i} faq={faq} />

@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Menu, Plus, LogOut, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import { Menu, Plus, LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -94,12 +95,18 @@ export function DashboardHeader() {
             </SheetContent>
           </Sheet>
 
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
-            <Sparkles size={18} />
+          <div className="flex items-center gap-2">
+            <Image
+              src="/multiquiz-logo.svg"
+              alt="MultiQuiz Logo"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
+            <span className="font-bold text-xl tracking-tight">
+              MultiQuiz
+            </span>
           </div>
-          <span className="font-bold text-xl tracking-tight">
-            MultiQuiz
-          </span>
         </div>
 
         {/* Actions */}

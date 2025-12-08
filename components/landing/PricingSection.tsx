@@ -9,49 +9,49 @@ import { Check } from 'lucide-react';
 
 const tiers = [
   {
-    name: 'Free',
-    price: '$0',
-    frequency: '/month',
-    description: 'For individuals and small teams getting started.',
+    name: 'Grátis',
+    price: 'R$0',
+    frequency: '/mês',
+    description: 'Para começar a explorar e criar seus primeiros quizzes.',
     features: [
-      '1 User',
-      'Up to 3 quizzes',
-      'Basic analytics',
-      'Community support',
+      '1 Usuário',
+      'Até 3 quizzes ativos',
+      'Captura de leads básica',
+      'Suporte da comunidade',
     ],
-    cta: 'Start for Free',
+    cta: 'Começar Agora',
     href: '/dashboard',
     featured: false,
   },
   {
     name: 'Pro',
-    price: '$29',
-    frequency: '/month',
-    description: 'For growing teams and businesses.',
+    price: 'R$49',
+    frequency: '/mês',
+    description: 'Para infoprodutores e empresas que querem escalar.',
     features: [
-      'Up to 10 users',
-      'Unlimited quizzes',
-      'Advanced analytics',
-      'Custom branding',
-      'Priority email support',
+      'Até 5 usuários',
+      'Quizzes ilimitados',
+      'Analytics avançado',
+      'Personalização de marca (White-label)',
+      'Suporte prioritário por email',
     ],
-    cta: 'Get Started',
+    cta: 'Começar Teste Grátis',
     href: '/dashboard',
     featured: true,
   },
   {
-    name: 'Enterprise',
+    name: 'Empresas',
     price: 'Custom',
     frequency: '',
-    description: 'For large organizations with custom needs.',
+    description: 'Para grandes times com necessidades específicas.',
     features: [
-      'Unlimited users',
-      'Dedicated account manager',
-      'Single Sign-On (SSO)',
-      'Custom integrations',
-      '24/7 Phone Support',
+      'Usuários ilimitados',
+      'Gerente de contas dedicado',
+      'Integrações personalizadas',
+      'Treinamento para o time',
+      'SLA garantido',
     ],
-    cta: 'Contact Sales',
+    cta: 'Falar com Vendas',
     href: '#',
     featured: false,
   },
@@ -73,14 +73,17 @@ const cardVariants = {
 export const PricingSection = () => {
   const [ref, controls] = useScrollAnimation();
   return (
-    <section id="pricing" className="py-20 bg-background sm:py-32">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="pricing" className="py-20 bg-background sm:py-32 relative">
+      {/* Background Blob */}
+      <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-primary/5 blur-[120px] rounded-full opacity-50 pointer-events-none" />
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-3xl font-extrabold text-foreground sm:text-5xl">
-            Simple, Transparent Pricing
+            Planos Simples e Transparentes
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Choose the perfect plan for your team. Start free, upgrade anytime.
+            Escolha o plano ideal para o seu momento. Comece grátis, evolua quando precisar.
           </p>
         </div>
         <motion.div
@@ -94,30 +97,30 @@ export const PricingSection = () => {
               key={tier.name}
               custom={i}
               variants={cardVariants}
-              className={`flex flex-col rounded-3xl overflow-hidden ${tier.featured ? 'border-2 border-primary shadow-lg' : 'border border-border'}`}
+              className={`flex flex-col rounded-3xl overflow-hidden ${tier.featured ? 'border-2 border-primary shadow-xl scale-105 z-10' : 'border border-border bg-card/50'}`}
             >
               <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
                 <div>
-                  <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-primary/20 text-primary">
+                  <h3 className={`inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase ${tier.featured ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                     {tier.name}
                   </h3>
                 </div>
-                <div className="mt-4 flex items-baseline text-6xl font-extrabold text-foreground">
+                <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
                   {tier.price}
-                  <span className="ml-1 text-2xl font-medium text-muted-foreground">
+                  <span className="ml-1 text-xl font-medium text-muted-foreground">
                     {tier.frequency}
                   </span>
                 </div>
-                <p className="mt-5 text-lg text-muted-foreground">{tier.description}</p>
+                <p className="mt-5 text-base text-muted-foreground">{tier.description}</p>
               </div>
-              <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/50 space-y-6 sm:p-10 sm:pt-6">
+              <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
                 <ul className="space-y-4">
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex items-start">
                       <div className="flex-shrink-0">
-                        <Check className="h-6 w-6 text-green-400" />
+                        <Check className="h-5 w-5 text-primary" />
                       </div>
-                      <p className="ml-3 text-base text-foreground">{feature}</p>
+                      <p className="ml-3 text-sm text-foreground">{feature}</p>
                     </li>
                   ))}
                 </ul>
@@ -125,7 +128,7 @@ export const PricingSection = () => {
                   <Button
                     asChild
                     size="lg"
-                    className={`w-full font-bold ${tier.featured ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
+                    className={`w-full font-bold h-12 rounded-xl ${tier.featured ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
                   >
                     <Link href={tier.href}>{tier.cta}</Link>
                   </Button>
