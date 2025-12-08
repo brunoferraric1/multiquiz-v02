@@ -153,7 +153,7 @@ export function BuilderHeader({
               type="button"
               variant="outline"
               size="icon"
-              className="h-9 w-9 sm:w-auto sm:gap-2 sm:px-3 border border-border/60 bg-background/40 hover:bg-background/60 flex-shrink-0"
+              className="h-9 w-9 sm:w-auto sm:gap-2 sm:px-3 border border-border/60 bg-background/40 flex-shrink-0"
               onClick={handleBack}
             >
               <ArrowLeft size={16} />

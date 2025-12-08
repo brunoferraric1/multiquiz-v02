@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Globe, Lock } from 'lucide-react';
+import { Globe, Lock, Pencil } from 'lucide-react';
 import type { Quiz } from '@/types';
 import {
   Card,
@@ -74,8 +74,8 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
       </CardContent>
 
       <CardFooter className="p-5 pt-0 flex items-center justify-between border-t border-border/50 mt-auto">
-        <div className="text-xs text-muted-foreground pt-4">
-          {/* Could add "Edited 2h ago" here */}
+        <div className="text-xs text-muted-foreground pt-4 flex items-center gap-1.5 group-hover:text-accent transition-colors">
+          <Pencil size={14} />
           Editar
         </div>
 
