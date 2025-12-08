@@ -11,6 +11,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useDeleteQuizMutation } from '@/lib/hooks/use-quiz-queries';
+import { DeleteQuizDialog } from '@/components/dashboard/delete-quiz-dialog';
+import { useRouter } from 'next/navigation';
 
 interface BuilderHeaderProps {
   quiz: QuizDraft | Quiz;
@@ -38,6 +42,24 @@ export function BuilderHeader({
 }: BuilderHeaderProps) {
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const router = useRouter();
+  const { user } = useAuth();
+  const deleteQuizMutation = useDeleteQuizMutation();
+
+  const handleDelete = async () => {
+    if (!user || !quiz.id) return;
+
+    try {
+      await deleteQuizMutation.mutateAsync({ quizId: quiz.id, userId: user.uid });
+      setShowDeleteDialog(false);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Failed to delete quiz:', error);
+      alert('Erro ao excluir quiz. Tente novamente.');
+    }
+  };
 
   const handleCopyUrl = async () => {
     if (!quiz.id) return;
@@ -217,7 +239,7 @@ export function BuilderHeader({
                     type="button"
                     onClick={() => {
                       setMenuOpen(false);
-                      // TODO: Add delete quiz functionality
+                      setShowDeleteDialog(true);
                     }}
                     className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                   >
@@ -229,6 +251,13 @@ export function BuilderHeader({
           </div>
         </div>
       </div>
-    </header>
+      <DeleteQuizDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDelete}
+        title={quiz.title || 'Novo Quiz'}
+        isDeleting={deleteQuizMutation.isPending}
+      />
+    </header >
   );
 }

@@ -16,14 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { copyToClipboard } from '@/lib/copy-to-clipboard';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DeleteQuizDialog } from '@/components/dashboard/delete-quiz-dialog';
 
 interface QuizCardProps {
   quiz: Quiz;
@@ -120,7 +113,7 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="p-5 flex flex-col flex-1">
         <CardTitle className="text-lg mb-1 line-clamp-1 group-hover:text-primary transition-colors">
           {quiz.title}
@@ -176,63 +169,28 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
 
         {/* Delete */}
         <Button
-            variant="destructive"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              setShowDeleteDialog(true);
-            }}
-            disabled={isDeleting}
-            title={isDeleting ? "Excluindo..." : "Excluir"}
-          >
-            <Trash2 size={18} />
-          </Button>
+          variant="destructive"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setShowDeleteDialog(true);
+          }}
+          disabled={isDeleting}
+          title={isDeleting ? "Excluindo..." : "Excluir"}
+        >
+          <Trash2 size={18} />
+        </Button>
       </CardFooter>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={(open) => {
-        // Prevent closing the dialog while deleting
-        if (!isDeleting_Internal) {
-          setShowDeleteDialog(open);
-        }
-      }}>
-        <DialogContent onClick={(e) => e.stopPropagation()}>
-          <DialogHeader>
-            <DialogTitle>Excluir Quiz</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir o quiz &quot;{quiz.title}&quot;?
-              <br />
-              <br />
-              Esta ação não pode ser desfeita e todos os dados associados serão permanentemente removidos.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-              disabled={isDeleting_Internal}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDelete}
-              disabled={isDeleting_Internal}
-              className="min-w-[100px]"
-            >
-              {isDeleting_Internal ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Excluindo...
-                </>
-              ) : (
-                'Excluir'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteQuizDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        title={quiz.title}
+        isDeleting={isDeleting_Internal}
+      />
     </Card>
   );
 }
