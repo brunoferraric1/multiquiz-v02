@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Rocket, Link2, Check, MoreVertical, EyeOff, Undo2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Rocket, Link2, Check, MoreVertical, EyeOff, Undo2, RefreshCw, LineChart } from 'lucide-react';
 import { useState } from 'react';
 import type { Quiz, QuizDraft, QuizSnapshot } from '@/types';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ import { useDeleteQuizMutation } from '@/lib/hooks/use-quiz-queries';
 import { DeleteQuizDialog } from '@/components/dashboard/delete-quiz-dialog';
 import { BuilderActionsDrawer } from './builder-actions-drawer';
 import { UnsavedChangesDialog } from './unsaved-changes-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useRouter } from 'next/navigation';
 
 interface BuilderHeaderProps {
@@ -48,6 +49,7 @@ export function BuilderHeader({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
   const [isUpdatingAndExiting, setIsUpdatingAndExiting] = useState(false);
 
   const router = useRouter();
@@ -149,13 +151,13 @@ export function BuilderHeader({
     }
 
     if (hasUnpublishedChanges) {
-      // Published with changes - show Atualizar button
+      // Published with changes - show Atualizar button (yellow to match notification)
       return (
         <Button
           size="icon-text"
           onClick={onPublishUpdate}
           disabled={isPublishing}
-          className="gap-2"
+          className="gap-2 bg-yellow-500 hover:bg-yellow-600 text-yellow-950"
         >
           <RefreshCw size={16} />
           {isPublishing ? 'Atualizando...' : 'Atualizar'}
@@ -163,18 +165,8 @@ export function BuilderHeader({
       );
     }
 
-    // Published with no changes - show checkmark
-    return (
-      <Button
-        size="icon-text"
-        variant="outline"
-        disabled
-        className="gap-2 opacity-60"
-      >
-        <Check size={16} />
-        Publicado
-      </Button>
-    );
+    // Published with no changes - no button needed (badge is enough)
+    return null;
   };
 
   return (
@@ -243,33 +235,82 @@ export function BuilderHeader({
                       <span className="sr-only">Menu de opções</span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent align="end" className="w-48 p-1">
+                  <PopoverContent align="end" className="w-56 p-1">
                     {quiz.isPublished ? (
                       <>
+                        {/* Pending changes section */}
+                        {hasUnpublishedChanges && (
+                          <>
+                            <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+                              <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                              <span>Alterações pendentes</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuOpen(false);
+                                onPublishUpdate?.();
+                              }}
+                              disabled={isPublishing}
+                              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-yellow-600 dark:text-yellow-500 hover:bg-yellow-500/10 transition-colors"
+                            >
+                              <RefreshCw size={16} />
+                              Publicar alterações
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuOpen(false);
+                                onDiscardChanges?.();
+                              }}
+                              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors"
+                            >
+                              <Undo2 size={16} />
+                              Descartar alterações
+                            </button>
+                            <div className="h-px bg-border my-1" />
+                          </>
+                        )}
+
+                        {/* Copy link */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleCopyUrl();
+                          }}
+                          className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors ${copied ? 'text-green-600 dark:text-green-500' : ''}`}
+                        >
+                          {copied ? <Check size={16} /> : <Link2 size={16} />}
+                          {copied ? 'Link copiado!' : 'Copiar link público'}
+                        </button>
+
+                        {/* Unpublish */}
                         <button
                           type="button"
                           onClick={() => {
                             setMenuOpen(false);
-                            onUnpublish?.();
+                            setShowUnpublishDialog(true);
                           }}
-                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-orange-500 hover:bg-orange-500/10 transition-colors"
                         >
                           <EyeOff size={16} />
-                          Despublicar
+                          Despublicar quiz
                         </button>
-                        {hasUnpublishedChanges && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMenuOpen(false);
-                              onDiscardChanges?.();
-                            }}
-                            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted transition-colors"
-                          >
-                            <Undo2 size={16} />
-                            Descartar alterações
-                          </button>
-                        )}
+
+                        <div className="h-px bg-border my-1" />
+
+                        {/* Reports */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            router.push(`/dashboard/reports/${quiz.id}`);
+                          }}
+                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors"
+                        >
+                          <LineChart size={16} />
+                          Ver relatório
+                        </button>
                       </>
                     ) : (
                       <button
@@ -315,7 +356,10 @@ export function BuilderHeader({
         quiz={quiz}
         onPublish={onPublish}
         onPublishUpdate={onPublishUpdate}
-        onUnpublish={onUnpublish}
+        onUnpublish={() => {
+          setMobileDrawerOpen(false);
+          setShowUnpublishDialog(true);
+        }}
         onDiscardChanges={onDiscardChanges}
         onCopyLink={handleCopyUrl}
         onDelete={() => setShowDeleteDialog(true)}
@@ -340,6 +384,22 @@ export function BuilderHeader({
         onUpdateAndExit={handleUpdateAndExit}
         onExitWithoutUpdating={handleExitWithoutUpdating}
         isUpdating={isUpdatingAndExiting}
+      />
+
+      {/* Unpublish confirmation dialog */}
+      <ConfirmDialog
+        open={showUnpublishDialog}
+        onOpenChange={setShowUnpublishDialog}
+        onConfirm={() => {
+          setShowUnpublishDialog(false);
+          onUnpublish?.();
+        }}
+        title="Despublicar quiz?"
+        description="O quiz não estará mais acessível para novos participantes. Os dados de respostas anteriores serão mantidos."
+        confirmText="Despublicar"
+        confirmingText="Despublicando..."
+        isConfirming={isPublishing}
+        variant="warning"
       />
     </>
   );

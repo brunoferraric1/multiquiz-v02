@@ -518,7 +518,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   };
 
   const handleDiscardChanges = () => {
-    if (!publishedVersion) return;
+    if (!publishedVersion) {
+      toast.error('Não é possível descartar', {
+        description: 'Este quiz foi publicado antes do sistema de versões. Publique novamente para habilitar esta função.',
+      });
+      return;
+    }
 
     loadPublishedVersion();
     toast.success('Alterações descartadas');
