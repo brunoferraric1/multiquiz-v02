@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Rocket, Link2, Check, MoreVertical, EyeOff, Undo2, RefreshCw, LineChart } from 'lucide-react';
+import { ArrowLeft, Rocket, Link2, Check, MoreVertical, EyeOff, Undo2, RefreshCw, LineChart, Globe } from 'lucide-react';
 import { useState } from 'react';
 import type { Quiz, QuizDraft, QuizSnapshot } from '@/types';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,7 @@ export function BuilderHeader({
 }: BuilderHeaderProps) {
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [publishedButtonHovered, setPublishedButtonHovered] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
@@ -126,9 +127,10 @@ export function BuilderHeader({
     onBack();
   };
 
-  // Status badge (without notification dot - that's now on the 3-dots button)
+  // Status badge - desktop only shows Rascunho (Publicado shown via button)
+  // Mobile shows both since actions are in the drawer
   const statusBadge = quiz.isPublished ? (
-    <Badge variant="published">Publicado</Badge>
+    <Badge variant="published" className="sm:hidden">Publicado</Badge>
   ) : (
     <Badge variant="draft">Rascunho</Badge>
   );
@@ -165,8 +167,40 @@ export function BuilderHeader({
       );
     }
 
-    // Published with no changes - no button needed (badge is enough)
-    return null;
+    // Published with no changes - show Publicado button that reveals copy URL on hover
+    return (
+      <Button
+        size="icon-text"
+        variant="outline"
+        onClick={handleCopyUrl}
+        onMouseEnter={() => setPublishedButtonHovered(true)}
+        onMouseLeave={() => setPublishedButtonHovered(false)}
+        className={`gap-2 h-9 transition-all duration-200 ${copied
+          ? 'text-green-600 border-green-500/50 bg-green-500/10'
+          : publishedButtonHovered
+            ? 'text-primary border-primary/50'
+            : 'text-green-600 border-green-500/50 bg-green-500/10'
+          }`}
+        title={copied ? 'URL copiada' : 'Clique para copiar URL do quiz'}
+      >
+        {copied ? (
+          <>
+            <Check size={16} />
+            <span className="text-sm font-semibold">Copiado!</span>
+          </>
+        ) : publishedButtonHovered ? (
+          <>
+            <Link2 size={16} />
+            <span className="text-sm font-semibold">Copiar URL</span>
+          </>
+        ) : (
+          <>
+            <Globe size={16} />
+            <span className="text-sm font-semibold">Publicado</span>
+          </>
+        )}
+      </Button>
+    );
   };
 
   return (
@@ -208,18 +242,6 @@ export function BuilderHeader({
             <div className="flex items-center gap-2 flex-shrink-0">
               {/* Desktop actions - hidden on mobile */}
               <div className="hidden sm:flex items-center gap-2">
-                {quiz.isPublished && (
-                  <Button
-                    size="icon-text"
-                    variant="outline"
-                    onClick={handleCopyUrl}
-                    className="gap-2 h-9"
-                    title={copied ? 'URL copiada' : 'Copiar URL do quiz'}
-                  >
-                    {copied ? <Check size={16} /> : <Link2 size={16} />}
-                    <span className="text-sm font-semibold">copiar</span>
-                  </Button>
-                )}
 
                 {renderPrimaryButton()}
 
