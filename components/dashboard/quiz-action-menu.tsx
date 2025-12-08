@@ -33,6 +33,8 @@ import {
 import { copyToClipboard } from '@/lib/copy-to-clipboard';
 import { QuizService } from '@/lib/services/quiz-service';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useQueryClient } from '@tanstack/react-query';
+import { PublishSuccessDrawer } from '@/components/dashboard/publish-success-drawer';
 import type { Quiz } from '@/types';
 
 interface QuizActionMenuProps {
@@ -44,11 +46,13 @@ interface QuizActionMenuProps {
 export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActionMenuProps) {
     const router = useRouter();
     const { user } = useAuth();
+    const queryClient = useQueryClient();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeletingInternal, setIsDeletingInternal] = useState(false);
     const [copied, setCopied] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
+    const [showPublishModal, setShowPublishModal] = useState(false);
 
     const handleCopyLink = async () => {
         if (!quiz.isPublished || !quiz.id) return;
@@ -96,12 +100,30 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
     };
 
     const handlePublish = async () => {
-        if (!user || !quiz.id || isPublishing) return;
+        console.log('[QuizActionMenu] handlePublish called', { user: !!user, quizId: quiz.id, isPublishing });
+        if (!user) {
+            console.error('[QuizActionMenu] No user available');
+            return;
+        }
+        if (!quiz.id) {
+            console.error('[QuizActionMenu] No quiz ID');
+            return;
+        }
+        if (isPublishing) {
+            console.log('[QuizActionMenu] Already publishing');
+            return;
+        }
         setIsPublishing(true);
         try {
             await QuizService.publishQuiz(quiz.id, user.uid);
             setMobileMenuOpen(false);
-            router.refresh();
+            // Invalidate cache to update UI first
+            queryClient.invalidateQueries({ queryKey: ['quiz', quiz.id] });
+            queryClient.invalidateQueries({ queryKey: ['quizzes', user.uid] });
+            // Wait 750ms so user can see the card status change, then show drawer
+            setTimeout(() => {
+                setShowPublishModal(true);
+            }, 750);
         } catch (error) {
             console.error('Publish failed', error);
         } finally {
@@ -115,7 +137,9 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
         try {
             await QuizService.unpublishQuiz(quiz.id, user.uid);
             setMobileMenuOpen(false);
-            router.refresh();
+            // Invalidate cache to update UI
+            queryClient.invalidateQueries({ queryKey: ['quiz', quiz.id] });
+            queryClient.invalidateQueries({ queryKey: ['quizzes', user.uid] });
         } catch (error) {
             console.error('Unpublish failed', error);
         } finally {
@@ -314,6 +338,12 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <PublishSuccessDrawer
+                open={showPublishModal}
+                onClose={() => setShowPublishModal(false)}
+                quizId={quiz.id}
+            />
         </>
     );
 }
