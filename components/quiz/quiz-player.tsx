@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { AnswerOption, Quiz, QuizDraft } from '@/types';
 import { QuizIntro } from './quiz-intro';
 import { QuizQuestion } from './quiz-question';
 import { QuizResult } from './quiz-result';
 import { QuizLeadGen } from './quiz-lead-gen';
 import { QuizProgressBar } from './quiz-progress-bar';
+import { AnalyticsService } from '@/lib/services/analytics-service';
 
 type PlayableQuestion = {
   id: string;
@@ -44,6 +45,12 @@ const getPreviewCopy = (quiz: QuizDraft | Quiz) => ({
 
 export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
   const { title, description, coverImageUrl, primaryColor, ctaText } = getPreviewCopy(quiz);
+
+  // Attempt Tracking
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+
+  // Track if we already started tracking to avoid double inits
+  const hasStartedRef = useRef(false);
 
   const questions = useMemo<PlayableQuestion[]>(() => {
     return (quiz.questions || []).reduce<PlayableQuestion[]>((list, item) => {
@@ -90,12 +97,28 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
   const currentSelectionIds =
     currentQuestion && currentQuestion.id ? selectedOptions[currentQuestion.id] || [] : [];
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (questions.length > 0 && outcomes.length > 0) {
       setPhase('question');
       setCurrentQuestionIndex(0);
       setSelectedOptions({});
       setResultOutcomeId(null);
+
+      // Start analytics attempt
+      if (mode === 'live' && quiz.id) {
+        try {
+          // We don't have user ID in public player, so undefined
+          const id = await AnalyticsService.createAttempt(quiz.id);
+          setAttemptId(id);
+
+          // Initial update with first question
+          await AnalyticsService.updateAttempt(id, {
+            currentQuestionId: questions[0].id
+          });
+        } catch (error) {
+          console.error("Failed to start analytics attempt", error);
+        }
+      }
     }
   };
 
@@ -110,10 +133,28 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
           : [...existing, optionId]
         : [optionId];
 
-      return {
+      const nextState = {
         ...prev,
         [currentQuestion.id]: nextSelections,
       };
+
+      // Track answer if in live mode and attempt is active
+      if (mode === 'live' && attemptId) {
+        // Simplified: just taking the last selection or joined strings for tracking
+        // For allowMultiple, this might overwrite. Real app might want array storage or separate events.
+        // For MVP, tracking the latest state of answers map
+        // Construct the full answers map to update
+        const simpleAnswers: Record<string, string> = {};
+        Object.entries(nextState).forEach(([qId, sIds]) => {
+          simpleAnswers[qId] = sIds.join(',');
+        });
+
+        AnalyticsService.updateAttempt(attemptId, {
+          answers: simpleAnswers
+        });
+      }
+
+      return nextState;
     });
 
     if (!currentQuestion.allowMultiple) {
@@ -125,7 +166,15 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
 
   const goToNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+
+      // Update analytics with new current question
+      if (mode === 'live' && attemptId && questions[nextIndex]) {
+        AnalyticsService.updateAttempt(attemptId, {
+          currentQuestionId: questions[nextIndex].id
+        });
+      }
       return;
     }
     // Check for Lead Gen before finalizing
@@ -138,7 +187,18 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
 
   const handleLeadGenSubmit = (data: Record<string, string>) => {
     setLeadData(data);
-    // TODO: Send lead data to backend
+
+    // Track lead info
+    if (mode === 'live' && attemptId) {
+      AnalyticsService.updateAttempt(attemptId, {
+        lead: {
+          name: data.name,
+          email: data.email,
+          phone: data.phone
+        }
+      });
+    }
+
     finalizeQuiz();
   };
 
@@ -147,7 +207,14 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
       setPhase('intro');
       return;
     }
-    setCurrentQuestionIndex((prev) => Math.max(0, prev - 1));
+    const prevIndex = Math.max(0, currentQuestionIndex - 1);
+    setCurrentQuestionIndex(prevIndex);
+    // Update analytics with new current question (technically they went back, but it's still their "current" view)
+    if (mode === 'live' && attemptId && questions[prevIndex]) {
+      AnalyticsService.updateAttempt(attemptId, {
+        currentQuestionId: questions[prevIndex].id
+      });
+    }
   };
 
   const finalizeQuiz = () => {
@@ -168,6 +235,15 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
 
     setResultOutcomeId(winningOutcomeId);
     setPhase('result');
+
+    // Track completion
+    if (mode === 'live' && attemptId && winningOutcomeId) {
+      AnalyticsService.updateAttempt(attemptId, {
+        status: 'completed',
+        resultOutcomeId: winningOutcomeId,
+        // Ensure final state of answers is synced (optional if relying on interim updates)
+      });
+    }
   };
 
   const resetQuiz = () => {
@@ -175,7 +251,16 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
     setSelectedOptions({});
     setCurrentQuestionIndex(0);
     setResultOutcomeId(null);
+    setAttemptId(null); // Reset tracking session
   };
+
+  const handleCtaClick = () => {
+    if (mode === 'live' && attemptId) {
+      AnalyticsService.updateAttempt(attemptId, {
+        ctaClickedAt: Date.now()
+      });
+    }
+  }
 
   const resultOutcome =
     outcomes.find((outcome) => outcome.id === resultOutcomeId) || outcomes[0];
@@ -229,6 +314,7 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
             mode={mode}
             onReset={resetQuiz}
             onExit={onExit}
+            onCtaClick={handleCtaClick}
           />
         )}
       </div>

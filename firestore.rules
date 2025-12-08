@@ -38,17 +38,20 @@ service cloud.firestore {
                        resource.data.ownerId == request.auth.uid;
     }
 
-    // Leads/submissions collection
+    // Leads/submissions collection (Legacy?)
     match /submissions/{submissionId} {
-      // Allow authenticated users to read their own submissions
       allow read: if isAuthenticated();
-
-      // Allow anyone to create submissions (for quiz completions)
       allow create: if true;
+      allow read: if isAuthenticated() && isOwner(resource.data.quizId);
+    }
 
-      // Allow quiz owners to read submissions for their quizzes
-      allow read: if isAuthenticated() &&
-                     isOwner(resource.data.quizId);
+    // Quiz Attempts (Analytics)
+    match /quiz_attempts/{attemptId} {
+      // Allow anyone to start/update an attempt (public quiz taking)
+      allow create, update: if true;
+
+      // Allow only the quiz owner to view the analytics/leads
+      allow read: if isOwner(resource.data.quizId);
     }
   }
 }

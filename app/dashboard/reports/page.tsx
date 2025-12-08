@@ -1,0 +1,99 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { QuizService } from '@/lib/services/quiz-service';
+import type { Quiz } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { BarChart3, Eye, Play, CheckCircle2, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+export default function ReportsPage() {
+    const { user } = useAuth();
+    const router = useRouter();
+    const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchQuizzes() {
+            if (!user) return;
+            try {
+                const data = await QuizService.getUserQuizzes(user.uid);
+                setQuizzes(data);
+            } catch (error) {
+                console.error('Failed to fetch quizzes', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchQuizzes();
+    }, [user]);
+
+    if (loading) {
+        return <div className="p-8">Carregando relatórios...</div>;
+    }
+
+    return (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="flex flex-col gap-2 mb-8">
+                <h1 className="text-3xl font-bold">Relatórios de Performance</h1>
+                <p className="text-muted-foreground">
+                    Acompanhe o desempenho de seus quizzes e otimize suas conversões.
+                </p>
+            </div>
+
+            {quizzes.length === 0 ? (
+                <Card className="text-center py-12">
+                    <CardContent>
+                        <p className="text-muted-foreground mb-4">Você ainda não tem quizzes criados.</p>
+                        <Button onClick={() => router.push('/builder')}>Criar meu primeiro Quiz</Button>
+                    </CardContent>
+                </Card>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {quizzes.map((quiz) => (
+                        <Card key={quiz.id} className="hover:shadow-md transition-shadow">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="truncate text-lg">{quiz.title}</CardTitle>
+                                <CardDescription className="line-clamp-1">{quiz.description || 'Sem descrição'}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-3 gap-2 mt-2">
+                                    <div className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
+                                        <Eye className="h-4 w-4 mb-1 text-muted-foreground" />
+                                        <span className="text-lg font-bold">{quiz.stats?.views || 0}</span>
+                                        <span className="text-xs text-muted-foreground">Visitas</span>
+                                    </div>
+                                    <div className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
+                                        <Play className="h-4 w-4 mb-1 text-blue-500" />
+                                        <span className="text-lg font-bold">{quiz.stats?.starts || 0}</span>
+                                        <span className="text-xs text-muted-foreground">Inícios</span>
+                                    </div>
+                                    <div className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
+                                        <CheckCircle2 className="h-4 w-4 mb-1 text-green-500" />
+                                        <span className="text-lg font-bold">{quiz.stats?.completions || 0}</span>
+                                        <span className="text-xs text-muted-foreground">Finais</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-between text-sm">
+                                    <div className="text-muted-foreground">
+                                        Taxa de Conclusão: {quiz.stats?.starts ? Math.round(((quiz.stats.completions || 0) / quiz.stats.starts) * 100) : 0}%
+                                    </div>
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button className="w-full" variant="outline" onClick={() => router.push(`/dashboard/reports/${quiz.id}`)}>
+                                    <BarChart3 className="mr-2 h-4 w-4" />
+                                    Ver Detalhes
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}

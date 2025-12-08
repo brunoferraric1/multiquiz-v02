@@ -128,6 +128,28 @@ export type AIExtractionResult = {
   };
 };
 
+// Analytics Schemas
+export const QuizAttemptSchema = z.object({
+  id: z.string().uuid(),
+  quizId: z.string().uuid(),
+  userId: z.string().optional(),
+  startedAt: z.number(),
+  completedAt: z.number().optional(),
+  lastUpdatedAt: z.number(),
+  currentQuestionId: z.string().optional(),
+  answers: z.record(z.string(), z.string()), // questionId -> optionId (simplified for MVP, multiple choice might need array)
+  lead: z.object({
+    name: z.string().optional(),
+    email: z.string().optional(),
+    phone: z.string().optional(),
+  }).optional(),
+  resultOutcomeId: z.string().optional(),
+  status: z.enum(['started', 'completed', 'abandoned']),
+  ctaClickedAt: z.number().optional(),
+});
+
+export type QuizAttempt = z.infer<typeof QuizAttemptSchema>;
+
 // Store types
 export type QuizBuilderState = {
   quiz: QuizDraft;

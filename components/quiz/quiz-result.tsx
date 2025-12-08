@@ -14,9 +14,17 @@ type QuizResultProps = {
   mode: 'preview' | 'live';
   onReset: () => void;
   onExit?: () => void;
+  onCtaClick?: () => void;
 };
 
-export function QuizResult({ outcome, mode, onReset, onExit }: QuizResultProps) {
+export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick }: QuizResultProps) {
+
+  const handleCtaClick = () => {
+    if (outcome.ctaUrl && onCtaClick) {
+      onCtaClick();
+    }
+  };
+
   return (
     <div className="space-y-5 text-center">
       <div className="rounded-2xl border border-border/60 bg-secondary/30 p-4">
@@ -46,7 +54,7 @@ export function QuizResult({ outcome, mode, onReset, onExit }: QuizResultProps) 
       <div className="flex flex-wrap items-center justify-center gap-2">
 
         {outcome.ctaUrl && (
-          <Button asChild className="gap-2">
+          <Button asChild className="gap-2" onClick={handleCtaClick}>
             <a href={outcome.ctaUrl} target="_blank" rel="noreferrer">
               {outcome.ctaText || 'Saiba mais'}
               <ChevronRight className="h-4 w-4" />

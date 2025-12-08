@@ -63,6 +63,20 @@ export function DashboardHeader() {
                 <Button
                   variant="ghost"
                   className="w-full justify-start text-base"
+                  onClick={() => handleNavigation('/dashboard/reports')}
+                >
+                  Relatórios
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-base"
+                  onClick={() => handleNavigation('/dashboard/leads')}
+                >
+                  Leads
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-base"
                   onClick={() => handleNavigation('/account')}
                 >
                   Conta
