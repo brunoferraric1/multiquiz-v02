@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Rocket, Link2, Check, MoreVertical, EyeOff, Undo2, RefreshCw, LineChart, Globe } from 'lucide-react';
+import { ArrowLeft, Rocket, Link2, Check, MoreVertical, EyeOff, Undo2, RefreshCw, Globe } from 'lucide-react';
 import { useState } from 'react';
 import type { Quiz, QuizDraft, QuizSnapshot } from '@/types';
 import { Badge } from '@/components/ui/badge';
@@ -161,7 +161,7 @@ export function BuilderHeader({
           disabled={isPublishing}
           className="gap-2 bg-yellow-500 hover:bg-yellow-600 text-yellow-950"
         >
-          <RefreshCw size={16} />
+          <Globe size={16} />
           {isPublishing ? 'Atualizando...' : 'Atualizar'}
         </Button>
       );
@@ -317,21 +317,6 @@ export function BuilderHeader({
                         >
                           <EyeOff size={16} />
                           Despublicar quiz
-                        </button>
-
-                        <div className="h-px bg-border my-1" />
-
-                        {/* Reports */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuOpen(false);
-                            router.push(`/dashboard/reports/${quiz.id}`);
-                          }}
-                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors"
-                        >
-                          <LineChart size={16} />
-                          Ver relatório
                         </button>
                       </>
                     ) : (

@@ -7,7 +7,6 @@ import {
     Globe,
     GlobeLock,
     Undo2,
-    LineChart,
     Trash2,
     Check,
 } from 'lucide-react';
@@ -46,11 +45,6 @@ export function BuilderActionsDrawer({
     const router = useRouter();
 
     const itemClass = "flex w-full items-center gap-3 px-6 py-4 text-base font-medium transition-colors active:bg-muted";
-
-    const handleReports = () => {
-        onClose();
-        router.push(`/dashboard/reports/${quiz.id}`);
-    };
 
     const handleAction = (action: () => void) => {
         action();
@@ -116,14 +110,6 @@ export function BuilderActionsDrawer({
                         >
                             <GlobeLock size={20} />
                             <span>Despublicar quiz</span>
-                        </button>
-
-                        <div className="h-px bg-border my-2" />
-
-                        {/* Reports section */}
-                        <button onClick={handleReports} className={itemClass}>
-                            <LineChart size={20} />
-                            <span>Ver relatório</span>
                         </button>
                     </>
                 ) : (
