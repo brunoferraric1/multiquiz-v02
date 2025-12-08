@@ -6,6 +6,7 @@ import type { Quiz, QuizDraft, QuizSnapshot } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { copyToClipboard } from '@/lib/copy-to-clipboard';
+import { toast } from 'sonner';
 import {
   Popover,
   PopoverContent,
@@ -14,6 +15,8 @@ import {
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useDeleteQuizMutation } from '@/lib/hooks/use-quiz-queries';
 import { DeleteQuizDialog } from '@/components/dashboard/delete-quiz-dialog';
+import { BuilderActionsDrawer } from './builder-actions-drawer';
+import { UnsavedChangesDialog } from './unsaved-changes-dialog';
 import { useRouter } from 'next/navigation';
 
 interface BuilderHeaderProps {
@@ -43,6 +46,9 @@ export function BuilderHeader({
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [isUpdatingAndExiting, setIsUpdatingAndExiting] = useState(false);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -75,29 +81,57 @@ export function BuilderHeader({
       if (!copiedSuccessfully) throw new Error('Clipboard not supported');
 
       setCopied(true);
+      toast.success('Link copiado!', {
+        description: 'O link público do quiz foi copiado para a área de transferência.',
+      });
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy quiz URL:', error);
+      toast.error('Erro ao copiar', {
+        description: 'Não foi possível copiar o link. Tente novamente.',
+      });
     }
   };
 
   const handleBack = () => {
+    // If published quiz with unpublished changes, show confirmation dialog
+    if (quiz.isPublished && hasUnpublishedChanges) {
+      setShowUnsavedDialog(true);
+      return;
+    }
     onBack();
   };
 
-  // Status badge with pending changes indicator
+  const handleUpdateAndExit = async () => {
+    if (!onPublishUpdate) {
+      onBack();
+      return;
+    }
+    setIsUpdatingAndExiting(true);
+    try {
+      await onPublishUpdate();
+      setShowUnsavedDialog(false);
+      onBack();
+    } catch (error) {
+      console.error('Failed to update:', error);
+    } finally {
+      setIsUpdatingAndExiting(false);
+    }
+  };
+
+  const handleExitWithoutUpdating = () => {
+    setShowUnsavedDialog(false);
+    onBack();
+  };
+
+  // Status badge (without notification dot - that's now on the 3-dots button)
   const statusBadge = quiz.isPublished ? (
-    <Badge variant="published" className="gap-1.5">
-      Publicado
-      {hasUnpublishedChanges && (
-        <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-      )}
-    </Badge>
+    <Badge variant="published">Publicado</Badge>
   ) : (
     <Badge variant="draft">Rascunho</Badge>
   );
 
-  // Determine primary action button
+  // Determine primary action button (desktop only)
   const renderPrimaryButton = () => {
     if (!quiz.isPublished) {
       // Draft quiz - show Publicar button
@@ -144,113 +178,153 @@ export function BuilderHeader({
   };
 
   return (
-    <header className="bg-card/80 border-b border-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md shrink-0 z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex items-center justify-between gap-2">
-          {/* Left side - Back button + Title with Badge above */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 sm:w-auto sm:gap-2 sm:px-3 border border-border/60 bg-background/40 flex-shrink-0"
-              onClick={handleBack}
-            >
-              <ArrowLeft size={16} />
-              <span className="hidden sm:inline">
-                {isPreview ? 'Editor' : 'Voltar'}
-              </span>
-              <span className="sr-only sm:hidden">
-                {isPreview ? 'Voltar ao editor' : 'Voltar ao dashboard'}
-              </span>
-            </Button>
+    <>
+      <header className="bg-card/80 border-b border-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md shrink-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between gap-2">
+            {/* Left side - Back button + Title with Badge */}
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 sm:w-auto sm:gap-2 sm:px-3 border border-border/60 bg-background/40 flex-shrink-0"
+                onClick={handleBack}
+              >
+                <ArrowLeft size={16} />
+                <span className="hidden sm:inline">
+                  {isPreview ? 'Editor' : 'Voltar'}
+                </span>
+                <span className="sr-only sm:hidden">
+                  {isPreview ? 'Voltar ao editor' : 'Voltar ao dashboard'}
+                </span>
+              </Button>
 
-            <div className="hidden sm:block h-8 w-px bg-border/60 flex-shrink-0" />
+              <div className="hidden sm:block h-8 w-px bg-border/60 flex-shrink-0" />
 
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <h1 className="text-sm sm:text-base md:text-lg font-semibold truncate">
-                {quiz.title || 'Novo Quiz'}
-              </h1>
-              <div className="flex-shrink-0">
-                {statusBadge}
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <h1 className="text-sm sm:text-base md:text-lg font-semibold truncate">
+                  {quiz.title || 'Novo Quiz'}
+                </h1>
+                <div className="flex-shrink-0">
+                  {statusBadge}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Right side - Copy URL + Primary action + Menu */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {quiz.isPublished && (
-              <Button
-                size="icon-text"
-                variant="outline"
-                onClick={handleCopyUrl}
-                className="gap-2 h-9"
-                title={copied ? 'URL copiada' : 'Copiar URL do quiz'}
-              >
-                {copied ? <Check size={16} /> : <Link2 size={16} />}
-                <span className="text-sm font-semibold hidden sm:inline">copiar</span>
-              </Button>
-            )}
+            {/* Right side - Desktop: Full actions, Mobile: Just 3-dots */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Desktop actions - hidden on mobile */}
+              <div className="hidden sm:flex items-center gap-2">
+                {quiz.isPublished && (
+                  <Button
+                    size="icon-text"
+                    variant="outline"
+                    onClick={handleCopyUrl}
+                    className="gap-2 h-9"
+                    title={copied ? 'URL copiada' : 'Copiar URL do quiz'}
+                  >
+                    {copied ? <Check size={16} /> : <Link2 size={16} />}
+                    <span className="text-sm font-semibold">copiar</span>
+                  </Button>
+                )}
 
-            {renderPrimaryButton()}
+                {renderPrimaryButton()}
 
-            {/* Three-dot menu */}
-            <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9"
-                >
-                  <MoreVertical size={16} />
-                  <span className="sr-only">Menu de opções</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-48 p-1">
-                {quiz.isPublished ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onUnpublish?.();
-                      }}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                {/* Three-dot menu (desktop) */}
+                <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-9 w-9"
                     >
-                      <EyeOff size={16} />
-                      Despublicar
-                    </button>
-                    {hasUnpublishedChanges && (
+                      <MoreVertical size={16} />
+                      <span className="sr-only">Menu de opções</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-48 p-1">
+                    {quiz.isPublished ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            onUnpublish?.();
+                          }}
+                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <EyeOff size={16} />
+                          Despublicar
+                        </button>
+                        {hasUnpublishedChanges && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              onDiscardChanges?.();
+                            }}
+                            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted transition-colors"
+                          >
+                            <Undo2 size={16} />
+                            Descartar alterações
+                          </button>
+                        )}
+                      </>
+                    ) : (
                       <button
                         type="button"
                         onClick={() => {
                           setMenuOpen(false);
-                          onDiscardChanges?.();
+                          setShowDeleteDialog(true);
                         }}
-                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted transition-colors"
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                       >
-                        <Undo2 size={16} />
-                        Descartar alterações
+                        Deletar quiz
                       </button>
                     )}
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setShowDeleteDialog(true);
-                    }}
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                  >
-                    Deletar quiz
-                  </button>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Mobile: Only 3-dots button that opens bottom drawer */}
+              <div className="relative sm:hidden">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-9 w-9 border border-border/60 bg-background/40"
+                  onClick={() => setMobileDrawerOpen(true)}
+                >
+                  <MoreVertical size={16} />
+                  <span className="sr-only">Menu de opções</span>
+                </Button>
+                {/* Yellow notification dot for unpublished changes */}
+                {quiz.isPublished && hasUnpublishedChanges && (
+                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-yellow-500 animate-pulse border-2 border-card" />
                 )}
-              </PopoverContent>
-            </Popover>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
+
+      {/* Mobile actions drawer */}
+      <BuilderActionsDrawer
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        quiz={quiz}
+        onPublish={onPublish}
+        onPublishUpdate={onPublishUpdate}
+        onUnpublish={onUnpublish}
+        onDiscardChanges={onDiscardChanges}
+        onCopyLink={handleCopyUrl}
+        onDelete={() => setShowDeleteDialog(true)}
+        isPublishing={isPublishing}
+        hasUnpublishedChanges={hasUnpublishedChanges}
+        copied={copied}
+      />
+
+      {/* Delete confirmation dialog */}
       <DeleteQuizDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
@@ -258,6 +332,15 @@ export function BuilderHeader({
         title={quiz.title || 'Novo Quiz'}
         isDeleting={deleteQuizMutation.isPending}
       />
-    </header >
+
+      {/* Unsaved changes confirmation dialog */}
+      <UnsavedChangesDialog
+        open={showUnsavedDialog}
+        onOpenChange={setShowUnsavedDialog}
+        onUpdateAndExit={handleUpdateAndExit}
+        onExitWithoutUpdating={handleExitWithoutUpdating}
+        isUpdating={isUpdatingAndExiting}
+      />
+    </>
   );
 }
