@@ -35,7 +35,7 @@ export function QuizIntro({
       <div className="flex justify-center">
         <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
           {coverImageUrl ? (
-            <div className="aspect-w-4 aspect-h-3">
+            <div className="aspect-[4/3]">
               <img
                 src={coverImageUrl}
                 alt="Capa do quiz"
@@ -43,7 +43,7 @@ export function QuizIntro({
               />
             </div>
           ) : (
-            <div className="flex h-44 items-center justify-center text-sm text-muted-foreground bg-muted/60">
+            <div className="flex aspect-[4/3] items-center justify-center text-sm text-muted-foreground bg-muted/60">
               Adicione uma imagem de capa para o quiz
             </div>
           )}

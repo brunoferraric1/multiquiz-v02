@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type DragEvent } from 'react';
 import {
   ArrowLeft,
@@ -79,11 +79,16 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const { user } = useAuth();
   const router = useRouter();
   const [isPublishing, setIsPublishing] = useState(false);
+  const searchParams = useSearchParams();
   const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [outcomeFile, setOutcomeFile] = useState<File | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Initialize from URL param if present
+  const [isPreviewOpen, setIsPreviewOpen] = useState(() => {
+    return searchParams.get('mode') === 'preview';
+  });
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<number | null>(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);

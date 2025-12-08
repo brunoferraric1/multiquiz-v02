@@ -104,20 +104,18 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
       setSelectedOptions({});
       setResultOutcomeId(null);
 
-      // Start analytics attempt
+      // Create analytics attempt
       if (mode === 'live' && quiz.id) {
-        try {
-          // We don't have user ID in public player, so undefined
-          const id = await AnalyticsService.createAttempt(quiz.id);
+        // Fire and forget, but keep the ID if possible
+        AnalyticsService.createAttempt(quiz.id).then(id => {
           setAttemptId(id);
-
-          // Initial update with first question
-          await AnalyticsService.updateAttempt(id, {
-            currentQuestionId: questions[0].id
-          });
-        } catch (error) {
-          console.error("Failed to start analytics attempt", error);
-        }
+          // Initial update for first question
+          if (questions[0]) {
+            AnalyticsService.updateAttempt(id, {
+              currentQuestionId: questions[0].id
+            });
+          }
+        }).catch(e => console.error(e));
       }
     }
   };
