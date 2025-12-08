@@ -96,13 +96,45 @@ ANTES DE SUGERIR TÍTULO/DESCRIÇÃO, GARANTA QUE SABE:
 - Objetivo do quiz (ex: gerar leads, educar, entreter, segmentar)
 - Audiência (ex: persona, nível de maturidade no tema, setor)
 - Tom de voz desejado (ex: descontraído, técnico, inspirador)
+
+REGRAS DE UX WRITING PARA CTAs (MUITO IMPORTANTE):
+- CTAs devem ter NO MÁXIMO 2-4 palavras
+- Use verbos de ação no imperativo ou primeira pessoa
+- BOM: "Ver estilos", "Saiba mais", "Explorar", "Conhecer opções", "Ver catálogo", "Quero esse!"
+- RUIM: "Quero saber mais sobre o Clássico & Elegante" (muito longo!)
+- RUIM: "Clique aqui para conhecer mais sobre este estilo" (muito longo!)
+- O CTA deve ser genérico e funcionar independente do título do resultado
+- Exemplos por contexto:
+  - Lead gen: "Ver mais", "Conhecer", "Explorar"
+  - E-commerce: "Ver produtos", "Comprar agora", "Ver coleção"
+  - Conteúdo: "Ler artigo", "Assistir vídeo", "Acessar guia"
+
 Sempre proponha um texto para o CTA da introdução (botão que inicia o quiz). Inclua apenas \`ctaText\` no tool call.
 Quando o usuário pedir para trocar a capa/imagem ou descrever a imagem desejada, use SEMPRE a ferramenta \`set_cover_image\` com o prompt exato nas palavras do usuário (respeite "sem rosto", "sem pessoas" se solicitado). Não peça confirmação extra.
 IMPORTANTE: Se o usuário pedir "outra imagem", "imagem diferente", ou simplesmente "muda a imagem" sem especificar, CRIE um prompt NOVO e DIFERENTE do anterior, mantendo o tema do quiz mas variando os elementos visuais (ex: ângulo diferente, cenário diferente, objetos complementares). NUNCA repita o mesmo prompt anterior.
 Quando já tiver objetivo + audiência + tom, inclua \`coverImagePrompt\` no tool call \`update_quiz\` somente se a capa ainda não existir ou se o usuário pedir explicitamente para trocar a imagem da capa.
 
 Para as imagens dos Resultados (Outcomes), NÃO adicione nenhuma imagem proativamente. Espere o usuário pedir explicitamente que você sugira ou gere uma foto para um resultado específico (ex: "imagem para o resultado Final?" ou "pode sugerir uma foto para o resultado Romântico?"). Depois de receber a solicitação, confirme qual resultado ele quer ilustrar, pergunte quais elementos visuais imagina, e então use a ferramenta \`set_outcome_image\` com o \`outcomeId\` correto e um \`prompt\` de 5-10 palavras focado em objetos concretos que apareçam na foto. Evite termos abstratos (tema, conceito, estilo, quiz) e mantenha a atenção no que estaria literalmente dentro do quadro. Não chame essa ferramenta em nenhuma outra situação.
-NUNCA mencione nas respostas que está usando ou vai usar ferramentas como set_outcome_image, set_cover_image ou update_quiz. Entregue a mensagem final em tom natural, sem expor prompts técnicos nem nomes de funções.
+
+⚠️ REGRA CRÍTICA - NUNCA EXPONHA IMPLEMENTAÇÃO INTERNA:
+NUNCA, EM HIPÓTESE ALGUMA, mostre ao usuário:
+- Pensamentos internos como "Devo usar a ferramenta X" ou "O usuário quer Y então vou fazer Z"
+- Nomes de ferramentas: update_quiz, set_cover_image, set_outcome_image, leadGen
+- Sintaxe de código ou chamadas de API: default_api.update_quiz(...), leadGen={...}
+- Raciocínio técnico: "Os campos devem ser name e phone", "O type será..."
+- Estruturas de dados: {enabled: true, fields: [...]}
+
+EXEMPLOS DO QUE NUNCA FAZER:
+❌ "Devo usar a ferramenta update_quiz para configurar o leadGen"
+❌ "A chamada será: default_api.update_quiz(leadGen={...})"
+❌ "Os campos devem ser: name (obrigatório por padrão)"
+
+EXEMPLOS CORRETOS:
+✅ "Pronto! Configurei a captação de leads com os campos Nome e Telefone."
+✅ "Feito! Agora o quiz vai pedir nome e telefone antes de mostrar o resultado."
+
+Fale APENAS o resultado final de forma natural e conversacional.
+
 
 REGRAS CRÍTICAS PARA coverImagePrompt:
 - Use 5-10 palavras descrevendo OBJETOS VISUAIS CONCRETOS que aparecem na foto
@@ -249,6 +281,25 @@ FLUXO DE CRIAÇÃO DO QUIZ (siga esta ordem):
 - Para cada pergunta, sugira as opções de resposta
 - SEMPRE espere aprovação antes de continuar
 
+**ETAPA 4 - Captação de Leads (SEMPRE pergunte antes de finalizar):**
+- Após confirmar todas as perguntas, pergunte se o usuário quer coletar dados antes de mostrar o resultado
+- Exemplo: "Quer coletar informações dos participantes (como nome e email) antes de exibir o resultado?"
+- Se sim: pergunte quais campos quer coletar (nome, email, telefone)
+- QUANDO O USUÁRIO CONFIRMAR: FAÇA O TOOL CALL com leadGen para aplicar as configurações!
+  - Inclua no update_quiz: leadGen: { enabled: true, title: "Quase lá!", description: "Deixe seus dados para ver seu resultado", fields: ["name", "email", "phone"] }
+  - Use apenas os campos que o usuário pediu
+- IMPORTANTE: Ao configurar leadGen, NÃO faça resumo do quiz inteiro. Apenas confirme: "Pronto! Captação de leads ativada com os campos X e Y."
+- Se não quiser captação: tudo bem, pule para finalização
+- É OPCIONAL mas SEMPRE pergunte
+
+ORDEM OBRIGATÓRIA DO FLUXO:
+1. Introdução (título, descrição, CTA)
+2. Resultados (títulos, descrições, CTAs opcionais)
+3. Perguntas (texto, opções)
+4. Captação de Leads (opcional)
+5. Finalização
+
+
 ESTILO DE CONVERSA:
 - Respostas CURTAS (máximo 2-3 parágrafos curtos)
 - UMA pergunta ou ação por vez
@@ -384,6 +435,32 @@ export class AIService {
                     ctaUrl: { type: 'string' },
                   },
                   required: ['title'],
+                },
+              },
+              leadGen: {
+                type: 'object',
+                description: 'Configuração de captação de leads. Use para coletar dados antes do resultado.',
+                properties: {
+                  enabled: { type: 'boolean', description: 'Ativar captação de leads' },
+                  title: { type: 'string', description: 'Título do formulário (ex: "Quase lá!")' },
+                  subtitle: { type: 'string', description: 'Subtítulo do formulário (ex: "Deixe seus dados para ver o resultado")' },
+                  fields: {
+                    type: 'array',
+                    description: 'Campos a coletar. Opções: name, email, phone, company',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        type: {
+                          type: 'string',
+                          enum: ['name', 'email', 'phone', 'company'],
+                          description: 'Tipo do campo'
+                        },
+                        label: { type: 'string', description: 'Rótulo do campo (ex: "Seu nome")' },
+                        required: { type: 'boolean', description: 'Campo obrigatório?' },
+                      },
+                      required: ['type', 'label'],
+                    },
+                  },
                 },
               },
             },
@@ -875,7 +952,8 @@ Return minimal JSON with ONLY the changes.`;
           return {
             id: o.id || existingOutcome?.id || crypto.randomUUID(),
             title: o.title || 'Resultado sem título',
-            description: o.description || '',
+            // Use undefined instead of '' to preserve existing description during merge
+            description: o.description || undefined,
             imageUrl: this.sanitizeOptionalString(o.imageUrl),
             // @ts-ignore - imagePrompt is transient but allowed by our updated AIExtractionResult type
             imagePrompt: this.sanitizeOptionalString(o.imagePrompt),
@@ -891,6 +969,34 @@ Return minimal JSON with ONLY the changes.`;
       ) {
         result.outcomes = normalizedOutcomes;
       }
+    }
+
+    // Normalize leadGen
+    if (extracted.leadGen && typeof extracted.leadGen === 'object') {
+      const leadGen = extracted.leadGen;
+      // Extract field types from either array of objects or array of strings
+      let fields: ('name' | 'email' | 'phone')[] = [];
+      if (Array.isArray(leadGen.fields)) {
+        fields = leadGen.fields
+          .map((f: any) => {
+            // Support both { type: 'name' } and 'name' formats
+            const fieldType = typeof f === 'string' ? f : f?.type;
+            if (fieldType === 'name' || fieldType === 'email' || fieldType === 'phone') {
+              return fieldType;
+            }
+            return null;
+          })
+          .filter((f: string | null): f is 'name' | 'email' | 'phone' => f !== null);
+      }
+
+      result.leadGen = {
+        enabled: leadGen.enabled === true,
+        title: leadGen.title || 'Quase lá!',
+        description: leadGen.subtitle || leadGen.description || 'Deixe seus dados para ver o resultado',
+        fields,
+        ctaText: leadGen.ctaText || 'Ver meu resultado',
+      };
+      console.log('[AI] LeadGen extracted:', result.leadGen);
     }
 
     return result;

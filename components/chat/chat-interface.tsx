@@ -211,6 +211,7 @@ const applyExtractionResult = (
   }
 
   if (extraction.leadGen) {
+    console.log('[LeadGen] Applying extraction leadGen:', extraction.leadGen);
     nextQuiz.leadGen = {
       ...baseQuiz.leadGen,
       ...extraction.leadGen,
@@ -218,6 +219,7 @@ const applyExtractionResult = (
       fields: extraction.leadGen.fields || baseQuiz.leadGen?.fields || [],
       enabled: extraction.leadGen.enabled ?? baseQuiz.leadGen?.enabled ?? false,
     };
+    console.log('[LeadGen] Result:', nextQuiz.leadGen);
   }
 
   return nextQuiz;
@@ -570,7 +572,8 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
       'isso', 'exato', 'correto', 'certo', 'concordo', 'legal',
       'maravilha', 'beleza', 'show', 'top', 'segue', 'vamos', 'vai',
       'esses', 'essas', 'esse', 'essa', 'ficou bom', 'ficou otimo',
-      'aprovo', 'aprovado', 'pode seguir', 'continua', 'proximo'
+      'aprovo', 'aprovado', 'pode seguir', 'continua', 'proximo',
+      'quero' // Added: "quero captar leads" should trigger
     ];
 
     const hasConfirmation = confirmationKeywords.some((keyword) =>
@@ -581,7 +584,8 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
       'vou atualizar', 'vou adicionar', 'adicionei', 'atualizei', 'criei', 'vamos aos',
       'ajustei', 'ajustamos', 'ajuste realizado', 'alterei', 'alteramos', 'editei',
       'modifiquei', 'modificamos', 'mudei', 'mudamos', 'corrigi', 'corrigimos',
-      'reformulei', 'reescrevi', 'encurtei', 'simplifiquei', 'removi'
+      'reformulei', 'reescrevi', 'encurtei', 'simplifiquei', 'removi',
+      'captacao de leads', 'lead', 'configurei' // Added: when assistant mentions leadGen
     ];
 
     const assistantIndicatesUpdate = assistantActionKeywords.some((keyword) =>
@@ -601,7 +605,18 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
       normalizedUser.includes(keyword)
     );
 
-    return hasConfirmation || assistantIndicatesUpdate || hasEditRequest;
+    // Action requests that should trigger tool calls
+    const actionRequestKeywords = [
+      'captar leads', 'captar lead', 'coletar leads', 'coletar dados',
+      'ativar', 'habilitar', 'ative', 'habilite',
+      'configurar leads', 'configurar captacao'
+    ];
+
+    const hasActionRequest = actionRequestKeywords.some((keyword) =>
+      normalizedUser.includes(keyword)
+    );
+
+    return hasConfirmation || assistantIndicatesUpdate || hasEditRequest || hasActionRequest;
   };
 
   const handleSendMessage = async (content: string) => {
