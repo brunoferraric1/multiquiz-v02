@@ -1,60 +1,33 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useScrollAnimation } from '@/lib/hooks/use-scroll-animation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, X, Loader2 } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { createCheckoutSession } from '@/lib/services/subscription-service';
 
-const tiers = [
-  {
-    name: 'Grátis',
-    price: 'R$0',
-    frequency: '/mês',
-    description: 'Para começar a explorar e criar seus primeiros quizzes.',
-    features: [
-      '1 Usuário',
-      'Até 3 quizzes ativos',
-      'Captura de leads básica',
-      'Suporte da comunidade',
-    ],
-    cta: 'Começar Agora',
-    href: '/dashboard',
-    featured: false,
-  },
-  {
-    name: 'Pro',
-    price: 'R$49',
-    frequency: '/mês',
-    description: 'Para infoprodutores e empresas que querem escalar.',
-    features: [
-      'Até 5 usuários',
-      'Quizzes ilimitados',
-      'Analytics avançado',
-      'Personalização de marca (White-label)',
-      'Suporte prioritário por email',
-    ],
-    cta: 'Começar Teste Grátis',
-    href: '/dashboard',
-    featured: true,
-  },
-  {
-    name: 'Empresas',
-    price: 'Custom',
-    frequency: '',
-    description: 'Para grandes times com necessidades específicas.',
-    features: [
-      'Usuários ilimitados',
-      'Gerente de contas dedicado',
-      'Integrações personalizadas',
-      'Treinamento para o time',
-      'SLA garantido',
-    ],
-    cta: 'Falar com Vendas',
-    href: '#',
-    featured: false,
-  },
+const FREE_FEATURES = [
+  { text: '1 quiz publicado', included: true },
+  { text: 'Rascunhos ilimitados', included: true },
+  { text: '20 mensagens IA por mês', included: true },
+  { text: 'Captura de leads', included: true },
+  { text: 'Relatórios e Analytics', included: false },
+  { text: 'Página de Leads + CSV', included: false },
+  { text: 'Sem marca MultiQuiz', included: false },
+];
+
+const PRO_FEATURES = [
+  { text: 'Quizzes ilimitados', included: true },
+  { text: 'Rascunhos ilimitados', included: true },
+  { text: 'IA ilimitada', included: true },
+  { text: 'Captura de leads', included: true },
+  { text: 'Relatórios e Analytics', included: true },
+  { text: 'Página de Leads + CSV', included: true },
+  { text: 'Sem marca MultiQuiz', included: true },
 ];
 
 const cardVariants = {
@@ -71,7 +44,45 @@ const cardVariants = {
 };
 
 export const PricingSection = () => {
+  const router = useRouter();
+  const { user } = useAuth();
   const [ref, controls] = useScrollAnimation();
+  const [isYearly, setIsYearly] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const proPrice = isYearly ? 'R$39' : 'R$49';
+  const proFrequency = isYearly ? '/mês (cobrado anualmente)' : '/mês';
+  const yearlyTotal = isYearly ? 'R$468/ano' : null;
+
+  const handleProClick = async () => {
+    if (!user) {
+      // Redirect to login with upgrade intent
+      router.push(`/login?redirect=/dashboard&upgrade=true&period=${isYearly ? 'yearly' : 'monthly'}`);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const checkoutUrl = await createCheckoutSession(
+        user.uid,
+        user.email || '',
+        isYearly ? 'yearly' : 'monthly'
+      );
+
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      } else {
+        console.error('Failed to create checkout session');
+        alert('Erro ao iniciar pagamento. Por favor, tente novamente.');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Erro ao iniciar pagamento. Por favor, tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <section id="pricing" className="py-20 bg-background sm:py-32 relative">
       {/* Background Blob */}
@@ -83,61 +94,152 @@ export const PricingSection = () => {
             Planos Simples e Transparentes
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Escolha o plano ideal para o seu momento. Comece grátis, evolua quando precisar.
+            Comece grátis, evolua quando precisar. Sem surpresas.
           </p>
+
+          {/* Billing Toggle */}
+          <div className="mt-8 flex items-center justify-center gap-4">
+            <span className={`text-sm font-medium ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Mensal
+            </span>
+            <button
+              onClick={() => setIsYearly(!isYearly)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isYearly ? 'bg-primary' : 'bg-muted'}`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-1'}`}
+              />
+            </button>
+            <span className={`text-sm font-medium ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Anual
+              <span className="ml-1.5 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                Economize 20%
+              </span>
+            </span>
+          </div>
         </div>
+
         <motion.div
           ref={ref}
           initial="hidden"
           animate={controls}
-          className="mt-16 grid max-w-md gap-8 mx-auto lg:max-w-none lg:grid-cols-3"
+          className="mt-12 grid max-w-lg gap-8 mx-auto lg:max-w-4xl lg:grid-cols-2"
         >
-          {tiers.map((tier, i) => (
-            <motion.div
-              key={tier.name}
-              custom={i}
-              variants={cardVariants}
-              className={`flex flex-col rounded-3xl overflow-hidden ${tier.featured ? 'border-2 border-primary shadow-xl scale-105 z-10' : 'border border-border bg-card/50'}`}
-            >
-              <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
-                <div>
-                  <h3 className={`inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase ${tier.featured ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                    {tier.name}
-                  </h3>
-                </div>
-                <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
-                  {tier.price}
-                  <span className="ml-1 text-xl font-medium text-muted-foreground">
-                    {tier.frequency}
-                  </span>
-                </div>
-                <p className="mt-5 text-base text-muted-foreground">{tier.description}</p>
+          {/* Free Tier */}
+          <motion.div
+            custom={0}
+            variants={cardVariants}
+            className="flex flex-col rounded-3xl overflow-hidden border border-border bg-card/50"
+          >
+            <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
+              <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-muted text-muted-foreground">
+                Grátis
+              </h3>
+              <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
+                R$0
+                <span className="ml-1 text-xl font-medium text-muted-foreground">
+                  /mês
+                </span>
               </div>
-              <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
-                <ul className="space-y-4">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-start">
-                      <div className="flex-shrink-0">
+              <p className="mt-5 text-base text-muted-foreground">
+                Perfeito para começar e testar a plataforma.
+              </p>
+            </div>
+            <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
+              <ul className="space-y-4">
+                {FREE_FEATURES.map((feature) => (
+                  <li key={feature.text} className="flex items-start">
+                    <div className="flex-shrink-0">
+                      {feature.included ? (
                         <Check className="h-5 w-5 text-primary" />
-                      </div>
-                      <p className="ml-3 text-sm text-foreground">{feature}</p>
-                    </li>
-                  ))}
-                </ul>
-                <div className="rounded-md shadow">
-                  <Button
-                    asChild
-                    size="lg"
-                    className={`w-full font-bold h-12 rounded-xl ${tier.featured ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
-                  >
-                    <Link href={tier.href}>{tier.cta}</Link>
-                  </Button>
-                </div>
+                      ) : (
+                        <X className="h-5 w-5 text-muted-foreground/50" />
+                      )}
+                    </div>
+                    <p className={`ml-3 text-sm ${feature.included ? 'text-foreground' : 'text-muted-foreground/70'}`}>
+                      {feature.text}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <div className="rounded-md shadow">
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-full font-bold h-12 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                >
+                  <Link href="/dashboard">Começar Grátis</Link>
+                </Button>
               </div>
-            </motion.div>
-          ))}
+            </div>
+          </motion.div>
+
+          {/* Pro Tier */}
+          <motion.div
+            custom={1}
+            variants={cardVariants}
+            className="flex flex-col rounded-3xl overflow-hidden border-2 border-primary shadow-xl relative"
+          >
+            {/* Popular Badge */}
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-bl-xl">
+              MAIS POPULAR
+            </div>
+
+            <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
+              <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-primary/20 text-primary">
+                Pro
+              </h3>
+              <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
+                {proPrice}
+                <span className="ml-1 text-xl font-medium text-muted-foreground">
+                  {proFrequency}
+                </span>
+              </div>
+              {yearlyTotal && (
+                <p className="mt-1 text-sm text-muted-foreground">{yearlyTotal}</p>
+              )}
+              <p className="mt-5 text-base text-muted-foreground">
+                Para quem quer escalar e ter acesso total.
+              </p>
+            </div>
+            <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
+              <ul className="space-y-4">
+                {PRO_FEATURES.map((feature) => (
+                  <li key={feature.text} className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="ml-3 text-sm text-foreground">{feature.text}</p>
+                  </li>
+                ))}
+              </ul>
+              <div className="rounded-md shadow">
+                <Button
+                  onClick={handleProClick}
+                  disabled={isLoading}
+                  size="lg"
+                  className="w-full font-bold h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Carregando...
+                    </>
+                  ) : (
+                    'Começar Agora'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
+
+        {/* Trust Indicators */}
+        <p className="mt-8 text-center text-sm text-muted-foreground">
+          Cancele a qualquer momento • Sem compromisso • Pagamento seguro via Stripe
+        </p>
       </div>
     </section>
   );
 };
+
