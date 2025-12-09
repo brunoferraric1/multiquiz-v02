@@ -7,8 +7,8 @@ import { Providers } from "@/lib/providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MultiQuiz - AI-Powered Quiz Builder",
-  description: "Create engaging quizzes with AI assistance",
+  title: "MultiQuiz - Crie quizzes com IA",
+  description: "Crie quizzes com IA, gere leads e analise resultados.",
 };
 
 export default function RootLayout({
