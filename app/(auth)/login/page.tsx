@@ -2,24 +2,56 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Sparkles, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { createCheckoutSession } from '@/lib/services/subscription-service';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading, signInWithGoogle } = useAuth();
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Get query parameters
+  const redirect = searchParams.get('redirect') || '/dashboard';
+  const upgrade = searchParams.get('upgrade') === 'true';
+  const period = searchParams.get('period') || 'monthly';
+
   useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard');
+    async function handlePostLoginUpgrade() {
+      if (!loading && user && upgrade) {
+        // User just logged in and wants to upgrade
+        setIsSubmitting(true);
+        try {
+          const checkoutUrl = await createCheckoutSession(
+            user.uid,
+            user.email || '',
+            period as 'monthly' | 'yearly'
+          );
+
+          if (checkoutUrl) {
+            window.location.href = checkoutUrl;
+          } else {
+            console.error('Failed to create checkout session');
+            router.push('/dashboard');
+          }
+        } catch (error) {
+          console.error('Checkout error after login:', error);
+          router.push('/dashboard');
+        }
+      } else if (!loading && user && !upgrade) {
+        // Regular login, just redirect
+        router.push(redirect);
+      }
     }
-  }, [user, loading, router]);
+
+    handlePostLoginUpgrade();
+  }, [user, loading, upgrade, period, redirect, router]);
 
   const handleGoogleSignIn = async () => {
     setError('');
@@ -27,7 +59,7 @@ export default function LoginPage() {
 
     try {
       await signInWithGoogle();
-      router.push('/dashboard');
+      // Redirect will be handled by useEffect after user state updates
     } catch (err: any) {
       console.error('Login Error:', err);
 
@@ -38,7 +70,6 @@ export default function LoginPage() {
       } else {
         setError(err.message || 'Ocorreu um erro ao fazer login. Tente novamente.');
       }
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -62,7 +93,10 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-3xl">MultiQuiz</CardTitle>
           <CardDescription>
-            Crie quizzes virais e gere leads qualificados em minutos usando IA.
+            {upgrade
+              ? 'Faça login para assinar o plano Pro e desbloquear todos os recursos.'
+              : 'Crie quizzes virais e gere leads qualificados em minutos usando IA.'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>

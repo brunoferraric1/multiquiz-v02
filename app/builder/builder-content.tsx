@@ -797,7 +797,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         </div>
 
         {/* Mobile View Toggle - Fixed on mobile */}
-        <div className="flex-shrink-0 flex justify-center lg:hidden px-4 py-3 bg-background">
+        <div className="flex-shrink-0 flex justify-center md:hidden px-4 py-3 bg-background">
           <div className="inline-flex gap-1 rounded-full border border-border bg-muted p-1">
             {mobileViewOptions.map((option) => {
               const Icon = option.icon;
@@ -826,17 +826,17 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         <main className="flex-1 overflow-hidden min-h-0">
           <div className="h-full max-w-7xl mx-auto">
             {/* Grid Layout - Proper height constraints for scrolling */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 lg:gap-8 h-full lg:px-8 lg:py-8">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-0 md:gap-8 h-full md:px-8 md:py-8">
               <div className={cn(
-                "h-full min-h-0 lg:col-span-3 px-4 py-4 lg:px-0 lg:py-0",
-                mobileView === 'editor' && 'hidden lg:block'
+                "h-full min-h-0 md:col-span-3 px-4 py-4 md:px-0 md:py-0",
+                mobileView === 'editor' && 'hidden md:block'
               )}>
                 <ChatInterface userName={resolvedUserName} />
               </div>
 
               <div className={cn(
-                "h-full min-h-0 lg:col-span-2 px-4 py-4 lg:px-0 lg:py-0",
-                mobileView === 'chat' && 'hidden lg:block'
+                "h-full min-h-0 md:col-span-2 px-4 py-4 md:px-0 md:py-0",
+                mobileView === 'chat' && 'hidden md:block'
               )}>
                 {editorPanel}
               </div>
