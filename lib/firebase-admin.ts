@@ -16,22 +16,45 @@ function getAdminApp(): App {
     }
 
     // Parse service account from environment variable
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
     if (!serviceAccountJson) {
+        console.error('[Firebase Admin] FIREBASE_SERVICE_ACCOUNT_KEY is not set');
         throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set');
     }
 
+    // Try to decode base64 if it doesn't look like JSON (starts with {)
+    if (!serviceAccountJson.trim().startsWith('{')) {
+        try {
+            const buffer = Buffer.from(serviceAccountJson, 'base64');
+            serviceAccountJson = buffer.toString('utf-8');
+            console.log('[Firebase Admin] Detected Base64 key, decoded successfully');
+        } catch (e) {
+            console.warn('[Firebase Admin] Failed to decode potential Base64 key', e);
+        }
+    }
+
+    console.log('[Firebase Admin] Key length:', serviceAccountJson.length);
+    console.log('[Firebase Admin] First 20 chars:', serviceAccountJson.substring(0, 20));
+
     try {
         const serviceAccount = JSON.parse(serviceAccountJson);
+
+        if (!serviceAccount.project_id) {
+        }
+
+        console.log('[Firebase Admin] Parsed project_id:', serviceAccount.project_id);
 
         adminApp = initializeApp({
             credential: cert(serviceAccount),
         });
 
+        console.log('[Firebase Admin] Successfully initialized');
         return adminApp;
     } catch (error) {
-        throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY: ${error}`);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error('[Firebase Admin] Parse/init error:', errorMsg);
+        throw new Error(`Failed to initialize Firebase Admin: ${errorMsg}. Key length: ${serviceAccountJson.length}`);
     }
 }
 
