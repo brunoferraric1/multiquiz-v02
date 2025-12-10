@@ -77,6 +77,9 @@ export class QuizService {
     if (quiz.ctaUrl) {
       quizData.ctaUrl = quiz.ctaUrl;
     }
+    if (quiz.leadGen) {
+      quizData.leadGen = quiz.leadGen;
+    }
 
     // Recursively remove all undefined values (Firestore doesn't accept them)
     const cleanedData = removeUndefinedDeep(quizData);
@@ -206,6 +209,7 @@ export class QuizService {
       primaryColor: quiz.primaryColor || '#4F46E5',
       questions: quiz.questions || [],
       outcomes: quiz.outcomes || [],
+      leadGen: quiz.leadGen,
     };
   }
 
