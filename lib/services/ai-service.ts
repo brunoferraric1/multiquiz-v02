@@ -700,7 +700,13 @@ Your response must be a valid JSON object with this structure:
       "ctaText": "string (optional)",
       "ctaUrl": "string (optional)"
     }
-  ]
+  ],
+  "leadGen": {
+    "enabled": "boolean (optional)",
+    "title": "string (optional)",
+    "description": "string (optional)",
+    "fields": ["name", "email", "phone"] (array of strings, optional)
+  }
 }
 
 EXAMPLE - If conversation mentions:
@@ -716,12 +722,26 @@ Extract as:
   ]
 }
 
+EXAMPLE - If conversation mentions lead capture:
+"Quero coletar nome, email e telefone antes de mostrar o resultado"
+
+Extract as:
+{
+  "leadGen": {
+    "enabled": true,
+    "title": "Quase lá!",
+    "description": "Deixe seus dados para ver o resultado",
+    "fields": ["name", "email", "phone"]
+  }
+}
+
 IMPORTANT:
 - Return ONLY the JSON object, no explanations or markdown
 - Use UUIDs for all IDs (generate them if needed)
 - Preserve existing IDs when updating
 - If no changes detected, return empty object: {}
 - For outcomes without descriptions, use empty string ""
+- For leadGen fields, use simple string array: ["name", "email", "phone"]
 - Look carefully for outcome titles in quotes, bullets, or numbered lists`,
             },
             {
