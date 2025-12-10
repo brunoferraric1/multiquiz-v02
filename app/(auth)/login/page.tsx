@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sparkles, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { createCheckoutSession } from '@/lib/services/subscription-service';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading, signInWithGoogle } = useAuth();
@@ -146,3 +146,16 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
