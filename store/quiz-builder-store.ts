@@ -9,6 +9,7 @@ import type {
   Quiz,
   ManualChange,
   QuizSnapshot,
+  LoadingSections,
 } from '@/types';
 
 const quizFieldLabels: Record<string, string> = {
@@ -102,6 +103,12 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
         pendingManualChanges: [],
         publishedVersion: null,
         publishedAt: null,
+        loadingSections: {
+          introduction: false,
+          questions: false,
+          outcomes: false,
+          leadGen: false,
+        },
 
         setQuiz: (quiz) => set({ quiz }),
 
@@ -235,6 +242,12 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             pendingManualChanges: [],
             publishedVersion: null,
             publishedAt: null,
+            loadingSections: {
+              introduction: false,
+              questions: false,
+              outcomes: false,
+              leadGen: false,
+            },
           }),
 
         loadQuiz: (quiz: Quiz) =>
@@ -287,6 +300,21 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             },
           }));
         },
+
+        setLoadingSections: (sections: Partial<LoadingSections>) =>
+          set((state) => ({
+            loadingSections: { ...state.loadingSections, ...sections },
+          })),
+
+        clearLoadingSections: () =>
+          set({
+            loadingSections: {
+              introduction: false,
+              questions: false,
+              outcomes: false,
+              leadGen: false,
+            },
+          }),
       }),
       {
         name: 'quiz-builder-storage',

@@ -6,7 +6,7 @@ import { ChatMessageComponent } from './chat-message';
 import { ChatInput } from './chat-input';
 import { TypingIndicator } from './typing-indicator';
 import { AIService, type OutcomeImageRequest } from '@/lib/services/ai-service';
-import type { AIExtractionResult, QuizDraft, Question, Outcome, ManualChange } from '@/types';
+import type { AIExtractionResult, QuizDraft, Question, Outcome, ManualChange, LoadingSections } from '@/types';
 
 const formatManualChangesInstruction = (changes: ManualChange[]): string | undefined => {
   if (!changes.length) return undefined;
@@ -72,6 +72,17 @@ const buildIntentHint = (message: string): string | undefined => {
 
   return ['[NOTA_PRIVADA]', instructions.join(' '), '[/NOTA_PRIVADA]'].join('\n');
 };
+
+/**
+ * Detects which sections of the quiz will be updated based on the extraction result.
+ * Used to set loading states for sidebar card animations.
+ */
+const detectChangedSections = (extraction: AIExtractionResult): Partial<LoadingSections> => ({
+  introduction: Boolean(extraction.title || extraction.description || extraction.coverImageUrl || extraction.ctaText || extraction.coverImagePrompt),
+  questions: Boolean(extraction.questions?.length),
+  outcomes: Boolean(extraction.outcomes?.length),
+  leadGen: Boolean(extraction.leadGen),
+});
 
 type ChatInterfaceProps = {
   userName?: string;
@@ -234,6 +245,8 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
   const consumeManualChanges = useQuizBuilderStore((state) => state.consumeManualChanges);
   const hasSeenWelcomeMessage = useQuizBuilderStore((state) => state.hasSeenWelcomeMessage);
   const setHasSeenWelcomeMessage = useQuizBuilderStore((state) => state.setHasSeenWelcomeMessage);
+  const setLoadingSections = useQuizBuilderStore((state) => state.setLoadingSections);
+  const clearLoadingSections = useQuizBuilderStore((state) => state.clearLoadingSections);
 
   const quiz = useQuizBuilderStore((state) => state.quiz);
   const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
@@ -684,9 +697,19 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
       if (shouldApplyExtraction && extraction && Object.keys(extraction).length > 0) {
         console.log('[Flow] Taking extraction branch');
         const latestQuiz = useQuizBuilderStore.getState().quiz;
+
+        // Set loading state for sections that will be updated
+        const sectionsToUpdate = detectChangedSections(extraction);
+        setLoadingSections(sectionsToUpdate);
+
         const updatedQuiz = applyExtractionResult(latestQuiz, extraction, { mergeExisting: true });
 
         setQuiz(updatedQuiz);
+
+        // Clear loading after a delay for visual feedback
+        setTimeout(() => {
+          clearLoadingSections();
+        }, 1500);
 
         // Auto-suggest cover when title/description are confirmed
         // Priority: 1) AI-provided coverPrompt, 2) extraction.coverImagePrompt, 3) generate from title/desc
@@ -837,9 +860,18 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
 
       // Apply extracted changes if any
       if (Object.keys(extracted).length > 0) {
+        // Set loading state for sections that will be updated
+        const sectionsToUpdate = detectChangedSections(extracted);
+        setLoadingSections(sectionsToUpdate);
+
         const updatedQuiz = applyExtractionResult(latestQuiz, extracted, { mergeExisting: true });
 
         setQuiz(updatedQuiz);
+
+        // Clear loading after a delay for visual feedback
+        setTimeout(() => {
+          clearLoadingSections();
+        }, 1500);
 
         // Auto-suggest cover image when:
         // 1. Main flow hasn't already triggered it

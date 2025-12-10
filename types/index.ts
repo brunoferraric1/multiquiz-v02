@@ -150,6 +150,14 @@ export const QuizAttemptSchema = z.object({
 
 export type QuizAttempt = z.infer<typeof QuizAttemptSchema>;
 
+// Loading sections for sidebar card animations
+export type LoadingSections = {
+  introduction: boolean;
+  questions: boolean;
+  outcomes: boolean;
+  leadGen: boolean;
+};
+
 // Store types
 export type QuizBuilderState = {
   quiz: QuizDraft;
@@ -162,6 +170,8 @@ export type QuizBuilderState = {
   // Draft/Live separation
   publishedVersion: QuizSnapshot | null;
   publishedAt: number | null;
+  // Loading sections for sidebar animations
+  loadingSections: LoadingSections;
 
   // Actions
   setQuiz: (quiz: QuizDraft) => void;
@@ -186,6 +196,9 @@ export type QuizBuilderState = {
   // Draft/Live separation actions
   setPublishedVersion: (version: QuizSnapshot | null, publishedAt: number | null) => void;
   loadPublishedVersion: () => void;
+  // Loading sections actions
+  setLoadingSections: (sections: Partial<LoadingSections>) => void;
+  clearLoadingSections: () => void;
 };
 
 export type AuthUser = {

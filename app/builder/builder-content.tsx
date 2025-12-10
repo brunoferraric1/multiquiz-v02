@@ -33,6 +33,7 @@ import { EditQuestionModal } from '@/components/builder/edit-question-modal';
 import { PublishSuccessModal } from '@/components/builder/publish-success-modal';
 import { DrawerFooter } from '@/components/builder/drawer-footer';
 import { Upload } from '@/components/ui/upload';
+import { LoadingCard } from '@/components/ui/loading-card';
 import { LeadGenSheet } from '@/components/builder/lead-gen-sheet';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
 import { QuizService } from '@/lib/services/quiz-service';
@@ -140,6 +141,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const publishedVersion = useQuizBuilderStore((state) => state.publishedVersion);
   const setPublishedVersion = useQuizBuilderStore((state) => state.setPublishedVersion);
   const loadPublishedVersion = useQuizBuilderStore((state) => state.loadPublishedVersion);
+  const loadingSections = useQuizBuilderStore((state) => state.loadingSections);
 
   // Compute hasUnpublishedChanges
   // Explicitly depend on stringified questions/outcomes to detect nested changes
@@ -566,35 +568,37 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
             Introdução
           </div>
-          <button
-            type="button"
-            onClick={() => setActiveSheet({ type: 'introduction' })}
-            className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          >
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
-                {quiz.coverImageUrl ? (
-                  <img
-                    src={quiz.coverImageUrl}
-                    alt="Capa do quiz"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-12 w-12 items-center justify-center">
-                    <ImageIcon className="h-5 w-5" />
-                  </div>
-                )}
+          <LoadingCard isLoading={loadingSections.introduction}>
+            <button
+              type="button"
+              onClick={() => setActiveSheet({ type: 'introduction' })}
+              className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
+                  {quiz.coverImageUrl ? (
+                    <img
+                      src={quiz.coverImageUrl}
+                      alt="Capa do quiz"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center">
+                      <ImageIcon className="h-5 w-5" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">
+                    {quiz.title || 'Meu Novo Quiz'}
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                    {introDescription}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">
-                  {quiz.title || 'Meu Novo Quiz'}
-                </p>
-                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                  {introDescription}
-                </p>
-              </div>
-            </div>
-          </button>
+            </button>
+          </LoadingCard>
         </section>
 
         <section className="space-y-3">
@@ -629,44 +633,46 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       aria-hidden="true"
                     />
                   )}
-                  <button
-                    type="button"
-                    draggable={canReorderQuestions}
-                    aria-grabbed={isDragging}
-                    onClick={() =>
-                      question.id && setEditingQuestionId(question.id)
-                    }
-                    onDragStart={(event) => handleQuestionDragStart(event, index)}
-                    onDragOver={(event) => handleQuestionDragOver(event, index)}
-                    onDrop={handleQuestionDrop}
-                    onDragEnd={handleQuestionDragEnd}
-                    className={cn(
-                      'group w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-                      {
-                        'opacity-60': isDragging,
+                  <LoadingCard isLoading={loadingSections.questions}>
+                    <button
+                      type="button"
+                      draggable={canReorderQuestions}
+                      aria-grabbed={isDragging}
+                      onClick={() =>
+                        question.id && setEditingQuestionId(question.id)
                       }
-                    )}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary text-sm font-semibold flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground">
-                          {question.text || 'Pergunta sem texto'}
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {(question.options?.length ?? 0)} opções
-                        </p>
-                      </div>
-                      {canReorderQuestions && (
-                        <GripVertical
-                          className="h-4 w-4 flex-shrink-0 text-muted-foreground/70 transition-opacity duration-200 group-hover:opacity-100"
-                          aria-hidden="true"
-                        />
+                      onDragStart={(event) => handleQuestionDragStart(event, index)}
+                      onDragOver={(event) => handleQuestionDragOver(event, index)}
+                      onDrop={handleQuestionDrop}
+                      onDragEnd={handleQuestionDragEnd}
+                      className={cn(
+                        'group w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                        {
+                          'opacity-60': isDragging,
+                        }
                       )}
-                    </div>
-                  </button>
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary text-sm font-semibold flex-shrink-0">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground">
+                            {question.text || 'Pergunta sem texto'}
+                          </p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {(question.options?.length ?? 0)} opções
+                          </p>
+                        </div>
+                        {canReorderQuestions && (
+                          <GripVertical
+                            className="h-4 w-4 flex-shrink-0 text-muted-foreground/70 transition-opacity duration-200 group-hover:opacity-100"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </div>
+                    </button>
+                  </LoadingCard>
                 </div>
               );
             })}
@@ -713,36 +719,37 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               </div>
             ) : (
               outcomes.map((outcome) => (
-                <button
-                  key={outcome.id}
-                  type="button"
-                  onClick={() => outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })}
-                  className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
-                      {outcome.imageUrl ? (
-                        <img
-                          src={outcome.imageUrl}
-                          alt="Resultado"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-12 w-12 items-center justify-center">
-                          <Rocket className="h-5 w-5" />
-                        </div>
-                      )}
+                <LoadingCard key={outcome.id} isLoading={loadingSections.outcomes}>
+                  <button
+                    type="button"
+                    onClick={() => outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })}
+                    className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
+                        {outcome.imageUrl ? (
+                          <img
+                            src={outcome.imageUrl}
+                            alt="Resultado"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center">
+                            <Rocket className="h-5 w-5" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-foreground">
+                          {outcome.title || 'Novo resultado'}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                          {outcome.description || 'Sem descrição'}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">
-                        {outcome.title || 'Novo resultado'}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                        {outcome.description || 'Sem descrição'}
-                      </p>
-                    </div>
-                  </div>
-                </button>
+                  </button>
+                </LoadingCard>
               ))
             )}
           </div>
@@ -752,27 +759,29 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
             Captura de Leads
           </div>
-          <button
-            type="button"
-            onClick={() => setActiveSheet({ type: 'lead-gen' })}
-            className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary">
-                <ContactIcon className="h-5 w-5" />
+          <LoadingCard isLoading={loadingSections.leadGen}>
+            <button
+              type="button"
+              onClick={() => setActiveSheet({ type: 'lead-gen' })}
+              className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary">
+                  <ContactIcon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">
+                    {quiz.leadGen?.enabled ? 'Ativado' : 'Desativado'}
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {quiz.leadGen?.enabled
+                      ? `${(quiz.leadGen.fields || []).length} campos solicitados`
+                      : 'Configure a captura de dados dos participantes'}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">
-                  {quiz.leadGen?.enabled ? 'Ativado' : 'Desativado'}
-                </p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {quiz.leadGen?.enabled
-                    ? `${(quiz.leadGen.fields || []).length} campos solicitados`
-                    : 'Configure a captura de dados dos participantes'}
-                </p>
-              </div>
-            </div>
-          </button>
+            </button>
+          </LoadingCard>
         </section>
       </CardContent>
     </Card>
