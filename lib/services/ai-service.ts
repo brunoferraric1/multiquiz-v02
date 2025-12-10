@@ -443,22 +443,13 @@ export class AIService {
                 properties: {
                   enabled: { type: 'boolean', description: 'Ativar captação de leads' },
                   title: { type: 'string', description: 'Título do formulário (ex: "Quase lá!")' },
-                  subtitle: { type: 'string', description: 'Subtítulo do formulário (ex: "Deixe seus dados para ver o resultado")' },
+                  description: { type: 'string', description: 'Subtítulo/descrição do formulário (ex: "Deixe seus dados para ver o resultado")' },
                   fields: {
                     type: 'array',
-                    description: 'Campos a coletar. Opções: name, email, phone, company',
+                    description: 'Lista de campos a coletar: "name", "email", "phone". Exemplo: ["name", "email", "phone"]',
                     items: {
-                      type: 'object',
-                      properties: {
-                        type: {
-                          type: 'string',
-                          enum: ['name', 'email', 'phone', 'company'],
-                          description: 'Tipo do campo'
-                        },
-                        label: { type: 'string', description: 'Rótulo do campo (ex: "Seu nome")' },
-                        required: { type: 'boolean', description: 'Campo obrigatório?' },
-                      },
-                      required: ['type', 'label'],
+                      type: 'string',
+                      enum: ['name', 'email', 'phone'],
                     },
                   },
                 },
