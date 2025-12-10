@@ -250,7 +250,8 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             },
           }),
 
-        loadQuiz: (quiz: Quiz) =>
+        loadQuiz: (quiz: Quiz) => {
+          console.log('[Store] loadQuiz called - quiz.leadGen from Firestore:', JSON.stringify(quiz.leadGen));
           set({
             quiz: {
               id: quiz.id,
@@ -277,7 +278,8 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             pendingManualChanges: [],
             publishedVersion: quiz.publishedVersion || null,
             publishedAt: quiz.publishedAt || null,
-          }),
+          });
+        },
 
         setPublishedVersion: (version: QuizSnapshot | null, publishedAt: number | null) =>
           set({ publishedVersion: version, publishedAt }),

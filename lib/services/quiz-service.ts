@@ -79,10 +79,14 @@ export class QuizService {
     }
     if (quiz.leadGen) {
       quizData.leadGen = quiz.leadGen;
+      console.log('[QuizService] saveQuiz - leadGen being saved:', JSON.stringify(quiz.leadGen));
+    } else {
+      console.log('[QuizService] saveQuiz - NO leadGen in quiz draft');
     }
 
     // Recursively remove all undefined values (Firestore doesn't accept them)
     const cleanedData = removeUndefinedDeep(quizData);
+    console.log('[QuizService] saveQuiz - cleanedData.leadGen after removeUndefinedDeep:', JSON.stringify(cleanedData.leadGen));
 
     console.log('[QuizService] About to save to Firestore with isPublished:', cleanedData.isPublished);
 

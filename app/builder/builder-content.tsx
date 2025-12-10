@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState, type DragEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import {
   ArrowLeft,
   Eye,
@@ -143,6 +143,32 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const loadPublishedVersion = useQuizBuilderStore((state) => state.loadPublishedVersion);
   const loadingSections = useQuizBuilderStore((state) => state.loadingSections);
 
+  // Refs for sidebar sections (for auto-scroll)
+  const introductionRef = useRef<HTMLElement>(null);
+  const questionsRef = useRef<HTMLElement>(null);
+  const outcomesRef = useRef<HTMLElement>(null);
+  const leadGenRef = useRef<HTMLElement>(null);
+
+  // Auto-scroll to loading sections
+  useEffect(() => {
+    // Find the first section that is loading and scroll to it
+    let targetRef: React.RefObject<HTMLElement | null> | null = null;
+
+    if (loadingSections.introduction) {
+      targetRef = introductionRef;
+    } else if (loadingSections.outcomes) {
+      targetRef = outcomesRef;
+    } else if (loadingSections.questions) {
+      targetRef = questionsRef;
+    } else if (loadingSections.leadGen) {
+      targetRef = leadGenRef;
+    }
+
+    if (targetRef?.current) {
+      targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [loadingSections]);
+
   // Compute hasUnpublishedChanges
   // Explicitly depend on stringified questions/outcomes to detect nested changes
   const questionsJson = useMemo(() => JSON.stringify(quiz.questions), [quiz.questions]);
@@ -163,6 +189,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       primaryColor: quiz.primaryColor,
       questions: quiz.questions,
       outcomes: quiz.outcomes,
+      leadGen: quiz.leadGen,
     };
 
     return JSON.stringify(currentSnapshot) !== JSON.stringify(publishedVersion);
@@ -173,6 +200,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     quiz.coverImageUrl,
     quiz.ctaText,
     quiz.primaryColor,
+    quiz.leadGen,
     questionsJson,
     outcomesJson,
     publishedVersion,
@@ -444,6 +472,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         primaryColor: quiz.primaryColor || '#4F46E5',
         questions: (quiz.questions || []) as any,
         outcomes: (quiz.outcomes || []) as any,
+        leadGen: quiz.leadGen,
       };
       setPublishedVersion(snapshot, Date.now());
       updateQuizField('isPublished', true);
@@ -488,6 +517,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         primaryColor: quiz.primaryColor || '#4F46E5',
         questions: (quiz.questions || []) as any,
         outcomes: (quiz.outcomes || []) as any,
+        leadGen: quiz.leadGen,
       };
       setPublishedVersion(snapshot, Date.now());
 
@@ -564,7 +594,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       </CardHeader>
 
       <CardContent className="flex flex-col gap-10 overflow-y-auto min-h-0 p-6 pt-0">
-        <section className="space-y-3">
+        <section ref={introductionRef} className="space-y-3">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
             Introdução
           </div>
@@ -601,7 +631,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           </LoadingCard>
         </section>
 
-        <section className="space-y-3">
+        <section ref={questionsRef} className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
               Perguntas ({questions.length})
@@ -697,7 +727,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section ref={outcomesRef} className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
               Resultados ({outcomes.length})
@@ -755,7 +785,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           </div>
         </section>
 
-        <section className="space-y-3 pb-8">
+        <section ref={leadGenRef} className="space-y-3 pb-8">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
             Captura de Leads
           </div>
