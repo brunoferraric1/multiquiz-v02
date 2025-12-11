@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, LayoutGrid, List } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useUserQuizzesQuery, useDeleteQuizMutation } from '@/lib/hooks/use-quiz-queries';
+import { createCheckoutSession } from '@/lib/services/subscription-service';
 
 import { QuizCard } from '@/components/dashboard/quiz-card';
 import { QuizListItem } from '@/components/dashboard/quiz-list-item';
@@ -15,10 +17,70 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 function DashboardContent() {
   const router = useRouter();
-  const { user } = useAuth();
-  const { data: quizzes, isLoading } = useUserQuizzesQuery(user?.uid);
+  const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
+  const { data: quizzes, isLoading: quizzesLoading } = useUserQuizzesQuery(user?.uid);
   const deleteQuizMutation = useDeleteQuizMutation();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
+
+  // Handle post-login upgrade intent
+  useEffect(() => {
+    const handleUpgrade = async () => {
+      const upgrade = searchParams.get('upgrade') === 'true';
+      const period = searchParams.get('period') || 'monthly';
+      const checkoutStatus = searchParams.get('checkout');
+
+      // If user came back from successful checkout, show success message
+      if (checkoutStatus === 'success') {
+        toast.success('Assinatura ativada com sucesso!');
+        // Remove params to clean URL
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('checkout');
+        newUrl.searchParams.delete('upgrade');
+        newUrl.searchParams.delete('period');
+        window.history.replaceState({}, '', newUrl.toString());
+        return;
+      }
+
+      // If upgrade intent is present and user is logged in
+      if (upgrade && user && !isProcessingUpgrade) {
+        setIsProcessingUpgrade(true);
+        try {
+          const checkoutUrl = await createCheckoutSession(
+            user.uid,
+            user.email || '',
+            period as 'monthly' | 'yearly'
+          );
+
+          if (checkoutUrl) {
+            window.location.href = checkoutUrl;
+          } else {
+            console.error('Failed to create checkout session');
+            toast.error('Erro ao iniciar pagamento. Tente novamente.');
+            setIsProcessingUpgrade(false);
+          }
+        } catch (error) {
+          console.error('Checkout error:', error);
+          toast.error('Erro ao processar upgrade.');
+          setIsProcessingUpgrade(false);
+        }
+      }
+    };
+
+    if (!authLoading && user) {
+      handleUpgrade();
+    }
+  }, [user, authLoading, searchParams, isProcessingUpgrade]);
+
+  if (isProcessingUpgrade) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center space-y-4">
+        <LoadingSpinner size="lg" />
+        <p className="text-muted-foreground animate-pulse">Iniciando checkout seguro...</p>
+      </div>
+    );
+  }
 
   const handleDelete = async (quizId: string): Promise<void> => {
     if (!user) {
@@ -32,14 +94,6 @@ function DashboardContent() {
   const handleNewQuiz = () => {
     router.push('/builder');
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen pb-20">
