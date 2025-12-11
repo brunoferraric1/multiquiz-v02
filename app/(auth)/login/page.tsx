@@ -27,6 +27,7 @@ function LoginContent() {
       if (!loading && user && upgrade) {
         // User just logged in and wants to upgrade
         setIsSubmitting(true);
+        console.log('[Login] Attempting checkout for upgrade intent...');
         try {
           const checkoutUrl = await createCheckoutSession(
             user.uid,
@@ -35,14 +36,19 @@ function LoginContent() {
           );
 
           if (checkoutUrl) {
+            console.log('[Login] Checkout URL received, redirecting...');
             window.location.href = checkoutUrl;
           } else {
-            console.error('Failed to create checkout session');
-            router.push('/dashboard');
+            console.error('[Login] Failed to create checkout session - no URL returned');
+            alert('Erro ao iniciar checkout. Tente novamente pelo dashboard.');
+            // Preserve upgrade intent for dashboard to retry
+            router.push(`/dashboard?upgrade=true&period=${period}`);
           }
         } catch (error) {
-          console.error('Checkout error after login:', error);
-          router.push('/dashboard');
+          console.error('[Login] Checkout error after login:', error);
+          alert('Erro ao conectar com Stripe. Tente novamente.');
+          // Preserve upgrade intent for dashboard to retry
+          router.push(`/dashboard?upgrade=true&period=${period}`);
         }
       } else if (!loading && user && !upgrade) {
         // Regular login, just redirect
