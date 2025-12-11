@@ -140,7 +140,20 @@ export async function createCheckoutSession(
         });
 
         if (!response.ok) {
-            throw new Error('Failed to create checkout session');
+            let errorMessage = 'Failed to create checkout session';
+            try {
+                const errorData = await response.json();
+                console.error('[Checkout] Server error:', errorData);
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                console.error('[Checkout] Could not parse error response', e);
+                // Try text if json fails
+                try {
+                    const text = await response.text();
+                    console.error('[Checkout] Server error text:', text);
+                } catch (t) { /* ignore */ }
+            }
+            throw new Error(errorMessage);
         }
 
         const { url } = await response.json();
