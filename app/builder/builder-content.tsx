@@ -181,6 +181,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     // publishedVersion will be null. Show indicator so user can push initial snapshot.
     if (!publishedVersion) return true;
 
+    // Build current snapshot with same shape as what we compare against
     const currentSnapshot = {
       title: quiz.title,
       description: quiz.description,
@@ -192,7 +193,24 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       leadGen: quiz.leadGen,
     };
 
-    return JSON.stringify(currentSnapshot) !== JSON.stringify(publishedVersion);
+    // Build a comparable version of publishedVersion with leadGen included
+    // This handles legacy published versions that don't have leadGen
+    const comparablePublishedVersion = {
+      ...publishedVersion,
+      leadGen: publishedVersion.leadGen, // will be undefined for legacy
+    };
+
+    // For comparison, normalize both: if one has undefined leadGen and other has default, treat as equal
+    const normalizedCurrent = {
+      ...currentSnapshot,
+      leadGen: currentSnapshot.leadGen?.enabled ? currentSnapshot.leadGen : undefined,
+    };
+    const normalizedPublished = {
+      ...comparablePublishedVersion,
+      leadGen: comparablePublishedVersion.leadGen?.enabled ? comparablePublishedVersion.leadGen : undefined,
+    };
+
+    return JSON.stringify(normalizedCurrent) !== JSON.stringify(normalizedPublished);
   }, [
     quiz.isPublished,
     quiz.title,

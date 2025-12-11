@@ -74,6 +74,38 @@ const buildIntentHint = (message: string): string | undefined => {
 };
 
 /**
+ * Detect if user message indicates a removal/deletion request
+ */
+const isRemovalRequest = (userMessage: string): boolean => {
+  const normalized = normalizeText(userMessage);
+  const removalKeywords = [
+    'remova', 'remover', 'remove', 'delete', 'deletar', 'exclua', 'excluir',
+    'tire', 'tirar', 'apagar', 'apague', 'elimine', 'eliminar',
+    'nao quero', 'não quero', 'sem esse', 'sem essa', 'menos esse', 'menos essa',
+    'so esses', 'só esses', 'so essas', 'só essas', 'apenas esses', 'apenas essas',
+    'quero apenas', 'quero so', 'quero só', 'mantenha apenas', 'mantem apenas',
+    'deixa so', 'deixa só', 'fica so', 'fica só'
+  ];
+  return removalKeywords.some((keyword) => normalized.includes(keyword));
+};
+
+/**
+ * Detect if user is explicitly confirming outcomes/results
+ */
+const isOutcomeConfirmation = (userMessage: string): boolean => {
+  const normalized = normalizeText(userMessage);
+  // Keywords that indicate the user is specifically confirming outcomes
+  const outcomeTerms = ['resultado', 'resultados', 'outcome', 'outcomes', 'opcao', 'opção', 'opcoes', 'opções'];
+  const confirmationTerms = ['confirmo', 'aprovo', 'aprovado', 'perfeito', 'otimo', 'ótimo', 'esses', 'essas', 'gostei', 'adorei', 'ficou bom', 'pode seguir', 'vamos la', 'vamos lá'];
+
+  const mentionsOutcome = outcomeTerms.some(term => normalized.includes(term));
+  const hasConfirmation = confirmationTerms.some(term => normalized.includes(term));
+
+  // Either explicitly mentions outcomes with confirmation, or just uses strong confirmation keywords
+  return mentionsOutcome || hasConfirmation;
+};
+
+/**
  * Detects which sections of the quiz will be updated based on the extraction result.
  * Used to set loading states for sidebar card animations.
  */
@@ -151,9 +183,9 @@ const mergeEntityCollections = <T extends MergeableEntity>(
 const applyExtractionResult = (
   baseQuiz: QuizDraft,
   extraction: AIExtractionResult,
-  options?: { mergeExisting?: boolean }
+  options?: { mergeExisting?: boolean; isRemoval?: boolean; userConfirmedOutcomes?: boolean }
 ): QuizDraft => {
-  const { mergeExisting = false } = options || {};
+  const { mergeExisting = false, isRemoval = false, userConfirmedOutcomes = false } = options || {};
   const nextQuiz: QuizDraft = { ...baseQuiz };
 
   // Phase detection for workflow enforcement:
@@ -178,6 +210,7 @@ const applyExtractionResult = (
   if (extraction.ctaUrl) nextQuiz.ctaUrl = extraction.ctaUrl;
 
   // Only apply outcomes if intro is confirmed (Phase 2+)
+  // Additional check: if outcomes don't exist yet, require explicit confirmation from user
   if (Array.isArray(extraction.outcomes) && extraction.outcomes.length > 0) {
     if (!hasConfirmedIntro) {
       console.log('[Phase Enforcement] Skipping outcomes - intro not confirmed yet', {
@@ -185,16 +218,24 @@ const applyExtractionResult = (
         hasDescription: Boolean(baseQuiz.description),
         outcomesCount: extraction.outcomes.length,
       });
+    } else if (!hasConfirmedOutcomes && !userConfirmedOutcomes) {
+      // First time adding outcomes - require explicit user confirmation
+      console.log('[Phase Enforcement] Skipping outcomes - first time adding, waiting for explicit confirmation', {
+        hasExistingOutcomes: hasConfirmedOutcomes,
+        userConfirmedOutcomes,
+        incomingOutcomesCount: extraction.outcomes.length,
+      });
     } else {
       // Strip imagePrompt before merging as it's not part of the Outcome type in the store
-      const outcomesToMerge = extraction.outcomes.map(({ imagePrompt, ...rest }) => rest);
+      const outcomesToApply = extraction.outcomes.map(({ imagePrompt, ...rest }) => rest);
 
-      if (mergeExisting) {
-        if (outcomesToMerge.length > 0) {
-          nextQuiz.outcomes = mergeEntityCollections(nextQuiz.outcomes || [], outcomesToMerge);
-        }
+      // Use replace (not merge) when user is requesting removal OR when explicitly replacing
+      if (isRemoval || !mergeExisting) {
+        console.log('[Outcomes] Replacing outcomes (removal or replace mode)', { count: outcomesToApply.length, isRemoval });
+        nextQuiz.outcomes = outcomesToApply;
       } else {
-        nextQuiz.outcomes = outcomesToMerge;
+        console.log('[Outcomes] Merging outcomes', { existing: nextQuiz.outcomes?.length, incoming: outcomesToApply.length });
+        nextQuiz.outcomes = mergeEntityCollections(nextQuiz.outcomes || [], outcomesToApply);
       }
     }
   }
@@ -221,16 +262,32 @@ const applyExtractionResult = (
     }
   }
 
+  // Only apply leadGen if questions are confirmed (Phase 4)
+  // LeadGen should ONLY be configured after all other sections are done
+  const hasConfirmedQuestions = Boolean(
+    baseQuiz.questions &&
+    baseQuiz.questions.length > 0
+  );
+
   if (extraction.leadGen) {
-    console.log('[LeadGen] Applying extraction leadGen:', extraction.leadGen);
-    nextQuiz.leadGen = {
-      ...baseQuiz.leadGen,
-      ...extraction.leadGen,
-      // Ensure fields are definitely assigned if provided, not deep merged in a weird way
-      fields: extraction.leadGen.fields || baseQuiz.leadGen?.fields || [],
-      enabled: extraction.leadGen.enabled ?? baseQuiz.leadGen?.enabled ?? false,
-    };
-    console.log('[LeadGen] Result:', nextQuiz.leadGen);
+    if (!hasConfirmedQuestions) {
+      console.log('[Phase Enforcement] Skipping leadGen - questions not confirmed yet', {
+        hasIntro: hasConfirmedIntro,
+        outcomesCount: baseQuiz.outcomes?.length || 0,
+        questionsCount: baseQuiz.questions?.length || 0,
+        leadGenEnabled: extraction.leadGen.enabled,
+      });
+    } else {
+      console.log('[LeadGen] Applying extraction leadGen:', extraction.leadGen);
+      nextQuiz.leadGen = {
+        ...baseQuiz.leadGen,
+        ...extraction.leadGen,
+        // Ensure fields are definitely assigned if provided, not deep merged in a weird way
+        fields: extraction.leadGen.fields || baseQuiz.leadGen?.fields || [],
+        enabled: extraction.leadGen.enabled ?? baseQuiz.leadGen?.enabled ?? false,
+      };
+      console.log('[LeadGen] Result:', nextQuiz.leadGen);
+    }
   }
 
   return nextQuiz;
@@ -702,7 +759,17 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
         const sectionsToUpdate = detectChangedSections(extraction);
         setLoadingSections(sectionsToUpdate);
 
-        const updatedQuiz = applyExtractionResult(latestQuiz, extraction, { mergeExisting: true });
+        // Detect if this is a removal request or explicit outcome confirmation
+        const userRequestedRemoval = isRemovalRequest(content);
+        const userConfirmedOutcomes = isOutcomeConfirmation(content);
+
+        console.log('[Flow] Extraction options', { userRequestedRemoval, userConfirmedOutcomes });
+
+        const updatedQuiz = applyExtractionResult(latestQuiz, extraction, {
+          mergeExisting: !userRequestedRemoval, // Don't merge when removing
+          isRemoval: userRequestedRemoval,
+          userConfirmedOutcomes
+        });
 
         setQuiz(updatedQuiz);
 
@@ -864,7 +931,16 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
         const sectionsToUpdate = detectChangedSections(extracted);
         setLoadingSections(sectionsToUpdate);
 
-        const updatedQuiz = applyExtractionResult(latestQuiz, extracted, { mergeExisting: true });
+        // Get the last user message from chat history for detection
+        const lastUserMessage = updatedHistory.filter(m => m.role === 'user').pop()?.content || '';
+        const userRequestedRemoval = isRemovalRequest(lastUserMessage);
+        const userConfirmedOutcomes = isOutcomeConfirmation(lastUserMessage);
+
+        const updatedQuiz = applyExtractionResult(latestQuiz, extracted, {
+          mergeExisting: !userRequestedRemoval,
+          isRemoval: userRequestedRemoval,
+          userConfirmedOutcomes
+        });
 
         setQuiz(updatedQuiz);
 

@@ -156,11 +156,12 @@ SOBRE O TOOL CALL \`update_quiz\`:
 - Se o usuário disser que quer pensar ou revisar algo, aguarde a confirmação antes de atualizar a estrutura.
 
 REGRA CRÍTICA - SEPARAÇÃO POR ETAPAS:
-**ETAPA 1 (Introdução):** O tool call \`update_quiz\` pode incluir APENAS: title, description, ctaText, coverImagePrompt. NUNCA inclua outcomes ou questions durante esta etapa.
-**ETAPA 2 (Resultados):** Somente depois que o usuário confirmar título/descrição E pedir para definir resultados, você pode incluir outcomes no tool call. NUNCA inclua questions durante esta etapa.
-**ETAPA 3 (Perguntas):** Somente depois que os resultados estiverem confirmados E o usuário pedir para criar perguntas, você pode incluir questions no tool call.
+**ETAPA 1 (Introdução):** O tool call \`update_quiz\` pode incluir APENAS: title, description, ctaText, coverImagePrompt. NUNCA inclua outcomes, questions ou leadGen durante esta etapa.
+**ETAPA 2 (Resultados):** Somente depois que o usuário confirmar título/descrição E pedir para definir resultados, você pode incluir outcomes no tool call. NUNCA inclua questions ou leadGen durante esta etapa.
+**ETAPA 3 (Perguntas):** Somente depois que os resultados estiverem confirmados E o usuário pedir para criar perguntas, você pode incluir questions no tool call. NUNCA inclua leadGen durante esta etapa.
+**ETAPA 4 (Captação de Leads):** Somente DEPOIS que as perguntas estiverem confirmadas E o usuário CONFIRMAR que quer coletar dados (leadGen), você pode incluir leadGen no tool call. SEMPRE pergunte antes de ativar.
 
-SE VOCÊ INCLUIR outcomes OU questions NO TOOL CALL ANTES DA ETAPA CORRETA, SERÁ CONSIDERADO UM ERRO GRAVE.
+SE VOCÊ INCLUIR outcomes, questions OU leadGen NO TOOL CALL ANTES DA ETAPA CORRETA, SERÁ CONSIDERADO UM ERRO GRAVE.
 
 FORMATAÇÃO É CRÍTICA! Siga estes exemplos EXATAMENTE:
 
