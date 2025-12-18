@@ -7,6 +7,56 @@ const EXTRACTION_MODEL =
   process.env.NEXT_PUBLIC_AI_EXTRACTION_MODEL || 'openai/gpt-4o-mini';
 const PLACEHOLDER_KEYWORDS = ['string', 'texto', 'description', 'descricao', 'url', 'cta', 'imagem', 'image', 'link'];
 const NULLISH_VALUES = new Set(['none', 'null', 'undefined', 'n/a', 'na']);
+
+/**
+ * Sanitizes AI response to remove internal thoughts and repetitive loops
+ */
+function cleanAIResponse(text: string): string {
+  if (!text) return '';
+
+  // 1. Remove <think>...</think> blocks (case insensitive, dotall)
+  let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+  // 2. Remove [NOTA_PRIVADA]...[/NOTA_PRIVADA] leakage
+  cleaned = cleaned.replace(/\[NOTA_PRIVADA\][\s\S]*?\[\/NOTA_PRIVADA\]/gi, '').trim();
+
+  // 3. Detect and truncate repetitive loops
+  // Split into lines
+  const lines = cleaned.split('\n');
+  const uniqueLines = new Set<string>();
+  const outputLines: string[] = [];
+  let repetitionCount = 0;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      outputLines.push(line); // Preserve empty lines for formatting
+      continue;
+    }
+
+    // specific check for the user confirmation loop bug
+    if (trimmed.startsWith('O usuário confirmou') || trimmed.startsWith('User confirmed')) {
+      if (uniqueLines.has(trimmed)) {
+        continue; // Skip duplicates of confirmation status
+      }
+    }
+
+    // General 3-peat check for exact line matches
+    if (outputLines.length >= 2) {
+      const last = outputLines[outputLines.length - 1].trim();
+      const secondLast = outputLines[outputLines.length - 2].trim();
+      if (trimmed === last && trimmed === secondLast) {
+        continue; // Skip 3rd occurrence
+      }
+    }
+
+    outputLines.push(line);
+    uniqueLines.add(trimmed);
+  }
+
+  return outputLines.join('\n').trim();
+}
+
 /**
  * Generate a contextual fallback message based on what was actually changed
  */
@@ -89,6 +139,8 @@ export type OutcomeImageRequest = {
 const BASE_SYSTEM_PROMPT = `Você é um Arquiteto de Quizzes especializado em criar quizzes engajantes e personalizados.
 
 IMPORTANTE: Sempre responda em português brasileiro de forma amigável, conversacional e CONCISA.
+NUNCA mostre seu processo de pensamento, tags como <think> ou [NOTA_PRIVADA].
+NUNCA repita a mesma frase múltiplas vezes na mesma resposta. Seja direto.
 
 AO IDENTIFICAR O TEMA DO QUIZ (ex: "gatos", "marketing B2B", "viagens"), reaja com UMA frase curta antes das perguntas iniciais: reconheça positivamente o tema e faça um comentário leve (ex: "Adorei esse tema sobre gatos, sempre rende ótimas histórias!" ou "Legal focar em marketing B2B, dá pra gerar ótimos insights"). Use variação natural para não soar repetitivo e mantenha a reação breve.
 
@@ -577,8 +629,11 @@ export class AIService {
       }
 
       // Generate contextual response if model didn't provide text but took action
-      const finalMessage =
+      let finalMessage =
         assistantMessage || generateContextualResponse(extraction, coverPromptFromTool, outcomeImageRequests);
+
+      // Sanitize response to prevent repetition bugs
+      finalMessage = cleanAIResponse(finalMessage);
 
       this.conversationHistory.push({
         role: 'assistant',
@@ -631,13 +686,14 @@ export class AIService {
 
       const data = await response.json();
       const assistantMessage = data.choices[0]?.message?.content || '';
+      const cleanedMessage = cleanAIResponse(assistantMessage);
 
       this.conversationHistory.push({
         role: 'assistant',
-        content: assistantMessage,
+        content: cleanedMessage,
       });
 
-      return assistantMessage;
+      return cleanedMessage;
     } catch (error) {
       console.error('AI Service Error:', error);
       throw new Error('Falha ao comunicar com o assistente de IA');
