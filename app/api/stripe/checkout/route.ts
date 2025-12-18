@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
                 },
             ],
             success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500'}/dashboard?checkout=success`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500'}/pricing?checkout=canceled`,
+            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500'}/dashboard?checkout=canceled`,
             subscription_data: {
                 metadata: {
                     firebaseUserId: userId,
