@@ -77,7 +77,7 @@ export function DashboardHeader() {
                 <Button
                   variant="ghost"
                   className="w-full justify-start text-base"
-                  onClick={() => handleNavigation('/account')}
+                  onClick={() => handleNavigation('/dashboard/account')}
                 >
                   Conta
                 </Button>

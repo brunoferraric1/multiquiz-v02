@@ -53,5 +53,10 @@ service cloud.firestore {
       // Allow only the quiz owner to view the analytics/leads
       allow read: if isOwner(resource.data.quizId);
     }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+    }
   }
 }

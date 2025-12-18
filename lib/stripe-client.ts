@@ -26,8 +26,8 @@ export function getStripeClient(): Promise<Stripe | null> {
  */
 export const STRIPE_CLIENT_PRICES = {
     pro: {
-        monthly: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || '',
-        yearly: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY || '',
+        monthly: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY || process.env.STRIPE_PRICE_PRO_MONTHLY || '',
+        yearly: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY || process.env.STRIPE_PRICE_PRO_YEARLY || '',
     },
 } as const;
 

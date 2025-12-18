@@ -126,46 +126,38 @@ export function hasLeadsAccess(subscription: UserSubscription | undefined): bool
     return TIER_LIMITS[tier].hasLeadsPage;
 }
 
-// Create checkout session (client-side redirect)
+// Create checkout session (server-side generation)
 export async function createCheckoutSession(
     userId: string,
     userEmail: string,
     billingPeriod: 'monthly' | 'yearly' = 'monthly'
 ): Promise<string | null> {
     try {
-        // Import the client-side stripe utility
-        const { redirectToStripeCheckout, STRIPE_CLIENT_PRICES } = await import('@/lib/stripe-client');
-
-        const priceId = billingPeriod === 'yearly'
-            ? STRIPE_CLIENT_PRICES.pro.yearly
-            : STRIPE_CLIENT_PRICES.pro.monthly;
-
-        if (!priceId) {
-            console.error('[Checkout] Price ID not configured for', billingPeriod);
-            return null;
-        }
-
-        const baseUrl = window.location.origin;
-
-        console.log('[Checkout] Starting client-side checkout...', { priceId, billingPeriod });
-
-        // Use client-side checkout (no server secrets needed!)
-        const { error } = await redirectToStripeCheckout({
-            priceId,
-            successUrl: `${baseUrl}/dashboard?checkout=success`,
-            cancelUrl: `${baseUrl}/dashboard?checkout=canceled`,
-            customerEmail: userEmail,
-            clientReferenceId: userId, // This will be available in the webhook
+        const response = await fetch('/api/stripe/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, userEmail, billingPeriod }),
         });
 
-        if (error) {
-            console.error('[Checkout] Stripe redirect error:', error);
-            return null;
+        if (!response.ok) {
+            let errorMessage = 'Failed to create checkout session';
+            try {
+                const errorData = await response.json();
+                console.error('[Checkout] Server error:', errorData);
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                console.error('[Checkout] Could not parse error response', e);
+                // Try text if json fails
+                try {
+                    const text = await response.text();
+                    console.error('[Checkout] Server error text:', text);
+                } catch (t) { /* ignore */ }
+            }
+            throw new Error(errorMessage);
         }
 
-        // If successful, the user is already redirecting to Stripe
-        // Return a dummy URL to indicate success (won't be used)
-        return 'redirecting';
+        const { url } = await response.json();
+        return url;
     } catch (error) {
         console.error('Error creating checkout session:', error);
         return null;
