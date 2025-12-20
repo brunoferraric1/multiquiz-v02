@@ -1022,7 +1022,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               </>
             )}
             {activeSheet?.type === 'lead-gen' && (
-              <LeadGenSheet onClose={() => setActiveSheet(null)} />
+              <LeadGenSheet onClose={() => setActiveSheet(null)} onSave={forceSave} />
             )}
             {activeSheet?.type !== 'lead-gen' && (
               <div className="flex-shrink-0 border-t bg-background py-8 mt-auto">

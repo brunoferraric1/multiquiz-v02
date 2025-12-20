@@ -23,6 +23,18 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
   const lastSavedRef = useRef<string>('');
   const lastSavedCoverRef = useRef<string | undefined>(undefined);
   const savingCoverRef = useRef<boolean>(false);
+  // Track the quiz ID to detect when a new/different quiz is loaded
+  const initializedQuizIdRef = useRef<string | null>(null);
+
+  // When a quiz is first loaded (different ID), initialize the lastSavedCoverRef
+  // to prevent immediate save from overwriting Firestore data with stale localStorage data
+  useEffect(() => {
+    if (quiz.id && quiz.id !== initializedQuizIdRef.current) {
+      console.log('[AutoSave] Quiz loaded, initializing cover ref:', quiz.coverImageUrl?.slice(0, 60));
+      lastSavedCoverRef.current = quiz.coverImageUrl;
+      initializedQuizIdRef.current = quiz.id;
+    }
+  }, [quiz.id, quiz.coverImageUrl]);
 
   const saveToFirestore = useCallback(async () => {
     if (!userId) {

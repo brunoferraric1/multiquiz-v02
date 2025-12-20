@@ -10,6 +10,7 @@ import { Mail, Phone, User } from 'lucide-react';
 
 interface LeadGenSheetProps {
     onClose: () => void;
+    onSave?: () => Promise<void>;
 }
 
 const FIELD_OPTIONS = [
@@ -20,12 +21,13 @@ const FIELD_OPTIONS = [
 
 const fieldLabelClass = 'text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground';
 
-export function LeadGenSheet({ onClose }: LeadGenSheetProps) {
+export function LeadGenSheet({ onClose, onSave }: LeadGenSheetProps) {
     const { quiz, setQuiz } = useQuizBuilderStore();
     const leadGen = quiz.leadGen || { enabled: false, fields: [] };
 
     const updateLeadGen = (updates: Partial<typeof leadGen>) => {
         setQuiz({
+            ...quiz,
             leadGen: { ...leadGen, ...updates },
         });
     };
@@ -38,10 +40,18 @@ export function LeadGenSheet({ onClose }: LeadGenSheetProps) {
         updateLeadGen({ fields: newFields });
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (leadGen.enabled && (!leadGen.fields || leadGen.fields.length === 0)) {
             toast.error('Selecione pelo menos um campo para capturar');
             return;
+        }
+        console.log('[LeadGenSheet] handleSave called, leadGen:', JSON.stringify(quiz.leadGen));
+        if (onSave) {
+            console.log('[LeadGenSheet] Calling onSave (forceSave)...');
+            await onSave();
+            console.log('[LeadGenSheet] onSave completed');
+        } else {
+            console.log('[LeadGenSheet] No onSave prop provided!');
         }
         toast.success('Configurações salvas!');
         onClose();
@@ -117,14 +127,14 @@ export function LeadGenSheet({ onClose }: LeadGenSheetProps) {
                                                 type="button"
                                                 onClick={() => toggleField(option.id)}
                                                 className={`flex w-full items-center gap-3 rounded-xl border p-3 transition-colors ${isSelected
-                                                        ? 'border-primary bg-primary/5 text-primary'
-                                                        : 'border-border bg-muted/40 text-foreground hover:border-primary/50'
+                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                    : 'border-border bg-muted/40 text-foreground hover:border-primary/50'
                                                     }`}
                                             >
                                                 <div
                                                     className={`flex h-5 w-5 items-center justify-center rounded border ${isSelected
-                                                            ? 'border-primary bg-primary text-white'
-                                                            : 'border-muted-foreground/50'
+                                                        ? 'border-primary bg-primary text-white'
+                                                        : 'border-muted-foreground/50'
                                                         }`}
                                                 >
                                                     {isSelected && (

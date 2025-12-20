@@ -80,6 +80,10 @@ export class QuizService {
     if (quiz.leadGen) {
       quizData.leadGen = quiz.leadGen;
       console.log('[QuizService] saveQuiz - leadGen being saved:', JSON.stringify(quiz.leadGen));
+      if (!quiz.leadGen.enabled || !quiz.leadGen.fields?.length) {
+        console.warn('[QuizService] WARNING: Saving leadGen with enabled=false or empty fields!');
+        console.trace('Stack trace for disabled leadGen save:');
+      }
     } else {
       console.log('[QuizService] saveQuiz - NO leadGen in quiz draft');
     }
