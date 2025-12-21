@@ -41,13 +41,24 @@ export default function QuizReportPage() {
             if (!user || !quizId) return;
 
             try {
-                const [quizData, attemptsData] = await Promise.all([
+                const [quizData, allAttempts] = await Promise.all([
                     QuizService.getQuizById(quizId, user.uid),
                     AnalyticsService.getQuizAttempts(quizId)
                 ]);
 
+                if (!quizData) {
+                    setQuiz(null);
+                    setLoading(false);
+                    return;
+                }
+
+                // Filter out attempts by the owner to avoid skewing metrics
+                const validAttempts = allAttempts.filter(attempt =>
+                    !attempt.isOwnerAttempt && attempt.userId !== quizData.ownerId
+                );
+
                 setQuiz(quizData);
-                setAttempts(attemptsData);
+                setAttempts(validAttempts);
             } catch (error) {
                 console.error('Failed to fetch report data', error);
             } finally {

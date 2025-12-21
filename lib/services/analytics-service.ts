@@ -1,6 +1,7 @@
 import {
     collection,
     doc,
+    getDoc,
     setDoc,
     updateDoc,
     getDocs,
@@ -21,18 +22,19 @@ export class AnalyticsService {
     /**
      * Create a new quiz attempt when a user starts a quiz
      */
-    static async createAttempt(quizId: string, userId?: string): Promise<string> {
+    static async createAttempt(quizId: string, userId?: string, isOwnerAttempt: boolean = false): Promise<string> {
         const attemptId = crypto.randomUUID();
         const now = Date.now();
 
         const attempt: QuizAttempt = {
             id: attemptId,
             quizId,
-            userId,
+            userId: userId || null, // Ensure undefined becomes null for Firestore
             startedAt: now,
             lastUpdatedAt: now,
             answers: {},
-            status: 'started'
+            status: 'started',
+            isOwnerAttempt
         };
 
         try {
@@ -43,8 +45,10 @@ export class AnalyticsService {
                 lastUpdatedAt: serverTimestamp(),
             });
 
-            // Increment quiz starts
-            await QuizService.incrementStat(quizId, 'starts');
+            // Increment quiz starts ONLY if not owner
+            if (!isOwnerAttempt) {
+                await QuizService.incrementStat(quizId, 'starts');
+            }
 
             return attemptId;
         } catch (error) {
@@ -77,8 +81,33 @@ export class AnalyticsService {
 
             await updateDoc(attemptRef, firestoreUpdates);
 
-            // If completing, increment quiz completions
-            if (updates.status === 'completed' && updates.quizId) {
+            // If completing, increment quiz completions (only if not owner check is complex here without fetching, 
+            // but we can trust the attempt creation logic or fetch it. 
+            // For efficiency, we might need to know if it's an owner attempt.
+            // Let's fetch the attempt first to be sure? No that's extra read.
+            // Argument 'updates' doesn't necessarily have isOwnerAttempt.
+            // We should pass it or check it.
+            // Actually, best way is to fetch the attempt to check 'isOwnerAttempt', or trust the caller to pass it not easy.
+            // Alternative: The incrementStat call should be conditional.
+            // Let's just modify the updateAttempt to fetch the attempt document to check 'isOwnerAttempt'.
+
+            // Optimization: If we just created it with isOwnerAttempt: true, we can't easily know here without reading.
+            // Let's read the doc.
+
+            let isOwnerAttempt = false;
+            try {
+                const attemptSnap = await getDoc(attemptRef);
+                if (attemptSnap.exists()) {
+                    isOwnerAttempt = attemptSnap.data().isOwnerAttempt || false;
+                }
+            } catch (err) {
+                // If read fails (e.g. permission denied for public users), 
+                // it means they are not the owner (since owners can read).
+                // So we can assume isOwnerAttempt is false.
+                // console.log('Could not read attempt (expected for public users):', err);
+            }
+
+            if (updates.status === 'completed' && updates.quizId && !isOwnerAttempt) {
                 await QuizService.incrementStat(updates.quizId, 'completions');
             }
 

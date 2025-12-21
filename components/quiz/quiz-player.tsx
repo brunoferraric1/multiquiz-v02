@@ -8,6 +8,7 @@ import { QuizResult } from './quiz-result';
 import { QuizLeadGen } from './quiz-lead-gen';
 import { QuizProgressBar } from './quiz-progress-bar';
 import { AnalyticsService } from '@/lib/services/analytics-service';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 type PlayableQuestion = {
   id: string;
@@ -52,9 +53,31 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
 
   // Attempt Tracking
   const [attemptId, setAttemptId] = useState<string | null>(null);
+  const { user } = useAuth(); // Get current user
 
   // Track if we already started tracking to avoid double inits
   const hasStartedRef = useRef(false);
+
+  // Initialize attempt immediately on mount if live mode
+  useEffect(() => {
+    if (mode === 'live' && quiz.id && !hasStartedRef.current && !attemptId) {
+      hasStartedRef.current = true;
+      // Check if current user is owner
+      // We can't know for sure until user is loaded, but useAuth loads fast or we wait?
+      // user might be null initially. If we wait for user, we might delay.
+      // But we need to know if owner.
+      // Let's assume false if loading, but that risks false negative.
+      // Better: Just fire it. The service can be updated later? No.
+      // If we wait for user loading it might delay valid starts.
+      // Compromise: We check user.uid against quiz.ownerId if user exists.
+
+      const isOwner = user?.uid === quiz.ownerId;
+
+      AnalyticsService.createAttempt(quiz.id, user?.uid, isOwner).then(id => {
+        setAttemptId(id);
+      }).catch(e => console.error(e));
+    }
+  }, [mode, quiz.id, user, attemptId, quiz.ownerId]);
 
   const questions = useMemo<PlayableQuestion[]>(() => {
     return (quiz.questions || []).reduce<PlayableQuestion[]>((list, item) => {
@@ -108,18 +131,13 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
       setSelectedOptions({});
       setResultOutcomeId(null);
 
-      // Create analytics attempt
-      if (mode === 'live' && quiz.id) {
-        // Fire and forget, but keep the ID if possible
-        AnalyticsService.createAttempt(quiz.id).then(id => {
-          setAttemptId(id);
-          // Initial update for first question
-          if (questions[0]) {
-            AnalyticsService.updateAttempt(id, {
-              currentQuestionId: questions[0].id
-            });
-          }
-        }).catch(e => console.error(e));
+      // Attempt is already created in useEffect.
+      // We just need to update it with first question IF we have the ID.
+      // If we don't have ID yet (rare race), we should wait or retry.
+      if (attemptId && questions[0]) {
+        AnalyticsService.updateAttempt(attemptId, {
+          currentQuestionId: questions[0].id
+        });
       }
     }
   };

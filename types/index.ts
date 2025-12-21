@@ -132,7 +132,7 @@ export type AIExtractionResult = {
 export const QuizAttemptSchema = z.object({
   id: z.string().uuid(),
   quizId: z.string().uuid(),
-  userId: z.string().optional(),
+  userId: z.string().nullable().optional(),
   startedAt: z.number(),
   completedAt: z.number().optional(),
   lastUpdatedAt: z.number(),
@@ -146,6 +146,7 @@ export const QuizAttemptSchema = z.object({
   resultOutcomeId: z.string().optional(),
   status: z.enum(['started', 'completed', 'abandoned']),
   ctaClickedAt: z.number().optional(),
+  isOwnerAttempt: z.boolean().optional(),
 });
 
 export type QuizAttempt = z.infer<typeof QuizAttemptSchema>;
