@@ -317,23 +317,6 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
   const aiService = useMemo(() => new AIService({ userName }), [userName]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [hasHydrated, setHasHydrated] = useState(
-    useQuizBuilderStore.persist.hasHydrated()
-  );
-
-  useEffect(() => {
-    if (useQuizBuilderStore.persist.hasHydrated()) {
-      setHasHydrated(true);
-    }
-
-    const unsub = useQuizBuilderStore.persist.onFinishHydration(() => {
-      setHasHydrated(true);
-    });
-
-    return () => {
-      unsub?.();
-    };
-  }, []);
 
   // Request counter to implement "latest request wins" pattern for cover suggestions
   // This prevents flickering when multiple requests are made in quick succession
@@ -353,7 +336,7 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
 
   // Send welcome message when chat becomes empty (new quiz or cleared chat)
   useEffect(() => {
-    if (!hasHydrated || !quiz?.id) {
+    if (!quiz?.id) {
       return;
     }
 
@@ -398,7 +381,6 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
   }, [
     chatHistory.length,
     addChatMessage,
-    hasHydrated,
     setHasSeenWelcomeMessage,
     quiz?.id,
     userName,

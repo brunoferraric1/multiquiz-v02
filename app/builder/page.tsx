@@ -7,24 +7,11 @@ import { ProtectedRoute } from '@/components/protected-route';
 import BuilderContent from './builder-content';
 
 function NewQuizInitializer() {
-  const { reset, setQuiz, quiz } = useQuizBuilderStore();
-  const [hasHydrated, setHasHydrated] = useState(
-    useQuizBuilderStore.persist.hasHydrated()
-  );
+  const { reset, setQuiz } = useQuizBuilderStore();
 
   const [navigationType, setNavigationType] =
     useState<PerformanceNavigationTiming['type'] | null>(null);
   const initializedRef = useRef(false);
-
-  useEffect(() => {
-    const unsub = useQuizBuilderStore.persist.onFinishHydration(() => {
-      setHasHydrated(true);
-    });
-
-    return () => {
-      unsub?.();
-    };
-  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof performance === 'undefined') {
@@ -64,29 +51,9 @@ function NewQuizInitializer() {
     };
   }, []);
 
-  // Reset store and initialize a new quiz only when we don't have persisted data
+  // Initialize a new quiz on first load
   useEffect(() => {
-    if (!hasHydrated || initializedRef.current || !navigationType) {
-      return;
-    }
-
-    const cameFromBuilder = (() => {
-      if (typeof document === 'undefined') return false;
-      if (!document.referrer) return false;
-      try {
-        const referrerPathname = new URL(document.referrer).pathname;
-        return referrerPathname.startsWith('/builder');
-      } catch (error) {
-        console.error('Failed to parse referrer for builder navigation:', error);
-        return false;
-      }
-    })();
-
-    const shouldPreserveExisting =
-      cameFromBuilder && (navigationType === 'reload' || navigationType === 'back_forward') && Boolean(quiz?.id);
-
-    if (shouldPreserveExisting) {
-      initializedRef.current = true;
+    if (initializedRef.current || !navigationType) {
       return;
     }
 
@@ -102,7 +69,7 @@ function NewQuizInitializer() {
       isPublished: false,
     });
     initializedRef.current = true;
-  }, [hasHydrated, navigationType, quiz?.id, reset, setQuiz]);
+  }, [navigationType, reset, setQuiz]);
 
   return <BuilderContent isEditMode={false} />;
 }

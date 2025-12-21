@@ -50,6 +50,12 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
       return;
     }
 
+    // Prevent saving default/invalid state (e.g., after Fast Refresh reset)
+    if (!currentQuiz.title && currentQuiz.questions?.length === 0 && currentQuiz.outcomes?.length === 0) {
+      console.log('Auto-save skipped: quiz appears to be in default/uninitialized state');
+      return;
+    }
+
     // Create a snapshot to compare
     const currentSnapshot = JSON.stringify({
       quiz: currentQuiz,

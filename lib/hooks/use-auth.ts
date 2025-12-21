@@ -45,10 +45,8 @@ export function useAuth() {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      // Clear persisted store
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('quiz-builder-storage');
-      }
+      // Reset auth state
+      setUser(null);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to sign out');
     }

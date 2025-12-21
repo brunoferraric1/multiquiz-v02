@@ -14,40 +14,37 @@ function EditQuizLoader() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { data: quiz, isLoading, error } = useQuizQuery(id as string, user?.uid);
+  const { data: quiz, isLoading, error, dataUpdatedAt } = useQuizQuery(id as string, user?.uid);
   const loadQuiz = useQuizBuilderStore((state) => state.loadQuiz);
-  
-  // Track if we've already loaded this quiz to prevent infinite loops
-  const loadedQuizIdRef = useRef<string | null>(null);
+
+  // Track timestamp of last loaded data to allow updates when fresh data arrives
+  const loadedTimestampRef = useRef<number>(0);
 
   // On mount: invalidate cache to get fresh data
   useEffect(() => {
     if (id) {
-      console.log('[EditQuiz] Entering builder, invalidating cache for quiz:', id);
       // Invalidate cache ONCE on entry to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['quiz', id] });
       // Reset loaded ref so we load the fresh data
-      loadedQuizIdRef.current = null;
-      // Note: We don't call reset() here because it would clear the conversation history
-      // before loadQuiz() runs, causing the welcome message to appear incorrectly
+      loadedTimestampRef.current = 0;
     }
   }, [id, queryClient]);
 
   useEffect(() => {
-    // Only proceed if we have quiz data, user, and haven't loaded this quiz yet
-    if (quiz && user && loadedQuizIdRef.current !== quiz.id) {
+    // Only proceed if we have quiz data and it's newer than what we last loaded
+    if (quiz && user && dataUpdatedAt > loadedTimestampRef.current) {
       // Check if user is the owner
       if (quiz.ownerId !== user.uid) {
         alert('Você não tem permissão para editar este quiz.');
         router.push('/dashboard');
         return;
       }
-      // Load the quiz into the store ONCE
-      console.log('[EditQuiz] Loading quiz from Firestore:', quiz.id, 'coverImageUrl:', quiz.coverImageUrl?.slice(0, 50));
+      // Load the quiz into the store
+      console.log('[EditQuiz] Loading quiz update from Firestore. Timestamp:', dataUpdatedAt);
       loadQuiz(quiz);
-      loadedQuizIdRef.current = quiz.id;
+      loadedTimestampRef.current = dataUpdatedAt;
     }
-  }, [quiz, user, router, loadQuiz]);
+  }, [quiz, user, router, loadQuiz, dataUpdatedAt]);
 
   // Handle error state separately
   useEffect(() => {

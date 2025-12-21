@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
 import type {
   QuizBuilderState,
   QuizDraft,
@@ -92,242 +92,231 @@ const initialQuizState: QuizDraft = {
 
 export const useQuizBuilderStore = create<QuizBuilderState>()(
   devtools(
-    persist(
-      (set, get) => ({
-        quiz: initialQuizState,
-        chatHistory: [],
-        isExtracting: false,
-        isSaving: false,
-        error: null,
-        hasSeenWelcomeMessage: false,
-        pendingManualChanges: [],
-        publishedVersion: null,
-        publishedAt: null,
-        loadingSections: {
-          introduction: false,
-          questions: false,
-          outcomes: false,
-          leadGen: false,
-        },
+    (set, get) => ({
+      quiz: initialQuizState,
+      chatHistory: [],
+      isExtracting: false,
+      isSaving: false,
+      error: null,
+      hasSeenWelcomeMessage: false,
+      pendingManualChanges: [],
+      publishedVersion: null,
+      publishedAt: null,
+      loadingSections: {
+        introduction: false,
+        questions: false,
+        outcomes: false,
+        leadGen: false,
+      },
 
-        setQuiz: (quiz) => set({ quiz }),
+      setQuiz: (quiz) => set({ quiz }),
 
-        updateQuizField: (field, value) =>
-          set((state) => ({
-            quiz: { ...state.quiz, [field]: value },
-            pendingManualChanges: pushManualChange(
-              state.pendingManualChanges,
-              createManualChange({ scope: 'quiz', field: String(field), value })
+      updateQuizField: (field, value) =>
+        set((state) => ({
+          quiz: { ...state.quiz, [field]: value },
+          pendingManualChanges: pushManualChange(
+            state.pendingManualChanges,
+            createManualChange({ scope: 'quiz', field: String(field), value })
+          ),
+        })),
+
+      addQuestion: (question) =>
+        set((state) => ({
+          quiz: {
+            ...state.quiz,
+            questions: [...(state.quiz.questions || []), question],
+          },
+        })),
+
+      updateQuestion: (id, updatedQuestion) =>
+        set((state) => ({
+          quiz: {
+            ...state.quiz,
+            questions: state.quiz.questions?.map((q) =>
+              q.id === id ? { ...q, ...updatedQuestion } : q
             ),
-          })),
+          },
+        })),
 
-        addQuestion: (question) =>
-          set((state) => ({
-            quiz: {
-              ...state.quiz,
-              questions: [...(state.quiz.questions || []), question],
-            },
-          })),
+      deleteQuestion: (id) =>
+        set((state) => ({
+          quiz: {
+            ...state.quiz,
+            questions: state.quiz.questions?.filter((q) => q.id !== id),
+          },
+        })),
 
-        updateQuestion: (id, updatedQuestion) =>
-          set((state) => ({
-            quiz: {
-              ...state.quiz,
-              questions: state.quiz.questions?.map((q) =>
-                q.id === id ? { ...q, ...updatedQuestion } : q
-              ),
-            },
-          })),
+      moveQuestion: (id, direction) =>
+        set((state) => {
+          const questions = [...(state.quiz.questions || [])];
+          const index = questions.findIndex((q) => q.id === id);
+          if (index === -1) return state;
 
-        deleteQuestion: (id) =>
-          set((state) => ({
-            quiz: {
-              ...state.quiz,
-              questions: state.quiz.questions?.filter((q) => q.id !== id),
-            },
-          })),
+          const newIndex = direction === 'up' ? index - 1 : index + 1;
+          if (newIndex < 0 || newIndex >= questions.length) return state;
 
-        moveQuestion: (id, direction) =>
-          set((state) => {
-            const questions = [...(state.quiz.questions || [])];
-            const index = questions.findIndex((q) => q.id === id);
-            if (index === -1) return state;
+          [questions[index], questions[newIndex]] = [questions[newIndex], questions[index]];
 
-            const newIndex = direction === 'up' ? index - 1 : index + 1;
-            if (newIndex < 0 || newIndex >= questions.length) return state;
-
-            [questions[index], questions[newIndex]] = [questions[newIndex], questions[index]];
-
-            return {
-              quiz: { ...state.quiz, questions },
-            };
-          }),
-
-        reorderQuestions: (sourceIndex, destinationIndex) =>
-          set((state) => {
-            const questions = [...(state.quiz.questions || [])];
-            if (
-              sourceIndex < 0 ||
-              destinationIndex < 0 ||
-              sourceIndex >= questions.length ||
-              destinationIndex > questions.length
-            ) {
-              return state;
-            }
-
-            const [movedQuestion] = questions.splice(sourceIndex, 1);
-            const insertIndex = destinationIndex > sourceIndex ? destinationIndex - 1 : destinationIndex;
-            questions.splice(insertIndex, 0, movedQuestion);
-
-            return {
-              quiz: { ...state.quiz, questions },
-            };
-          }),
-
-        addOutcome: (outcome) =>
-          set((state) => ({
-            quiz: {
-              ...state.quiz,
-              outcomes: [...(state.quiz.outcomes || []), outcome],
-            },
-          })),
-
-        updateOutcome: (id, updatedOutcome) =>
-          set((state) => ({
-            quiz: {
-              ...state.quiz,
-              outcomes: state.quiz.outcomes?.map((o) =>
-                o.id === id ? { ...o, ...updatedOutcome } : o
-              ),
-            },
-          })),
-
-        deleteOutcome: (id) =>
-          set((state) => ({
-            quiz: {
-              ...state.quiz,
-              outcomes: state.quiz.outcomes?.filter((o) => o.id !== id),
-            },
-          })),
-
-        addChatMessage: (message) =>
-          set((state) => ({
-            chatHistory: [...state.chatHistory, message],
-          })),
-
-        setChatHistory: (history) => set({ chatHistory: history }),
-
-        setHasSeenWelcomeMessage: (value: boolean) => set({ hasSeenWelcomeMessage: value }),
-
-        consumeManualChanges: () => {
-          const changes = get().pendingManualChanges;
-          set({ pendingManualChanges: [] });
-          return changes;
-        },
-
-        setExtracting: (isExtracting) => set({ isExtracting }),
-
-        setSaving: (isSaving) => set({ isSaving }),
-
-        setError: (error) => set({ error }),
-
-        reset: () =>
-          set({
-            quiz: initialQuizState,
-            chatHistory: [],
-            isExtracting: false,
-            isSaving: false,
-            error: null,
-            hasSeenWelcomeMessage: false,
-            pendingManualChanges: [],
-            publishedVersion: null,
-            publishedAt: null,
-            loadingSections: {
-              introduction: false,
-              questions: false,
-              outcomes: false,
-              leadGen: false,
-            },
-          }),
-
-        loadQuiz: (quiz: Quiz) => {
-          console.log('[Store] loadQuiz called - quiz.leadGen from Firestore:', JSON.stringify(quiz.leadGen));
-          set({
-            quiz: {
-              id: quiz.id,
-              title: quiz.title,
-              description: quiz.description,
-              coverImageUrl: quiz.coverImageUrl,
-              ctaText: quiz.ctaText,
-              ctaUrl: quiz.ctaUrl,
-              primaryColor: quiz.primaryColor,
-              questions: quiz.questions,
-              outcomes: quiz.outcomes,
-              isPublished: quiz.isPublished,
-              createdAt: quiz.createdAt,
-              updatedAt: quiz.updatedAt,
-              stats: quiz.stats,
-              ownerId: quiz.ownerId,
-              leadGen: quiz.leadGen || {
-                enabled: false,
-                fields: [],
-              },
-            },
-            chatHistory: quiz.conversationHistory || [],
-            hasSeenWelcomeMessage: Boolean((quiz.conversationHistory || []).length),
-            pendingManualChanges: [],
-            publishedVersion: quiz.publishedVersion || null,
-            publishedAt: quiz.publishedAt || null,
-          });
-        },
-
-        setPublishedVersion: (version: QuizSnapshot | null, publishedAt: number | null) =>
-          set({ publishedVersion: version, publishedAt }),
-
-        loadPublishedVersion: () => {
-          const { publishedVersion } = get();
-          if (!publishedVersion) return;
-
-          set((state) => ({
-            quiz: {
-              ...state.quiz,
-              title: publishedVersion.title,
-              description: publishedVersion.description,
-              coverImageUrl: publishedVersion.coverImageUrl,
-              ctaText: publishedVersion.ctaText,
-              primaryColor: publishedVersion.primaryColor,
-              questions: publishedVersion.questions as Partial<Question>[],
-              outcomes: publishedVersion.outcomes as Partial<Outcome>[],
-              leadGen: publishedVersion.leadGen,
-            },
-          }));
-        },
-
-        setLoadingSections: (sections: Partial<LoadingSections>) =>
-          set((state) => ({
-            loadingSections: { ...state.loadingSections, ...sections },
-          })),
-
-        clearLoadingSections: () =>
-          set({
-            loadingSections: {
-              introduction: false,
-              questions: false,
-              outcomes: false,
-              leadGen: false,
-            },
-          }),
-      }),
-      {
-        name: 'quiz-builder-storage',
-        partialize: (state) => ({
-          quiz: state.quiz,
-          chatHistory: state.chatHistory,
-          hasSeenWelcomeMessage: state.hasSeenWelcomeMessage,
-          pendingManualChanges: state.pendingManualChanges,
+          return {
+            quiz: { ...state.quiz, questions },
+          };
         }),
-      }
-    ),
+
+      reorderQuestions: (sourceIndex, destinationIndex) =>
+        set((state) => {
+          const questions = [...(state.quiz.questions || [])];
+          if (
+            sourceIndex < 0 ||
+            destinationIndex < 0 ||
+            sourceIndex >= questions.length ||
+            destinationIndex > questions.length
+          ) {
+            return state;
+          }
+
+          const [movedQuestion] = questions.splice(sourceIndex, 1);
+          const insertIndex = destinationIndex > sourceIndex ? destinationIndex - 1 : destinationIndex;
+          questions.splice(insertIndex, 0, movedQuestion);
+
+          return {
+            quiz: { ...state.quiz, questions },
+          };
+        }),
+
+      addOutcome: (outcome) =>
+        set((state) => ({
+          quiz: {
+            ...state.quiz,
+            outcomes: [...(state.quiz.outcomes || []), outcome],
+          },
+        })),
+
+      updateOutcome: (id, updatedOutcome) =>
+        set((state) => ({
+          quiz: {
+            ...state.quiz,
+            outcomes: state.quiz.outcomes?.map((o) =>
+              o.id === id ? { ...o, ...updatedOutcome } : o
+            ),
+          },
+        })),
+
+      deleteOutcome: (id) =>
+        set((state) => ({
+          quiz: {
+            ...state.quiz,
+            outcomes: state.quiz.outcomes?.filter((o) => o.id !== id),
+          },
+        })),
+
+      addChatMessage: (message) =>
+        set((state) => ({
+          chatHistory: [...state.chatHistory, message],
+        })),
+
+      setChatHistory: (history) => set({ chatHistory: history }),
+
+      setHasSeenWelcomeMessage: (value: boolean) => set({ hasSeenWelcomeMessage: value }),
+
+      consumeManualChanges: () => {
+        const changes = get().pendingManualChanges;
+        set({ pendingManualChanges: [] });
+        return changes;
+      },
+
+      setExtracting: (isExtracting) => set({ isExtracting }),
+
+      setSaving: (isSaving) => set({ isSaving }),
+
+      setError: (error) => set({ error }),
+
+      reset: () =>
+        set({
+          quiz: initialQuizState,
+          chatHistory: [],
+          isExtracting: false,
+          isSaving: false,
+          error: null,
+          hasSeenWelcomeMessage: false,
+          pendingManualChanges: [],
+          publishedVersion: null,
+          publishedAt: null,
+          loadingSections: {
+            introduction: false,
+            questions: false,
+            outcomes: false,
+            leadGen: false,
+          },
+        }),
+
+      loadQuiz: (quiz: Quiz) => {
+        console.log('[Store] loadQuiz called - quiz.leadGen from Firestore:', JSON.stringify(quiz.leadGen));
+        set({
+          quiz: {
+            id: quiz.id,
+            title: quiz.title,
+            description: quiz.description,
+            coverImageUrl: quiz.coverImageUrl,
+            ctaText: quiz.ctaText,
+            ctaUrl: quiz.ctaUrl,
+            primaryColor: quiz.primaryColor,
+            questions: quiz.questions,
+            outcomes: quiz.outcomes,
+            isPublished: quiz.isPublished,
+            createdAt: quiz.createdAt,
+            updatedAt: quiz.updatedAt,
+            stats: quiz.stats,
+            ownerId: quiz.ownerId,
+            leadGen: quiz.leadGen || {
+              enabled: false,
+              fields: [],
+            },
+          },
+          chatHistory: quiz.conversationHistory || [],
+          hasSeenWelcomeMessage: Boolean((quiz.conversationHistory || []).length),
+          pendingManualChanges: [],
+          publishedVersion: quiz.publishedVersion || null,
+          publishedAt: quiz.publishedAt || null,
+        });
+      },
+
+      setPublishedVersion: (version: QuizSnapshot | null, publishedAt: number | null) =>
+        set({ publishedVersion: version, publishedAt }),
+
+      loadPublishedVersion: () => {
+        const { publishedVersion } = get();
+        if (!publishedVersion) return;
+
+        set((state) => ({
+          quiz: {
+            ...state.quiz,
+            title: publishedVersion.title,
+            description: publishedVersion.description,
+            coverImageUrl: publishedVersion.coverImageUrl,
+            ctaText: publishedVersion.ctaText,
+            primaryColor: publishedVersion.primaryColor,
+            questions: publishedVersion.questions as Partial<Question>[],
+            outcomes: publishedVersion.outcomes as Partial<Outcome>[],
+            leadGen: publishedVersion.leadGen,
+          },
+        }));
+      },
+
+      setLoadingSections: (sections: Partial<LoadingSections>) =>
+        set((state) => ({
+          loadingSections: { ...state.loadingSections, ...sections },
+        })),
+
+      clearLoadingSections: () =>
+        set({
+          loadingSections: {
+            introduction: false,
+            questions: false,
+            outcomes: false,
+            leadGen: false,
+          },
+        }),
+    }),
     { name: 'QuizBuilderStore' }
   )
 );

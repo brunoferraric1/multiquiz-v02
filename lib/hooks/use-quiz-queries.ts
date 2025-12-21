@@ -9,7 +9,6 @@ export function useQuizQuery(quizId: string | undefined, userId?: string) {
     queryKey: ['quiz', quizId],
     queryFn: () => (quizId ? QuizService.getQuizById(quizId, userId) : null),
     enabled: !!quizId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 

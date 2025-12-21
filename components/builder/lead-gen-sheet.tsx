@@ -45,13 +45,8 @@ export function LeadGenSheet({ onClose, onSave }: LeadGenSheetProps) {
             toast.error('Selecione pelo menos um campo para capturar');
             return;
         }
-        console.log('[LeadGenSheet] handleSave called, leadGen:', JSON.stringify(quiz.leadGen));
         if (onSave) {
-            console.log('[LeadGenSheet] Calling onSave (forceSave)...');
             await onSave();
-            console.log('[LeadGenSheet] onSave completed');
-        } else {
-            console.log('[LeadGenSheet] No onSave prop provided!');
         }
         toast.success('Configurações salvas!');
         onClose();
