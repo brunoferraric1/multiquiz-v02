@@ -68,8 +68,11 @@ export class AnalyticsService {
         try {
             const attemptRef = doc(db, ATTEMPTS_COLLECTION, attemptId);
 
+            // Sanitize updates to remove undefined values
+            const cleanUpdates = JSON.parse(JSON.stringify(updates));
+
             const firestoreUpdates = {
-                ...updates,
+                ...cleanUpdates,
                 lastUpdatedAt: serverTimestamp(),
             };
 
