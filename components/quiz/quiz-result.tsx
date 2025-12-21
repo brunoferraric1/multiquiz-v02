@@ -15,9 +15,10 @@ type QuizResultProps = {
   onReset: () => void;
   onExit?: () => void;
   onCtaClick?: () => void;
+  primaryColor?: string;
 };
 
-export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick }: QuizResultProps) {
+export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick, primaryColor }: QuizResultProps) {
 
   const handleCtaClick = () => {
     if (outcome.ctaUrl && onCtaClick) {
@@ -56,6 +57,7 @@ export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick }: QuizR
                 asChild={!!outcome.ctaUrl}
                 className="gap-2 w-full sm:w-auto min-w-[200px]"
                 onClick={handleCtaClick}
+                style={primaryColor ? { backgroundColor: primaryColor } : undefined}
               >
                 {outcome.ctaUrl ? (
                   <a href={outcome.ctaUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center">

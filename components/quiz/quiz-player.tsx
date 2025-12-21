@@ -34,12 +34,16 @@ type QuizPlayerProps = {
 
 type SelectionState = Record<string, string[]>;
 
+const DEFAULT_PURPLE = '#4F46E5';
+
 const getPreviewCopy = (quiz: QuizDraft | Quiz) => ({
   title: quiz.title?.trim() || 'Meu Novo Quiz',
   description:
     quiz.description?.trim() || 'Conte mais sobre o que torna esse quiz especial.',
   coverImageUrl: quiz.coverImageUrl,
-  primaryColor: quiz.primaryColor || 'var(--color-primary)',
+  primaryColor: (quiz.primaryColor && quiz.primaryColor !== DEFAULT_PURPLE)
+    ? quiz.primaryColor
+    : 'var(--color-primary)',
   ctaText: quiz.ctaText,
 });
 
@@ -313,6 +317,7 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
             onReset={resetQuiz}
             onExit={onExit}
             onCtaClick={handleCtaClick}
+            primaryColor={primaryColor}
           />
         )}
       </div>

@@ -82,7 +82,7 @@ const initialQuizState: QuizDraft = {
   ctaUrl: '',
   questions: [],
   outcomes: [],
-  primaryColor: '#4F46E5',
+  primaryColor: undefined,
   isPublished: false,
   leadGen: {
     enabled: false,

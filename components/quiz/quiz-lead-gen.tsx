@@ -24,7 +24,7 @@ interface QuizLeadGenProps {
 const fieldLabels: Record<string, string> = {
     name: 'Nome',
     email: 'E-mail',
-    phone: 'WhatsApp',
+    phone: 'Celular',
 };
 
 const fieldPlaceholders: Record<string, string> = {
@@ -33,12 +33,41 @@ const fieldPlaceholders: Record<string, string> = {
     phone: '(11) 99999-9999',
 };
 
-export function QuizLeadGen({ config, primaryColor = '#4F46E5', onSubmit }: QuizLeadGenProps) {
+// Helper for phone masking
+const formatPhone = (value: string) => {
+    // Remove non-digits
+    const numbers = value.replace(/\D/g, '');
+
+    // Apply mask
+    let r = numbers;
+    if (r.length > 11) r = r.substring(0, 11); // Limit to 11 digits
+
+    if (r.length > 10) {
+        // (11) 99999-9999
+        r = r.replace(/^(\d\d)(\d{5})(\d{4}).*/, '($1) $2-$3');
+    } else if (r.length > 5) {
+        // (11) 9999-9999 (legacy/landline fallback or partial)
+        r = r.replace(/^(\d\d)(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+    } else if (r.length > 2) {
+        // (11) 99...
+        r = r.replace(/^(\d\d)(\d{0,5})/, '($1) $2');
+    } else {
+        // (1...
+        r = r.replace(/^(\d*)/, '($1');
+    }
+    return r;
+};
+
+export function QuizLeadGen({ config, primaryColor, onSubmit }: QuizLeadGenProps) {
     const [formData, setFormData] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleInputChange = (field: string, value: string) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
+        let finalValue = value;
+        if (field === 'phone') {
+            finalValue = formatPhone(value);
+        }
+        setFormData((prev) => ({ ...prev, [field]: finalValue }));
     };
 
     const validateEmail = (email: string) => {
@@ -55,6 +84,10 @@ export function QuizLeadGen({ config, primaryColor = '#4F46E5', onSubmit }: Quiz
             }
             if (field === 'email' && !validateEmail(value)) {
                 toast.error('Por favor, insira um e-mail válido');
+                return;
+            }
+            if (field === 'phone' && value.replace(/\D/g, '').length < 10) {
+                toast.error('Por favor, insira um número de celular válido');
                 return;
             }
         }
@@ -83,11 +116,12 @@ export function QuizLeadGen({ config, primaryColor = '#4F46E5', onSubmit }: Quiz
                             {fieldLabels[field]}
                         </label>
                         <Input
-                            type={field === 'email' ? 'email' : 'text'}
+                            type={field === 'email' ? 'email' : (field === 'phone' ? 'tel' : 'text')}
                             placeholder={fieldPlaceholders[field]}
                             value={formData[field] || ''}
                             onChange={(e) => handleInputChange(field, e.target.value)}
                             className="h-12"
+                            maxLength={field === 'phone' ? 15 : undefined}
                         />
                     </div>
                 ))}
@@ -97,7 +131,7 @@ export function QuizLeadGen({ config, primaryColor = '#4F46E5', onSubmit }: Quiz
                     onClick={handleSubmit}
                     disabled={isSubmitting}
                     className="w-full h-12 text-base font-semibold"
-                    style={{ backgroundColor: primaryColor }}
+                    style={primaryColor ? { backgroundColor: primaryColor } : undefined}
                 >
                     {isSubmitting ? 'Carregando...' : (config.ctaText || 'Ver Resultado')}
                     <ArrowRight className="ml-2 h-5 w-5" />
