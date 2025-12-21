@@ -8,7 +8,7 @@ import { AnalyticsService } from '@/lib/services/analytics-service';
 import type { Quiz, QuizAttempt } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, Download, Play, CheckCircle, Mail } from 'lucide-react';
 import {
     BarChart,
     Bar,
@@ -166,16 +166,18 @@ export default function QuizReportPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Inícios Totais</CardTitle>
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 text-muted-foreground">
+                        <CardTitle className="text-sm font-medium">Inícios Totais</CardTitle>
+                        <Play className="h-4 w-4" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{attempts.length}</div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Conclusões</CardTitle>
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 text-muted-foreground">
+                        <CardTitle className="text-sm font-medium">Conclusões</CardTitle>
+                        <CheckCircle className="h-4 w-4" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{funnelCounts.completed}</div>
@@ -185,8 +187,9 @@ export default function QuizReportPage() {
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Leads Capturados</CardTitle>
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 text-muted-foreground">
+                        <CardTitle className="text-sm font-medium">Leads Capturados</CardTitle>
+                        <Mail className="h-4 w-4" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">

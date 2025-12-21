@@ -620,7 +620,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             <button
               type="button"
               onClick={() => setActiveSheet({ type: 'introduction' })}
-              className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
@@ -694,7 +694,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       onDrop={handleQuestionDrop}
                       onDragEnd={handleQuestionDragEnd}
                       className={cn(
-                        'group w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                        'group w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
                         {
                           'opacity-60': isDragging,
                         }
@@ -771,7 +771,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   <button
                     type="button"
                     onClick={() => outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })}
-                    className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   >
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
@@ -811,7 +811,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             <button
               type="button"
               onClick={() => setActiveSheet({ type: 'lead-gen' })}
-              className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary">

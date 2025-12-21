@@ -98,20 +98,24 @@ export class AnalyticsService {
             // Let's read the doc.
 
             let isOwnerAttempt = false;
+            let targetQuizId = updates.quizId;
+
+            // Fetch current attempt data to check ownership and getting quizId if needed
             try {
                 const attemptSnap = await getDoc(attemptRef);
                 if (attemptSnap.exists()) {
-                    isOwnerAttempt = attemptSnap.data().isOwnerAttempt || false;
+                    const data = attemptSnap.data() as QuizAttempt;
+                    isOwnerAttempt = data.isOwnerAttempt || false;
+                    if (!targetQuizId) {
+                        targetQuizId = data.quizId;
+                    }
                 }
             } catch (err) {
-                // If read fails (e.g. permission denied for public users), 
-                // it means they are not the owner (since owners can read).
-                // So we can assume isOwnerAttempt is false.
-                // console.log('Could not read attempt (expected for public users):', err);
+                // Ignore read errors for public users
             }
 
-            if (updates.status === 'completed' && updates.quizId && !isOwnerAttempt) {
-                await QuizService.incrementStat(updates.quizId, 'completions');
+            if (updates.status === 'completed' && targetQuizId && !isOwnerAttempt) {
+                await QuizService.incrementStat(targetQuizId, 'completions');
             }
 
         } catch (error) {

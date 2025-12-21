@@ -53,13 +53,16 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
 
   // Attempt Tracking
   const [attemptId, setAttemptId] = useState<string | null>(null);
-  const { user } = useAuth(); // Get current user
+  const { user, loading: authLoading } = useAuth(); // Get current user
 
   // Track if we already started tracking to avoid double inits
   const hasStartedRef = useRef(false);
 
   // Initialize attempt immediately on mount if live mode
   useEffect(() => {
+    // Wait for auth to load so we know if it's the owner
+    if (authLoading) return;
+
     if (mode === 'live' && quiz.id && !hasStartedRef.current && !attemptId) {
       hasStartedRef.current = true;
       // Check if current user is owner
@@ -77,7 +80,7 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
         setAttemptId(id);
       }).catch(e => console.error(e));
     }
-  }, [mode, quiz.id, user, attemptId, quiz.ownerId]);
+  }, [mode, quiz.id, user, attemptId, quiz.ownerId, authLoading]);
 
   const questions = useMemo<PlayableQuestion[]>(() => {
     return (quiz.questions || []).reduce<PlayableQuestion[]>((list, item) => {
