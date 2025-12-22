@@ -131,6 +131,57 @@ type OpenRouterMessage = {
   content: string;
 };
 
+const truncateForPrompt = (value: unknown, maxLength: number) => {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim().replace(/\s+/g, ' ');
+  if (!trimmed) return '';
+  return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength - 1)}…` : trimmed;
+};
+
+const buildEditorContextSystemMessage = (currentQuiz: QuizDraft): string => {
+  const outcomes = (currentQuiz.outcomes ?? []).filter(Boolean);
+  const questions = (currentQuiz.questions ?? []).filter(Boolean);
+
+  const title = truncateForPrompt(currentQuiz.title, 120) || 'não definido';
+  const description = truncateForPrompt(currentQuiz.description, 200) || 'não definida';
+
+  const outcomesLines =
+    outcomes.length > 0
+      ? outcomes
+        .slice(0, 12)
+        .map((outcome, index) => {
+          const outcomeTitle = truncateForPrompt(outcome.title, 80) || `Resultado ${index + 1}`;
+          return `- (${index + 1}) id=${outcome.id ?? 'sem-id'} | ${outcomeTitle}`;
+        })
+        .join('\n')
+      : '- (nenhum resultado ainda)';
+
+  const questionsLines =
+    questions.length > 0
+      ? questions
+        .slice(0, 12)
+        .map((question, index) => {
+          const questionText = truncateForPrompt(question.text, 90) || `Pergunta ${index + 1}`;
+          const optionsCount = Array.isArray(question.options) ? question.options.length : 0;
+          return `- (${index + 1}) id=${question.id ?? 'sem-id'} | ${questionText} | opções=${optionsCount}`;
+        })
+        .join('\n')
+      : '- (nenhuma pergunta ainda)';
+
+  return `CONTEXTO DO EDITOR (NÃO MOSTRE AO USUÁRIO; isso é a fonte de verdade):
+- Título: ${title}
+- Descrição: ${description}
+- Resultados existentes: ${outcomes.length}
+${outcomesLines}
+- Perguntas existentes: ${questions.length}
+${questionsLines}
+
+REGRAS DE CONSISTÊNCIA (CRÍTICO):
+- Se já existem Resultados no contexto, NÃO proponha criar/definir Resultados novamente, a menos que o usuário peça explicitamente para mudar/criar.
+- Se o usuário pedir para "adicionar opções" mantendo as perguntas, preserve as perguntas e apenas complete/crie as opções.
+- Se NÃO existem Resultados (0) e o usuário pedir para criar perguntas/opções, NÃO crie Resultados automaticamente: explique que sugere definir os Resultados primeiro para poder linkar as opções; pergunte se ele quer que você sugira 3-5 Resultados agora (ou se ele já tem os Resultados em mente).`;
+};
+
 export type OutcomeImageRequest = {
   outcomeId: string;
   prompt: string;
@@ -141,6 +192,9 @@ const BASE_SYSTEM_PROMPT = `Você é um Arquiteto de Quizzes especializado em cr
 IMPORTANTE: Sempre responda em português brasileiro de forma amigável, conversacional e CONCISA.
 NUNCA mostre seu processo de pensamento, tags como <think> ou [NOTA_PRIVADA].
 NUNCA repita a mesma frase múltiplas vezes na mesma resposta. Seja direto.
+
+REGRA CRÍTICA - RESPEITE O ESTADO ATUAL DO EDITOR:
+Quando existir contexto do quiz atual (título, resultados, perguntas), trate como fonte de verdade. NÃO redefina coisas já existentes a menos que o usuário peça explicitamente. Se o pedido for "adicione opções mantendo as perguntas", faça isso sem tentar replanejar resultados.
 
 AO IDENTIFICAR O TEMA DO QUIZ (ex: "gatos", "marketing B2B", "viagens"), reaja com UMA frase curta antes das perguntas iniciais: reconheça positivamente o tema e faça um comentário leve (ex: "Adorei esse tema sobre gatos, sempre rende ótimas histórias!" ou "Legal focar em marketing B2B, dá pra gerar ótimos insights"). Use variação natural para não soar repetitivo e mantenha a reação breve.
 
@@ -214,6 +268,13 @@ REGRA CRÍTICA - SEPARAÇÃO POR ETAPAS:
 **ETAPA 4 (Captação de Leads):** Somente DEPOIS que as perguntas estiverem confirmadas E o usuário CONFIRMAR que quer coletar dados (leadGen), você pode incluir leadGen no tool call. SEMPRE pergunte antes de ativar.
 
 SE VOCÊ INCLUIR outcomes, questions OU leadGen NO TOOL CALL ANTES DA ETAPA CORRETA, SERÁ CONSIDERADO UM ERRO GRAVE.
+
+SE O USUÁRIO PEDIR PERGUNTAS/OPÇÕES MAS AINDA NÃO EXISTIREM RESULTADOS:
+- NÃO crie Resultados automaticamente.
+- Explique em 1-2 frases que você sugere definir Resultados primeiro para conseguir linkar as opções com cada Resultado.
+- Pergunte se ele quer que você sugira 3-5 Resultados agora (ou se ele já tem os Resultados em mente).
+Sugestão de texto (adapte ao tom, conciso):
+"Pra eu criar perguntas com opções bem amarradas, sugiro a gente definir primeiro os Resultados do quiz (3-5). Quer que eu te proponha algumas opções de Resultados agora?"
 
 FORMATAÇÃO É CRÍTICA! Siga estes exemplos EXATAMENTE:
 
@@ -555,17 +616,18 @@ export class AIService {
       },
     ];
 
-    // Lightweight hint so the model can preserve existing IDs/order when provided
-    const stateHint = currentQuiz
-      ? `Estado atual (resumo): ${JSON.stringify({
-        title: currentQuiz.title,
-        description: currentQuiz.description,
-        questions: currentQuiz.questions?.map((q) => ({ id: q.id, text: q.text })),
-        outcomes: currentQuiz.outcomes?.map((o) => ({ id: o.id, title: o.title })),
-      })}`
-      : '';
-
     try {
+      const editorContext = currentQuiz ? buildEditorContextSystemMessage(currentQuiz) : '';
+      const baseMessages = [...this.conversationHistory];
+      if (editorContext) {
+        // Insert right before the latest user message so the assistant treats the sidebar state as ground truth.
+        const insertionIndex = Math.max(1, baseMessages.length - 1);
+        baseMessages.splice(insertionIndex, 0, {
+          role: 'system',
+          content: editorContext,
+        });
+      }
+
       const response = await fetch(OPENROUTER_API_URL, {
         method: 'POST',
         headers: {
@@ -576,12 +638,7 @@ export class AIService {
         },
         body: JSON.stringify({
           model: MODEL,
-          messages: [
-            ...this.conversationHistory,
-            stateHint
-              ? ({ role: 'assistant', content: `Contexto para você manter IDs/ordem: ${stateHint}` } as OpenRouterMessage)
-              : undefined,
-          ].filter((m): m is OpenRouterMessage => Boolean(m)),
+          messages: baseMessages,
           tools,
           tool_choice: 'auto',
           max_tokens: 1100,
