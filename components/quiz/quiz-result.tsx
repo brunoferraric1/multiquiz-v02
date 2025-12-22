@@ -2,6 +2,7 @@
 
 import { ArrowLeft, ChevronRight, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ensureProtocol } from '@/lib/utils';
 
 type QuizResultProps = {
   outcome: {
@@ -19,9 +20,11 @@ type QuizResultProps = {
 };
 
 export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick, primaryColor }: QuizResultProps) {
+  const ctaUrl = ensureProtocol(outcome.ctaUrl);
+  const hasCtaUrl = Boolean(ctaUrl);
 
   const handleCtaClick = () => {
-    if (outcome.ctaUrl && onCtaClick) {
+    if (hasCtaUrl && onCtaClick) {
       onCtaClick();
     }
   };
@@ -54,13 +57,13 @@ export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick, primary
           {outcome.ctaText && (
             <div className="mt-6 flex justify-center">
               <Button
-                asChild={!!outcome.ctaUrl}
+                asChild={hasCtaUrl}
                 className="gap-2 w-full sm:w-auto min-w-[200px]"
                 onClick={handleCtaClick}
                 style={primaryColor ? { backgroundColor: primaryColor } : undefined}
               >
-                {outcome.ctaUrl ? (
-                  <a href={outcome.ctaUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center">
+                {hasCtaUrl ? (
+                  <a href={ctaUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center">
                     <span className="truncate">{outcome.ctaText}</span>
                     <ChevronRight className="h-4 w-4 flex-shrink-0 ml-1" />
                   </a>

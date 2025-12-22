@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import {
   ArrowLeft,
+  AlertTriangle,
   Eye,
   ImageIcon,
   Plus,
@@ -95,6 +96,9 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
   const [mobileView, setMobileView] = useState<MobileViewMode>('chat');
   const [showUpdateConfirmModal, setShowUpdateConfirmModal] = useState(false);
+  const [ctaWarningOpen, setCtaWarningOpen] = useState(false);
+  const [ctaWarningOutcomes, setCtaWarningOutcomes] = useState<Partial<Outcome>[]>([]);
+  const [pendingPublishType, setPendingPublishType] = useState<'publish' | 'update' | null>(null);
 
   // Draft state for Introduction
   const [draftTitle, setDraftTitle] = useState('');
@@ -451,24 +455,26 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     resetQuestionDragState();
   };
 
-  const handleBack = async () => {
-    if (!user) {
-      router.push('/dashboard');
-      return;
-    }
-
-    try {
-      cancelPendingSave();
-      await forceSave();
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Error saving quiz before leaving:', error);
-      // Navigate anyway - data is likely already auto-saved
-      router.push('/dashboard');
-    }
+  const findOutcomesMissingCtaUrl = () => {
+    return (quiz.outcomes || []).filter((outcome) => {
+      const hasCtaText = Boolean(outcome.ctaText && outcome.ctaText.trim());
+      const hasCtaUrl = Boolean(outcome.ctaUrl && outcome.ctaUrl.trim());
+      return hasCtaText && !hasCtaUrl;
+    });
   };
 
-  const handlePublish = async () => {
+  const requireCtaUrlBeforePublish = (type: 'publish' | 'update') => {
+    const missing = findOutcomesMissingCtaUrl();
+    if (missing.length) {
+      setCtaWarningOutcomes(missing);
+      setPendingPublishType(type);
+      setCtaWarningOpen(true);
+      return true;
+    }
+    return false;
+  };
+
+  const executePublish = async () => {
     if (!user || !quiz.id) return;
 
     try {
@@ -505,16 +511,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     }
   };
 
-  // Called from header - opens confirmation modal
-  const handlePublishUpdateClick = () => {
-    setShowUpdateConfirmModal(true);
-  };
-
-  // Called when user confirms in the modal
-  const handlePublishUpdateConfirm = async () => {
+  const executePublishUpdate = async () => {
     if (!user || !quiz.id) return;
-
-    setShowUpdateConfirmModal(false);
 
     try {
       setIsPublishing(true);
@@ -546,6 +544,58 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     } finally {
       setIsPublishing(false);
     }
+  };
+
+  const handleBack = async () => {
+    if (!user) {
+      router.push('/dashboard');
+      return;
+    }
+
+    try {
+      cancelPendingSave();
+      await forceSave();
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error saving quiz before leaving:', error);
+      // Navigate anyway - data is likely already auto-saved
+      router.push('/dashboard');
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!user || !quiz.id) return;
+    if (requireCtaUrlBeforePublish('publish')) return;
+    await executePublish();
+  };
+
+  // Called from header - opens confirmation modal
+  const handlePublishUpdateClick = () => {
+    setShowUpdateConfirmModal(true);
+  };
+
+  // Called when user confirms in the modal
+  const handlePublishUpdateConfirm = async () => {
+    if (!user || !quiz.id) return;
+
+    setShowUpdateConfirmModal(false);
+    if (requireCtaUrlBeforePublish('update')) return;
+    await executePublishUpdate();
+  };
+
+  const handleConfirmCtaWarning = async () => {
+    if (!pendingPublishType) {
+      setCtaWarningOpen(false);
+      return;
+    }
+
+    setCtaWarningOpen(false);
+    if (pendingPublishType === 'publish') {
+      await executePublish();
+    } else {
+      await executePublishUpdate();
+    }
+    setPendingPublishType(null);
   };
 
   const handleUnpublish = async () => {
@@ -1095,6 +1145,86 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           </div>
         </div>
       )}
+
+      {/* CTA URL warning */}
+      <Dialog
+        open={ctaWarningOpen}
+        onOpenChange={(open) => {
+          if (isPublishing) return;
+          setCtaWarningOpen(open);
+          if (!open) {
+            setPendingPublishType(null);
+            setCtaWarningOutcomes([]);
+          }
+        }}
+          >
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <span>Botão sem URL (link)</span>
+            </DialogTitle>
+            <DialogDescription>
+              Alguns resultados têm texto de botão, mas não têm URL. Sem um link o botão não aparece para quem fizer o quiz.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Inclua uma URL ou remova o texto do CTA para os resultados abaixo:
+            </p>
+            <div className="rounded-lg border border-border/60 bg-muted/40 p-3">
+              <ul className="space-y-2">
+                {ctaWarningOutcomes.map((outcome) => (
+                  <li
+                    key={outcome.id || outcome.title || Math.random().toString(36)}
+                    className="flex items-center justify-between gap-3"
+                  >
+                    <span className="font-medium truncate">
+                      {outcome.title || 'Resultado sem título'}
+                    </span>
+                    {outcome.ctaText && (
+                      <span className="text-xs text-muted-foreground truncate max-w-[55%]">
+                        CTA: {outcome.ctaText}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Se um resultado não tiver texto nem URL, nenhum botão será exibido para o usuário final.
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCtaWarningOpen(false);
+                setPendingPublishType(null);
+                setCtaWarningOutcomes([]);
+              }}
+              disabled={isPublishing}
+            >
+              Voltar e ajustar
+            </Button>
+            <Button
+              onClick={handleConfirmCtaWarning}
+              disabled={isPublishing}
+              className="min-w-[160px]"
+            >
+              {isPublishing
+                ? pendingPublishType === 'update'
+                  ? 'Atualizando...'
+                  : 'Publicando...'
+                : pendingPublishType === 'update'
+                  ? 'Atualizar mesmo assim'
+                  : 'Publicar mesmo assim'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Update Confirmation Modal */}
       <Dialog open={showUpdateConfirmModal} onOpenChange={setShowUpdateConfirmModal}>

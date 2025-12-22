@@ -64,3 +64,18 @@ export async function compressImage(
     reader.readAsDataURL(file);
   });
 }
+
+/**
+ * Ensure URLs have an explicit protocol to avoid being treated as relative paths.
+ * Defaults to https:// when missing and preserves other valid schemes.
+ */
+export function ensureProtocol(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+
+  const hasProtocol = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed);
+  if (hasProtocol) return trimmed;
+
+  return `https://${trimmed.replace(/^\/+/, '')}`;
+}
