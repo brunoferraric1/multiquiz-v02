@@ -42,8 +42,12 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
       return;
     }
 
-    const { quiz: currentQuiz, chatHistory: currentChatHistory } =
-      useQuizBuilderStore.getState();
+    const {
+      quiz: currentQuiz,
+      chatHistory: currentChatHistory,
+      publishedVersion: currentPublishedVersion,
+      publishedAt: currentPublishedAt,
+    } = useQuizBuilderStore.getState();
 
     if (!currentQuiz.id) {
       console.log('Auto-save skipped: missing quiz.id');
@@ -86,6 +90,9 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
         isPublished: currentQuiz.isPublished || false,
         stats: currentQuiz.stats || { views: 0, starts: 0, completions: 0 },
         leadGen: currentQuiz.leadGen,
+        // Preserve live snapshot fields so auto-save doesn't wipe them
+        publishedVersion: currentPublishedVersion ?? null,
+        publishedAt: currentPublishedAt ?? null,
       };
 
       console.log('[AutoSave] quizToSave.leadGen:', JSON.stringify(quizToSave.leadGen));

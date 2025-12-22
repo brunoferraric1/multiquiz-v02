@@ -26,6 +26,7 @@ interface BuilderHeaderProps {
   onBack: () => void;
   onPublish: () => void;
   onPublishUpdate?: () => void;
+  onPublishUpdateAndExit?: () => Promise<void>;
   onUnpublish?: () => void;
   onDiscardChanges?: () => void;
   isPublishing: boolean;
@@ -39,6 +40,7 @@ export function BuilderHeader({
   onBack,
   onPublish,
   onPublishUpdate,
+  onPublishUpdateAndExit,
   onUnpublish,
   onDiscardChanges,
   isPublishing,
@@ -106,13 +108,14 @@ export function BuilderHeader({
   };
 
   const handleUpdateAndExit = async () => {
-    if (!onPublishUpdate) {
+    const publishFn = onPublishUpdateAndExit || onPublishUpdate;
+    if (!publishFn) {
       onBack();
       return;
     }
     setIsUpdatingAndExiting(true);
     try {
-      await onPublishUpdate();
+      await publishFn();
       setShowUnsavedDialog(false);
       onBack();
     } catch (error) {

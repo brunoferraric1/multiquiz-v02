@@ -65,6 +65,9 @@ export class QuizService {
       stats: quiz.stats || { views: 0, starts: 0, completions: 0 },
       conversationHistory: quiz.conversationHistory || [],
       ownerId: userId,
+      // Preserve live snapshot metadata so auto-save doesn't drop it
+      publishedVersion: quiz.publishedVersion ?? null,
+      publishedAt: quiz.publishedAt ?? null,
     };
 
     // Add optional fields only if they have values
@@ -95,11 +98,20 @@ export class QuizService {
     console.log('[QuizService] About to save to Firestore with isPublished:', cleanedData.isPublished);
 
     const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
-    await setDoc(quizRef, {
+    const firestorePayload: Record<string, unknown> = {
       ...cleanedData,
       createdAt: Timestamp.fromMillis(cleanedData.createdAt as number),
       updatedAt: Timestamp.fromMillis(cleanedData.updatedAt as number),
-    });
+    };
+
+    if ('publishedAt' in cleanedData) {
+      firestorePayload.publishedAt =
+        cleanedData.publishedAt === null
+          ? null
+          : Timestamp.fromMillis(cleanedData.publishedAt as number);
+    }
+
+    await setDoc(quizRef, firestorePayload);
 
     console.log('[QuizService] Successfully saved to Firestore');
 

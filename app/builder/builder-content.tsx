@@ -79,6 +79,34 @@ function generateUUID(): string {
   });
 }
 
+// Stable stringify to avoid false positives from key order differences
+function stableStringify(value: unknown): string {
+  const seen = new WeakSet();
+
+  const sortObject = (input: any): any => {
+    if (input === null || typeof input !== 'object') return input;
+    if (seen.has(input)) return input;
+    seen.add(input);
+
+    if (Array.isArray(input)) {
+      return input.map(sortObject);
+    }
+
+    const sorted: Record<string, unknown> = {};
+    Object.keys(input)
+      .sort()
+      .forEach((key) => {
+        const val = (input as Record<string, unknown>)[key];
+        if (val !== undefined) {
+          sorted[key] = sortObject(val);
+        }
+      });
+    return sorted;
+  };
+
+  return JSON.stringify(sortObject(value));
+}
+
 export default function BuilderContent({ isEditMode = false }: { isEditMode?: boolean }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -101,6 +129,15 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [ctaWarningOpen, setCtaWarningOpen] = useState(false);
   const [ctaWarningOutcomes, setCtaWarningOutcomes] = useState<Partial<Outcome>[]>([]);
   const [pendingPublishType, setPendingPublishType] = useState<'publish' | 'update' | null>(null);
+  const pendingPublishResolveRef = useRef<(() => void) | null>(null);
+  const pendingPublishRejectRef = useRef<((error?: Error) => void) | null>(null);
+  const clearPendingPublishPromises = (shouldReject = false) => {
+    if (shouldReject) {
+      pendingPublishRejectRef.current?.();
+    }
+    pendingPublishResolveRef.current = null;
+    pendingPublishRejectRef.current = null;
+  };
 
   // Draft state for Introduction
   const [draftTitle, setDraftTitle] = useState('');
@@ -216,7 +253,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       leadGen: comparablePublishedVersion.leadGen?.enabled ? comparablePublishedVersion.leadGen : undefined,
     };
 
-    return JSON.stringify(normalizedCurrent) !== JSON.stringify(normalizedPublished);
+    return stableStringify(normalizedCurrent) !== stableStringify(normalizedPublished);
   }, [
     quiz.isPublished,
     quiz.title,
@@ -576,6 +613,19 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     setShowUpdateConfirmModal(true);
   };
 
+  const handlePublishUpdateAndExit = async () => {
+    if (!user || !quiz.id) return;
+
+    if (requireCtaUrlBeforePublish('update')) {
+      return new Promise<void>((resolve, reject) => {
+        pendingPublishResolveRef.current = resolve;
+        pendingPublishRejectRef.current = reject;
+      });
+    }
+
+    await executePublishUpdate();
+  };
+
   // Called when user confirms in the modal
   const handlePublishUpdateConfirm = async () => {
     if (!user || !quiz.id) return;
@@ -588,6 +638,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const handleConfirmCtaWarning = async () => {
     if (!pendingPublishType) {
       setCtaWarningOpen(false);
+      clearPendingPublishPromises();
       return;
     }
 
@@ -597,6 +648,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     } else {
       await executePublishUpdate();
     }
+    pendingPublishResolveRef.current?.();
+    clearPendingPublishPromises();
     setPendingPublishType(null);
   };
 
@@ -750,16 +803,31 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                         {
                           'opacity-60': isDragging,
                         }
-                      )}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary text-sm font-semibold flex-shrink-0">
-                          {index + 1}
+                    )}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="relative h-14 w-14 flex-shrink-0">
+                        <div className="h-full w-full overflow-hidden rounded-2xl border border-border bg-muted/60">
+                          {question.imageUrl ? (
+                            <img
+                              src={question.imageUrl}
+                              alt="Imagem da pergunta"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                              <ImageIcon className="h-5 w-5" aria-hidden="true" />
+                            </div>
+                          )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground">
-                            {question.text || 'Pergunta sem texto'}
-                          </p>
+                        <span className="absolute -top-1.5 -right-1.5 flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-primary px-2 text-xs font-semibold text-primary-foreground shadow-sm">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">
+                          {question.text || 'Pergunta sem texto'}
+                        </p>
                           <p className="text-xs text-muted-foreground leading-relaxed">
                             {(question.options?.length ?? 0)} opções
                           </p>
@@ -923,6 +991,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             onBack={handleBack}
             onPublish={handlePublish}
             onPublishUpdate={handlePublishUpdateClick}
+            onPublishUpdateAndExit={handlePublishUpdateAndExit}
             onUnpublish={handleUnpublish}
             onDiscardChanges={handleDiscardChanges}
             isPublishing={isPublishing}
@@ -1151,6 +1220,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               onBack={() => setIsPreviewOpen(false)}
               onPublish={handlePublish}
               onPublishUpdate={handlePublishUpdateClick}
+              onPublishUpdateAndExit={handlePublishUpdateAndExit}
               onUnpublish={handleUnpublish}
               onDiscardChanges={handleDiscardChanges}
               isPublishing={isPublishing}
@@ -1183,6 +1253,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           if (!open) {
             setPendingPublishType(null);
             setCtaWarningOutcomes([]);
+            clearPendingPublishPromises(true);
           }
         }}
           >
@@ -1232,6 +1303,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 setCtaWarningOpen(false);
                 setPendingPublishType(null);
                 setCtaWarningOutcomes([]);
+                clearPendingPublishPromises(true);
               }}
               disabled={isPublishing}
             >
