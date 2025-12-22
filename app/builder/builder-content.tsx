@@ -15,7 +15,7 @@ import {
   PenSquare,
   Contact as ContactIcon,
   Link2,
-  Type,
+  MousePointerClick,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -825,8 +825,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                     onClick={() => outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })}
                     className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
+                      <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
                         {outcome.imageUrl ? (
                           <img
                             src={outcome.imageUrl}
@@ -839,7 +839,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                           </div>
                         )}
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground">
                           {outcome.title || 'Novo resultado'}
                         </p>
@@ -849,11 +849,11 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                         <div className="mt-2 flex flex-wrap gap-2">
                           <Badge
                             variant={outcome.ctaText ? 'outline' : 'disabled'}
-                            className="max-w-[18rem] truncate px-3 py-1 text-[11px] font-medium"
+                            className="max-w-[14rem] min-w-0 overflow-hidden whitespace-nowrap px-3 py-1 text-[11px] font-medium"
                           >
-                            <Type className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            <MousePointerClick className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                             <span
-                              className="truncate"
+                              className="block max-w-full truncate"
                               title={outcome.ctaText || 'Sem texto'}
                             >
                               {outcome.ctaText || 'Sem texto'}
@@ -861,11 +861,11 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                           </Badge>
                           <Badge
                             variant={outcome.ctaUrl ? 'outline' : 'disabled'}
-                            className="max-w-[18rem] truncate px-3 py-1 text-[11px] font-medium"
+                            className="max-w-[16rem] min-w-0 overflow-hidden whitespace-nowrap px-3 py-1 text-[11px] font-medium"
                           >
                             <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                             <span
-                              className="truncate"
+                              className="block max-w-full truncate"
                               title={outcome.ctaUrl || 'Sem URL'}
                             >
                               {outcome.ctaUrl || 'Sem URL'}
