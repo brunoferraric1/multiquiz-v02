@@ -7,6 +7,26 @@ const EXTRACTION_MODEL =
   process.env.NEXT_PUBLIC_AI_EXTRACTION_MODEL || 'openai/gpt-4o-mini';
 const PLACEHOLDER_KEYWORDS = ['string', 'texto', 'description', 'descricao', 'url', 'cta', 'imagem', 'image', 'link'];
 const NULLISH_VALUES = new Set(['none', 'null', 'undefined', 'n/a', 'na']);
+const INTERNAL_LEAK_PATTERNS = [
+  /update_quiz/i,
+  /set_cover_image/i,
+  /set_outcome_image/i,
+  /\btool[_ ]?call\b/i,
+  /\bferramenta\s+(?:update_quiz|set_cover_image|set_outcome_image|leadgen)\b/i,
+  /\bchamar a ferramenta\b/i,
+  /\bleadgen\b/i,
+  /\bcontexto do editor\b/i,
+  /\bnota_privada\b/i,
+];
+
+const stripInternalProcess = (text: string): string => {
+  const lines = text.split('\n');
+  const filtered = lines.filter((line) => {
+    const normalized = line.toLowerCase();
+    return !INTERNAL_LEAK_PATTERNS.some((pattern) => pattern.test(normalized));
+  });
+  return filtered.join('\n').trim();
+};
 
 /**
  * Sanitizes AI response to remove internal thoughts and repetitive loops
@@ -14,13 +34,19 @@ const NULLISH_VALUES = new Set(['none', 'null', 'undefined', 'n/a', 'na']);
 function cleanAIResponse(text: string): string {
   if (!text) return '';
 
-  // 1. Remove <think>...</think> blocks (case insensitive, dotall)
+  // Remove <think>...</think> blocks (case insensitive, dotall)
   let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
-  // 2. Remove [NOTA_PRIVADA]...[/NOTA_PRIVADA] leakage
+  // Remove [NOTA_PRIVADA]...[/NOTA_PRIVADA] leakage
   cleaned = cleaned.replace(/\[NOTA_PRIVADA\][\s\S]*?\[\/NOTA_PRIVADA\]/gi, '').trim();
 
-  // 3. Detect and truncate repetitive loops
+  // Remove any accidental code blocks
+  cleaned = cleaned.replace(/```[\s\S]*?```/g, '').trim();
+
+  // Strip tool names, internal planning or implementation hints
+  cleaned = stripInternalProcess(cleaned);
+
+  // Detect and truncate repetitive loops
   // Split into lines
   const lines = cleaned.split('\n');
   const uniqueLines = new Set<string>();
@@ -192,6 +218,10 @@ const BASE_SYSTEM_PROMPT = `Você é um Arquiteto de Quizzes especializado em cr
 IMPORTANTE: Sempre responda em português brasileiro de forma amigável, conversacional e CONCISA.
 NUNCA mostre seu processo de pensamento, tags como <think> ou [NOTA_PRIVADA].
 NUNCA repita a mesma frase múltiplas vezes na mesma resposta. Seja direto.
+
+CHECKLIST ANTES DE ENVIAR:
+- Se mencionar qualquer ferramenta (update_quiz, set_cover_image, set_outcome_image, leadGen) ou etapas internas, apague e reescreva em linguagem natural sem citar ferramentas.
+- Não diga "preciso perguntar" ou "vou perguntar"; faça a pergunta direto, em 1 linha clara.
 
 REGRA CRÍTICA - RESPEITE O ESTADO ATUAL DO EDITOR:
 Quando existir contexto do quiz atual (título, resultados, perguntas), trate como fonte de verdade. NÃO redefina coisas já existentes a menos que o usuário peça explicitamente. Se o pedido for "adicione opções mantendo as perguntas", faça isso sem tentar replanejar resultados.
@@ -685,12 +715,22 @@ export class AIService {
         }
       }
 
+      const contextualResponse = (extraction || coverPromptFromTool || outcomeImageRequests.length)
+        ? generateContextualResponse(extraction, coverPromptFromTool, outcomeImageRequests)
+        : '';
+
       // Generate contextual response if model didn't provide text but took action
-      let finalMessage =
-        assistantMessage || generateContextualResponse(extraction, coverPromptFromTool, outcomeImageRequests);
+      let finalMessage = assistantMessage || contextualResponse;
 
       // Sanitize response to prevent repetition bugs
       finalMessage = cleanAIResponse(finalMessage);
+
+      // Fallback in case sanitization removed everything
+      if (!finalMessage) {
+        finalMessage =
+          cleanAIResponse(contextualResponse) ||
+          'Tudo certo por aqui! Me diz qual o próximo ajuste que você quer fazer no quiz.';
+      }
 
       this.conversationHistory.push({
         role: 'assistant',
@@ -743,7 +783,9 @@ export class AIService {
 
       const data = await response.json();
       const assistantMessage = data.choices[0]?.message?.content || '';
-      const cleanedMessage = cleanAIResponse(assistantMessage);
+      const cleanedMessage =
+        cleanAIResponse(assistantMessage) ||
+        'Tudo certo por aqui! O que você quer ajustar no quiz agora?';
 
       this.conversationHistory.push({
         role: 'assistant',
