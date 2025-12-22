@@ -14,6 +14,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Set up Firebase credentials
+        run: |
+          cat <<'EOF' > firebase-key.json
+          ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+          EOF
       - name: Create env file from secrets
         run: |
           cat <<'EOF' > .env.staging
@@ -37,4 +42,6 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Deploy to Firebase
-        run: npx firebase-tools@latest deploy --only hosting --project multiquiz-staging --non-interactive --token ${{ secrets.FIREBASE_TOKEN }}
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
+        run: npx firebase-tools@latest deploy --only hosting --project multiquiz-staging --non-interactive
