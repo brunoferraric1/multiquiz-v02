@@ -22,6 +22,7 @@ type QuizQuestionProps = {
   onNext: () => void;
   onBack: () => void;
   onReset: () => void;
+  mode?: 'preview' | 'live';
 };
 
 export function QuizQuestion({
@@ -34,6 +35,7 @@ export function QuizQuestion({
   onNext,
   onBack,
   onReset,
+  mode = 'live',
 }: QuizQuestionProps) {
   return (
     <div className="space-y-6">
@@ -84,7 +86,7 @@ export function QuizQuestion({
               )}
             >
               <p className="text-sm font-medium text-foreground">{option.text}</p>
-              {isSelected && (
+              {isSelected && mode === 'preview' && (
                 <p className="text-xs text-muted-foreground mt-1">
                   {option.targetOutcomeId
                     ? 'Resultado associado'
