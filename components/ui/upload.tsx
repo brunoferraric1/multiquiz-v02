@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from "react";
-import { ImageIcon, UploadCloud, X } from "lucide-react";
+import { ImageIcon, Trash2, UploadCloud, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,14 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
     const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       handleSelect(event.dataTransfer.files);
+    };
+
+    const handleRemoveImage = () => {
+      setIsPreviewViewerOpen(false);
+      onFileChange(null);
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
     };
 
     const [isPreviewViewerOpen, setIsPreviewViewerOpen] = React.useState(false);
@@ -63,8 +71,8 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
           data-upload-area
           className={cn(
             "group relative rounded-2xl border border-dashed border-border/60 bg-muted/60 transition hover:bg-muted/70 focus-visible:border-[#fbbf24]",
-            previewUrl 
-              ? "overflow-hidden cursor-pointer" 
+            previewUrl
+              ? "overflow-hidden cursor-pointer"
               : "flex flex-col h-32 cursor-pointer items-center justify-center px-4 py-3 text-center"
           )}
           onClick={previewUrl ? undefined : handleButtonClick}
@@ -145,15 +153,26 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
         )}
 
         {previewUrl && (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full text-sm font-semibold"
-            onClick={handleButtonClick}
-          >
-            <UploadCloud className="mr-2 h-4 w-4" />
-            Trocar Imagem
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full text-sm font-semibold sm:flex-1"
+              onClick={handleButtonClick}
+            >
+              <UploadCloud className="mr-2 h-4 w-4" />
+              Trocar Imagem
+            </Button>
+            <Button
+              type="button"
+              variant="outline-destructive"
+              className="w-full text-sm font-semibold sm:flex-1"
+              onClick={handleRemoveImage}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remover Imagem
+            </Button>
+          </div>
         )}
 
         {file && (

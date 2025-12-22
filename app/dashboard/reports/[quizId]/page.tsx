@@ -20,11 +20,34 @@ import {
     PieChart,
     Pie,
     Cell,
-    Legend
+    Legend,
+    type TooltipProps
 } from 'recharts';
 
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
+const getFunnelTooltipLabel = (label: string) => {
+    if (label === 'Inícios') return 'início';
+    if (label === 'Finais') return 'final';
+    if (/^P\d+/i.test(label)) return `pergunta ${label.replace(/\D/g, '')}`;
+    return label.toLowerCase();
+};
+
+const FunnelTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+    if (!active || !payload?.length) return null;
+
+    const [{ name, value }] = payload;
+    const stageLabel = getFunnelTooltipLabel(String(name));
+
+    return (
+        <div className="rounded-md bg-card px-3 py-2 shadow-md">
+            <p className="text-sm text-card-foreground">
+                Pessoas que chegaram a {stageLabel}: {value ?? 0}
+            </p>
+        </div>
+    );
+};
 
 export default function QuizReportPage() {
     const params = useParams();
@@ -213,10 +236,7 @@ export default function QuizReportPage() {
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
-                                <Tooltip
-                                    cursor={{ fill: 'transparent' }}
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                />
+                                <Tooltip cursor={{ fill: 'transparent' }} content={<FunnelTooltip />} />
                                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                     {funnelData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.fill} />
