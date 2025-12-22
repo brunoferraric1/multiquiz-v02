@@ -14,6 +14,8 @@ import {
   MessageSquare,
   PenSquare,
   Contact as ContactIcon,
+  Link2,
+  Type,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -844,6 +846,32 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
                           {outcome.description || 'Sem descrição'}
                         </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Badge
+                            variant={outcome.ctaText ? 'outline' : 'disabled'}
+                            className="max-w-[18rem] truncate px-3 py-1 text-[11px] font-medium"
+                          >
+                            <Type className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            <span
+                              className="truncate"
+                              title={outcome.ctaText || 'Sem texto'}
+                            >
+                              {outcome.ctaText || 'Sem texto'}
+                            </span>
+                          </Badge>
+                          <Badge
+                            variant={outcome.ctaUrl ? 'outline' : 'disabled'}
+                            className="max-w-[18rem] truncate px-3 py-1 text-[11px] font-medium"
+                          >
+                            <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            <span
+                              className="truncate"
+                              title={outcome.ctaUrl || 'Sem URL'}
+                            >
+                              {outcome.ctaUrl || 'Sem URL'}
+                            </span>
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </button>
