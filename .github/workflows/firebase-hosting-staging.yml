@@ -3,7 +3,7 @@ name: Deploy to Firebase Hosting on Staging
 on:
   push:
     branches:
-      - develop # Change this the branch you want to use for staging
+      - Development # Change this to the branch you want to use for staging
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
