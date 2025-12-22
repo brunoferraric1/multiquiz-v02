@@ -637,7 +637,7 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
       'ajustei', 'ajustamos', 'ajuste realizado', 'alterei', 'alteramos', 'editei',
       'modifiquei', 'modificamos', 'mudei', 'mudamos', 'corrigi', 'corrigimos',
       'reformulei', 'reescrevi', 'encurtei', 'simplifiquei', 'removi',
-      'captacao de leads', 'lead', 'configurei' // Added: when assistant mentions leadGen
+      'captacao de leads', 'lead', 'configurei', 'apliquei', 'aplicamos', 'aplicado', 'inclui', 'incluiu', 'incluimos', 'inseri', 'inserimos'
     ];
 
     const assistantIndicatesUpdate = assistantActionKeywords.some((keyword) =>
@@ -650,7 +650,10 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
       'troca', 'altere', 'alterar', 'altera', 'reescreva', 'reescrever', 'reescreve',
       'encurte', 'encurtar', 'encurta', 'simplifique', 'simplificar', 'simplifica',
       'melhore', 'melhorar', 'melhora', 'corrija', 'corrigir', 'corrige', 'resuma',
-      'resumir', 'reduza', 'reduzir', 'ajuste a pergunta', 'ajuste o resultado'
+      'resumir', 'reduza', 'reduzir', 'ajuste a pergunta', 'ajuste o resultado',
+      'adiciona', 'adicionar', 'adicione', 'inclua', 'incluir', 'inclui', 'coloque', 'colocar', 'coloca',
+      'insira', 'inserir', 'insere', 'complete', 'completar', 'completa', 'preencha', 'preencher',
+      'crie', 'criar', 'cria', 'gera', 'gerar'
     ];
 
     const hasEditRequest = editRequestKeywords.some((keyword) =>

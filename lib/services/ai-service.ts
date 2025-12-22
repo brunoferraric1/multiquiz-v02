@@ -17,12 +17,21 @@ const INTERNAL_LEAK_PATTERNS = [
   /\bleadgen\b/i,
   /\bcontexto do editor\b/i,
   /\bnota_privada\b/i,
+  /\bo usuario pediu\b/i,
+  /\bminha ultima resposta\b/i,
+  /\bmelhor abordagem\b/i,
+  /\bpreciso confirmar\b/i,
+  /\bcontexto atual\b/i,
+  /\bfluxo correto\b/i,
 ];
 
 const stripInternalProcess = (text: string): string => {
   const lines = text.split('\n');
   const filtered = lines.filter((line) => {
-    const normalized = line.toLowerCase();
+    const normalized = line
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
     return !INTERNAL_LEAK_PATTERNS.some((pattern) => pattern.test(normalized));
   });
   return filtered.join('\n').trim();
