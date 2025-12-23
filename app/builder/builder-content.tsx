@@ -12,6 +12,7 @@ import {
   X,
   GripVertical,
   MessageSquare,
+  MoreVertical,
   PenSquare,
   Contact as ContactIcon,
   Link2,
@@ -56,6 +57,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type ActiveSheet =
   | { type: 'introduction' }
@@ -131,6 +138,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [pendingPublishType, setPendingPublishType] = useState<'publish' | 'update' | null>(null);
   const pendingPublishResolveRef = useRef<(() => void) | null>(null);
   const pendingPublishRejectRef = useRef<((error?: Error) => void) | null>(null);
+  const questionCardRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const clearPendingPublishPromises = (shouldReject = false) => {
     if (shouldReject) {
       pendingPublishRejectRef.current?.();
@@ -178,6 +186,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
   const addQuestion = useQuizBuilderStore((state) => state.addQuestion);
   const updateQuestion = useQuizBuilderStore((state) => state.updateQuestion);
+  const deleteQuestion = useQuizBuilderStore((state) => state.deleteQuestion);
   const addOutcome = useQuizBuilderStore((state) => state.addOutcome);
   const updateOutcome = useQuizBuilderStore((state) => state.updateOutcome);
   const reorderQuestions = useQuizBuilderStore((state) => state.reorderQuestions);
@@ -356,6 +365,15 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     setEditingQuestionId(null);
   };
 
+  const handleDeleteQuestion = (id?: string) => {
+    if (!id) return;
+    deleteQuestion(id);
+    if (editingQuestionId === id) {
+      setEditingQuestionId(null);
+    }
+    toast.success('Pergunta removida');
+  };
+
   const handleAddOutcome = () => {
     const newOutcome: Partial<Outcome> = {
       id: generateUUID(),
@@ -463,10 +481,18 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     setDropIndicatorIndex(null);
   };
 
-  const handleQuestionDragStart = (event: DragEvent<HTMLButtonElement>, index: number) => {
+  const handleQuestionDragStart = (
+    event: DragEvent<HTMLElement>,
+    index: number,
+    dragImageEl?: HTMLElement | null
+  ) => {
     if (!canReorderQuestions) return;
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', String(index));
+    if (dragImageEl) {
+      const { width, height } = dragImageEl.getBoundingClientRect();
+      event.dataTransfer.setDragImage(dragImageEl, width / 2, height / 2);
+    }
     setDraggedQuestionIndex(index);
     setDropIndicatorIndex(index);
   };
@@ -490,7 +516,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     resetQuestionDragState();
   };
 
-  const handleQuestionDragEnd = () => {
+  const handleQuestionDragEnd = (event?: DragEvent<HTMLElement>) => {
+    event?.currentTarget?.blur?.();
     resetQuestionDragState();
   };
 
@@ -801,59 +828,126 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                     />
                   )}
                   <LoadingCard isLoading={loadingSections.questions}>
-                    <button
-                      type="button"
-                      draggable={canReorderQuestions}
-                      aria-grabbed={isDragging}
-                      onClick={() =>
-                        question.id && setEditingQuestionId(question.id)
-                      }
-                      onDragStart={(event) => handleQuestionDragStart(event, index)}
-                      onDragOver={(event) => handleQuestionDragOver(event, index)}
-                      onDrop={handleQuestionDrop}
-                      onDragEnd={handleQuestionDragEnd}
-                      className={cn(
-                        'group w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-                        {
-                          'opacity-60': isDragging,
-                        }
-                    )}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="relative h-14 w-14 flex-shrink-0">
-                        <div className="h-full w-full overflow-hidden rounded-2xl border border-border bg-muted/60">
-                          {question.imageUrl ? (
-                            <img
-                              src={question.imageUrl}
-                              alt="Imagem da pergunta"
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                              <ImageIcon className="h-5 w-5" aria-hidden="true" />
-                            </div>
+                    <div className="relative group">
+                      {canReorderQuestions && (
+                        <button
+                          type="button"
+                          draggable={canReorderQuestions}
+                          aria-grabbed={isDragging}
+                          onDragStart={(event) =>
+                            handleQuestionDragStart(
+                              event,
+                              index,
+                              questionCardRefs.current[index]
+                            )
+                          }
+                          onDragEnd={handleQuestionDragEnd}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                          }}
+                          className={cn(
+                            'absolute -left-4 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors duration-150',
+                            'cursor-grab active:cursor-grabbing hover:text-foreground focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
                           )}
-                        </div>
-                        <span className="absolute -top-1.5 -right-1.5 flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-primary px-2 text-xs font-semibold text-primary-foreground shadow-sm">
-                          {index + 1}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground">
-                          {question.text || 'Pergunta sem texto'}
-                        </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {(question.options?.length ?? 0)} opções
-                          </p>
-                        </div>
-                        {canReorderQuestions && (
-                          <GripVertical
-                            className="h-4 w-4 flex-shrink-0 text-muted-foreground/70 transition-opacity duration-200 group-hover:opacity-100"
-                            aria-hidden="true"
-                          />
+                          aria-label="Reordenar pergunta"
+                        >
+                          <GripVertical className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        draggable={canReorderQuestions}
+                        data-question-card
+                        ref={(el) => {
+                          questionCardRefs.current[index] = el;
+                        }}
+                        onClick={() =>
+                          question.id && setEditingQuestionId(question.id)
+                        }
+                        onDragStart={(event) =>
+                          handleQuestionDragStart(event, index, event.currentTarget)
+                        }
+                        onDragOver={(event) => handleQuestionDragOver(event, index)}
+                        onDrop={handleQuestionDrop}
+                        onDragEnd={handleQuestionDragEnd}
+                        className={cn(
+                          'w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 pr-14 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                          {
+                            'opacity-60': isDragging,
+                          }
                         )}
-                      </div>
-                    </button>
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="relative h-14 w-14 flex-shrink-0">
+                            <div className="h-full w-full overflow-hidden rounded-2xl border border-border bg-muted/60">
+                              {question.imageUrl ? (
+                                <img
+                                  src={question.imageUrl}
+                                  alt="Imagem da pergunta"
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                  <ImageIcon className="h-5 w-5" aria-hidden="true" />
+                                </div>
+                              )}
+                            </div>
+                            <span className="absolute -top-1.5 -right-1.5 flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-primary px-2 text-xs font-semibold text-primary-foreground shadow-sm">
+                              {index + 1}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">
+                              {question.text || 'Pergunta sem texto'}
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {(question.options?.length ?? 0)} opções
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={(event) => event.stopPropagation()}
+                            onDragStart={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-transparent text-muted-foreground transition-colors duration-150 hover:bg-secondary/60 hover:text-foreground focus-visible:bg-secondary/60 focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            aria-label="Opções da pergunta"
+                          >
+                            <MoreVertical className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              if (question.id) {
+                                setEditingQuestionId(question.id);
+                              }
+                            }}
+                          >
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              handleDeleteQuestion(question.id);
+                            }}
+                          >
+                            Deletar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </LoadingCard>
                 </div>
               );
