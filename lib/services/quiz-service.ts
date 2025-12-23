@@ -14,8 +14,13 @@ import {
 import { db } from '@/lib/firebase';
 import type { Quiz, QuizDraft, QuizSnapshot } from '@/types';
 import { QuizSchema } from '@/types';
+import { TIER_LIMITS } from '@/lib/stripe';
 
 const QUIZZES_COLLECTION = 'quizzes';
+const LIMIT_ERRORS = {
+  DRAFT: 'DRAFT_LIMIT_REACHED',
+  PUBLISH: 'PUBLISH_LIMIT_REACHED',
+} as const;
 
 /**
  * Recursively removes all undefined values from an object
@@ -51,6 +56,36 @@ export class QuizService {
     const quizId = quiz.id || crypto.randomUUID();
     const now = Date.now();
     const normalizedTitle = quiz.title?.trim() || 'Sem título';
+
+    const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
+    const existingQuizSnap = await getDoc(quizRef);
+    const isNewQuiz = !existingQuizSnap.exists();
+
+    // Enforce draft cap for free users on new quiz creation
+    if (isNewQuiz && !quiz.isPublished) {
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.data();
+      const tier = (userData?.subscription?.tier as keyof typeof TIER_LIMITS) || 'free';
+      const draftLimit = TIER_LIMITS[tier]?.draftLimit ?? Infinity;
+
+      if (Number.isFinite(draftLimit)) {
+        const draftsQuery = query(
+          collection(db, QUIZZES_COLLECTION),
+          where('ownerId', '==', userId),
+          where('isPublished', '==', false)
+        );
+        const draftsSnapshot = await getDocs(draftsQuery);
+        const existingDraftCount = draftsSnapshot.size;
+
+        if (existingDraftCount >= draftLimit) {
+          const error: any = new Error(LIMIT_ERRORS.DRAFT);
+          error.code = LIMIT_ERRORS.DRAFT;
+          error.limit = draftLimit;
+          throw error;
+        }
+      }
+    }
 
     const quizData: any = {
       id: quizId,
@@ -97,7 +132,6 @@ export class QuizService {
 
     console.log('[QuizService] About to save to Firestore with isPublished:', cleanedData.isPublished);
 
-    const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
     const firestorePayload: Record<string, unknown> = {
       ...cleanedData,
       createdAt: Timestamp.fromMillis(cleanedData.createdAt as number),
@@ -244,6 +278,29 @@ export class QuizService {
         throw new Error('Unauthorized to publish this quiz');
       }
 
+      // Fetch subscription to enforce publish limit for free users
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.data();
+      const tier = (userData?.subscription?.tier as keyof typeof TIER_LIMITS) || 'free';
+      const publishedQuotaUsed = userData?.publishedQuotaUsed || 0;
+
+      if (tier === 'free') {
+        const publishedQuery = query(
+          collection(db, QUIZZES_COLLECTION),
+          where('ownerId', '==', userId),
+          where('isPublished', '==', true)
+        );
+        const publishedSnapshot = await getDocs(publishedQuery);
+        const publishedCount = publishedSnapshot.size;
+
+        if (publishedQuotaUsed >= 1 || publishedCount >= 1) {
+          const error: any = new Error(LIMIT_ERRORS.PUBLISH);
+          error.code = LIMIT_ERRORS.PUBLISH;
+          throw error;
+        }
+      }
+
       const now = Date.now();
       const snapshot = this.createSnapshot(quiz);
       const cleanedSnapshot = removeUndefinedDeep(snapshot);
@@ -255,6 +312,15 @@ export class QuizService {
         publishedAt: Timestamp.fromMillis(now),
         updatedAt: Timestamp.fromMillis(now),
       });
+
+      // Mark quota usage for free users
+      if (tier === 'free') {
+        await setDoc(
+          userRef,
+          { publishedQuotaUsed: 1, subscription: userData?.subscription || { tier } },
+          { merge: true }
+        );
+      }
 
       console.log('[QuizService] Quiz published with snapshot');
     } catch (error) {

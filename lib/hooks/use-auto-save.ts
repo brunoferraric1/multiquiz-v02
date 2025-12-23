@@ -10,9 +10,10 @@ interface UseAutoSaveOptions {
   userId: string | undefined;
   enabled?: boolean;
   debounceMs?: number;
+  onLimitError?: (error: Error) => void;
 }
 
-export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseAutoSaveOptions) {
+export function useAutoSave({ userId, enabled = true, debounceMs = 30000, onLimitError }: UseAutoSaveOptions) {
   const queryClient = useQueryClient();
   const quiz = useQuizBuilderStore((state) => state.quiz);
   const chatHistory = useQuizBuilderStore((state) => state.chatHistory);
@@ -114,7 +115,15 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000 }: UseA
       console.log('Auto-save completed successfully');
     } catch (error) {
       console.error('Auto-save error:', error);
-      setError('Auto-save failed. Your changes are still saved locally.');
+      const errorCode = (error as any)?.code || (error as Error)?.message;
+      if (errorCode === 'DRAFT_LIMIT_REACHED') {
+        setError('Limite de rascunhos atingido no plano gratuito. Exclua um rascunho ou faça upgrade.');
+        onLimitError?.(error as Error);
+        // Prevent spamming auto-save with the same payload
+        lastSavedRef.current = currentSnapshot;
+      } else {
+        setError('Auto-save failed. Your changes are still saved locally.');
+      }
     } finally {
       setSaving(false);
     }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -37,6 +37,7 @@ import { SaveIndicator } from '@/components/builder/save-indicator';
 import { EditQuestionModal } from '@/components/builder/edit-question-modal';
 import { PublishSuccessModal } from '@/components/builder/publish-success-modal';
 import { DrawerFooter } from '@/components/builder/drawer-footer';
+import { UpgradeModal } from '@/components/upgrade-modal';
 import { Upload } from '@/components/ui/upload';
 import { LoadingCard } from '@/components/ui/loading-card';
 import { LeadGenSheet } from '@/components/builder/lead-gen-sheet';
@@ -165,6 +166,14 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [draftOutcomeCtaText, setDraftOutcomeCtaText] = useState('');
   const [draftOutcomeCtaUrl, setDraftOutcomeCtaUrl] = useState('');
   const [draftOutcomeImageUrl, setDraftOutcomeImageUrl] = useState('');
+  const [upgradeModalState, setUpgradeModalState] = useState<{ open: boolean; reason: 'draft-limit' | 'publish-limit' }>({
+    open: false,
+    reason: 'draft-limit',
+  });
+
+  const openUpgradeModal = useCallback((reason: 'draft-limit' | 'publish-limit') => {
+    setUpgradeModalState({ open: true, reason });
+  }, []);
 
   void isEditMode;
 
@@ -172,6 +181,13 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     userId: user?.uid,
     enabled: true,
     debounceMs: 30000,
+    onLimitError: (error) => {
+      const errorCode = (error as any)?.code || (error as Error)?.message;
+      if (errorCode === 'DRAFT_LIMIT_REACHED') {
+        toast.error('Limite de rascunhos no plano gratuito');
+        openUpgradeModal('draft-limit');
+      }
+    },
   });
 
   const resolvedUserName = useMemo(() => {
@@ -601,7 +617,13 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       toast.success('Quiz publicado com sucesso!');
     } catch (error) {
       console.error('Error publishing quiz:', error);
-      toast.error('Erro ao publicar quiz');
+      const errorCode = (error as any)?.code || (error as Error)?.message;
+      if (errorCode === 'PUBLISH_LIMIT_REACHED') {
+        toast.error('Limite de publicação no plano gratuito');
+        openUpgradeModal('publish-limit');
+      } else {
+        toast.error('Erro ao publicar quiz');
+      }
     } finally {
       setIsPublishing(false);
     }
@@ -636,7 +658,13 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       toast.success('Quiz atualizado com sucesso!');
     } catch (error) {
       console.error('Error updating published quiz:', error);
-      toast.error('Erro ao atualizar quiz');
+      const errorCode = (error as any)?.code || (error as Error)?.message;
+      if (errorCode === 'PUBLISH_LIMIT_REACHED') {
+        toast.error('Limite de publicação no plano gratuito');
+        openUpgradeModal('publish-limit');
+      } else {
+        toast.error('Erro ao atualizar quiz');
+      }
     } finally {
       setIsPublishing(false);
     }
@@ -1368,6 +1396,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           onOpenChange={setShowPublishModal}
           quizId={quiz.id || ''}
           loading={isPublishing}
+        />
+
+        <UpgradeModal
+          open={upgradeModalState.open}
+          reason={upgradeModalState.reason}
+          onOpenChange={(open) => setUpgradeModalState((prev) => ({ ...prev, open }))}
         />
       </div>
 

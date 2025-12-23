@@ -60,6 +60,7 @@ export const TIER_LIMITS = {
     free: {
         publishedQuizzes: 1,
         aiMessagesPerMonth: 20,
+        draftLimit: 3,
         hasReports: false,
         hasLeadsPage: false,
         hasBranding: true, // Shows "Powered by MultiQuiz"
@@ -67,6 +68,7 @@ export const TIER_LIMITS = {
     pro: {
         publishedQuizzes: Infinity,
         aiMessagesPerMonth: Infinity,
+        draftLimit: Infinity,
         hasReports: true,
         hasLeadsPage: true,
         hasBranding: false, // No branding badge
