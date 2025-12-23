@@ -20,8 +20,7 @@ import {
     PieChart,
     Pie,
     Cell,
-    Legend,
-    type TooltipProps
+    Legend
 } from 'recharts';
 
 // Colors for charts
@@ -34,7 +33,7 @@ const getFunnelTooltipLabel = (label: string) => {
     return label.toLowerCase();
 };
 
-const FunnelTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+const FunnelTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
     if (!active || !payload?.length) return null;
 
     const [{ name, value }] = payload;
