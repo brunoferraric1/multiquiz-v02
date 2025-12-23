@@ -51,10 +51,12 @@ export async function POST(request: NextRequest) {
     }
     if (event.type === 'invoice.paid' || event.type === 'invoice.payment_failed') {
         const invoice = event.data.object as Stripe.Invoice;
+        // Invoice line items may not type `price`, so cast defensively for logging
+        const firstLine = invoice.lines?.data?.[0] as (Stripe.InvoiceLineItem & { price?: Stripe.Price }) | undefined;
         console.log(`[Webhook][${event.type}]`, {
             customer: invoice.customer,
             subscription: (invoice as any).subscription,
-            priceId: invoice.lines?.data?.[0]?.price?.id,
+            priceId: firstLine?.price?.id,
         });
     }
     if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
