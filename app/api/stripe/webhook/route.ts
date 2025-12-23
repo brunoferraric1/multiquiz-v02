@@ -39,6 +39,32 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Processing webhook event: ${event.type}`);
+    // Debug: log key identifiers to trace user mapping
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log('[Webhook][checkout.session.completed]', {
+            customer: session.customer,
+            subscription: session.subscription,
+            firebaseUserId: session.metadata?.firebaseUserId,
+            priceFromSession: session?.amount_total,
+        });
+    }
+    if (event.type === 'invoice.paid' || event.type === 'invoice.payment_failed') {
+        const invoice = event.data.object as Stripe.Invoice;
+        console.log(`[Webhook][${event.type}]`, {
+            customer: invoice.customer,
+            subscription: (invoice as any).subscription,
+            priceId: invoice.lines?.data?.[0]?.price?.id,
+        });
+    }
+    if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
+        const subscription = event.data.object as Stripe.Subscription;
+        console.log(`[Webhook][${event.type}]`, {
+            customer: subscription.customer,
+            priceId: subscription.items?.data?.[0]?.price?.id,
+            status: subscription.status,
+        });
+    }
 
     try {
         switch (event.type) {
@@ -89,6 +115,12 @@ export async function POST(request: NextRequest) {
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const customerId = session.customer as string;
     const subscriptionId = session.subscription as string;
+
+    console.log('[handleCheckoutCompleted] received', {
+        customerId,
+        subscriptionId,
+        metadataUser: session.metadata?.firebaseUserId,
+    });
 
     // Get user ID from metadata or find by customer ID
     let userId = session.metadata?.firebaseUserId;
@@ -219,4 +251,3 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
     console.log(`Subscription canceled for user ${userId}, reverted to free tier`);
 }
-
