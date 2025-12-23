@@ -16,9 +16,10 @@ jobs:
           node-version: 20
       - name: Set up Firebase credentials
         run: |
-          cat <<'EOF' > firebase-key.json
-          ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
-          EOF
+          # Write service account JSON for firebase-tools authentication
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT || secrets.STAGING_FIREBASE_SERVICE_ACCOUNT || secrets.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY }}" > $HOME/firebase-key.json
+          # Sanity check: ensure file is not empty
+          test -s $HOME/firebase-key.json
       - name: Create env file from secrets
         run: |
           cat <<'EOF' > .env.staging
@@ -52,5 +53,5 @@ jobs:
       - run: npm run build
       - name: Deploy to Firebase
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
+          GOOGLE_APPLICATION_CREDENTIALS: $HOME/firebase-key.json
         run: npx firebase-tools@latest deploy --only hosting --project multiquiz-staging --non-interactive
