@@ -41,6 +41,11 @@ import { LoadingCard } from '@/components/ui/loading-card';
 import { LeadGenSheet } from '@/components/builder/lead-gen-sheet';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
 import { QuizService } from '@/lib/services/quiz-service';
+import {
+  SidebarCard,
+  SidebarCardActionTrigger,
+  SidebarCardDragHandle,
+} from '@/components/builder/sidebar-card';
 
 import {
   Sheet,
@@ -773,11 +778,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             Introdução
           </div>
           <LoadingCard isLoading={loadingSections.introduction}>
-            <button
-              type="button"
-              onClick={() => setActiveSheet({ type: 'introduction' })}
-              className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
+            <SidebarCard onClick={() => setActiveSheet({ type: 'introduction' })}>
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
                   {quiz.coverImageUrl ? (
@@ -801,7 +802,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   </p>
                 </div>
               </div>
-            </button>
+            </SidebarCard>
           </LoadingCard>
         </section>
 
@@ -840,8 +841,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   <LoadingCard isLoading={loadingSections.questions}>
                     <div className="relative group">
                       {canReorderQuestions && (
-                        <button
-                          type="button"
+                        <SidebarCardDragHandle
                           draggable={canReorderQuestions}
                           aria-grabbed={isDragging}
                           onDragStart={(event) =>
@@ -856,18 +856,14 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                             event.preventDefault();
                             event.stopPropagation();
                           }}
-                          className={cn(
-                            'absolute -left-4 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors duration-150',
-                            'cursor-grab active:cursor-grabbing hover:text-foreground focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
-                          )}
                           aria-label="Reordenar pergunta"
+                          isDragging={isDragging}
                         >
                           <GripVertical className="h-4 w-4" aria-hidden="true" />
-                        </button>
+                        </SidebarCardDragHandle>
                       )}
 
-                      <button
-                        type="button"
+                      <SidebarCard
                         draggable={canReorderQuestions}
                         data-question-card
                         ref={(el) => {
@@ -882,12 +878,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                         onDragOver={(event) => handleQuestionDragOver(event, index)}
                         onDrop={handleQuestionDrop}
                         onDragEnd={handleQuestionDragEnd}
-                        className={cn(
-                          'w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 pr-14 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-                          {
-                            'opacity-60': isDragging,
-                          }
-                        )}
+                        withActionPadding
+                        isDragging={isDragging}
                       >
                         <div className="flex items-center gap-4">
                           <div className="relative h-14 w-14 flex-shrink-0">
@@ -917,23 +909,22 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                             </p>
                           </div>
                         </div>
-                      </button>
+                      </SidebarCard>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
+                          <SidebarCardActionTrigger
                             onPointerDown={(event) => event.stopPropagation()}
                             onClick={(event) => event.stopPropagation()}
                             onDragStart={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
                             }}
-                            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-transparent text-muted-foreground transition-colors duration-150 hover:bg-secondary/60 hover:text-foreground focus-visible:bg-secondary/60 focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             aria-label="Opções da pergunta"
+                            className="absolute right-3 top-3"
                           >
                             <MoreVertical className="h-4 w-4" aria-hidden="true" />
-                          </button>
+                          </SidebarCardActionTrigger>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
                           <DropdownMenuItem
@@ -1012,10 +1003,9 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 return (
                   <LoadingCard key={outcome.id} isLoading={loadingSections.outcomes}>
                     <div className="relative group">
-                      <button
-                        type="button"
+                      <SidebarCard
                         onClick={() => outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })}
-                        className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 pr-14 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        withActionPadding
                       >
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
@@ -1070,19 +1060,18 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                             </div>
                           </div>
                         </div>
-                      </button>
+                      </SidebarCard>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
+                          <SidebarCardActionTrigger
                             onPointerDown={(event) => event.stopPropagation()}
                             onClick={(event) => event.stopPropagation()}
-                            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-transparent text-muted-foreground transition-colors duration-150 hover:bg-secondary/60 hover:text-foreground focus-visible:bg-secondary/60 focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             aria-label="Opções do resultado"
+                            className="absolute right-3 top-3"
                           >
                             <MoreVertical className="h-4 w-4" aria-hidden="true" />
-                          </button>
+                          </SidebarCardActionTrigger>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
                           <DropdownMenuItem
@@ -1119,11 +1108,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             Captura de Leads
           </div>
           <LoadingCard isLoading={loadingSections.leadGen}>
-            <button
-              type="button"
-              onClick={() => setActiveSheet({ type: 'lead-gen' })}
-              className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
+            <SidebarCard onClick={() => setActiveSheet({ type: 'lead-gen' })}>
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary">
                   <ContactIcon className="h-5 w-5" />
@@ -1139,7 +1124,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   </p>
                 </div>
               </div>
-            </button>
+            </SidebarCard>
           </LoadingCard>
         </section>
       </CardContent>
