@@ -189,6 +189,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const deleteQuestion = useQuizBuilderStore((state) => state.deleteQuestion);
   const addOutcome = useQuizBuilderStore((state) => state.addOutcome);
   const updateOutcome = useQuizBuilderStore((state) => state.updateOutcome);
+  const deleteOutcome = useQuizBuilderStore((state) => state.deleteOutcome);
   const reorderQuestions = useQuizBuilderStore((state) => state.reorderQuestions);
   const publishedVersion = useQuizBuilderStore((state) => state.publishedVersion);
   const setPublishedVersion = useQuizBuilderStore((state) => state.setPublishedVersion);
@@ -474,6 +475,15 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       setOutcomeFile(null);
     }
     setActiveSheet(null);
+  };
+
+  const handleDeleteOutcome = (id?: string) => {
+    if (!id) return;
+    deleteOutcome(id);
+    if (activeSheet?.type === 'outcome' && activeSheet.id === id) {
+      setActiveSheet(null);
+    }
+    toast.success('Resultado removido');
   };
 
   const resetQuestionDragState = () => {
@@ -1001,65 +1011,102 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
                 return (
                   <LoadingCard key={outcome.id} isLoading={loadingSections.outcomes}>
-                    <button
-                      type="button"
-                      onClick={() => outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })}
-                      className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
-                          {outcome.imageUrl ? (
-                            <img
-                              src={outcome.imageUrl}
-                              alt="Resultado"
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center">
-                              <Rocket className="h-5 w-5" />
+                    <div className="relative group">
+                      <button
+                        type="button"
+                        onClick={() => outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })}
+                        className="w-full rounded-2xl border border-border bg-muted/60 px-4 py-4 pr-14 text-left transition-colors duration-200 hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
+                            {outcome.imageUrl ? (
+                              <img
+                                src={outcome.imageUrl}
+                                alt="Resultado"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center">
+                                <Rocket className="h-5 w-5" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">
+                              {outcome.title || 'Novo resultado'}
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                              {outcome.description || 'Sem descrição'}
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <Badge
+                                variant={outcome.ctaText ? 'outline' : 'disabled'}
+                                className="max-w-[14rem] min-w-0 overflow-hidden whitespace-nowrap px-3 py-1 text-[11px] font-medium"
+                              >
+                                <MousePointerClick className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                <span
+                                  className="block max-w-full truncate"
+                                  title={outcome.ctaText || 'Sem texto'}
+                                >
+                                  {outcome.ctaText || 'Sem texto'}
+                                </span>
+                              </Badge>
+                              <Badge
+                                variant={outcome.ctaUrl ? 'outline' : 'disabled'}
+                                className="max-w-[16rem] min-w-0 overflow-hidden whitespace-nowrap px-3 py-1 text-[11px] font-medium"
+                              >
+                                {shouldWarnMissingCtaUrl ? (
+                                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                                ) : (
+                                  <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                )}
+                                <span
+                                  className="block max-w-full truncate"
+                                  title={outcome.ctaUrl || 'Sem URL'}
+                                >
+                                  {outcome.ctaUrl || 'Sem URL'}
+                                </span>
+                              </Badge>
                             </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground">
-                            {outcome.title || 'Novo resultado'}
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                            {outcome.description || 'Sem descrição'}
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <Badge
-                              variant={outcome.ctaText ? 'outline' : 'disabled'}
-                              className="max-w-[14rem] min-w-0 overflow-hidden whitespace-nowrap px-3 py-1 text-[11px] font-medium"
-                            >
-                              <MousePointerClick className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                              <span
-                                className="block max-w-full truncate"
-                                title={outcome.ctaText || 'Sem texto'}
-                              >
-                                {outcome.ctaText || 'Sem texto'}
-                              </span>
-                            </Badge>
-                            <Badge
-                              variant={outcome.ctaUrl ? 'outline' : 'disabled'}
-                              className="max-w-[16rem] min-w-0 overflow-hidden whitespace-nowrap px-3 py-1 text-[11px] font-medium"
-                            >
-                              {shouldWarnMissingCtaUrl ? (
-                                <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-                              ) : (
-                                <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                              )}
-                              <span
-                                className="block max-w-full truncate"
-                                title={outcome.ctaUrl || 'Sem URL'}
-                              >
-                                {outcome.ctaUrl || 'Sem URL'}
-                              </span>
-                            </Badge>
                           </div>
                         </div>
-                      </div>
-                    </button>
+                      </button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={(event) => event.stopPropagation()}
+                            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-transparent text-muted-foreground transition-colors duration-150 hover:bg-secondary/60 hover:text-foreground focus-visible:bg-secondary/60 focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            aria-label="Opções do resultado"
+                          >
+                            <MoreVertical className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              if (outcome.id) {
+                                setActiveSheet({ type: 'outcome', id: outcome.id });
+                              }
+                            }}
+                          >
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              handleDeleteOutcome(outcome.id);
+                            }}
+                          >
+                            Deletar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </LoadingCard>
                 );
               })
