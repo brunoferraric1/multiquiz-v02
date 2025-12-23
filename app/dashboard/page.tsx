@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, LayoutGrid, List } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,6 +23,15 @@ function DashboardContent() {
   const deleteQuizMutation = useDeleteQuizMutation();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
+  const hasProcessedUpgrade = useRef(false);
+
+  const clearUpgradeParams = () => {
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete('upgrade');
+    newUrl.searchParams.delete('period');
+    newUrl.searchParams.delete('checkout');
+    window.history.replaceState({}, '', newUrl.toString());
+  };
 
   // Handle post-login upgrade intent
   useEffect(() => {
@@ -35,16 +44,13 @@ function DashboardContent() {
       if (checkoutStatus === 'success') {
         toast.success('Assinatura ativada com sucesso!');
         // Remove params to clean URL
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete('checkout');
-        newUrl.searchParams.delete('upgrade');
-        newUrl.searchParams.delete('period');
-        window.history.replaceState({}, '', newUrl.toString());
+        clearUpgradeParams();
         return;
       }
 
       // If upgrade intent is present and user is logged in
-      if (upgrade && user && !isProcessingUpgrade) {
+      if (upgrade && user && !isProcessingUpgrade && !hasProcessedUpgrade.current) {
+        hasProcessedUpgrade.current = true;
         setIsProcessingUpgrade(true);
         try {
           const checkoutUrl = await createCheckoutSession(
@@ -59,11 +65,13 @@ function DashboardContent() {
             console.error('Failed to create checkout session');
             toast.error('Erro ao iniciar pagamento. Tente novamente.');
             setIsProcessingUpgrade(false);
+            clearUpgradeParams();
           }
         } catch (error) {
           console.error('Checkout error:', error);
           toast.error('Erro ao processar upgrade.');
           setIsProcessingUpgrade(false);
+          clearUpgradeParams();
         }
       }
     };
@@ -176,4 +184,3 @@ function DashboardContent() {
 export default function DashboardPage() {
   return <DashboardContent />;
 }
-
