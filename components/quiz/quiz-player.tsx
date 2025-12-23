@@ -322,7 +322,6 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
             onNext={goToNextQuestion}
             onBack={goToPreviousQuestion}
             onReset={resetQuiz}
-            mode={mode}
           />
         )}
         {phase === 'lead-gen' && leadGenConfig && (
