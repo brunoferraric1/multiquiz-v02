@@ -85,7 +85,7 @@ export function QuizQuestion({
                 'w-full rounded-2xl border border-border/60 bg-background px-4 py-3 text-left transition duration-150 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
                 isSelected
                   ? 'border-primary bg-primary/10 text-foreground shadow'
-                  : 'hover:border-primary/70'
+                  : 'hover:border-primary/70 hover:bg-primary/5'
               )}
             >
               <p className="text-sm font-medium text-foreground">{option.text}</p>
