@@ -3,6 +3,7 @@
 import { Play, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { FormattedText } from './formatted-text';
 
 type QuizIntroProps = {
   title: string;
@@ -54,7 +55,10 @@ export function QuizIntro({
 
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+        <FormattedText
+          text={description}
+          className="text-sm text-muted-foreground leading-relaxed"
+        />
       </div>
 
       <div className="space-y-4">
@@ -62,9 +66,6 @@ export function QuizIntro({
           <Play className="h-4 w-4" />
           {startButtonText}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          {questionCount} perguntas • Leva ~1 minuto para responder
-        </p>
       </div>
     </div>
   );

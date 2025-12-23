@@ -5,6 +5,7 @@ import type { AnswerOption } from '@/types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { QuizProgressBar } from './quiz-progress-bar';
+import { FormattedText } from './formatted-text';
 
 type QuizQuestionProps = {
   question: {
@@ -54,7 +55,11 @@ export function QuizQuestion({
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-xl font-semibold leading-tight text-center">{question.text}</h2>
+        <FormattedText
+          text={question.text}
+          className="text-center"
+          paragraphClassName="text-xl font-semibold leading-tight text-center"
+        />
         {question.imageUrl && (
           <div className="flex justify-center">
             <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">

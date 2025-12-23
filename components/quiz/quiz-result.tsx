@@ -3,6 +3,7 @@
 import { ArrowLeft, ChevronRight, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ensureProtocol } from '@/lib/utils';
+import { FormattedText } from './formatted-text';
 
 type QuizResultProps = {
   outcome: {
@@ -50,9 +51,11 @@ export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick, primary
           )}
 
           <h3 className="text-2xl font-semibold">{outcome.title}</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {outcome.description || 'Adicione uma descrição para este resultado.'}
-          </p>
+          <FormattedText
+            text={outcome.description}
+            fallback="Adicione uma descrição para este resultado."
+            className="mt-2 text-sm text-muted-foreground"
+          />
 
           {outcome.ctaText && (
             <div className="mt-6 flex justify-center">
