@@ -431,7 +431,7 @@ FLUXO DE CRIAÇÃO DO QUIZ (siga esta ordem):
 - Explique que agora vão criar as perguntas
 - Pergunte quantas perguntas o usuário quer (sugira 5-8)
 - Sugira as perguntas UMA ou DUAS por vez
-- Para cada pergunta, sugira as opções de resposta
+- Para cada pergunta, sugira as opções de resposta. IMPORTANTE: randomize a ordem das opções (não mapeie sempre a 1ª opção para o 1º resultado).
 - SEMPRE espere aprovação antes de continuar
 
 **ETAPA 4 - Captação de Leads (SEMPRE pergunte antes de finalizar):**
@@ -478,7 +478,8 @@ REGRAS GERAIS:
 Formato do Quiz:
 - **Perguntas**: Cada pergunta tem múltiplas opções de resposta
 - **Opções**: Cada opção aponta para um resultado específico (outcome)
-- **Resultados (Outcomes)**: Diferentes finais baseados nas respostas do usuário`;
+- **Resultados (Outcomes)**: Diferentes finais baseados nas respostas do usuário
+- **Variação**: A ordem das opções deve ser aleatória em relação aos resultados. Nunca siga um padrão óbvio (ex: Opção 1 -> Resultado A).`;
 
 const buildSystemPrompt = (userName?: string) => {
   const trimmedName = userName?.trim();
