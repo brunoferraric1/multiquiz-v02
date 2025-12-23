@@ -23,6 +23,14 @@ const INTERNAL_LEAK_PATTERNS = [
   /\bpreciso confirmar\b/i,
   /\bcontexto atual\b/i,
   /\bfluxo correto\b/i,
+  /\bgarantir que as\b/i,
+  /\bos outcomeid existentes sao\b/i,
+  /\bos ids existentes sao\b/i,
+  /\bid new-question-id\b/i,
+  /\bid [a-z0-9-]{36}\b/i,
+  /\ba pergunta \d+ \(id\b/i,
+  /\bpreciso garantir\b/i,
+  /\bmapeadas corretamente\b/i,
 ];
 
 const stripInternalProcess = (text: string): string => {
@@ -214,7 +222,8 @@ ${questionsLines}
 REGRAS DE CONSISTÊNCIA (CRÍTICO):
 - Se já existem Resultados no contexto, NÃO proponha criar/definir Resultados novamente, a menos que o usuário peça explicitamente para mudar/criar.
 - Se o usuário pedir para "adicionar opções" mantendo as perguntas, preserve as perguntas e apenas complete/crie as opções.
-- Se NÃO existem Resultados (0) e o usuário pedir para criar perguntas/opções, NÃO crie Resultados automaticamente: explique que sugere definir os Resultados primeiro para poder linkar as opções; pergunte se ele quer que você sugira 3-5 Resultados agora (ou se ele já tem os Resultados em mente).`;
+- Se NÃO existem Resultados (0) e o usuário pedir para criar perguntas/opções, NÃO crie Resultados automaticamente: explique que sugere definir os Resultados primeiro para poder linkar as opções; pergunte se ele quer que você sugira 3-5 Resultados agora (ou se ele já tem os Resultados em mente).
+- **IMPORTANTE**: Ao chamar update_quiz para perguntas (questions) ou resultados (outcomes), você deve enviar a LISTA COMPLETA. O que você omitir será APAGADO. Se o usuário pediu 7 perguntas, seu JSON deve conter 7 perguntas. Se tiver dúvidas sobre o limite de tokens, seja breve na RESPOSTA EM TEXTO mas COMPLETO NO JSON.`;
 };
 
 export type OutcomeImageRequest = {
@@ -226,6 +235,7 @@ const BASE_SYSTEM_PROMPT = `Você é um Arquiteto de Quizzes especializado em cr
 
 IMPORTANTE: Sempre responda em português brasileiro de forma amigável, conversacional e CONCISA.
 NUNCA mostre seu processo de pensamento, tags como <think> ou [NOTA_PRIVADA].
+NUNCA mostre IDs internos, UUIDs ou lógica de validação no chat.
 NUNCA repita a mesma frase múltiplas vezes na mesma resposta. Seja direto.
 
 CHECKLIST ANTES DE ENVIAR:
@@ -264,6 +274,8 @@ Para as imagens dos Resultados (Outcomes), NÃO adicione nenhuma imagem proativa
 ⚠️ REGRA CRÍTICA - NUNCA EXPONHA IMPLEMENTAÇÃO INTERNA:
 NUNCA, EM HIPÓTESE ALGUMA, mostre ao usuário:
 - Pensamentos internos como "Devo usar a ferramenta X" ou "O usuário quer Y então vou fazer Z"
+- Validações de consistência: "Preciso garantir que as opções estejam mapeadas", "Os outcomeId são..."
+- IDs técnicos ou UUIDs: "new-question-id-6", "f2b1a3c4..."
 - Nomes de ferramentas: update_quiz, set_cover_image, set_outcome_image, leadGen
 - Sintaxe de código ou chamadas de API: default_api.update_quiz(...), leadGen={...}
 - Raciocínio técnico: "Os campos devem ser name e phone", "O type será..."
@@ -273,6 +285,8 @@ EXEMPLOS DO QUE NUNCA FAZER:
 ❌ "Devo usar a ferramenta update_quiz para configurar o leadGen"
 ❌ "A chamada será: default_api.update_quiz(leadGen={...})"
 ❌ "Os campos devem ser: name (obrigatório por padrão)"
+❌ "A pergunta 6 (ID new-question-id-6) tem 4 opções."
+❌ "Preciso garantir que as opções..."
 
 EXEMPLOS CORRETOS:
 ✅ "Pronto! Configurei a captação de leads com os campos Nome e Telefone."
@@ -314,6 +328,12 @@ SE O USUÁRIO PEDIR PERGUNTAS/OPÇÕES MAS AINDA NÃO EXISTIREM RESULTADOS:
 - Pergunte se ele quer que você sugira 3-5 Resultados agora (ou se ele já tem os Resultados em mente).
 Sugestão de texto (adapte ao tom, conciso):
 "Pra eu criar perguntas com opções bem amarradas, sugiro a gente definir primeiro os Resultados do quiz (3-5). Quer que eu te proponha algumas opções de Resultados agora?"
+
+VERIFICAÇÃO DE INTEGRIDADE (ANTI-ALUCINAÇÃO):
+- Se você diz "Criei 7 perguntas", o JSON em \`update_quiz\` DEVE conter exatas 7 perguntas.
+- Se você diz "Randomizei as opções", o JSON em \`update_quiz\` DEVE conter as opções em ordem diferente da anterior.
+- NÃO CONFIRME ações que você não executou no JSON.
+- Se o JSON ficar muito grande, reduza sua resposta textual para economizar tokens, mas mantenha o JSON completo.
 
 FORMATAÇÃO É CRÍTICA! Siga estes exemplos EXATAMENTE:
 
@@ -528,7 +548,7 @@ export class AIService {
         function: {
           name: 'update_quiz',
           description:
-            'Extraia a estrutura confirmada do quiz (título, descrição, resultados e perguntas) em português. Só inclua itens confirmados ou claramente aceitos.',
+            'Extraia a estrutura confirmada do quiz em português. AVISO: Se você atualizar a lista de "questions" ou "outcomes", você DEVE fornecer a lista COMPLETA, pois a lista enviada substituirá a existente. Se enviar apenas perguntas novas e omitir as antigas, as antigas serão DELETADAS. Para adicionar, envie [antigas + novas]. Para reordenar, envie todas na nova ordem.',
           parameters: {
             type: 'object',
             properties: {
@@ -681,7 +701,7 @@ export class AIService {
           messages: baseMessages,
           tools,
           tool_choice: 'auto',
-          max_tokens: 1100,
+          max_tokens: 4000,
           temperature: 0.45,
         }),
       });
@@ -782,7 +802,7 @@ export class AIService {
         body: JSON.stringify({
           model: MODEL,
           messages: this.conversationHistory,
-          max_tokens: 1100,
+          max_tokens: 2000,
           temperature: 0.5,
         }),
       });
@@ -1111,7 +1131,7 @@ Return minimal JSON with ONLY the changes.`;
             }),
           };
         })
-        .filter((question: Partial<Question>): question is Partial<Question> => Boolean(question?.text));
+        .filter((question: Partial<Question>): question is Partial<Question> => Boolean(question?.text && question.text !== ''));
 
       if (
         normalizedQuestions.length > 0 &&
