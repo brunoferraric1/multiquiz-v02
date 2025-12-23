@@ -44,14 +44,18 @@ interface EditQuestionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   question: Partial<Question> | null;
+  questionIndex: number | null;
+  totalQuestions: number;
   outcomes: Partial<Outcome>[];
-  onSave: (question: Partial<Question>) => void;
+  onSave: (question: Partial<Question>, destinationIndex?: number) => void;
 }
 
 export function EditQuestionModal({
   open,
   onOpenChange,
   question,
+  questionIndex,
+  totalQuestions,
   outcomes,
   onSave,
 }: EditQuestionModalProps) {
@@ -59,6 +63,9 @@ export function EditQuestionModal({
   const [options, setOptions] = useState<AnswerOption[]>(question?.options || []);
   const [questionFile, setQuestionFile] = useState<File | null>(null);
   const [draftQuestionImageUrl, setDraftQuestionImageUrl] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(
+    questionIndex !== null ? String(questionIndex + 1) : '1'
+  );
 
   // Sync state when question changes or modal opens
   useEffect(() => {
@@ -67,8 +74,14 @@ export function EditQuestionModal({
       setOptions(question.options || []);
       setDraftQuestionImageUrl(question.imageUrl ?? '');
       setQuestionFile(null);
+      const maxIndex = Math.max(totalQuestions - 1, 0);
+      const safeIndex =
+        questionIndex !== null
+          ? Math.min(Math.max(questionIndex, 0), maxIndex)
+          : 0;
+      setSelectedOrder(String(safeIndex + 1));
     }
-  }, [open, question]);
+  }, [open, question, questionIndex, totalQuestions]);
 
   const handleAddOption = () => {
     const fallbackOutcomeId = outcomes[0]?.id || '';
@@ -145,6 +158,11 @@ export function EditQuestionModal({
 
   const handleSave = () => {
     if (!question?.id) return;
+    const parsedOrder = Number.parseInt(selectedOrder, 10);
+    const maxIndex = Math.max(totalQuestions - 1, 0);
+    const destinationIndex = Number.isNaN(parsedOrder)
+      ? null
+      : Math.min(Math.max(parsedOrder - 1, 0), maxIndex);
 
     // Ensure all options have required fields
     const validOptions = options
@@ -160,7 +178,7 @@ export function EditQuestionModal({
       text: questionText,
       imageUrl: draftQuestionImageUrl || undefined,
       options: validOptions,
-    });
+    }, destinationIndex === null ? undefined : destinationIndex);
     onOpenChange(false);
     toast.success('Salvo');
   };
@@ -204,6 +222,30 @@ export function EditQuestionModal({
                 rows={3}
                 autoFocus={false}
               />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted-foreground">
+                Ordem
+              </p>
+              <Select
+                value={selectedOrder}
+                onValueChange={(value) => setSelectedOrder(value)}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Selecione a ordem" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: totalQuestions }, (_, index) => {
+                    const order = index + 1;
+                    return (
+                      <SelectItem key={order} value={String(order)}>
+                        {order}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Question Image Section */}
@@ -328,5 +370,3 @@ export function EditQuestionModal({
     </Sheet>
   );
 }
-
-

@@ -277,6 +277,10 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const editingQuestion = editingQuestionId
     ? questions.find((question) => question.id === editingQuestionId) ?? null
     : null;
+  const editingQuestionIndex =
+    editingQuestionId && editingQuestion
+      ? questions.findIndex((question) => question.id === editingQuestionId)
+      : -1;
   const activeOutcome =
     activeSheet?.type === 'outcome'
       ? outcomes.find((outcome) => outcome.id === activeSheet.id)
@@ -335,9 +339,19 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     }
   };
 
-  const handleQuestionSave = (updatedQuestion: Partial<Question>) => {
+  const handleQuestionSave = (updatedQuestion: Partial<Question>, destinationIndex?: number) => {
     if (updatedQuestion.id) {
       updateQuestion(updatedQuestion.id, updatedQuestion);
+      const currentIndex = questions.findIndex((question) => question.id === updatedQuestion.id);
+      if (
+        currentIndex !== -1 &&
+        typeof destinationIndex === 'number' &&
+        destinationIndex >= 0 &&
+        destinationIndex < questions.length &&
+        destinationIndex !== currentIndex
+      ) {
+        reorderQuestions(currentIndex, destinationIndex);
+      }
     }
     setEditingQuestionId(null);
   };
@@ -1209,6 +1223,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             }
           }}
           question={editingQuestion}
+          questionIndex={editingQuestionIndex >= 0 ? editingQuestionIndex : null}
+          totalQuestions={questions.length}
           outcomes={outcomes}
           onSave={handleQuestionSave}
         />
