@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, RefreshCw, Rocket } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { ChatMessageComponent } from './chat-message';
 import { ChatInput } from './chat-input';
@@ -118,6 +120,11 @@ const detectChangedSections = (extraction: AIExtractionResult): Partial<LoadingS
 
 type ChatInterfaceProps = {
   userName?: string;
+  onOpenPreview?: () => void;
+  onPublish?: () => void;
+  onPublishUpdate?: () => void;
+  isPublishing?: boolean;
+  hasUnpublishedChanges?: boolean;
 };
 
 type MergeableEntity = Partial<Question> | Partial<Outcome>;
@@ -294,7 +301,14 @@ const applyExtractionResult = (
 };
 
 
-export function ChatInterface({ userName }: ChatInterfaceProps) {
+export function ChatInterface({
+  userName,
+  onOpenPreview,
+  onPublish,
+  onPublishUpdate,
+  isPublishing = false,
+  hasUnpublishedChanges = false,
+}: ChatInterfaceProps) {
   const chatHistory = useQuizBuilderStore((state) => state.chatHistory);
   const addChatMessage = useQuizBuilderStore((state) => state.addChatMessage);
   const setExtracting = useQuizBuilderStore((state) => state.setExtracting);
@@ -309,6 +323,7 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
   const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
   const updateOutcome = useQuizBuilderStore((state) => state.updateOutcome);
   const setQuiz = useQuizBuilderStore((state) => state.setQuiz);
+  const isSaving = useQuizBuilderStore((state) => state.isSaving);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isCoverSuggesting, setIsCoverSuggesting] = useState(false);
@@ -326,6 +341,41 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
   const outcomeImageRequestIdRef = useRef<Record<string, number>>({});
   const lastOutcomeImagePromptRef = useRef<Record<string, string>>({});
   const lastSuggestedOutcomeImageUrlRef = useRef<Record<string, string>>({});
+
+  const isQuizReadyForActions = useMemo(() => {
+    if (!quiz) return false;
+
+    const hasIntro = Boolean(
+      quiz.title &&
+      quiz.title !== 'Meu Novo Quiz' &&
+      quiz.description?.trim() &&
+      quiz.ctaText?.trim()
+    );
+
+    const hasOutcomesReady = Boolean(
+      quiz.outcomes &&
+      quiz.outcomes.length > 0 &&
+      quiz.outcomes.every(
+        (outcome) => Boolean(outcome?.title?.trim() && outcome?.description?.trim())
+      )
+    );
+
+    const hasQuestionsReady = Boolean(
+      quiz.questions &&
+      quiz.questions.length > 0 &&
+      quiz.questions.every(
+        (question) => Boolean(
+          question?.text?.trim() &&
+          Array.isArray(question.options) &&
+          question.options.length > 0
+        )
+      )
+    );
+
+    const hasLeadDecision = quiz.leadGen?.enabled !== undefined;
+
+    return hasIntro && hasOutcomesReady && hasQuestionsReady && hasLeadDecision;
+  }, [quiz]);
 
   // Load conversation history into AI service when it changes
   useEffect(() => {
@@ -1031,6 +1081,12 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
     }
   };
 
+  const canPreview = typeof onOpenPreview === 'function';
+  const canPublish = Boolean(!quiz?.isPublished && typeof onPublish === 'function');
+  const canUpdateLive = Boolean(quiz?.isPublished && hasUnpublishedChanges && typeof onPublishUpdate === 'function');
+  const shouldShowActionRow = isQuizReadyForActions && (canPreview || canPublish || canUpdateLive);
+  const actionBusy = isLoading || isPublishing || isSaving;
+
   return (
     <div className="flex flex-col h-full bg-card border rounded-lg">
       {/* Header removed as requested */}
@@ -1069,6 +1125,58 @@ export function ChatInterface({ userName }: ChatInterfaceProps) {
             {chatHistory.map((message, index) => (
               <ChatMessageComponent key={index} message={message} />
             ))}
+            {shouldShowActionRow && (
+              <div className="flex flex-col gap-3 p-4 rounded-lg border border-border bg-muted/50 shadow-sm">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Quiz pronto! Escolha o próximo passo direto aqui.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {quiz?.isPublished
+                      ? hasUnpublishedChanges
+                        ? 'Há alterações pendentes no quiz ao vivo. Visualize ou atualize direto pelo chat.'
+                        : 'Quiz publicado sem pendências. Visualize rapidinho para garantir que está tudo certo.'
+                      : 'Revise no preview ou publique quando estiver pronto.'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {canPreview && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={onOpenPreview}
+                      disabled={actionBusy}
+                      className="flex-1 min-w-[160px]"
+                    >
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                      Pré-visualizar
+                    </Button>
+                  )}
+                  {canPublish && (
+                    <Button
+                      type="button"
+                      onClick={onPublish}
+                      disabled={actionBusy}
+                      className="flex-1 min-w-[160px]"
+                    >
+                      <Rocket className="h-4 w-4" aria-hidden="true" />
+                      {isPublishing ? 'Publicando...' : 'Publicar'}
+                    </Button>
+                  )}
+                  {canUpdateLive && (
+                    <Button
+                      type="button"
+                      onClick={onPublishUpdate}
+                      disabled={actionBusy}
+                      className="flex-1 min-w-[180px]"
+                    >
+                      <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                      {isPublishing ? 'Atualizando...' : 'Atualizar quiz ao vivo'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
             {isLoading && <TypingIndicator />}
             <div ref={messagesEndRef} />
           </>

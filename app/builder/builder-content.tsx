@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
   AlertTriangle,
@@ -1185,7 +1186,14 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 "h-full min-h-0 md:col-span-3 px-4 py-4 md:px-0 md:py-0",
                 mobileView === 'editor' && 'hidden md:block'
               )}>
-                <ChatInterface userName={resolvedUserName} />
+                <ChatInterface
+                  userName={resolvedUserName}
+                  onOpenPreview={() => setIsPreviewOpen(true)}
+                  onPublish={handlePublish}
+                  onPublishUpdate={handlePublishUpdateClick}
+                  isPublishing={isPublishing}
+                  hasUnpublishedChanges={hasUnpublishedChanges}
+                />
               </div>
 
               <div className={cn(
@@ -1363,38 +1371,38 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         />
       </div>
 
-      {isPreviewOpen && (
-        <div className="absolute inset-0 z-10 flex">
-          <div className="relative flex h-full w-full flex-col bg-background">
-            <BuilderHeader
-              quiz={quiz}
-              isPreview={true}
-              onBack={() => setIsPreviewOpen(false)}
-              onPublish={handlePublish}
-              onPublishUpdate={handlePublishUpdateClick}
-              onPublishUpdateAndExit={handlePublishUpdateAndExit}
-              onUnpublish={handleUnpublish}
-              onDiscardChanges={handleDiscardChanges}
-              isPublishing={isPublishing}
-              hasUnpublishedChanges={hasUnpublishedChanges}
-              publishedVersion={publishedVersion}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsPreviewOpen(false)}
-              className="absolute top-20 right-4 sm:right-6 lg:right-8 z-10 rounded-full bg-background/60 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background/80 hover:text-foreground"
-              aria-label="Fechar pré-visualização"
-            >
-              <X size={20} />
-            </Button>
-            <main className="flex-1 bg-muted/40 overflow-auto">
-              <QuizPlayer quiz={quiz} mode="preview" onExit={() => setIsPreviewOpen(false)} />
-            </main>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {isPreviewOpen && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{
+              type: 'spring',
+              damping: 30,
+              stiffness: 300,
+              mass: 0.8,
+            }}
+            className="absolute inset-0 z-10 flex"
+          >
+            <div className="relative flex h-full w-full flex-col bg-background">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsPreviewOpen(false)}
+                className="absolute top-4 right-4 sm:right-6 lg:right-8 z-10 rounded-full bg-background/60 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background/80 hover:text-foreground"
+                aria-label="Fechar pré-visualização"
+              >
+                <X size={20} />
+              </Button>
+              <main className="flex-1 bg-muted/40 overflow-auto">
+                <QuizPlayer quiz={quiz} mode="preview" onExit={() => setIsPreviewOpen(false)} />
+              </main>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* CTA URL warning */}
       <Dialog
