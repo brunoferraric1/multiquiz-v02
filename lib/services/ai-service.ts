@@ -1,7 +1,6 @@
 import type { ChatMessage, AIExtractionResult, QuizDraft, Question, Outcome } from '@/types';
 
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+const OPENROUTER_API_URL = '/api/openrouter';
 const MODEL = process.env.NEXT_PUBLIC_AI_MODEL || 'x-ai/grok-4.1-fast:free';
 const EXTRACTION_MODEL =
   process.env.NEXT_PUBLIC_AI_EXTRACTION_MODEL || 'openai/gpt-4o-mini';
@@ -692,9 +691,6 @@ export class AIService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${API_KEY}`,
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
-          'X-Title': 'MultiQuiz v2',
         },
         body: JSON.stringify({
           model: MODEL,
@@ -703,6 +699,7 @@ export class AIService {
           tool_choice: 'auto',
           max_tokens: 4000,
           temperature: 0.45,
+          title: 'MultiQuiz v2',
         }),
       });
 
@@ -795,15 +792,13 @@ export class AIService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${API_KEY}`,
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
-          'X-Title': 'MultiQuiz v2',
         },
         body: JSON.stringify({
           model: MODEL,
           messages: this.conversationHistory,
           max_tokens: 2000,
           temperature: 0.5,
+          title: 'MultiQuiz v2',
         }),
       });
 
@@ -844,9 +839,6 @@ export class AIService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${API_KEY}`,
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
-          'X-Title': 'MultiQuiz v2 - Extraction',
         },
         body: JSON.stringify({
           model: EXTRACTION_MODEL,
@@ -937,6 +929,7 @@ IMPORTANT:
           ],
           max_tokens: 4000,
           temperature: 0.2,
+          title: 'MultiQuiz v2 - Extraction',
         }),
       });
 

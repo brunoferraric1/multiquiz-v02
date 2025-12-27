@@ -9,6 +9,19 @@ function getAdminApp(): App {
         return adminApp;
     }
 
+    const parseAndInit = (raw: string): App => {
+        const serviceAccount = JSON.parse(raw);
+
+        console.log('[Firebase Admin] Parsed project_id:', serviceAccount.project_id);
+
+        adminApp = initializeApp({
+            credential: cert(serviceAccount),
+        });
+
+        console.log('[Firebase Admin] Successfully initialized');
+        return adminApp;
+    };
+
     const existingApps = getApps();
     if (existingApps.length > 0) {
         adminApp = existingApps[0];
@@ -38,23 +51,20 @@ function getAdminApp(): App {
     console.log('[Firebase Admin] First 20 chars:', serviceAccountJson.substring(0, 20));
 
     try {
-        const serviceAccount = JSON.parse(serviceAccountJson);
-
-        if (!serviceAccount.project_id) {
-        }
-
-        console.log('[Firebase Admin] Parsed project_id:', serviceAccount.project_id);
-
-        adminApp = initializeApp({
-            credential: cert(serviceAccount),
-        });
-
-        console.log('[Firebase Admin] Successfully initialized');
-        return adminApp;
+        return parseAndInit(serviceAccountJson);
     } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        console.error('[Firebase Admin] Parse/init error:', errorMsg);
-        throw new Error(`Failed to initialize Firebase Admin: ${errorMsg}. Key length: ${serviceAccountJson.length}`);
+        console.warn('[Firebase Admin] JSON parse failed, attempting base64 decode fallback');
+        try {
+            const decoded = Buffer.from(serviceAccountJson, 'base64').toString('utf-8');
+            console.log('[Firebase Admin] Base64 decoded length:', decoded.length);
+            return parseAndInit(decoded);
+        } catch (decodeError) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            const decodeMsg = decodeError instanceof Error ? decodeError.message : String(decodeError);
+            console.error('[Firebase Admin] Parse/init error:', errorMsg);
+            console.error('[Firebase Admin] Base64 decode error:', decodeMsg);
+            throw new Error(`Failed to initialize Firebase Admin: ${errorMsg}. Decode error: ${decodeMsg}. Key length: ${serviceAccountJson.length}`);
+        }
     }
 }
 

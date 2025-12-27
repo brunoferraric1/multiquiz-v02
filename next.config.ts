@@ -78,10 +78,6 @@ const nextConfig: NextConfig = {
       process.env.NEXT_PUBLIC_APP_URL,
       process.env.STAGING_NEXT_PUBLIC_APP_URL,
     ),
-    NEXT_PUBLIC_OPENROUTER_API_KEY: withStaging(
-      process.env.NEXT_PUBLIC_OPENROUTER_API_KEY,
-      process.env.STAGING_NEXT_PUBLIC_OPENROUTER_API_KEY,
-    ),
     NEXT_PUBLIC_AI_MODEL: withStaging(
       process.env.NEXT_PUBLIC_AI_MODEL,
       process.env.STAGING_NEXT_PUBLIC_AI_MODEL,

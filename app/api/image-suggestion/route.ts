@@ -19,7 +19,7 @@ type UnsplashPhoto = {
 };
 
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
-const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const QUERY_TRANSLATION_MODEL = 'google/gemini-2.5-flash-lite';
 
 const DEFAULT_FALLBACK =
@@ -30,21 +30,26 @@ const randomSig = () => Math.random().toString(36).slice(2);
  * Use AI to translate Portuguese quiz context into optimal English Unsplash search keywords.
  * This dramatically improves search relevance since Unsplash metadata is primarily in English.
  */
-const translateToImageQuery = async (prompt: string): Promise<string> => {
+const translateToImageQuery = async (prompt: string, referer?: string): Promise<string> => {
   if (!OPENROUTER_API_KEY) {
     console.warn('No OpenRouter API key - falling back to basic keyword extraction');
     return extractBasicEnglishKeywords(prompt);
   }
 
   try {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      'X-Title': 'MultiQuiz Image Search',
+    };
+
+    if (referer) {
+      headers['HTTP-Referer'] = referer;
+    }
+
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        'HTTP-Referer': 'https://multiquiz.com',
-        'X-Title': 'MultiQuiz Image Search',
-      },
+      headers,
       body: JSON.stringify({
         model: QUERY_TRANSLATION_MODEL,
         messages: [
@@ -377,13 +382,18 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
+    const origin =
+      request.headers.get('origin') ||
+      request.headers.get('referer') ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      '';
 
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt ausente' }, { status: 400 });
     }
 
     // Step 1: Use AI to translate the prompt to optimal English Unsplash keywords
-    const translatedQuery = await translateToImageQuery(prompt);
+    const translatedQuery = await translateToImageQuery(prompt, origin);
     console.info('Image suggestion query translation', { original: prompt, translated: translatedQuery });
 
     try {
