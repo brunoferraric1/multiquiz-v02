@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 type OpenRouterPayload = {
   model: string;
@@ -14,7 +13,11 @@ type OpenRouterPayload = {
 };
 
 export async function POST(request: Request) {
-  if (!OPENROUTER_API_KEY) {
+  // Read API key at request time, not module load time (important for serverless)
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  
+  if (!apiKey) {
+    console.error('[OpenRouter] API key not configured. OPENROUTER_API_KEY is missing from environment.');
     return NextResponse.json({ error: 'OpenRouter API key not configured' }, { status: 500 });
   }
 
@@ -34,7 +37,7 @@ export async function POST(request: Request) {
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+    Authorization: `Bearer ${apiKey}`,
     'X-Title': title || 'MultiQuiz v2',
   };
 
@@ -42,17 +45,36 @@ export async function POST(request: Request) {
     headers['HTTP-Referer'] = origin;
   }
 
-  const response = await fetch(OPENROUTER_API_URL, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
+  try {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
 
-  const responseBody = await response.text();
-  const contentType = response.headers.get('Content-Type') || 'application/json';
+    const responseBody = await response.text();
+    const contentType = response.headers.get('Content-Type') || 'application/json';
 
-  return new NextResponse(responseBody, {
-    status: response.status,
-    headers: { 'Content-Type': contentType },
-  });
+    // Log errors for debugging in production
+    if (!response.ok) {
+      console.error('[OpenRouter] API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseBody.slice(0, 500),
+        keyPrefix: apiKey.slice(0, 10) + '...',
+        origin,
+      });
+    }
+
+    return new NextResponse(responseBody, {
+      status: response.status,
+      headers: { 'Content-Type': contentType },
+    });
+  } catch (error) {
+    console.error('[OpenRouter] Fetch error:', error);
+    return NextResponse.json(
+      { error: 'Failed to connect to OpenRouter API' },
+      { status: 502 }
+    );
+  }
 }

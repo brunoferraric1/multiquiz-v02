@@ -18,8 +18,6 @@ type UnsplashPhoto = {
   user?: { name?: string; links?: { html?: string } };
 };
 
-const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const QUERY_TRANSLATION_MODEL = 'google/gemini-2.5-flash-lite';
 
 const DEFAULT_FALLBACK =
@@ -31,7 +29,10 @@ const randomSig = () => Math.random().toString(36).slice(2);
  * This dramatically improves search relevance since Unsplash metadata is primarily in English.
  */
 const translateToImageQuery = async (prompt: string, referer?: string): Promise<string> => {
-  if (!OPENROUTER_API_KEY) {
+  // Read API key at request time, not module load time (important for serverless)
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  
+  if (!openRouterKey) {
     console.warn('No OpenRouter API key - falling back to basic keyword extraction');
     return extractBasicEnglishKeywords(prompt);
   }
@@ -39,7 +40,7 @@ const translateToImageQuery = async (prompt: string, referer?: string): Promise<
   try {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      Authorization: `Bearer ${openRouterKey}`,
       'X-Title': 'MultiQuiz Image Search',
     };
 
@@ -291,7 +292,8 @@ const pickBestPhoto = (photos: UnsplashPhoto[], prompt: string): UnsplashPhoto |
  * Search Unsplash with a single query
  */
 const searchUnsplash = async (query: string): Promise<UnsplashPhoto[]> => {
-  if (!UNSPLASH_ACCESS_KEY || !query) return [];
+  const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
+  if (!unsplashKey || !query) return [];
 
   const searchParams = new URLSearchParams({
     query,
@@ -303,7 +305,7 @@ const searchUnsplash = async (query: string): Promise<UnsplashPhoto[]> => {
 
   const response = await fetch(`https://api.unsplash.com/search/photos?${searchParams.toString()}`, {
     headers: {
-      Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+      Authorization: `Client-ID ${unsplashKey}`,
       'Accept-Version': 'v1',
     },
     cache: 'no-store',
@@ -325,7 +327,8 @@ const searchUnsplash = async (query: string): Promise<UnsplashPhoto[]> => {
  * 3. If still 0, try just the first word
  */
 const fetchViaUnsplashApi = async (query: string, prompt: string): Promise<UnsplashResult | undefined> => {
-  if (!UNSPLASH_ACCESS_KEY || !query) return undefined;
+  const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
+  if (!unsplashKey || !query) return undefined;
 
   const queryWords = query.split(' ').filter(Boolean);
   
