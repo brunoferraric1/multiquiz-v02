@@ -12,6 +12,15 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+// DEBUG: Remove after fixing auth issue
+if (typeof window !== 'undefined') {
+  console.log('[Firebase Config Debug]', {
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+    hasApiKey: !!firebaseConfig.apiKey,
+  });
+}
+
 // Initialize Firebase (singleton pattern)
 let app: FirebaseApp;
 let auth: Auth;
