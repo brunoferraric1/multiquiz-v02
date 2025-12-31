@@ -23,13 +23,13 @@ jobs:
       - name: Create env file from secrets
         run: |
           echo "PORT=3500" > .env.staging
-          echo "NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.STAGING_FIREBASE_API_KEY }}" >> .env.staging
-          echo "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.STAGING_FIREBASE_AUTH_DOMAIN }}" >> .env.staging
-          echo "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.STAGING_FIREBASE_STORAGE_BUCKET }}" >> .env.staging
-          echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.STAGING_FIREBASE_PROJECT_ID }}" >> .env.staging
-          echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.STAGING_FIREBASE_MESSAGING_SENDER_ID }}" >> .env.staging
-          echo "NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> .env.staging
-          echo "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.STAGING_FIREBASE_MEASUREMENT_ID }}" >> .env.staging
+          echo "NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.STAGING_NEXT_PUBLIC_FIREBASE_API_KEY }}" >> .env.staging
+          echo "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.STAGING_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}" >> .env.staging
+          echo "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.STAGING_NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}" >> .env.staging
+          echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.STAGING_NEXT_PUBLIC_FIREBASE_PROJECT_ID }}" >> .env.staging
+          echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.STAGING_NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}" >> .env.staging
+          echo "NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.STAGING_NEXT_PUBLIC_FIREBASE_APP_ID }}" >> .env.staging
+          echo "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.STAGING_NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}" >> .env.staging
           echo "OPENROUTER_API_KEY=${{ secrets.STAGING_OPENROUTER_API_KEY }}" >> .env.staging
           echo "NEXT_PUBLIC_AI_MODEL=${{ vars.STAGING_AI_MODEL }}" >> .env.staging
           echo "NEXT_PUBLIC_AI_EXTRACTION_MODEL=${{ vars.STAGING_AI_EXTRACTION_MODEL }}" >> .env.staging
@@ -44,7 +44,7 @@ jobs:
           echo "NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY=${{ secrets.STAGING_NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY }}" >> .env.staging
           echo "NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY=${{ secrets.STAGING_NEXT_PUBLIC_STRIPE_PRICE_PRO_YEARLY }}" >> .env.staging
           echo "FIREBASE_SERVICE_ACCOUNT_KEY=${{ secrets.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY }}" >> .env.staging
-          echo "NEXT_PUBLIC_APP_URL=https://staging.multi-quiz.com" >> .env.staging
+          echo "NEXT_PUBLIC_APP_URL=${{ secrets.STAGING_NEXT_PUBLIC_APP_URL }}" >> .env.staging
       - name: Use staging env file for Next build
         run: cp .env.staging .env.production
       - name: Debug - Verify env file (remove after fix)
