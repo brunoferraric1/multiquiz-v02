@@ -283,9 +283,10 @@ export class QuizService {
       const userSnap = await getDoc(userRef);
       const userData = userSnap.data();
       const tier = (userData?.subscription?.tier as keyof typeof TIER_LIMITS) || 'free';
-      const publishedQuotaUsed = userData?.publishedQuotaUsed || 0;
+      const publishedLimit = TIER_LIMITS[tier]?.publishedQuizzes ?? Infinity;
+      const isAlreadyPublished = Boolean(quiz.isPublished);
 
-      if (tier === 'free') {
+      if (Number.isFinite(publishedLimit)) {
         const publishedQuery = query(
           collection(db, QUIZZES_COLLECTION),
           where('ownerId', '==', userId),
@@ -294,7 +295,7 @@ export class QuizService {
         const publishedSnapshot = await getDocs(publishedQuery);
         const publishedCount = publishedSnapshot.size;
 
-        if (publishedQuotaUsed >= 1 || publishedCount >= 1) {
+        if (!isAlreadyPublished && publishedCount >= publishedLimit) {
           const error: any = new Error(LIMIT_ERRORS.PUBLISH);
           error.code = LIMIT_ERRORS.PUBLISH;
           throw error;
@@ -312,15 +313,6 @@ export class QuizService {
         publishedAt: Timestamp.fromMillis(now),
         updatedAt: Timestamp.fromMillis(now),
       });
-
-      // Mark quota usage for free users
-      if (tier === 'free') {
-        await setDoc(
-          userRef,
-          { publishedQuotaUsed: 1, subscription: userData?.subscription || { tier } },
-          { merge: true }
-        );
-      }
 
       console.log('[QuizService] Quiz published with snapshot');
     } catch (error) {

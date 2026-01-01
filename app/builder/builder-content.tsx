@@ -124,6 +124,22 @@ function stableStringify(value: unknown): string {
 export default function BuilderContent({ isEditMode = false }: { isEditMode?: boolean }) {
   const { user } = useAuth();
   const router = useRouter();
+  
+  // Store hooks - must be at top to be available for other hooks/refs
+  const quiz = useQuizBuilderStore((state) => state.quiz);
+  const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
+  const addQuestion = useQuizBuilderStore((state) => state.addQuestion);
+  const updateQuestion = useQuizBuilderStore((state) => state.updateQuestion);
+  const deleteQuestion = useQuizBuilderStore((state) => state.deleteQuestion);
+  const addOutcome = useQuizBuilderStore((state) => state.addOutcome);
+  const updateOutcome = useQuizBuilderStore((state) => state.updateOutcome);
+  const deleteOutcome = useQuizBuilderStore((state) => state.deleteOutcome);
+  const reorderQuestions = useQuizBuilderStore((state) => state.reorderQuestions);
+  const publishedVersion = useQuizBuilderStore((state) => state.publishedVersion);
+  const setPublishedVersion = useQuizBuilderStore((state) => state.setPublishedVersion);
+  const loadPublishedVersion = useQuizBuilderStore((state) => state.loadPublishedVersion);
+  const loadingSections = useQuizBuilderStore((state) => state.loadingSections);
+
   const [isPublishing, setIsPublishing] = useState(false);
   const searchParams = useSearchParams();
   const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
@@ -171,6 +187,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     reason: 'draft-limit',
   });
 
+  // Onboarding State
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const hasShownOnboardingRef = useRef(false);
+  // Track previous title to detect transition from default -> set
+  const prevTitleRef = useRef(quiz.title);
+
   const openUpgradeModal = useCallback((reason: 'draft-limit' | 'publish-limit') => {
     setUpgradeModalState({ open: true, reason });
   }, []);
@@ -203,20 +225,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     const normalizedFirstName = firstName.charAt(0).toLocaleUpperCase('pt-BR') + firstName.slice(1);
     return normalizedFirstName;
   }, [user?.displayName, user?.email]);
-
-  const quiz = useQuizBuilderStore((state) => state.quiz);
-  const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
-  const addQuestion = useQuizBuilderStore((state) => state.addQuestion);
-  const updateQuestion = useQuizBuilderStore((state) => state.updateQuestion);
-  const deleteQuestion = useQuizBuilderStore((state) => state.deleteQuestion);
-  const addOutcome = useQuizBuilderStore((state) => state.addOutcome);
-  const updateOutcome = useQuizBuilderStore((state) => state.updateOutcome);
-  const deleteOutcome = useQuizBuilderStore((state) => state.deleteOutcome);
-  const reorderQuestions = useQuizBuilderStore((state) => state.reorderQuestions);
-  const publishedVersion = useQuizBuilderStore((state) => state.publishedVersion);
-  const setPublishedVersion = useQuizBuilderStore((state) => state.setPublishedVersion);
-  const loadPublishedVersion = useQuizBuilderStore((state) => state.loadPublishedVersion);
-  const loadingSections = useQuizBuilderStore((state) => state.loadingSections);
 
   // Refs for sidebar sections (for auto-scroll)
   const introductionRef = useRef<HTMLElement>(null);
@@ -335,6 +343,30 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       setOutcomeFile(null);
     }
   }, [activeOutcome?.imageUrl, activeOutcome?.id]);
+
+  // Onboarding Trigger Logic
+  useEffect(() => {
+    // Helper to check if title is "default" or empty
+    const isDefaultTitle = (t: string | undefined) => !t || t === 'Meu Novo Quiz';
+    
+    const wasDefault = isDefaultTitle(prevTitleRef.current);
+    const isNowSet = !isDefaultTitle(quiz.title);
+    const hasDescription = Boolean(quiz.description);
+
+    // Trigger ONLY when transitioning from Default -> Set AND description exists
+    // This avoids triggering on page load if the quiz was already created
+    if (wasDefault && isNowSet && hasDescription && !hasShownOnboardingRef.current) {
+      // Add a small delay to ensure UI is ready and animation is smooth
+      const timer = setTimeout(() => {
+        setShowOnboarding(true);
+        hasShownOnboardingRef.current = true;
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
+    // Update ref for next render
+    prevTitleRef.current = quiz.title;
+  }, [quiz.title, quiz.description]);
 
   // Sync draft state when Introduction sheet opens
   useEffect(() => {
@@ -1159,8 +1191,77 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       </CardContent>
     </Card>
   );
+  const handleDismissOnboarding = () => {
+    setShowOnboarding(false);
+  };
+
   return (
     <div className="fixed inset-0 flex flex-col">
+      {/* Onboarding Overlay */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px]"
+            onClick={handleDismissOnboarding}
+          >
+            {/* Desktop Message */}
+            <div className="hidden md:block absolute right-[42%] top-[15%] max-w-sm text-white p-6 animate-in fade-in slide-in-from-right-10 duration-700">
+              <div className="relative">
+                {/* Arrow pointing to right */}
+                <svg className="absolute -right-24 top-8 w-24 h-24 text-white transform rotate-12" fill="none" stroke="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
+                   <path 
+                     strokeWidth="2" 
+                     strokeLinecap="round" 
+                     strokeLinejoin="round" 
+                     d="M10,50 Q40,20 90,50 M80,35 L90,50 L75,60"
+                     className="animate-pulse"
+                   />
+                </svg>
+                
+                <h3 className="text-xl font-bold mb-2">Edite tudo por aqui!</h3>
+                <p className="text-gray-200 leading-relaxed">
+                  Você pode continuar conversando com a IA ou clicar nos cards ao lado para fazer ajustes manuais finos em textos, imagens e opções.
+                </p>
+                <Button 
+                  className="mt-4 bg-white text-black hover:bg-gray-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDismissOnboarding();
+                  }}
+                >
+                  Entendi
+                </Button>
+              </div>
+            </div>
+
+            {/* Mobile Message */}
+            <div className="md:hidden absolute top-[160px] left-1/2 -translate-x-1/2 w-full max-w-xs text-center text-white p-4 animate-in fade-in slide-in-from-top-5 duration-700 z-[70]">
+              <div className="flex flex-col items-center">
+                <svg className="w-10 h-10 text-white animate-bounce mb-2 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+                <p className="text-lg font-medium mb-4 text-gray-100">
+                  Toque em <span className="font-bold text-white">Editor</span> para ver e ajustar o que a IA criou
+                </p>
+                <Button 
+                  size="sm"
+                  className="mt-2 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md border border-white/40"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDismissOnboarding();
+                  }}
+                >
+                  Ok, entendi
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className={`h-full flex flex-col ${isPreviewOpen ? 'hidden' : ''}`}>
         {/* Fixed Header */}
         <div className="flex-shrink-0">
@@ -1180,21 +1281,38 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         </div>
 
         {/* Mobile View Toggle - Fixed on mobile */}
-        <div className="flex-shrink-0 flex justify-center md:hidden px-4 py-3 bg-background">
-          <div className="inline-flex gap-1 rounded-full border border-border bg-muted p-1">
+        <div className={cn(
+          "flex-shrink-0 flex justify-center md:hidden px-4 py-3 bg-background relative transition-all duration-300",
+          showOnboarding ? "z-[60]" : "z-[45]"
+        )}>
+          <div className="inline-flex gap-1 rounded-full border border-border bg-muted p-1 relative">
+            {/* Highlight for onboarding on mobile */}
+            {showOnboarding && (
+              <div className="absolute inset-0 z-50 rounded-full ring-4 ring-white ring-offset-4 ring-offset-black/60 pointer-events-none" />
+            )}
+            
             {mobileViewOptions.map((option) => {
               const Icon = option.icon;
               const isActive = mobileView === option.id;
+              // Highlight specifically the Editor tab trigger when onboarding is active
+              const isOnboardingTarget = showOnboarding && option.id === 'editor';
+              
               return (
                 <button
                   key={option.id}
                   type="button"
-                  onClick={() => setMobileView(option.id)}
+                  onClick={() => {
+                     setMobileView(option.id);
+                     if (showOnboarding && option.id === 'editor') {
+                       handleDismissOnboarding();
+                     }
+                  }}
                   className={cn(
-                    'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors cursor-[var(--cursor-interactive)]',
+                    'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors cursor-[var(--cursor-interactive)] relative',
                     isActive
                       ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground'
+                      : 'text-muted-foreground',
+                    isOnboardingTarget ? 'z-[60] bg-background text-foreground shadow-lg' : ''
                   )}
                   aria-pressed={isActive}
                 >
@@ -1225,8 +1343,9 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               </div>
 
               <div className={cn(
-                "h-full min-h-0 md:col-span-2 px-4 py-4 md:px-0 md:py-0",
-                mobileView === 'chat' && 'hidden md:block'
+                "h-full min-h-0 md:col-span-2 px-4 py-4 md:px-0 md:py-0 relative transition-all duration-300",
+                mobileView === 'chat' && 'hidden md:block',
+                showOnboarding && "md:z-[60] md:ring-4 md:ring-white md:ring-offset-4 md:ring-offset-black/60 md:rounded-xl md:shadow-2xl"
               )}>
                 {editorPanel}
               </div>
