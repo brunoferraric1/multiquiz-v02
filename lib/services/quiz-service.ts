@@ -52,14 +52,45 @@ export class QuizService {
   /**
    * Save a quiz (create or update)
    */
-  static async saveQuiz(quiz: QuizDraft, userId: string): Promise<string> {
+  static async saveQuiz(
+    quiz: QuizDraft,
+    userId: string,
+    options?: { isNewQuiz?: boolean }
+  ): Promise<string> {
     const quizId = quiz.id || crypto.randomUUID();
     const now = Date.now();
     const normalizedTitle = quiz.title?.trim() || 'Sem título';
 
     const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
-    const existingQuizSnap = await getDoc(quizRef);
-    const isNewQuiz = !existingQuizSnap.exists();
+    let existingQuizSnap;
+    let isNewQuiz = options?.isNewQuiz;
+    if (typeof isNewQuiz !== 'boolean') {
+      try {
+        existingQuizSnap = await getDoc(quizRef);
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('[QuizService] saveQuiz getDoc failed', {
+            quizId,
+            userId,
+            errorMessage: (error as Error)?.message,
+          });
+        }
+        throw error;
+      }
+      isNewQuiz = !existingQuizSnap.exists();
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      const existingOwnerId = existingQuizSnap?.exists()
+        ? (existingQuizSnap.data()?.ownerId as string | undefined)
+        : undefined;
+      console.log('[QuizService] saveQuiz preflight', {
+        quizId,
+        userId,
+        isNewQuiz,
+        existingOwnerId,
+      });
+    }
 
     // Enforce draft cap for free users on new quiz creation
     if (isNewQuiz && !quiz.isPublished) {
@@ -145,7 +176,23 @@ export class QuizService {
           : Timestamp.fromMillis(cleanedData.publishedAt as number);
     }
 
-    await setDoc(quizRef, firestorePayload);
+    try {
+      await setDoc(quizRef, firestorePayload);
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[QuizService] saveQuiz setDoc failed', {
+          quizId,
+          userId,
+          isNewQuiz,
+          existingOwnerId: existingQuizSnap?.exists()
+            ? (existingQuizSnap.data()?.ownerId as string | undefined)
+            : undefined,
+          payloadOwnerId: quizData.ownerId,
+          errorMessage: (error as Error)?.message,
+        });
+      }
+      throw error;
+    }
 
     console.log('[QuizService] Successfully saved to Firestore');
 

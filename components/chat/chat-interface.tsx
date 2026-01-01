@@ -107,16 +107,190 @@ const isOutcomeConfirmation = (userMessage: string): boolean => {
   return mentionsOutcome || hasConfirmation;
 };
 
-/**
- * Detects which sections of the quiz will be updated based on the extraction result.
- * Used to set loading states for sidebar card animations.
- */
-const detectChangedSections = (extraction: AIExtractionResult): Partial<LoadingSections> => ({
-  introduction: Boolean(extraction.title || extraction.description || extraction.coverImageUrl || extraction.ctaText || extraction.coverImagePrompt),
-  questions: Boolean(extraction.questions?.length),
-  outcomes: Boolean(extraction.outcomes?.length),
-  leadGen: Boolean(extraction.leadGen),
+const isLeadGenPrompt = (assistantMessage: string): boolean => {
+  const normalized = normalizeText(assistantMessage);
+  const leadPromptKeywords = [
+    'captar leads',
+    'captacao de leads',
+    'captura de leads',
+    'lead capture',
+    'coletar dados',
+    'coletar informacoes',
+    'informacoes dos participantes',
+    'nome e email',
+    'nome e e-mail',
+    'nome e telefone',
+    'antes de mostrar o resultado',
+    'antes de mostrar os resultados',
+    'etapa para coletar',
+  ];
+  const leadSignalTokens = [
+    'lead',
+    'leads',
+    'captar',
+    'captacao',
+    'coletar',
+    'dados',
+    'email',
+    'e-mail',
+    'telefone',
+    'nome',
+  ];
+  const promptTokens = [
+    'gostaria',
+    'quer',
+    'deseja',
+    'adicionar',
+    'etapa',
+    'antes de',
+    'coletar',
+    'captar',
+  ];
+
+  return (
+    leadPromptKeywords.some((keyword) => normalized.includes(keyword)) ||
+    (leadSignalTokens.some((token) => normalized.includes(token)) &&
+      promptTokens.some((token) => normalized.includes(token)))
+  );
+};
+
+const isLeadGenRejection = (userMessage: string): boolean => {
+  const normalized = normalizeText(userMessage);
+  const hasNegation = ['nao', 'sem', 'dispensa'].some((token) => normalized.includes(token));
+  const hasLeadToken = ['lead', 'leads', 'captacao', 'captar', 'coletar', 'dados', 'email', 'e-mail', 'telefone', 'nome']
+    .some((token) => normalized.includes(token));
+  return hasNegation && hasLeadToken;
+};
+
+const isLeadGenConfirmation = (userMessage: string, previousAssistantMessage?: string): boolean => {
+  const normalized = normalizeText(userMessage);
+  if (!normalized || isLeadGenRejection(userMessage)) {
+    return false;
+  }
+
+  const explicitLeadRequests = [
+    'captar leads',
+    'captacao de leads',
+    'captura de leads',
+    'coletar leads',
+    'coletar dados',
+    'gerar leads',
+    'ativar leads',
+    'ativar lead',
+    'habilitar leads',
+    'habilitar lead',
+    'adicionar formulario',
+    'formulario de leads',
+    'pedir nome',
+    'pedir email',
+    'pedir e-mail',
+    'pedir telefone',
+    'quero captar',
+    'quero coletar',
+    'quero leads',
+    'quero lead',
+  ];
+
+  if (explicitLeadRequests.some((keyword) => normalized.includes(keyword))) {
+    return true;
+  }
+
+  if (previousAssistantMessage && isLeadGenPrompt(previousAssistantMessage)) {
+    const affirmationKeywords = [
+      'sim',
+      'pode',
+      'pode sim',
+      'quero',
+      'quero sim',
+      'ok',
+      'okay',
+      'claro',
+      'perfeito',
+      'otimo',
+      'bora',
+      'vamos',
+      'segue',
+      'manda',
+      'pode seguir',
+    ];
+
+    return affirmationKeywords.some((keyword) => normalized.includes(keyword));
+  }
+
+  return false;
+};
+
+const normalizeOption = (option?: Partial<Question>['options'][number]) => ({
+  id: option?.id ?? null,
+  text: option?.text ?? null,
+  icon: option?.icon ?? null,
+  targetOutcomeId: option?.targetOutcomeId ?? null,
 });
+
+const normalizeQuestion = (question?: Partial<Question>) => ({
+  id: question?.id ?? null,
+  text: question?.text ?? null,
+  imageUrl: question?.imageUrl ?? null,
+  allowMultiple: question?.allowMultiple ?? null,
+  options: (question?.options || []).map(normalizeOption),
+});
+
+const normalizeOutcome = (outcome?: Partial<Outcome>) => ({
+  id: outcome?.id ?? null,
+  title: outcome?.title ?? null,
+  description: outcome?.description ?? null,
+  imageUrl: outcome?.imageUrl ?? null,
+  ctaText: outcome?.ctaText ?? null,
+  ctaUrl: outcome?.ctaUrl ?? null,
+});
+
+const normalizeLeadGen = (leadGen?: QuizDraft['leadGen']) => ({
+  enabled: leadGen?.enabled ?? null,
+  title: leadGen?.title ?? null,
+  description: leadGen?.description ?? null,
+  ctaText: leadGen?.ctaText ?? null,
+  fields: leadGen?.fields ? [...leadGen.fields] : [],
+});
+
+const areQuestionArraysEquivalent = (
+  baseQuestions?: Partial<Question>[],
+  updatedQuestions?: Partial<Question>[]
+): boolean => {
+  const base = (baseQuestions || []).map(normalizeQuestion);
+  const updated = (updatedQuestions || []).map(normalizeQuestion);
+  return JSON.stringify(base) === JSON.stringify(updated);
+};
+
+const areOutcomeArraysEquivalent = (
+  baseOutcomes?: Partial<Outcome>[],
+  updatedOutcomes?: Partial<Outcome>[]
+): boolean => {
+  const base = (baseOutcomes || []).map(normalizeOutcome);
+  const updated = (updatedOutcomes || []).map(normalizeOutcome);
+  return JSON.stringify(base) === JSON.stringify(updated);
+};
+
+const areLeadGenEquivalent = (base?: QuizDraft['leadGen'], updated?: QuizDraft['leadGen']): boolean =>
+  JSON.stringify(normalizeLeadGen(base)) === JSON.stringify(normalizeLeadGen(updated));
+
+/**
+ * Detects which sections were actually updated so loading highlights stay in sync.
+ */
+const detectAppliedSections = (baseQuiz: QuizDraft, updatedQuiz: QuizDraft): LoadingSections => {
+  const introductionChanged =
+    baseQuiz.title !== updatedQuiz.title ||
+    baseQuiz.description !== updatedQuiz.description ||
+    baseQuiz.coverImageUrl !== updatedQuiz.coverImageUrl ||
+    baseQuiz.ctaText !== updatedQuiz.ctaText ||
+    baseQuiz.ctaUrl !== updatedQuiz.ctaUrl;
+
+  return {
+    introduction: introductionChanged,
+    questions: !areQuestionArraysEquivalent(baseQuiz.questions, updatedQuiz.questions),
+    outcomes: !areOutcomeArraysEquivalent(baseQuiz.outcomes, updatedQuiz.outcomes),
+    leadGen: !areLeadGenEquivalent(baseQuiz.leadGen, updatedQuiz.leadGen),
+  };
+};
 
 type ChatInterfaceProps = {
   userName?: string;
@@ -190,9 +364,14 @@ const mergeEntityCollections = <T extends MergeableEntity>(
 const applyExtractionResult = (
   baseQuiz: QuizDraft,
   extraction: AIExtractionResult,
-  options?: { mergeExisting?: boolean; isRemoval?: boolean; userConfirmedOutcomes?: boolean }
+  options?: { mergeExisting?: boolean; isRemoval?: boolean; userConfirmedOutcomes?: boolean; userConfirmedLeadGen?: boolean }
 ): QuizDraft => {
-  const { mergeExisting = false, isRemoval = false, userConfirmedOutcomes = false } = options || {};
+  const {
+    mergeExisting = false,
+    isRemoval = false,
+    userConfirmedOutcomes = false,
+    userConfirmedLeadGen = false,
+  } = options || {};
   const nextQuiz: QuizDraft = { ...baseQuiz };
 
   // Phase detection for workflow enforcement:
@@ -282,6 +461,11 @@ const applyExtractionResult = (
         hasIntro: hasConfirmedIntro,
         outcomesCount: baseQuiz.outcomes?.length || 0,
         questionsCount: baseQuiz.questions?.length || 0,
+        leadGenEnabled: extraction.leadGen.enabled,
+      });
+    } else if (!userConfirmedLeadGen) {
+      console.log('[Phase Enforcement] Skipping leadGen - user did not confirm', {
+        hasConfirmedQuestions,
         leadGenEnabled: extraction.leadGen.enabled,
       });
     } else {
@@ -733,6 +917,9 @@ export function ChatInterface({
       timestamp: Date.now(),
     };
     addChatMessage(userMessage);
+    const previousAssistantMessage = [...chatHistory]
+      .reverse()
+      .find((message) => message.role === 'assistant')?.content;
 
     try {
       setIsLoading(true);
@@ -790,21 +977,23 @@ export function ChatInterface({
         console.log('[Flow] Taking extraction branch');
         const latestQuiz = useQuizBuilderStore.getState().quiz;
 
-        // Set loading state for sections that will be updated
-        const sectionsToUpdate = detectChangedSections(extraction);
-        setLoadingSections(sectionsToUpdate);
-
         // Detect if this is a removal request or explicit outcome confirmation
         const userRequestedRemoval = isRemovalRequest(content);
         const userConfirmedOutcomes = isOutcomeConfirmation(content);
+        const userConfirmedLeadGen = isLeadGenConfirmation(content, previousAssistantMessage);
 
-        console.log('[Flow] Extraction options', { userRequestedRemoval, userConfirmedOutcomes });
+        console.log('[Flow] Extraction options', { userRequestedRemoval, userConfirmedOutcomes, userConfirmedLeadGen });
 
         const updatedQuiz = applyExtractionResult(latestQuiz, extraction, {
           mergeExisting: !userRequestedRemoval, // Don't merge when removing
           isRemoval: userRequestedRemoval,
-          userConfirmedOutcomes
+          userConfirmedOutcomes,
+          userConfirmedLeadGen,
         });
+
+        // Set loading state only for sections that actually changed
+        const sectionsToUpdate = detectAppliedSections(latestQuiz, updatedQuiz);
+        setLoadingSections(sectionsToUpdate);
 
         setQuiz(updatedQuiz);
 
@@ -962,20 +1151,33 @@ export function ChatInterface({
 
       // Apply extracted changes if any
       if (Object.keys(extracted).length > 0) {
-        // Set loading state for sections that will be updated
-        const sectionsToUpdate = detectChangedSections(extracted);
-        setLoadingSections(sectionsToUpdate);
-
         // Get the last user message from chat history for detection
         const lastUserMessage = updatedHistory.filter(m => m.role === 'user').pop()?.content || '';
         const userRequestedRemoval = isRemovalRequest(lastUserMessage);
         const userConfirmedOutcomes = isOutcomeConfirmation(lastUserMessage);
+        const lastUserIndex = (() => {
+          for (let i = updatedHistory.length - 1; i >= 0; i -= 1) {
+            if (updatedHistory[i].role === 'user') {
+              return i;
+            }
+          }
+          return -1;
+        })();
+        const previousAssistantMessage = lastUserIndex > 0
+          ? updatedHistory.slice(0, lastUserIndex).reverse().find((message) => message.role === 'assistant')?.content
+          : undefined;
+        const userConfirmedLeadGen = isLeadGenConfirmation(lastUserMessage, previousAssistantMessage);
 
         const updatedQuiz = applyExtractionResult(latestQuiz, extracted, {
           mergeExisting: !userRequestedRemoval,
           isRemoval: userRequestedRemoval,
-          userConfirmedOutcomes
+          userConfirmedOutcomes,
+          userConfirmedLeadGen,
         });
+
+        // Set loading state only for sections that actually changed
+        const sectionsToUpdate = detectAppliedSections(latestQuiz, updatedQuiz);
+        setLoadingSections(sectionsToUpdate);
 
         setQuiz(updatedQuiz);
 

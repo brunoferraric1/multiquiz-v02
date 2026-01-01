@@ -197,12 +197,11 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     setUpgradeModalState({ open: true, reason });
   }, []);
 
-  void isEditMode;
-
   const { forceSave, cancelPendingSave } = useAutoSave({
     userId: user?.uid,
     enabled: true,
     debounceMs: 30000,
+    isNewQuiz: !isEditMode,
     onLimitError: (error) => {
       const errorCode = (error as any)?.code || (error as Error)?.message;
       if (errorCode === 'DRAFT_LIMIT_REACHED') {

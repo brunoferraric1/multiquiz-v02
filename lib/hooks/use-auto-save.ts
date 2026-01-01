@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
+import { auth, db } from '@/lib/firebase';
 import { QuizService } from '@/lib/services/quiz-service';
 import type { QuizDraft } from '@/types';
 
@@ -11,9 +12,16 @@ interface UseAutoSaveOptions {
   enabled?: boolean;
   debounceMs?: number;
   onLimitError?: (error: Error) => void;
+  isNewQuiz?: boolean;
 }
 
-export function useAutoSave({ userId, enabled = true, debounceMs = 30000, onLimitError }: UseAutoSaveOptions) {
+export function useAutoSave({
+  userId,
+  enabled = true,
+  debounceMs = 30000,
+  onLimitError,
+  isNewQuiz = false,
+}: UseAutoSaveOptions) {
   const queryClient = useQueryClient();
   const quiz = useQuizBuilderStore((state) => state.quiz);
   const chatHistory = useQuizBuilderStore((state) => state.chatHistory);
@@ -101,7 +109,7 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000, onLimi
       console.log('[AutoSave] Saving quiz with isPublished:', quizToSave.isPublished);
       console.log('[AutoSave] Quiz ID:', quizToSave.id);
 
-      await QuizService.saveQuiz(quizToSave, userId);
+      await QuizService.saveQuiz(quizToSave, userId, { isNewQuiz });
 
       // Only invalidate the quizzes LIST (for dashboard) - NOT the current quiz
       // Invalidating the current quiz would cause an infinite loop:
@@ -114,8 +122,27 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000, onLimi
       setError(null);
       console.log('Auto-save completed successfully');
     } catch (error) {
-      console.error('Auto-save error:', error);
       const errorCode = (error as any)?.code || (error as Error)?.message;
+      const authUser = auth?.currentUser;
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[AutoSave] Failed to save quiz', {
+          errorCode,
+          errorMessage: (error as Error)?.message,
+          userId,
+          quizId: currentQuiz.id,
+          quizOwnerId: currentQuiz.ownerId,
+          isPublished: currentQuiz.isPublished,
+          authUid: authUser?.uid,
+          authEmail: authUser?.email,
+          authProviders: authUser?.providerData?.map((provider) => provider.providerId),
+          authProjectId: auth?.app?.options?.projectId,
+          dbProjectId: db?.app?.options?.projectId,
+          hasAuthUser: Boolean(authUser),
+          hasDb: Boolean(db),
+        });
+      } else {
+        console.error('[AutoSave] Failed to save quiz', { errorCode });
+      }
       if (errorCode === 'DRAFT_LIMIT_REACHED') {
         setError('Limite de rascunhos atingido no plano gratuito. Exclua um rascunho ou faça upgrade.');
         onLimitError?.(error as Error);
@@ -127,7 +154,7 @@ export function useAutoSave({ userId, enabled = true, debounceMs = 30000, onLimi
     } finally {
       setSaving(false);
     }
-  }, [userId, setSaving, setError, queryClient]);
+  }, [userId, setSaving, setError, queryClient, isNewQuiz]);
 
   const saveToFirestoreRef = useRef(saveToFirestore);
 
