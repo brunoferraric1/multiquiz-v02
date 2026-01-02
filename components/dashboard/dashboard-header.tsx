@@ -116,7 +116,7 @@ export function DashboardHeader() {
                 <Link
                   href="/dashboard/account"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3"
+                  className="flex items-center gap-3 mb-2"
                 >
                   <Avatar>
                     <AvatarImage src={user?.photoURL ?? undefined} />
@@ -131,7 +131,7 @@ export function DashboardHeader() {
                   </div>
                 </Link>
                 {!subscriptionLoading && !isProUser && (
-                  <Button asChild size="sm" className="w-full mt-3">
+                  <Button asChild size="sm" className="w-full">
                     <Link href="/dashboard?upgrade=true&period=monthly">
                       Fazer upgrade para Pro
                     </Link>

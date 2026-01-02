@@ -8,7 +8,15 @@ import { ChatMessageComponent } from './chat-message';
 import { ChatInput } from './chat-input';
 import { TypingIndicator } from './typing-indicator';
 import { AIService, type OutcomeImageRequest } from '@/lib/services/ai-service';
-import type { AIExtractionResult, QuizDraft, Question, Outcome, ManualChange, LoadingSections } from '@/types';
+import type {
+  AIExtractionResult,
+  QuizDraft,
+  Question,
+  Outcome,
+  ManualChange,
+  LoadingSections,
+  AnswerOption,
+} from '@/types';
 
 const formatManualChangesInstruction = (changes: ManualChange[]): string | undefined => {
   if (!changes.length) return undefined;
@@ -276,7 +284,7 @@ const isQuestionChangeRequest = (userMessage: string): boolean => {
   return mentionsQuestion && mentionsChange;
 };
 
-const normalizeOption = (option?: Partial<Question>['options'][number]) => ({
+const normalizeOption = (option?: Partial<AnswerOption>) => ({
   id: option?.id ?? null,
   text: option?.text ?? null,
   icon: option?.icon ?? null,
