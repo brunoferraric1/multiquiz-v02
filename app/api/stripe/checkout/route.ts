@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, STRIPE_PRICES } from '@/lib/stripe';
 import { getAdminDb } from '@/lib/firebase-admin';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
     console.log('[Checkout] Starting checkout session creation');
 
@@ -113,4 +115,3 @@ export async function POST(request: NextRequest) {
         );
     }
 }
-

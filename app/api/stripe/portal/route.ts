@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 import { getAdminDb } from '@/lib/firebase-admin';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
