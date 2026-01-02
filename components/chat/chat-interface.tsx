@@ -220,6 +220,46 @@ const isLeadGenConfirmation = (userMessage: string, previousAssistantMessage?: s
   return false;
 };
 
+const detectActionRequest = (userMessage: string): { preview: boolean; publish: boolean } => {
+  const normalized = normalizeText(userMessage);
+  const hasNegation = ['nao', 'sem', 'dispensa'].some((token) => normalized.includes(token));
+  const previewKeywords = [
+    'preview',
+    'previa',
+    'previsualizar',
+    'pre-visualizar',
+    'pre visualizar',
+    'visualizar quiz',
+    'visualizar o quiz',
+  ];
+  const publishKeywords = [
+    'publicar',
+    'publique',
+    'publicacao',
+    'publica',
+    'publish',
+    'lancar',
+    'colocar no ar',
+    'coloca no ar',
+  ];
+  const mentionsQuiz = normalized.includes('quiz');
+  const mentionsPreview = normalized.includes('preview') || normalized.includes('previa');
+  const mentionsVisualizar = normalized.includes('visualizar') || normalized.includes('visualizacao');
+  const mentionsVer = normalized.includes('ver');
+
+  const previewRequested =
+    previewKeywords.some((keyword) => normalized.includes(keyword)) ||
+    (mentionsVisualizar && mentionsQuiz) ||
+    (mentionsVer && (mentionsQuiz || mentionsPreview));
+  const publishRequested = publishKeywords.some((keyword) => normalized.includes(keyword));
+
+  if (hasNegation && (previewRequested || publishRequested)) {
+    return { preview: false, publish: false };
+  }
+
+  return { preview: previewRequested, publish: publishRequested };
+};
+
 const isQuestionChangeRequest = (userMessage: string): boolean => {
   const normalized = normalizeText(userMessage);
   const questionTerms = ['pergunta', 'perguntas', 'questao', 'questoes', 'opcao', 'opcoes'];
@@ -549,6 +589,7 @@ export function ChatInterface({
 
   const [isLoading, setIsLoading] = useState(false);
   const [isCoverSuggesting, setIsCoverSuggesting] = useState(false);
+  const [actionRequest, setActionRequest] = useState<{ preview: boolean; publish: boolean } | null>(null);
   const [lastCoverPrompt, setLastCoverPrompt] = useState('');
   const [lastSuggestedCoverUrl, setLastSuggestedCoverUrl] = useState('');
   const aiService = useMemo(() => new AIService({ userName }), [userName]);
@@ -570,8 +611,7 @@ export function ChatInterface({
     const hasIntro = Boolean(
       quiz.title &&
       quiz.title !== 'Meu Novo Quiz' &&
-      quiz.description?.trim() &&
-      quiz.ctaText?.trim()
+      quiz.description?.trim()
     );
 
     const hasOutcomesReady = Boolean(
@@ -958,6 +998,10 @@ export function ChatInterface({
     const previousAssistantMessage = [...chatHistory]
       .reverse()
       .find((message) => message.role === 'assistant')?.content;
+    const nextActionRequest = detectActionRequest(content);
+    setActionRequest(
+      nextActionRequest.preview || nextActionRequest.publish ? nextActionRequest : null
+    );
 
     try {
       setIsLoading(true);
@@ -1333,7 +1377,12 @@ export function ChatInterface({
   const canPreview = typeof onOpenPreview === 'function';
   const canPublish = Boolean(!quiz?.isPublished && typeof onPublish === 'function');
   const canUpdateLive = Boolean(quiz?.isPublished && hasUnpublishedChanges && typeof onPublishUpdate === 'function');
-  const shouldShowActionRow = isQuizReadyForActions && (canPreview || canPublish || canUpdateLive);
+  const requestedPreview = Boolean(actionRequest?.preview);
+  const requestedPublish = Boolean(actionRequest?.publish);
+  const showPreviewAction = canPreview && (isQuizReadyForActions || requestedPreview);
+  const showPublishAction = canPublish && (isQuizReadyForActions || requestedPublish);
+  const showUpdateAction = canUpdateLive && (isQuizReadyForActions || requestedPublish);
+  const shouldShowActionRow = (showPreviewAction || showPublishAction || showUpdateAction);
   const actionBusy = isLoading || isPublishing || isSaving;
 
   return (
@@ -1389,7 +1438,7 @@ export function ChatInterface({
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {canPreview && (
+                  {showPreviewAction && (
                     <Button
                       type="button"
                       variant="secondary"
@@ -1401,7 +1450,7 @@ export function ChatInterface({
                       Pré-visualizar
                     </Button>
                   )}
-                  {canPublish && (
+                  {showPublishAction && (
                     <Button
                       type="button"
                       onClick={onPublish}
@@ -1412,7 +1461,7 @@ export function ChatInterface({
                       {isPublishing ? 'Publicando...' : 'Publicar'}
                     </Button>
                   )}
-                  {canUpdateLive && (
+                  {showUpdateAction && (
                     <Button
                       type="button"
                       onClick={onPublishUpdate}
