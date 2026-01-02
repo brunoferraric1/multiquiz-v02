@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Menu, Plus, LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { isPro, useSubscription } from '@/lib/services/subscription-service';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   Sheet,
   SheetContent,
@@ -15,11 +18,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import Link from 'next/link';
 
 export function DashboardHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { subscription, isLoading: subscriptionLoading } = useSubscription(user?.uid);
   const [menuOpen, setMenuOpen] = useState(false);
+  const isProUser = isPro(subscription);
 
   const handleNewQuiz = () => {
     router.push('/builder');
@@ -33,6 +40,12 @@ export function DashboardHeader() {
   const handleNavigation = (path: string) => {
     router.push(path);
     setMenuOpen(false);
+  };
+
+  const isActiveRoute = (path: string) => {
+    if (!pathname) return false;
+    if (path === '/dashboard') return pathname === '/dashboard';
+    return pathname.startsWith(path);
   };
 
   return (
@@ -55,45 +68,75 @@ export function DashboardHeader() {
               <nav className="space-y-2">
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-base"
+                  className={cn(
+                    "w-full justify-start text-base",
+                    isActiveRoute('/dashboard') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+                  )}
                   onClick={() => handleNavigation('/dashboard')}
+                  aria-current={isActiveRoute('/dashboard') ? 'page' : undefined}
                 >
                   Quizzes
                 </Button>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-base"
+                  className={cn(
+                    "w-full justify-start text-base",
+                    isActiveRoute('/dashboard/reports') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+                  )}
                   onClick={() => handleNavigation('/dashboard/reports')}
+                  aria-current={isActiveRoute('/dashboard/reports') ? 'page' : undefined}
                 >
                   Relatórios
                 </Button>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-base"
+                  className={cn(
+                    "w-full justify-start text-base",
+                    isActiveRoute('/dashboard/leads') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+                  )}
                   onClick={() => handleNavigation('/dashboard/leads')}
+                  aria-current={isActiveRoute('/dashboard/leads') ? 'page' : undefined}
                 >
                   Leads
                 </Button>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-base"
+                  className={cn(
+                    "w-full justify-start text-base",
+                    isActiveRoute('/dashboard/account') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+                  )}
                   onClick={() => handleNavigation('/dashboard/account')}
+                  aria-current={isActiveRoute('/dashboard/account') ? 'page' : undefined}
                 >
                   Conta
                 </Button>
               </nav>
 
               <div className="mt-10 border-t pt-6 space-y-4">
-                <div className="flex items-center gap-3">
+                <Link
+                  href="/dashboard/account"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3"
+                >
                   <Avatar>
                     <AvatarImage src={user?.photoURL ?? undefined} />
                     <AvatarFallback>{user?.email?.[0]?.toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium">{user?.displayName || 'Usuário'}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{user?.displayName || 'Usuário'}</span>
+                      {isProUser && <Badge variant="secondary">Pro</Badge>}
+                    </div>
                     <span className="text-xs text-muted-foreground">{user?.email}</span>
                   </div>
-                </div>
+                </Link>
+                {!subscriptionLoading && !isProUser && (
+                  <Button asChild size="sm" className="w-full mt-3">
+                    <Link href="/dashboard?upgrade=true&period=monthly">
+                      Fazer upgrade para Pro
+                    </Link>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   className="w-full justify-start"
