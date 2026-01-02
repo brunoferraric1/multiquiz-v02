@@ -295,8 +295,10 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
         ? questions.length + 1
         : currentQuestionIndex + 1;
 
+  const isLive = mode === 'live';
+
   return (
-    <div className="h-full w-full overflow-y-auto px-4 py-8 sm:px-8">
+    <div className="relative min-h-screen w-full px-4 py-8 pb-20 sm:px-8 sm:pb-24 flex flex-col justify-center">
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
         {phase === 'intro' && (
           <QuizIntro
@@ -340,6 +342,31 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
             onCtaClick={handleCtaClick}
             primaryColor={primaryColor}
           />
+        )}
+      </div>
+      <div className="pointer-events-auto fixed bottom-4 left-1/2 z-10 -translate-x-1/2">
+        {isLive ? (
+          <a
+            href="/"
+            target="_blank"
+            rel="noreferrer"
+            className="flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur transition-colors hover:text-foreground hover:bg-card/90 sm:flex-row sm:gap-2"
+            aria-label="Made with MultiQuiz"
+          >
+            <span>Made with</span>
+            <span className="flex items-center gap-1 text-foreground/90">
+              <img src="/multiquiz-logo.svg" alt="MultiQuiz" className="h-4 w-4" />
+              <span>MultiQuiz</span>
+            </span>
+          </a>
+        ) : (
+          <div className="flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur sm:flex-row sm:gap-2">
+            <span>Made with</span>
+            <span className="flex items-center gap-1 text-foreground/90">
+              <img src="/multiquiz-logo.svg" alt="MultiQuiz" className="h-4 w-4" />
+              <span>MultiQuiz</span>
+            </span>
+          </div>
         )}
       </div>
     </div>

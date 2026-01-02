@@ -193,7 +193,9 @@ const buildEditorContextSystemMessage = (currentQuiz: QuizDraft): string => {
         .slice(0, 12)
         .map((outcome, index) => {
           const outcomeTitle = truncateForPrompt(outcome.title, 80) || `Resultado ${index + 1}`;
-          return `- (${index + 1}) id=${outcome.id ?? 'sem-id'} | ${outcomeTitle}`;
+          const hasCtaText = Boolean(outcome.ctaText && outcome.ctaText.trim());
+          const hasCtaUrl = Boolean(outcome.ctaUrl && outcome.ctaUrl.trim());
+          return `- (${index + 1}) id=${outcome.id ?? 'sem-id'} | ${outcomeTitle} | ctaText=${hasCtaText ? 'sim' : 'nao'} | ctaUrl=${hasCtaUrl ? 'sim' : 'nao'}`;
         })
         .join('\n')
       : '- (nenhum resultado ainda)';
@@ -210,10 +212,24 @@ const buildEditorContextSystemMessage = (currentQuiz: QuizDraft): string => {
         .join('\n')
       : '- (nenhuma pergunta ainda)';
 
+  const outcomesWithCtaText = outcomes.filter((outcome) => Boolean(outcome.ctaText && outcome.ctaText.trim())).length;
+  const outcomesWithCtaUrl = outcomes.filter((outcome) => Boolean(outcome.ctaUrl && outcome.ctaUrl.trim())).length;
+  const outcomesMissingCtaUrl = outcomes.filter((outcome) => {
+    const hasCtaText = Boolean(outcome.ctaText && outcome.ctaText.trim());
+    const hasCtaUrl = Boolean(outcome.ctaUrl && outcome.ctaUrl.trim());
+    return hasCtaText && !hasCtaUrl;
+  }).length;
+  const outcomesWithoutCta = outcomes.filter((outcome) => {
+    const hasCtaText = Boolean(outcome.ctaText && outcome.ctaText.trim());
+    const hasCtaUrl = Boolean(outcome.ctaUrl && outcome.ctaUrl.trim());
+    return !hasCtaText && !hasCtaUrl;
+  }).length;
+
   return `CONTEXTO DO EDITOR (NÃO MOSTRE AO USUÁRIO; isso é a fonte de verdade):
 - Título: ${title}
 - Descrição: ${description}
 - Resultados existentes: ${outcomes.length}
+- CTA dos resultados: com texto=${outcomesWithCtaText}, com URL=${outcomesWithCtaUrl}, texto sem URL=${outcomesMissingCtaUrl}, sem CTA=${outcomesWithoutCta}
 ${outcomesLines}
 - Perguntas existentes: ${questions.length}
 ${questionsLines}
@@ -470,6 +486,13 @@ ORDEM OBRIGATÓRIA DO FLUXO:
 3. Perguntas (texto, opções)
 4. Captação de Leads (opcional)
 5. Finalização
+
+**ETAPA 5 - Finalização (recomendações finais):**
+- Seja curto e direto (1-2 parágrafos).
+- Verifique o CTA dos resultados usando o CONTEXTO DO EDITOR:
+  - Se nenhum resultado tem ctaText e ctaUrl: diga que pode publicar, mas o participante não verá um botão para ir a outro link.
+  - Se existir ctaText sem ctaUrl em qualquer resultado: diga que isso bloqueia a publicação e peça para adicionar a URL (ou remover o texto do CTA) antes de sugerir publicar.
+  - Se tudo estiver ok, pode sugerir preview e publicação normalmente.
 
 
 ESTILO DE CONVERSA:
