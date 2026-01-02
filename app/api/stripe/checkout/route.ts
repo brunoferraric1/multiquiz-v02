@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, STRIPE_PRICES } from '@/lib/stripe';
-import { getAdminDb } from '@/lib/firebase-admin';
+import { getAdminApp, getAdminDb } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs';
 
@@ -48,12 +48,29 @@ export async function POST(request: NextRequest) {
 
         step = 'init_firestore';
         console.log('[Checkout] Getting Firestore...');
+        const adminApp = getAdminApp();
+        console.log('[Checkout] Firebase admin app', {
+            name: adminApp.name,
+            projectId: adminApp.options?.projectId,
+        });
         const db = getAdminDb();
 
         step = 'fetch_user';
         console.log('[Checkout] Fetching user document...');
-        const userDoc = await db.collection('users').doc(userId).get();
+        let userDoc;
+        try {
+            userDoc = await db.collection('users').doc(userId).get();
+        } catch (error) {
+            const err = error as { code?: string; details?: string; message?: string };
+            console.error('[Checkout] Firestore fetch error', {
+                code: err.code,
+                details: err.details,
+                message: err.message,
+            });
+            throw error;
+        }
         const userData = userDoc.data();
+        console.log('[Checkout] User doc fetched', { exists: userDoc.exists });
         let stripeCustomerId = userData?.subscription?.stripeCustomerId;
 
         console.log('[Checkout] Existing customer ID:', stripeCustomerId);

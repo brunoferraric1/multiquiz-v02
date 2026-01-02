@@ -4,7 +4,7 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 let adminApp: App | undefined;
 let adminDb: Firestore | undefined;
 
-function getAdminApp(): App {
+export function getAdminApp(): App {
     if (adminApp) {
         return adminApp;
     }
@@ -25,6 +25,10 @@ function getAdminApp(): App {
     const existingApps = getApps();
     if (existingApps.length > 0) {
         adminApp = existingApps[0];
+        console.log('[Firebase Admin] Reusing existing app', {
+            name: adminApp.name,
+            projectId: adminApp.options?.projectId,
+        });
         return adminApp;
     }
 
