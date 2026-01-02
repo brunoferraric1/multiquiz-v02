@@ -220,6 +220,22 @@ const isLeadGenConfirmation = (userMessage: string, previousAssistantMessage?: s
   return false;
 };
 
+const isQuestionChangeRequest = (userMessage: string): boolean => {
+  const normalized = normalizeText(userMessage);
+  const questionTerms = ['pergunta', 'perguntas', 'questao', 'questoes', 'opcao', 'opcoes'];
+  const changeTerms = [
+    'ajuste', 'ajustar', 'ajusta', 'edite', 'editar', 'edita', 'mude', 'mudar', 'muda',
+    'troque', 'trocar', 'troca', 'altere', 'alterar', 'altera', 'reescreva', 'reescrever',
+    'adicione', 'adicionar', 'adiciona', 'inclua', 'incluir', 'inclui', 'remova', 'remover',
+    'crie', 'criar', 'cria', 'gera', 'gerar', 'mais', 'nova', 'novas', 'substitua', 'substituir'
+  ];
+
+  const mentionsQuestion = questionTerms.some((term) => normalized.includes(term));
+  const mentionsChange = changeTerms.some((term) => normalized.includes(term));
+
+  return mentionsQuestion && mentionsChange;
+};
+
 const normalizeOption = (option?: Partial<Question>['options'][number]) => ({
   id: option?.id ?? null,
   text: option?.text ?? null,
@@ -350,7 +366,13 @@ const mergeEntityCollections = <T extends MergeableEntity>(
     const matchIndex = findMatchIndex(item);
     if (matchIndex >= 0) {
       // Only merge non-undefined values to preserve existing imageUrl, etc.
-      merged[matchIndex] = { ...merged[matchIndex], ...filterUndefined(item) } as T;
+      const filteredItem = filterUndefined(item);
+      const currentId = (merged[matchIndex] as { id?: string }).id;
+      const incomingId = (filteredItem as { id?: string }).id;
+      if (currentId && incomingId && currentId !== incomingId) {
+        delete (filteredItem as { id?: string }).id;
+      }
+      merged[matchIndex] = { ...merged[matchIndex], ...filteredItem } as T;
     } else {
       merged.push({ ...item });
     }
@@ -364,13 +386,20 @@ const mergeEntityCollections = <T extends MergeableEntity>(
 const applyExtractionResult = (
   baseQuiz: QuizDraft,
   extraction: AIExtractionResult,
-  options?: { mergeExisting?: boolean; isRemoval?: boolean; userConfirmedOutcomes?: boolean; userConfirmedLeadGen?: boolean }
+  options?: {
+    mergeExisting?: boolean;
+    isRemoval?: boolean;
+    userConfirmedOutcomes?: boolean;
+    userConfirmedLeadGen?: boolean;
+    allowQuestionUpdates?: boolean;
+  }
 ): QuizDraft => {
   const {
     mergeExisting = false,
     isRemoval = false,
     userConfirmedOutcomes = false,
     userConfirmedLeadGen = false,
+    allowQuestionUpdates = false,
   } = options || {};
   const nextQuiz: QuizDraft = { ...baseQuiz };
 
@@ -386,6 +415,10 @@ const applyExtractionResult = (
   const hasConfirmedOutcomes = Boolean(
     baseQuiz.outcomes &&
     baseQuiz.outcomes.length > 0
+  );
+  const hasExistingQuestions = Boolean(
+    baseQuiz.questions &&
+    baseQuiz.questions.length > 0
   );
 
   // Always apply intro fields
@@ -433,6 +466,11 @@ const applyExtractionResult = (
         hasIntro: hasConfirmedIntro,
         outcomesCount: baseQuiz.outcomes?.length || 0,
         questionsCount: extraction.questions.length,
+      });
+    } else if (hasExistingQuestions && !allowQuestionUpdates) {
+      console.log('[Phase Enforcement] Skipping questions - no update requested', {
+        existingQuestions: baseQuiz.questions?.length || 0,
+        incomingQuestions: extraction.questions.length,
       });
     } else {
       // Strip imagePrompt before merging as it's not part of the Question type in the store
@@ -981,14 +1019,21 @@ export function ChatInterface({
         const userRequestedRemoval = isRemovalRequest(content);
         const userConfirmedOutcomes = isOutcomeConfirmation(content);
         const userConfirmedLeadGen = isLeadGenConfirmation(content, previousAssistantMessage);
+        const userRequestedQuestionChanges = isQuestionChangeRequest(content);
 
-        console.log('[Flow] Extraction options', { userRequestedRemoval, userConfirmedOutcomes, userConfirmedLeadGen });
+        console.log('[Flow] Extraction options', {
+          userRequestedRemoval,
+          userConfirmedOutcomes,
+          userConfirmedLeadGen,
+          userRequestedQuestionChanges,
+        });
 
         const updatedQuiz = applyExtractionResult(latestQuiz, extraction, {
           mergeExisting: !userRequestedRemoval, // Don't merge when removing
           isRemoval: userRequestedRemoval,
           userConfirmedOutcomes,
           userConfirmedLeadGen,
+          allowQuestionUpdates: userRequestedQuestionChanges,
         });
 
         // Set loading state only for sections that actually changed
@@ -1167,12 +1212,14 @@ export function ChatInterface({
           ? updatedHistory.slice(0, lastUserIndex).reverse().find((message) => message.role === 'assistant')?.content
           : undefined;
         const userConfirmedLeadGen = isLeadGenConfirmation(lastUserMessage, previousAssistantMessage);
+        const userRequestedQuestionChanges = isQuestionChangeRequest(lastUserMessage);
 
         const updatedQuiz = applyExtractionResult(latestQuiz, extracted, {
           mergeExisting: !userRequestedRemoval,
           isRemoval: userRequestedRemoval,
           userConfirmedOutcomes,
           userConfirmedLeadGen,
+          allowQuestionUpdates: userRequestedQuestionChanges,
         });
 
         // Set loading state only for sections that actually changed
