@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 
 export default function AccountPage() {
     const { user, updateUserProfile } = useAuth();
-    const { subscription, isLoading: isLoadingSubscription } = useSubscription(user?.uid);
+    const { subscription, isLoading: isLoadingSubscription, hasCached: subscriptionCached } = useSubscription(user?.uid);
     const router = useRouter();
 
     const [isLoading, setIsLoading] = useState(false);
@@ -78,6 +78,7 @@ export default function AccountPage() {
         }
     };
 
+    const isSubscriptionReady = !isLoadingSubscription || subscriptionCached;
     const isProUser = isPro(subscription);
 
     return (
@@ -176,9 +177,9 @@ export default function AccountPage() {
                                     <p className="font-medium">Plano Atual</p>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className={`text-lg font-bold ${isProUser ? 'text-primary' : ''}`}>
-                                            {isProUser ? 'MultiQuiz Pro' : 'Gratuito'}
+                                            {isSubscriptionReady ? (isProUser ? 'MultiQuiz Pro' : 'Gratuito') : 'Carregando...'}
                                         </span>
-                                        {isProUser && (
+                                        {isSubscriptionReady && isProUser && (
                                             <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                                                 Ativo
                                             </span>
@@ -192,7 +193,7 @@ export default function AccountPage() {
                                 )}
                             </div>
 
-                            {!isProUser && (
+                            {isSubscriptionReady && !isProUser && (
                                 <div className="rounded-lg bg-muted p-4 space-y-3">
                                     <p className="text-sm font-medium">Faça upgrade para o Pro:</p>
                                     <ul className="text-sm text-muted-foreground space-y-1">
@@ -210,12 +211,17 @@ export default function AccountPage() {
                             className="w-full"
                             variant={isProUser ? "outline" : "default"}
                             onClick={handleManageSubscription}
-                            disabled={isLoading || isLoadingSubscription}
+                            disabled={isLoading || !isSubscriptionReady}
                         >
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Processando...
+                                </>
+                            ) : !isSubscriptionReady ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Carregando plano...
                                 </>
                             ) : isProUser ? (
                                 'Gerenciar Assinatura'
