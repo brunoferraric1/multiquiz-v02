@@ -866,6 +866,140 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           </LoadingCard>
         </section>
 
+        <section ref={outcomesRef} className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+              Resultados ({outcomes.length})
+            </span>
+            <button
+              type="button"
+              onClick={handleAddOutcome}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
+              aria-label="Adicionar resultado"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {outcomes.length === 0 ? (
+              <button
+                type="button"
+                onClick={handleAddOutcome}
+                className="w-full rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground transition hover:border-border/80 hover:bg-muted/40 cursor-[var(--cursor-interactive)]"
+                aria-label="Adicionar resultado"
+              >
+                Nenhum resultado definido
+              </button>
+            ) : (
+              outcomes.map((outcome) => {
+                const hasCtaText = Boolean(outcome.ctaText && outcome.ctaText.trim());
+                const hasCtaUrl = Boolean(outcome.ctaUrl && outcome.ctaUrl.trim());
+                const shouldWarnMissingCtaUrl = hasCtaText && !hasCtaUrl;
+
+                return (
+                  <LoadingCard key={outcome.id} isLoading={loadingSections.outcomes}>
+                    <div className="relative group">
+                      <SidebarCard
+                        onClick={() => outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })}
+                        withActionPadding
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
+                            {outcome.imageUrl ? (
+                              <img
+                                src={outcome.imageUrl}
+                                alt="Resultado"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center">
+                                <Rocket className="h-5 w-5" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">
+                              {outcome.title || 'Novo resultado'}
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                              {outcome.description || 'Sem descrição'}
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <Badge
+                                variant={outcome.ctaText ? 'outline' : 'disabled'}
+                                className="max-w-[14rem] min-w-0 overflow-hidden whitespace-nowrap px-3 py-1 text-[11px] font-medium"
+                              >
+                                <MousePointerClick className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                <span
+                                  className="block max-w-full truncate"
+                                  title={outcome.ctaText || 'Sem texto'}
+                                >
+                                  {outcome.ctaText || 'Sem texto'}
+                                </span>
+                              </Badge>
+                              <Badge
+                                variant={outcome.ctaUrl ? 'outline' : 'disabled'}
+                                className="max-w-[16rem] min-w-0 overflow-hidden whitespace-nowrap px-3 py-1 text-[11px] font-medium"
+                              >
+                                {shouldWarnMissingCtaUrl ? (
+                                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                                ) : (
+                                  <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                )}
+                                <span
+                                  className="block max-w-full truncate"
+                                  title={outcome.ctaUrl || 'Sem URL'}
+                                >
+                                  {outcome.ctaUrl || 'Sem URL'}
+                                </span>
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </SidebarCard>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarCardActionTrigger
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={(event) => event.stopPropagation()}
+                            aria-label="Opções do resultado"
+                            className="absolute right-3 top-3"
+                          >
+                            <MoreVertical className="h-4 w-4" aria-hidden="true" />
+                          </SidebarCardActionTrigger>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              if (outcome.id) {
+                                setActiveSheet({ type: 'outcome', id: outcome.id });
+                              }
+                            }}
+                          >
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              handleDeleteOutcome(outcome.id);
+                            }}
+                          >
+                            Deletar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </LoadingCard>
+                );
+              })
+            )}
+          </div>
+        </section>
+
         <section ref={questionsRef} className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
@@ -883,9 +1017,14 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
           <div className="space-y-3">
             {questions.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+              <button
+                type="button"
+                onClick={handleAddQuestion}
+                className="w-full rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground transition hover:border-border/80 hover:bg-muted/40 cursor-[var(--cursor-interactive)]"
+                aria-label="Adicionar primeira pergunta do quiz"
+              >
                 Adicione a primeira pergunta do quiz
-              </div>
+              </button>
             )}
             {questions.map((question, index) => {
               const isDragging = draggedQuestionIndex === index;
@@ -1030,135 +1169,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 )}
                 aria-hidden="true"
               />
-            )}
-          </div>
-        </section>
-
-        <section ref={outcomesRef} className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-              Resultados ({outcomes.length})
-            </span>
-            <button
-              type="button"
-              onClick={handleAddOutcome}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-primary transition hover:bg-primary/10"
-              aria-label="Adicionar resultado"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {outcomes.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
-                Nenhum resultado definido
-              </div>
-            ) : (
-              outcomes.map((outcome) => {
-                const hasCtaText = Boolean(outcome.ctaText && outcome.ctaText.trim());
-                const hasCtaUrl = Boolean(outcome.ctaUrl && outcome.ctaUrl.trim());
-                const shouldWarnMissingCtaUrl = hasCtaText && !hasCtaUrl;
-
-                return (
-                  <LoadingCard key={outcome.id} isLoading={loadingSections.outcomes}>
-                    <div className="relative group">
-                      <SidebarCard
-                        onClick={() => outcome.id && setActiveSheet({ type: 'outcome', id: outcome.id })}
-                        withActionPadding
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-primary/10 text-primary">
-                            {outcome.imageUrl ? (
-                              <img
-                                src={outcome.imageUrl}
-                                alt="Resultado"
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-12 w-12 items-center justify-center">
-                                <Rocket className="h-5 w-5" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground">
-                              {outcome.title || 'Novo resultado'}
-                            </p>
-                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                              {outcome.description || 'Sem descrição'}
-                            </p>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              <Badge
-                                variant={outcome.ctaText ? 'outline' : 'disabled'}
-                                className="max-w-[14rem] min-w-0 overflow-hidden whitespace-nowrap px-3 py-1 text-[11px] font-medium"
-                              >
-                                <MousePointerClick className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                <span
-                                  className="block max-w-full truncate"
-                                  title={outcome.ctaText || 'Sem texto'}
-                                >
-                                  {outcome.ctaText || 'Sem texto'}
-                                </span>
-                              </Badge>
-                              <Badge
-                                variant={outcome.ctaUrl ? 'outline' : 'disabled'}
-                                className="max-w-[16rem] min-w-0 overflow-hidden whitespace-nowrap px-3 py-1 text-[11px] font-medium"
-                              >
-                                {shouldWarnMissingCtaUrl ? (
-                                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-                                ) : (
-                                  <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                )}
-                                <span
-                                  className="block max-w-full truncate"
-                                  title={outcome.ctaUrl || 'Sem URL'}
-                                >
-                                  {outcome.ctaUrl || 'Sem URL'}
-                                </span>
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </SidebarCard>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <SidebarCardActionTrigger
-                            onPointerDown={(event) => event.stopPropagation()}
-                            onClick={(event) => event.stopPropagation()}
-                            aria-label="Opções do resultado"
-                            className="absolute right-3 top-3"
-                          >
-                            <MoreVertical className="h-4 w-4" aria-hidden="true" />
-                          </SidebarCardActionTrigger>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuItem
-                            onSelect={(event) => {
-                              event.preventDefault();
-                              if (outcome.id) {
-                                setActiveSheet({ type: 'outcome', id: outcome.id });
-                              }
-                            }}
-                          >
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onSelect={(event) => {
-                              event.preventDefault();
-                              handleDeleteOutcome(outcome.id);
-                            }}
-                          >
-                            Deletar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </LoadingCard>
-                );
-              })
             )}
           </div>
         </section>
