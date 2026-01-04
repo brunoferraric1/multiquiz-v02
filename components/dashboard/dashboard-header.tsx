@@ -24,10 +24,9 @@ export function DashboardHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, signOut } = useAuth();
-  const { subscription, isLoading: subscriptionLoading, hasCached: subscriptionCached } = useSubscription(user?.uid);
+  const { subscription, isLoading: subscriptionLoading } = useSubscription(user?.uid);
   const [menuOpen, setMenuOpen] = useState(false);
   const isProUser = isPro(subscription);
-  const isSubscriptionReady = !subscriptionLoading || subscriptionCached;
 
   const handleNewQuiz = () => {
     router.push('/builder');
@@ -131,7 +130,9 @@ export function DashboardHeader() {
                     <span className="text-xs text-muted-foreground">{user?.email}</span>
                   </div>
                 </Link>
-                {isSubscriptionReady ? (
+                {subscriptionLoading ? (
+                  <div className="h-9 w-full rounded-md bg-muted/60 animate-pulse" aria-hidden="true" />
+                ) : (
                   !isProUser && (
                     <Button asChild size="sm" className="w-full">
                       <Link href="/dashboard?upgrade=true&period=monthly">
@@ -139,8 +140,6 @@ export function DashboardHeader() {
                       </Link>
                     </Button>
                   )
-                ) : (
-                  <div className="h-9 w-full rounded-md bg-muted/60 animate-pulse" aria-hidden="true" />
                 )}
                 <Button
                   variant="outline"

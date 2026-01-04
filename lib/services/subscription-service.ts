@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TIER_LIMITS, SubscriptionTier } from '@/lib/stripe';
 
@@ -27,38 +27,15 @@ export function useSubscription(userId: string | undefined) {
     const [subscription, setSubscription] = useState<UserSubscription>(DEFAULT_SUBSCRIPTION);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [hasCached, setHasCached] = useState(false);
 
     useEffect(() => {
         if (!userId || typeof window === 'undefined' || !db) {
             setIsLoading(false);
-            setHasCached(false);
             return;
         }
 
+        setIsLoading(true);
         setError(null);
-
-        const cacheKey = `mq-subscription:${userId}`;
-        const cachedRaw = window.localStorage.getItem(cacheKey);
-        let usedCache = false;
-        if (cachedRaw) {
-            try {
-                const parsed = JSON.parse(cachedRaw) as UserSubscription;
-                if (parsed?.tier) {
-                    setSubscription(parsed);
-                    setHasCached(true);
-                    setIsLoading(false);
-                    usedCache = true;
-                }
-            } catch (err) {
-                console.warn('[Subscription] Failed to parse cache', err);
-            }
-        }
-
-        if (!usedCache) {
-            setIsLoading(true);
-            setHasCached(false);
-        }
 
         const userRef = doc(db, 'users', userId);
 
@@ -67,22 +44,10 @@ export function useSubscription(userId: string | undefined) {
             (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.data();
-                    const nextSubscription = data?.subscription || DEFAULT_SUBSCRIPTION;
-                    setSubscription(nextSubscription);
-                    try {
-                        window.localStorage.setItem(cacheKey, JSON.stringify(nextSubscription));
-                    } catch (err) {
-                        console.warn('[Subscription] Failed to cache subscription', err);
-                    }
+                    setSubscription(data?.subscription || DEFAULT_SUBSCRIPTION);
                 } else {
                     setSubscription(DEFAULT_SUBSCRIPTION);
-                    try {
-                        window.localStorage.setItem(cacheKey, JSON.stringify(DEFAULT_SUBSCRIPTION));
-                    } catch (err) {
-                        console.warn('[Subscription] Failed to cache subscription', err);
-                    }
                 }
-                setHasCached(true);
                 setIsLoading(false);
             },
             (err) => {
@@ -95,7 +60,7 @@ export function useSubscription(userId: string | undefined) {
         return () => unsubscribe();
     }, [userId]);
 
-    return { subscription, isLoading, error, hasCached };
+    return { subscription, isLoading, error };
 }
 
 // Get tier limits for display

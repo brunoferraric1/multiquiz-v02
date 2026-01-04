@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 
 export default function AccountPage() {
     const { user, updateUserProfile } = useAuth();
-    const { subscription, isLoading: isLoadingSubscription, hasCached: subscriptionCached } = useSubscription(user?.uid);
+    const { subscription, isLoading: isLoadingSubscription } = useSubscription(user?.uid);
     const router = useRouter();
 
     const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +78,7 @@ export default function AccountPage() {
         }
     };
 
-    const isSubscriptionReady = !isLoadingSubscription || subscriptionCached;
+    const isSubscriptionReady = !isLoadingSubscription;
     const isProUser = isPro(subscription);
 
     return (
