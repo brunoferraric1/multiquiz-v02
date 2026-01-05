@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -15,6 +15,7 @@ import { ProtectedRoute } from '@/components/protected-route';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { LoadingPage } from '@/components/ui';
 import {
   Card,
   CardContent,
@@ -135,7 +136,7 @@ function FeatureValue({ value, highlight }: { value: string | boolean; highlight
   );
 }
 
-export default function PricingPage() {
+function PricingContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { subscription, isLoading: subscriptionLoading } = useSubscription(user?.uid);
@@ -455,5 +456,13 @@ export default function PricingPage() {
         </main>
       </div>
     </ProtectedRoute>
+  );
+}
+
+export default function PricingPage() {
+  return (
+    <Suspense fallback={<LoadingPage />}>
+      <PricingContent />
+    </Suspense>
   );
 }

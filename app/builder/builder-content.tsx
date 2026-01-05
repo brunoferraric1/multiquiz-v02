@@ -8,6 +8,8 @@ import {
   AlertTriangle,
   Eye,
   ImageIcon,
+  Lock,
+  Palette,
   Plus,
   Rocket,
   X,
@@ -43,6 +45,7 @@ import { LoadingCard } from '@/components/ui/loading-card';
 import { LeadGenSheet } from '@/components/builder/lead-gen-sheet';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
 import { QuizService } from '@/lib/services/quiz-service';
+import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import {
   SidebarCard,
   SidebarCardActionTrigger,
@@ -74,7 +77,8 @@ import {
 type ActiveSheet =
   | { type: 'introduction' }
   | { type: 'outcome'; id: string }
-  | { type: 'lead-gen' };
+  | { type: 'lead-gen' }
+  | { type: 'brand-kit' };
 type MobileViewMode = 'chat' | 'editor';
 
 const fieldLabelClass = 'text-sm font-medium text-muted-foreground';
@@ -152,6 +156,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     return searchParams.get('mode') === 'preview';
   });
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [brandKitDialogOpen, setBrandKitDialogOpen] = useState(false);
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<number | null>(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
   const [mobileView, setMobileView] = useState<MobileViewMode>('chat');
@@ -182,7 +187,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [draftOutcomeCtaText, setDraftOutcomeCtaText] = useState('');
   const [draftOutcomeCtaUrl, setDraftOutcomeCtaUrl] = useState('');
   const [draftOutcomeImageUrl, setDraftOutcomeImageUrl] = useState('');
-  const [upgradeModalState, setUpgradeModalState] = useState<{ open: boolean; reason: 'draft-limit' | 'publish-limit' }>({
+  const [upgradeModalState, setUpgradeModalState] = useState<{ open: boolean; reason: 'draft-limit' | 'publish-limit' | 'brand-kit' }>({
     open: false,
     reason: 'draft-limit',
   });
@@ -193,7 +198,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   // Track previous title to detect transition from default -> set
   const prevTitleRef = useRef(quiz.title);
 
-  const openUpgradeModal = useCallback((reason: 'draft-limit' | 'publish-limit') => {
+  const openUpgradeModal = useCallback((reason: 'draft-limit' | 'publish-limit' | 'brand-kit') => {
     setUpgradeModalState({ open: true, reason });
   }, []);
 
@@ -210,6 +215,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       }
     },
   });
+  const { subscription, isLoading: isSubscriptionLoading } = useSubscription(user?.uid);
+  const isProUser = isPro(subscription);
 
   const resolvedUserName = useMemo(() => {
     const fromDisplayName = user?.displayName?.trim();
@@ -804,12 +811,27 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     setShowPublishModal(true);
   };
 
+  const handleOpenBrandKitDialog = () => {
+    if (isSubscriptionLoading) return;
+    if (!isProUser) {
+      openUpgradeModal('brand-kit');
+      return;
+    }
+    setBrandKitDialogOpen(true);
+  };
+
+  const handleGoToAccount = () => {
+    setBrandKitDialogOpen(false);
+    router.push('/dashboard/account');
+  };
+
   const introDescription = quiz.description
     ? quiz.description
     : 'Conte mais sobre o que torna esse quiz especial.';
   const coverImagePreview = quiz.coverImageUrl ? quiz.coverImageUrl : undefined;
 
   const sheetOpen = Boolean(activeSheet);
+  const isBrandKitLocked = !isSubscriptionLoading && !isProUser;
   const mobileViewOptions: { id: MobileViewMode; label: string; icon: LucideIcon }[] = [
     { id: 'chat', label: 'Chat', icon: MessageSquare },
     { id: 'editor', label: 'Editor', icon: PenSquare },
@@ -864,6 +886,33 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               </div>
             </SidebarCard>
           </LoadingCard>
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            Kit da Marca
+          </div>
+          <SidebarCard onClick={() => setActiveSheet({ type: 'brand-kit' })}>
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary">
+                <Palette className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  Padrão MultiQuiz
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Logo e cores padrão
+                </p>
+              </div>
+              {isBrandKitLocked && (
+                <Badge variant="outline" className="shrink-0 gap-1">
+                  <Lock className="h-3.5 w-3.5" />
+                  Pro
+                </Badge>
+              )}
+            </div>
+          </SidebarCard>
         </section>
 
         <section ref={outcomesRef} className="space-y-3">
@@ -1482,10 +1531,76 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 </div>
               </>
             )}
+            {activeSheet?.type === 'brand-kit' && (
+              <>
+                <SheetHeader className="flex-shrink-0 pb-6">
+                  <SheetTitle className="text-2xl">Kit da Marca</SheetTitle>
+                  <SheetDescription>
+                    Defina o visual dos seus quizzes com logo e cores personalizadas.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto relative min-h-0">
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            Padrão MultiQuiz
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Logo e paleta padrão do MultiQuiz.
+                          </p>
+                        </div>
+                        <Badge variant="secondary">Padrão</Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="h-6 w-6 rounded-full bg-primary" aria-hidden="true" />
+                        <span className="h-6 w-6 rounded-full bg-secondary" aria-hidden="true" />
+                        <span className="h-6 w-6 rounded-full bg-accent" aria-hidden="true" />
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-foreground">Criar kit da marca</p>
+                        {isBrandKitLocked && (
+                          <Badge variant="outline" className="gap-1">
+                            <Lock className="h-3.5 w-3.5" />
+                            Pro
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Personalize logo e cores para todos os seus quizzes.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleOpenBrandKitDialog}
+                      >
+                        {isProUser ? (
+                          <>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Criar kit da marca
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="mr-2 h-4 w-4" />
+                            Criar kit da marca
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
+                </div>
+              </>
+            )}
             {activeSheet?.type === 'lead-gen' && (
               <LeadGenSheet onClose={() => setActiveSheet(null)} onSave={forceSave} />
             )}
-            {activeSheet?.type !== 'lead-gen' && (
+            {(activeSheet?.type === 'outcome' || activeSheet?.type === 'introduction') && (
               <div className="flex-shrink-0 border-t bg-background py-8 mt-auto">
                 {activeSheet?.type === 'outcome' && (
                   <DrawerFooter
@@ -1531,6 +1646,32 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           reason={upgradeModalState.reason}
           onOpenChange={(open) => setUpgradeModalState((prev) => ({ ...prev, open }))}
         />
+
+        <Dialog open={brandKitDialogOpen} onOpenChange={setBrandKitDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Criar kit da marca</DialogTitle>
+              <DialogDescription>
+                O kit da marca é configurado na sua conta e vale para todos os quizzes.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="rounded-lg border border-dashed border-border/60 bg-muted/40 p-4 text-sm text-muted-foreground">
+              Personalize logo e cores no seu perfil para aplicar automaticamente em todos os quizzes.
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setBrandKitDialogOpen(false)}
+              >
+                Agora não
+              </Button>
+              <Button type="button" onClick={handleGoToAccount}>
+                Ir para Minha Conta
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <AnimatePresence>
