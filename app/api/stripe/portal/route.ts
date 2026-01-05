@@ -4,6 +4,22 @@ import { getAdminDb } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs';
 
+const resolveBaseUrl = (request: NextRequest) => {
+    const origin = request.headers.get('origin');
+    if (origin) return origin;
+
+    const referer = request.headers.get('referer');
+    if (referer) {
+        try {
+            return new URL(referer).origin;
+        } catch {
+            // Fall through to env/default if referer is malformed.
+        }
+    }
+
+    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500';
+};
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
@@ -30,11 +46,12 @@ export async function POST(request: NextRequest) {
         }
 
         const stripe = getStripe();
+        const baseUrl = resolveBaseUrl(request);
 
         // Create customer portal session
         const session = await stripe.billingPortal.sessions.create({
             customer: stripeCustomerId,
-            return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500'}/dashboard`,
+            return_url: `${baseUrl}/dashboard`,
         });
 
         return NextResponse.json({ url: session.url });

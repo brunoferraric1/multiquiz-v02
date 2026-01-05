@@ -107,9 +107,16 @@ export async function updateUserSubscription(
     subscription: Partial<UserSubscription>
 ): Promise<void> {
     const db = getAdminDb();
+    const cleaned = Object.fromEntries(
+        Object.entries(subscription).filter(([, value]) => value !== undefined)
+    ) as Partial<UserSubscription>;
+
+    if (Object.keys(cleaned).length === 0) {
+        return;
+    }
 
     await db.collection('users').doc(userId).set(
-        { subscription },
+        { subscription: cleaned },
         { merge: true }
     );
 }

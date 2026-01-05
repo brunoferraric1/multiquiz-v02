@@ -4,6 +4,22 @@ import { getAdminApp, getAdminDb } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs';
 
+const resolveBaseUrl = (request: NextRequest) => {
+    const origin = request.headers.get('origin');
+    if (origin) return origin;
+
+    const referer = request.headers.get('referer');
+    if (referer) {
+        try {
+            return new URL(referer).origin;
+        } catch {
+            // Fall through to env/default if referer is malformed.
+        }
+    }
+
+    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500';
+};
+
 export async function POST(request: NextRequest) {
     console.log('[Checkout] Starting checkout session creation');
 
@@ -114,6 +130,7 @@ export async function POST(request: NextRequest) {
 
         step = 'create_session';
         console.log('[Checkout] Creating checkout session...');
+        const baseUrl = resolveBaseUrl(request);
         // Create checkout session
         const session = await stripe.checkout.sessions.create({
             customer: stripeCustomerId,
@@ -125,8 +142,8 @@ export async function POST(request: NextRequest) {
                     quantity: 1,
                 },
             ],
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500'}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500'}/dashboard?checkout=canceled`,
+            success_url: `${baseUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/dashboard?checkout=canceled`,
             metadata: {
                 firebaseUserId: userId,
             },
