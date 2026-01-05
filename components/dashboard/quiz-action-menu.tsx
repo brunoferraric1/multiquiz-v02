@@ -30,11 +30,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { copyToClipboard } from '@/lib/copy-to-clipboard';
 import { QuizService } from '@/lib/services/quiz-service';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { PublishSuccessDrawer } from '@/components/dashboard/publish-success-drawer';
+import { UpgradeModal } from '@/components/upgrade-modal';
 import type { Quiz } from '@/types';
 
 interface QuizActionMenuProps {
@@ -53,6 +55,10 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
     const [showPublishModal, setShowPublishModal] = useState(false);
+    const [upgradeModalState, setUpgradeModalState] = useState<{
+        open: boolean;
+        reason: 'draft-limit' | 'publish-limit' | 'brand-kit';
+    }>({ open: false, reason: 'publish-limit' });
 
     const handleCopyLink = async () => {
         if (!quiz.isPublished || !quiz.id) return;
@@ -115,7 +121,13 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
         }
         setIsPublishing(true);
         try {
-            await QuizService.publishQuiz(quiz.id, user.uid);
+            const result = await QuizService.publishQuiz(quiz.id, user.uid);
+            if (result.status === 'limit-reached') {
+                toast.error('Limite de publicação no plano gratuito');
+                setMobileMenuOpen(false);
+                setUpgradeModalState({ open: true, reason: 'publish-limit' });
+                return;
+            }
             setMobileMenuOpen(false);
             // Invalidate cache to update UI first
             queryClient.invalidateQueries({ queryKey: ['quiz', quiz.id] });
@@ -126,6 +138,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
             }, 750);
         } catch (error) {
             console.error('Publish failed', error);
+            toast.error('Erro ao publicar quiz');
         } finally {
             setIsPublishing(false);
         }
@@ -343,6 +356,12 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                 open={showPublishModal}
                 onClose={() => setShowPublishModal(false)}
                 quizId={quiz.id}
+            />
+
+            <UpgradeModal
+                open={upgradeModalState.open}
+                reason={upgradeModalState.reason}
+                onOpenChange={(open) => setUpgradeModalState((prev) => ({ ...prev, open }))}
             />
         </>
     );

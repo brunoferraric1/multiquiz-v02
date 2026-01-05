@@ -635,7 +635,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       await forceSave();
 
       // Then publish using the new service method
-      await QuizService.publishQuiz(quiz.id, user.uid);
+      const result = await QuizService.publishQuiz(quiz.id, user.uid);
+      if (result.status === 'limit-reached') {
+        toast.error('Limite de publicação no plano gratuito');
+        openUpgradeModal('publish-limit');
+        return;
+      }
 
       // Update local state with the new published version
       const snapshot = {
@@ -655,13 +660,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       toast.success('Quiz publicado com sucesso!');
     } catch (error) {
       console.error('Error publishing quiz:', error);
-      const errorCode = (error as any)?.code || (error as Error)?.message;
-      if (errorCode === 'PUBLISH_LIMIT_REACHED') {
-        toast.error('Limite de publicação no plano gratuito');
-        openUpgradeModal('publish-limit');
-      } else {
-        toast.error('Erro ao publicar quiz');
-      }
+      toast.error('Erro ao publicar quiz');
     } finally {
       setIsPublishing(false);
     }
@@ -678,7 +677,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       await forceSave();
 
       // Then update the published version
-      await QuizService.publishQuiz(quiz.id, user.uid);
+      const result = await QuizService.publishQuiz(quiz.id, user.uid);
+      if (result.status === 'limit-reached') {
+        toast.error('Limite de publicação no plano gratuito');
+        openUpgradeModal('publish-limit');
+        return;
+      }
 
       // Update local state with the new published version
       const snapshot = {
@@ -696,13 +700,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       toast.success('Quiz atualizado com sucesso!');
     } catch (error) {
       console.error('Error updating published quiz:', error);
-      const errorCode = (error as any)?.code || (error as Error)?.message;
-      if (errorCode === 'PUBLISH_LIMIT_REACHED') {
-        toast.error('Limite de publicação no plano gratuito');
-        openUpgradeModal('publish-limit');
-      } else {
-        toast.error('Erro ao atualizar quiz');
-      }
+      toast.error('Erro ao atualizar quiz');
     } finally {
       setIsPublishing(false);
     }

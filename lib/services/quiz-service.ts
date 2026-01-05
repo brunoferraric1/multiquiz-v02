@@ -48,6 +48,8 @@ function removeUndefinedDeep(obj: any): any {
   return obj;
 }
 
+export type PublishResult = { status: 'published' } | { status: 'limit-reached' };
+
 export class QuizService {
   /**
    * Save a quiz (create or update)
@@ -318,7 +320,7 @@ export class QuizService {
    * Publish a quiz (works for first publish and updates)
    * Creates a snapshot of current state and sets isPublished to true
    */
-  static async publishQuiz(quizId: string, userId: string): Promise<void> {
+  static async publishQuiz(quizId: string, userId: string): Promise<PublishResult> {
     try {
       const quiz = await this.getQuizById(quizId, userId);
       if (!quiz || quiz.ownerId !== userId) {
@@ -343,9 +345,7 @@ export class QuizService {
         const publishedCount = publishedSnapshot.size;
 
         if (!isAlreadyPublished && publishedCount >= publishedLimit) {
-          const error: any = new Error(LIMIT_ERRORS.PUBLISH);
-          error.code = LIMIT_ERRORS.PUBLISH;
-          throw error;
+          return { status: 'limit-reached' };
         }
       }
 
@@ -362,6 +362,7 @@ export class QuizService {
       });
 
       console.log('[QuizService] Quiz published with snapshot');
+      return { status: 'published' };
     } catch (error) {
       console.error('Error publishing quiz:', error);
       throw error;
@@ -401,7 +402,10 @@ export class QuizService {
     if (quiz.isPublished) {
       await this.unpublishQuiz(quizId, userId);
     } else {
-      await this.publishQuiz(quizId, userId);
+      const result = await this.publishQuiz(quizId, userId);
+      if (result.status === 'limit-reached') {
+        return;
+      }
     }
   }
 
