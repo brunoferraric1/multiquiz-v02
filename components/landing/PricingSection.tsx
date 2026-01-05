@@ -14,19 +14,19 @@ const FREE_FEATURES = [
   { text: 'Rascunhos ilimitados', included: true },
   { text: '20 mensagens IA por mês', included: true },
   { text: 'Captura de leads', included: true },
-  { text: 'Relatórios e Analytics', included: false },
-  { text: 'Página de Leads + CSV', included: false },
-  { text: 'Sem marca MultiQuiz', included: false },
+  { text: 'Relatórios de análise completos', included: false },
+  { text: 'Relatório de Leads + download', included: false },
+  { text: 'Personalização de logo e cores', included: false },
 ];
 
 const PRO_FEATURES = [
   { text: 'Quizzes ilimitados', included: true },
   { text: 'Rascunhos ilimitados', included: true },
-  { text: 'IA ilimitada', included: true },
+  { text: 'Assistente IA ilimitado', included: true },
   { text: 'Captura de leads', included: true },
-  { text: 'Relatórios e Analytics', included: true },
-  { text: 'Página de Leads + CSV', included: true },
-  { text: 'Sem marca MultiQuiz', included: true },
+  { text: 'Relatórios de análise completos', included: true },
+  { text: 'Relatório de Leads + download', included: true },
+  { text: 'Personalização de logo e cores', included: true },
 ];
 
 const cardVariants = {

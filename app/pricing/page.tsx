@@ -56,19 +56,19 @@ const FREE_FEATURES = [
   { text: 'Até 3 rascunhos ativos', included: true },
   { text: '20 mensagens IA por mês', included: true },
   { text: 'Captura de leads', included: true },
-  { text: 'Relatórios e Analytics', included: false },
-  { text: 'Página de Leads + CSV', included: false },
-  { text: 'Sem marca MultiQuiz', included: false },
+  { text: 'Relatórios de análise completos', included: false },
+  { text: 'Relatório de Leads + download', included: false },
+  { text: 'Personalização de logo e cores', included: false },
 ];
 
 const PRO_FEATURES = [
   { text: 'Quizzes ilimitados', included: true },
   { text: 'Rascunhos ilimitados', included: true },
-  { text: 'IA ilimitada', included: true },
+  { text: 'Assistente IA ilimitado', included: true },
   { text: 'Captura de leads', included: true },
-  { text: 'Relatórios e Analytics', included: true },
-  { text: 'Página de Leads + CSV', included: true },
-  { text: 'Sem marca MultiQuiz', included: true },
+  { text: 'Relatórios de análise completos', included: true },
+  { text: 'Relatório de Leads + download', included: true },
+  { text: 'Personalização de logo e cores', included: true },
 ];
 
 const formatLimit = (value: number) =>
@@ -96,17 +96,17 @@ const COMPARISON_ROWS: FeatureRow[] = [
     pro: true,
   },
   {
-    label: 'Relatórios avançados',
+    label: 'Relatórios de análise completos',
     free: TIER_LIMITS.free.hasReports,
     pro: TIER_LIMITS.pro.hasReports,
   },
   {
-    label: 'Página de leads + CSV',
+    label: 'Relatório de Leads + download',
     free: TIER_LIMITS.free.hasLeadsPage,
     pro: TIER_LIMITS.pro.hasLeadsPage,
   },
   {
-    label: 'Remoção da marca MultiQuiz',
+    label: 'Personalização de logo e cores',
     free: !TIER_LIMITS.free.hasBranding,
     pro: !TIER_LIMITS.pro.hasBranding,
   },
@@ -207,10 +207,16 @@ function PricingContent() {
           <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl space-y-4">
-                <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  <Sparkles className="h-4 w-4" aria-hidden="true" />
-                  Planos MultiQuiz
-                </span>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)] -ml-4"
+                >
+                  <Link href="/dashboard">
+                    <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Voltar ao painel
+                  </Link>
+                </Button>
                 <div>
                   <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
                     Compare o gratuito com o Pro
@@ -221,17 +227,6 @@ function PricingContent() {
                   </p>
                 </div>
               </div>
-
-              <Button
-                asChild
-                variant="ghost"
-                className="cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]"
-              >
-                <Link href="/dashboard">
-                  <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Voltar ao painel
-                </Link>
-              </Button>
             </div>
 
             <div className="mt-8 flex flex-col gap-4 rounded-[var(--radius-lg)] border border-border bg-card/50 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -266,7 +261,12 @@ function PricingContent() {
                   )}
                 >
                   Anual
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                  <span className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-semibold transition-colors",
+                    billingPeriod === 'yearly'
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-primary/10 text-primary"
+                  )}>
                     Economize 20%
                   </span>
                 </button>
@@ -283,8 +283,12 @@ function PricingContent() {
                     )}
                   </div>
                   <div>
-                    <CardTitle className="text-3xl">R$0</CardTitle>
-                    <CardDescription>/mês</CardDescription>
+                    <CardTitle className="text-3xl">
+                      R$0
+                      <span className="ml-2 text-base font-medium text-muted-foreground">
+                        /mês
+                      </span>
+                    </CardTitle>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Ideal para começar e publicar o primeiro quiz.
