@@ -350,20 +350,28 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
             href="/"
             target="_blank"
             rel="noreferrer"
-            className="flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur transition-colors hover:text-foreground hover:bg-card/90 sm:flex-row sm:gap-2"
+            className="group flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur transition-all hover:text-foreground hover:bg-card/90 sm:flex-row sm:gap-2"
             aria-label="Made with MultiQuiz"
           >
             <span>Made with</span>
-            <span className="flex items-center gap-1 text-foreground/90">
-              <img src="/multiquiz-logo.svg" alt="MultiQuiz" className="h-4 w-4" />
+            <span className="flex items-center gap-1 transition-colors">
+              <img 
+                src="/multiquiz-logo.svg" 
+                alt="MultiQuiz" 
+                className="h-4 w-4 opacity-70 transition-opacity group-hover:opacity-100" 
+              />
               <span>MultiQuiz</span>
             </span>
           </a>
         ) : (
-          <div className="flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur sm:flex-row sm:gap-2">
+          <div className="group flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur sm:flex-row sm:gap-2">
             <span>Made with</span>
-            <span className="flex items-center gap-1 text-foreground/90">
-              <img src="/multiquiz-logo.svg" alt="MultiQuiz" className="h-4 w-4" />
+            <span className="flex items-center gap-1">
+              <img 
+                src="/multiquiz-logo.svg" 
+                alt="MultiQuiz" 
+                className="h-4 w-4 opacity-70 transition-opacity group-hover:opacity-100" 
+              />
               <span>MultiQuiz</span>
             </span>
           </div>

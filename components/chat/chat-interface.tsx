@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Eye, RefreshCw, Rocket } from 'lucide-react';
+import { Check, Eye, Globe, Link2, RefreshCw, Rocket } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { copyToClipboard } from '@/lib/copy-to-clipboard';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { ChatMessageComponent } from './chat-message';
 import { ChatInput } from './chat-input';
@@ -600,6 +602,8 @@ export function ChatInterface({
   const [actionRequest, setActionRequest] = useState<{ preview: boolean; publish: boolean } | null>(null);
   const [lastCoverPrompt, setLastCoverPrompt] = useState('');
   const [lastSuggestedCoverUrl, setLastSuggestedCoverUrl] = useState('');
+  const [publishedButtonHovered, setPublishedButtonHovered] = useState(false);
+  const [copiedPublishedUrl, setCopiedPublishedUrl] = useState(false);
   const aiService = useMemo(() => new AIService({ userName }), [userName]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -612,6 +616,32 @@ export function ChatInterface({
   const outcomeImageRequestIdRef = useRef<Record<string, number>>({});
   const lastOutcomeImagePromptRef = useRef<Record<string, string>>({});
   const lastSuggestedOutcomeImageUrlRef = useRef<Record<string, string>>({});
+
+  const handleCopyPublishedUrl = async () => {
+    if (!quiz?.id || !quiz?.isPublished) return;
+
+    const quizUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}/quiz/${quiz.id}`
+      : '';
+
+    if (!quizUrl) return;
+
+    try {
+      const copiedSuccessfully = await copyToClipboard(quizUrl);
+      if (!copiedSuccessfully) throw new Error('Clipboard not supported');
+
+      setCopiedPublishedUrl(true);
+      toast.success('Link copiado!', {
+        description: 'O link público do quiz foi copiado para a área de transferência.',
+      });
+      setTimeout(() => setCopiedPublishedUrl(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy quiz URL:', error);
+      toast.error('Erro ao copiar', {
+        description: 'Não foi possível copiar o link. Tente novamente.',
+      });
+    }
+  };
 
   const isQuizReadyForActions = useMemo(() => {
     if (!quiz) return false;
@@ -1390,7 +1420,12 @@ export function ChatInterface({
   const showPreviewAction = canPreview && (isQuizReadyForActions || requestedPreview);
   const showPublishAction = canPublish && (isQuizReadyForActions || requestedPublish);
   const showUpdateAction = canUpdateLive && (isQuizReadyForActions || requestedPublish);
-  const shouldShowActionRow = (showPreviewAction || showPublishAction || showUpdateAction);
+  const showPublishedAction = Boolean(
+    quiz?.isPublished &&
+    !hasUnpublishedChanges &&
+    (isQuizReadyForActions || requestedPreview || requestedPublish)
+  );
+  const shouldShowActionRow = (showPreviewAction || showPublishAction || showUpdateAction || showPublishedAction);
   const actionBusy = isLoading || isPublishing || isSaving;
 
   return (
@@ -1441,7 +1476,7 @@ export function ChatInterface({
                     {quiz?.isPublished
                       ? hasUnpublishedChanges
                         ? 'Há alterações pendentes no quiz ao vivo. Visualize ou atualize direto pelo chat.'
-                        : 'Quiz publicado sem pendências. Visualize rapidinho para garantir que está tudo certo.'
+                        : 'Quiz publicado sem pendências. Visualize rapidinho ou copie o link público.'
                       : 'Revise no preview ou publique quando estiver pronto.'}
                   </p>
                 </div>
@@ -1452,10 +1487,44 @@ export function ChatInterface({
                       variant="secondary"
                       onClick={onOpenPreview}
                       disabled={actionBusy}
-                      className="flex-1 min-w-[160px]"
+                      className="flex-1 min-w-[160px] gap-2"
                     >
                       <Eye className="h-4 w-4" aria-hidden="true" />
                       Pré-visualizar
+                    </Button>
+                  )}
+                  {showPublishedAction && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCopyPublishedUrl}
+                      onMouseEnter={() => setPublishedButtonHovered(true)}
+                      onMouseLeave={() => setPublishedButtonHovered(false)}
+                      disabled={actionBusy}
+                      className={`flex-1 min-w-[160px] gap-2 transition-all duration-200 ${copiedPublishedUrl
+                        ? 'text-green-600 border-green-500/50 bg-green-500/10'
+                        : publishedButtonHovered
+                          ? 'text-primary border-primary/50'
+                          : 'text-green-600 border-green-500/50 bg-green-500/10'
+                        }`}
+                      title={copiedPublishedUrl ? 'URL copiada' : 'Clique para copiar URL do quiz'}
+                    >
+                      {copiedPublishedUrl ? (
+                        <>
+                          <Check className="h-4 w-4" aria-hidden="true" />
+                          Copiado!
+                        </>
+                      ) : publishedButtonHovered ? (
+                        <>
+                          <Link2 className="h-4 w-4" aria-hidden="true" />
+                          Copiar URL
+                        </>
+                      ) : (
+                        <>
+                          <Globe className="h-4 w-4" aria-hidden="true" />
+                          Publicado
+                        </>
+                      )}
                     </Button>
                   )}
                   {showPublishAction && (
@@ -1463,7 +1532,7 @@ export function ChatInterface({
                       type="button"
                       onClick={onPublish}
                       disabled={actionBusy}
-                      className="flex-1 min-w-[160px]"
+                      className="flex-1 min-w-[160px] gap-2"
                     >
                       <Rocket className="h-4 w-4" aria-hidden="true" />
                       {isPublishing ? 'Publicando...' : 'Publicar'}
@@ -1474,7 +1543,7 @@ export function ChatInterface({
                       type="button"
                       onClick={onPublishUpdate}
                       disabled={actionBusy}
-                      className="flex-1 min-w-[180px]"
+                      className="flex-1 min-w-[180px] gap-2"
                     >
                       <RefreshCw className="h-4 w-4" aria-hidden="true" />
                       {isPublishing ? 'Atualizando...' : 'Atualizar quiz ao vivo'}
