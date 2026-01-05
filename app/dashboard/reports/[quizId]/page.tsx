@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import { QuizService } from '@/lib/services/quiz-service';
-import { AnalyticsService } from '@/lib/services/analytics-service';
 import { auth } from '@/lib/firebase';
 import type { Quiz, QuizAttempt } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -56,6 +55,50 @@ type LeadsResponse = {
     isPro: boolean;
 };
 
+type ReportsResponse = {
+    attempts: QuizAttempt[];
+    isPro: boolean;
+};
+
+type ReportsGateProps = {
+    show: boolean;
+    onUpgradeClick: () => void;
+    children: ReactNode;
+};
+
+const ReportsGate = ({ show, onUpgradeClick, children }: ReportsGateProps) => {
+    if (!show) return <>{children}</>;
+
+    return (
+        <div className="relative">
+            <div className="sticky top-[20vh] z-30 flex justify-center pointer-events-none h-0">
+                <div className="pointer-events-auto w-full max-w-md px-4 translate-y-8 md:translate-y-12">
+                    <Card className="shadow-lg border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                        <CardContent className="flex flex-col items-center text-center p-6 gap-4">
+                            <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                                <Lock className="h-5 w-5" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <h3 className="font-semibold text-lg">Desbloqueie todos os dados do relatório</h3>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                    No plano Pro você acessa funil, resultados e leads completos deste quiz.
+                                </p>
+                            </div>
+                            <Button onClick={onUpgradeClick} className="w-full sm:w-auto min-w-[200px]">
+                                Fazer upgrade
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+            <div className="relative z-0 opacity-20 blur-[2px] pointer-events-none select-none">
+                {children}
+            </div>
+            <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-[6px] pointer-events-none" />
+        </div>
+    );
+};
+
 const getFunnelTooltipLabel = (label: string) => {
     if (label === 'Inícios') return 'início';
     if (label === 'Conclusões') return 'conclusão';
@@ -101,6 +144,42 @@ const PieTooltip = ({ active, payload, total }: { active?: boolean; payload?: re
     );
 };
 
+const buildMockFunnelData = (questionOrder: string[], questionLabels: Record<string, string>) => {
+    const steps = Math.max(1, questionOrder.length);
+    const base = Math.max(40, steps * 18);
+    const dropRate = 0.08;
+    const completionValue = Math.max(6, Math.round(base * 0.55));
+
+    return [
+        { name: 'Inícios', value: base, fill: FUNNEL_START_COLOR },
+        ...questionOrder.map((qId, index) => ({
+            name: questionLabels[qId],
+            value: Math.max(8, Math.round(base * (1 - (index + 1) * dropRate))),
+            fill: '#82ca9d'
+        })),
+        { name: 'Conclusões', value: completionValue, fill: '#4ade80' }
+    ];
+};
+
+const buildMockResultData = (outcomes: Quiz['outcomes'] | undefined) => {
+    if (!outcomes?.length) return [];
+
+    const total = Math.max(12, outcomes.length * 4);
+    const perOutcome = Math.max(1, Math.floor(total / outcomes.length));
+    const remainder = total - perOutcome * outcomes.length;
+
+    return outcomes.map((outcome, index) => {
+        const name = outcome.title || `Resultado ${index + 1}`;
+        const value = perOutcome + (index < remainder ? 1 : 0);
+
+        return {
+            name: `${name} (${value})`,
+            value,
+            rawName: name
+        };
+    });
+};
+
 export default function QuizReportPage() {
     const params = useParams();
     const quizId = params?.quizId as string;
@@ -126,10 +205,7 @@ export default function QuizReportPage() {
             if (!user || !quizId) return;
 
             try {
-                const [quizData, allAttempts] = await Promise.all([
-                    QuizService.getQuizById(quizId, user.uid),
-                    AnalyticsService.getQuizAttempts(quizId)
-                ]);
+                const quizData = await QuizService.getQuizById(quizId, user.uid);
 
                 if (!quizData) {
                     setQuiz(null);
@@ -137,13 +213,7 @@ export default function QuizReportPage() {
                     return;
                 }
 
-                // Filter out attempts by the owner to avoid skewing metrics
-                const validAttempts = allAttempts.filter(attempt =>
-                    !attempt.isOwnerAttempt && attempt.userId !== quizData.ownerId
-                );
-
                 setQuiz(quizData);
-                setAttempts(validAttempts);
             } catch (error) {
                 console.error('Failed to fetch report data', error);
             } finally {
@@ -155,8 +225,54 @@ export default function QuizReportPage() {
     }, [user, quizId]);
 
     useEffect(() => {
+        async function fetchReports() {
+            if (!user || !quizId) return;
+
+            if (!isProUser) {
+                setAttempts([]);
+                return;
+            }
+
+            try {
+                const token = await auth?.currentUser?.getIdToken();
+                if (!token) {
+                    throw new Error('Missing auth token');
+                }
+
+                const response = await fetch(`/api/reports?quizId=${encodeURIComponent(quizId)}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch reports');
+                }
+
+                const data = (await response.json()) as ReportsResponse;
+                const reportAttempts = data.attempts || [];
+                setAttempts(reportAttempts);
+            } catch (error) {
+                console.error('Failed to fetch report data', error);
+            }
+        }
+
+        fetchReports();
+    }, [user, quizId, isProUser]);
+
+    useEffect(() => {
         async function fetchLeads() {
             if (!user || !quizId) return;
+
+            if (!isProUser) {
+                setLeads([]);
+                setTotalLeadCount(0);
+                setLockedLeadCount(0);
+                setHasProAccess(false);
+                setLeadsLoading(false);
+                return;
+            }
+
             setLeadsLoading(true);
             try {
                 const token = await auth?.currentUser?.getIdToken();
@@ -187,7 +303,7 @@ export default function QuizReportPage() {
         }
 
         fetchLeads();
-    }, [user, quizId]);
+    }, [user, quizId, isProUser]);
 
     if (loading) {
         return <div className="p-8">Carregando dados...</div>;
@@ -212,9 +328,14 @@ export default function QuizReportPage() {
         return acc;
     }, {} as Record<string, string>);
 
+    const validAttempts = attempts.filter(attempt =>
+        !attempt.isOwnerAttempt && attempt.userId !== quiz.ownerId
+    );
+    const useMockReports = !isProUser;
+
     const funnelCounts: Record<string, number> = {
-        'start': attempts.length,
-        'completed': attempts.filter(a => a.status === 'completed').length,
+        'start': validAttempts.length,
+        'completed': validAttempts.filter(a => a.status === 'completed').length,
     };
 
     // Initialize question counts
@@ -222,7 +343,7 @@ export default function QuizReportPage() {
         funnelCounts[qId] = 0;
     });
 
-    attempts.forEach(attempt => {
+    validAttempts.forEach(attempt => {
         // If completed, they saw all questions (assuming linear flow)
         if (attempt.status === 'completed') {
             questionOrder.forEach(qId => funnelCounts[qId]++);
@@ -238,7 +359,7 @@ export default function QuizReportPage() {
         }
     });
 
-    const funnelData = [
+    const realFunnelData = [
         { name: 'Inícios', value: funnelCounts.start, fill: FUNNEL_START_COLOR },
         ...questionOrder.map(qId => ({
             name: questionLabels[qId],
@@ -247,15 +368,17 @@ export default function QuizReportPage() {
         })),
         { name: 'Conclusões', value: funnelCounts.completed, fill: '#4ade80' }
     ];
+    const mockFunnelData = buildMockFunnelData(questionOrder, questionLabels);
+    const funnelData = useMockReports ? mockFunnelData : realFunnelData;
 
     // 2. Result Distribution
     const resultCounts: Record<string, number> = {};
-    attempts.filter(a => a.status === 'completed' && a.resultOutcomeId).forEach(a => {
+    validAttempts.filter(a => a.status === 'completed' && a.resultOutcomeId).forEach(a => {
         const rId = a.resultOutcomeId!;
         resultCounts[rId] = (resultCounts[rId] || 0) + 1;
     });
 
-    const resultData = Object.entries(resultCounts).map(([rId, count]) => {
+    const realResultData = Object.entries(resultCounts).map(([rId, count]) => {
         const outcome = quiz.outcomes?.find(o => o.id === rId);
         const name = outcome?.title || 'Desconhecido';
         return {
@@ -265,14 +388,15 @@ export default function QuizReportPage() {
         };
     });
 
-    // Calculate total for percentage in tooltip
+    const mockResultData = buildMockResultData(quiz.outcomes);
+    const resultData = useMockReports ? mockResultData : realResultData;
     const resultTotal = resultData.reduce((sum, item) => sum + item.value, 0);
 
     // 3. CTA Clicks (If we tracked them... MVP skips this for now or assumes conversion if needed)
     const totalViews = quiz.stats?.views ?? 0;
-    const totalStarts = attempts.length;
+    const totalStarts = validAttempts.length;
     const totalCompletions = funnelCounts.completed;
-    const totalLeads = attempts.filter(a => a.lead && (a.lead.email || a.lead.phone)).length;
+    const totalLeads = validAttempts.filter(a => a.lead && (a.lead.email || a.lead.phone)).length;
     const startRate = totalViews ? Math.round((totalStarts / totalViews) * 100) : 0;
     const completionRate = totalStarts ? Math.round((totalCompletions / totalStarts) * 100) : 0;
 
@@ -342,7 +466,7 @@ export default function QuizReportPage() {
             resultTitle: resultName,
         };
     });
-    const leadsTitle = leadsLoading
+    const leadsTitle = leadsLoading || !isProUser
         ? 'Leads capturados'
         : totalLeadCount === 1
             ? '1 lead capturado'
@@ -455,141 +579,143 @@ export default function QuizReportPage() {
                 </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <ReportsGate show={!isProUser} onUpgradeClick={handleUpgradeClick}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                {/* Funnel Chart */}
-                <Card className="col-span-1">
-                    <CardHeader>
-                        <CardTitle>Funil de Conversão</CardTitle>
-                        <CardDescription>
-                            Onde os usuários estão abandonando o quiz
-                            <br />
-                            <span className="text-xs font-normal opacity-80">
-                                Número de pessoas que chegaram à cada etapa
-                            </span>
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={funnelData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                                <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
-                                <Tooltip cursor={{ fill: 'transparent' }} content={<FunnelTooltip />} />
-                                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                                    <LabelList 
-                                        dataKey="value" 
-                                        position="insideRight" 
-                                        fill="#fff" 
-                                        fontSize={12} 
-                                        fontWeight="bold"
-                                        offset={10}
-                                    />
-                                    {funnelData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-
-                {/* Results Distribution */}
-                <Card className="col-span-1">
-                    <CardHeader>
-                        <CardTitle>Distribuição de Resultados</CardTitle>
-                        <CardDescription>Quais resultados os usuários estão obtendo</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[400px]">
-                        {resultData.length > 0 ? (
+                    {/* Funnel Chart */}
+                    <Card className="col-span-1">
+                        <CardHeader>
+                            <CardTitle>Funil de Conversão</CardTitle>
+                            <CardDescription>
+                                Onde os usuários estão abandonando o quiz
+                                <br />
+                                <span className="text-xs font-normal opacity-80">
+                                    Número de pessoas que chegaram à cada etapa
+                                </span>
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <PieChart margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
-                                    <Pie
-                                        data={resultData}
-                                        cx="50%"
-                                        cy="45%"
-                                        labelLine={true}
-                                        outerRadius={90}
-                                        fill={FUNNEL_START_COLOR}
-                                        dataKey="value"
-                                        label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
-                                    >
-                                        {resultData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                <BarChart data={funnelData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                                    <XAxis type="number" hide />
+                                    <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
+                                    <Tooltip cursor={{ fill: 'transparent' }} content={<FunnelTooltip />} />
+                                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                                        <LabelList 
+                                            dataKey="value" 
+                                            position="insideRight" 
+                                            fill="#fff" 
+                                            fontSize={12} 
+                                            fontWeight="bold"
+                                            offset={10}
+                                        />
+                                        {funnelData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.fill} />
                                         ))}
-                                    </Pie>
-                                    <Tooltip 
-                                        content={({ active, payload }) => (
-                                            <PieTooltip active={active} payload={payload} total={resultTotal} />
-                                        )} 
-                                    />
-                                    <Legend 
-                                        layout="horizontal" 
-                                        verticalAlign="bottom" 
-                                        align="center"
-                                        wrapperStyle={{ paddingTop: '20px' }}
-                                    />
-                                </PieChart>
+                                    </Bar>
+                                </BarChart>
                             </ResponsiveContainer>
-                        ) : (
-                            <div className="flex h-full items-center justify-center text-muted-foreground">
-                                Sem dados suficientes
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
 
-            </div>
-
-            <div className="mt-10">
-                <div className="mb-6">
-                    <h2 className="text-2xl font-semibold">{leadsTitle}</h2>
-                    <p className="text-muted-foreground mt-1">
-                        Veja os contatos gerados por este quiz.
-                    </p>
-                </div>
-                <Card>
-                    <CardHeader className="pb-4">
-                        <div className="flex flex-col md:flex-row gap-4 md:items-center">
-                            <div className="flex-1">
-                                <div className="relative">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Buscar por nome, email..."
-                                        className="pl-8"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
+                    {/* Results Distribution */}
+                    <Card className="col-span-1">
+                        <CardHeader>
+                            <CardTitle>Distribuição de Resultados</CardTitle>
+                            <CardDescription>Quais resultados os usuários estão obtendo</CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-[400px]">
+                            {resultData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
+                                        <Pie
+                                            data={resultData}
+                                            cx="50%"
+                                            cy="45%"
+                                            labelLine={true}
+                                            outerRadius={90}
+                                            fill={FUNNEL_START_COLOR}
+                                            dataKey="value"
+                                            label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
+                                        >
+                                            {resultData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                            content={({ active, payload }) => (
+                                                <PieTooltip active={active} payload={payload} total={resultTotal} />
+                                            )} 
+                                        />
+                                        <Legend 
+                                            layout="horizontal" 
+                                            verticalAlign="bottom" 
+                                            align="center"
+                                            wrapperStyle={{ paddingTop: '20px' }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex h-full items-center justify-center text-muted-foreground">
+                                    Sem dados suficientes
                                 </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                </div>
+
+                <div className="mt-10">
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-semibold">{leadsTitle}</h2>
+                        <p className="text-muted-foreground mt-1">
+                            Veja os contatos gerados por este quiz.
+                        </p>
+                    </div>
+                    <Card>
+                        <CardHeader className="pb-4">
+                            <div className="flex flex-col md:flex-row gap-4 md:items-center">
+                                <div className="flex-1">
+                                    <div className="relative">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Buscar por nome, email..."
+                                            className="pl-8"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    className="md:self-start h-10"
+                                    onClick={handleExportClick}
+                                    disabled={hasProAccess && filteredLeads.length === 0}
+                                >
+                                    {hasProAccess ? (
+                                        <Download className="mr-2 h-4 w-4" />
+                                    ) : (
+                                        <Lock className="mr-2 h-4 w-4" />
+                                    )}
+                                    {hasProAccess ? 'Exportar CSV' : 'Exportar CSV (Pro)'}
+                                </Button>
                             </div>
-                            <Button
-                                variant="outline"
-                                className="md:self-start h-10"
-                                onClick={handleExportClick}
-                                disabled={hasProAccess && filteredLeads.length === 0}
-                            >
-                                {hasProAccess ? (
-                                    <Download className="mr-2 h-4 w-4" />
-                                ) : (
-                                    <Lock className="mr-2 h-4 w-4" />
-                                )}
-                                {hasProAccess ? 'Exportar CSV' : 'Exportar CSV (Pro)'}
-                            </Button>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <LeadsTable
-                            rows={leadRows}
-                            loading={leadsLoading}
-                            lockedCount={lockedLeadCount}
-                            visibleCount={visibleLeadCount}
-                            totalCount={totalLeadCount}
-                            onUpgradeClick={handleUpgradeClick}
-                            showFooter={!leadsLoading}
-                        />
-                    </CardContent>
-                </Card>
-            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <LeadsTable
+                                rows={leadRows}
+                                loading={leadsLoading}
+                                lockedCount={lockedLeadCount}
+                                visibleCount={visibleLeadCount}
+                                totalCount={totalLeadCount}
+                                onUpgradeClick={handleUpgradeClick}
+                                showFooter={!leadsLoading}
+                            />
+                        </CardContent>
+                    </Card>
+                </div>
+            </ReportsGate>
 
             <UpgradeModal
                 open={showUpgradeModal}
