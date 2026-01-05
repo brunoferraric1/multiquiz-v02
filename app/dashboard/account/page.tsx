@@ -16,6 +16,9 @@ export default function AccountPage() {
     const { user, updateUserProfile } = useAuth();
     const { subscription, isLoading: isLoadingSubscription } = useSubscription(user?.uid);
     const router = useRouter();
+    const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const firebaseAuthDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+    const showDebug = (firebaseProjectId || '').includes('staging');
 
     const [isLoading, setIsLoading] = useState(false);
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
@@ -278,6 +281,35 @@ export default function AccountPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {showDebug && (
+                <Card className="border-dashed bg-muted/30">
+                    <CardHeader>
+                        <CardTitle className="text-sm">Debug (Staging)</CardTitle>
+                        <CardDescription>
+                            Confirme o projeto Firebase e o UID atual.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-sm text-muted-foreground space-y-2">
+                        <div>
+                            <span className="font-medium text-foreground">UID:</span>{' '}
+                            <span>{user?.uid || 'n/a'}</span>
+                        </div>
+                        <div>
+                            <span className="font-medium text-foreground">Project ID:</span>{' '}
+                            <span>{firebaseProjectId || 'n/a'}</span>
+                        </div>
+                        <div>
+                            <span className="font-medium text-foreground">Auth Domain:</span>{' '}
+                            <span>{firebaseAuthDomain || 'n/a'}</span>
+                        </div>
+                        <div>
+                            <span className="font-medium text-foreground">Doc path:</span>{' '}
+                            <span>{user ? `users/${user.uid}` : 'n/a'}</span>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }

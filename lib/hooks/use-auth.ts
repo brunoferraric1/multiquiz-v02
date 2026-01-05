@@ -26,6 +26,15 @@ export function useAuth() {
           photoURL: firebaseUser.photoURL,
         };
 
+        const projectId = auth?.app?.options?.projectId;
+        if (projectId?.includes('staging')) {
+          console.log('[Auth Debug]', {
+            uid: firebaseUser.uid,
+            projectId,
+            authDomain: auth?.app?.options?.authDomain,
+          });
+        }
+
         setUser(nextUser);
         void upsertUserProfile(nextUser).catch((error) => {
           console.warn('[useAuth] Failed to sync user profile', error);

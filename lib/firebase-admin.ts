@@ -108,7 +108,9 @@ export async function updateUserSubscription(
 ): Promise<void> {
     const db = getAdminDb();
     const cleaned = Object.fromEntries(
-        Object.entries(subscription).filter(([, value]) => value !== undefined)
+        Object.entries(subscription).filter(([, value]) => (
+            value !== undefined && !(typeof value === 'number' && Number.isNaN(value))
+        ))
     ) as Partial<UserSubscription>;
 
     if (Object.keys(cleaned).length === 0) {

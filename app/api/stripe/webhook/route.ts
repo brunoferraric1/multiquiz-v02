@@ -10,6 +10,12 @@ import Stripe from 'stripe';
 // Disable body parsing, we need raw body for webhook signature verification
 export const runtime = 'nodejs';
 
+const toMillis = (seconds?: number | null) => (
+    typeof seconds === 'number' && Number.isFinite(seconds)
+        ? seconds * 1000
+        : undefined
+);
+
 export async function POST(request: NextRequest) {
     const body = await request.text();
     const signature = request.headers.get('stripe-signature');
@@ -149,7 +155,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscriptionId,
         stripePriceId: priceId,
-        currentPeriodEnd: periodEnd * 1000, // Convert to ms
+        currentPeriodEnd: toMillis(periodEnd), // Convert to ms
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
     };
 
@@ -181,7 +187,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     await updateUserSubscription(userId, {
         tier: getTierFromPriceId(priceId),
         status: 'active',
-        currentPeriodEnd: periodEnd * 1000,
+        currentPeriodEnd: toMillis(periodEnd),
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
     });
 
@@ -225,7 +231,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         tier: getTierFromPriceId(priceId),
         status,
         stripePriceId: priceId,
-        currentPeriodEnd: periodEnd * 1000,
+        currentPeriodEnd: toMillis(periodEnd),
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
     });
 

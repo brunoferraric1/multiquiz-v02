@@ -101,6 +101,10 @@ export async function POST(request: NextRequest) {
     const subscriptionCustomer = typeof subscription.customer === 'string'
         ? subscription.customer
         : subscription.customer?.id;
+    const currentPeriodEnd =
+        typeof periodEnd === 'number' && Number.isFinite(periodEnd)
+            ? periodEnd * 1000
+            : undefined;
 
     await updateUserSubscription(userId, {
         tier: getTierFromPriceId(priceId || ''),
@@ -108,7 +112,7 @@ export async function POST(request: NextRequest) {
         stripeCustomerId: customerId || subscriptionCustomer,
         stripeSubscriptionId: subscription.id,
         stripePriceId: priceId,
-        currentPeriodEnd: periodEnd ? periodEnd * 1000 : undefined,
+        currentPeriodEnd,
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
     });
 
