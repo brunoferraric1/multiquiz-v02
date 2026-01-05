@@ -64,17 +64,17 @@ export default function ReportsPage() {
                                     <div className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
                                         <Eye className="h-4 w-4 mb-1 text-muted-foreground" />
                                         <span className="text-lg font-bold">{quiz.stats?.views || 0}</span>
-                                        <span className="text-xs text-muted-foreground">Visitas</span>
+                                        <span className="text-xs text-muted-foreground">Visitas totais</span>
                                     </div>
                                     <div className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
                                         <Play className="h-4 w-4 mb-1 text-blue-500" />
                                         <span className="text-lg font-bold">{quiz.stats?.starts || 0}</span>
-                                        <span className="text-xs text-muted-foreground">Inícios</span>
+                                        <span className="text-xs text-muted-foreground">Inícios totais</span>
                                     </div>
                                     <div className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
                                         <CheckCircle2 className="h-4 w-4 mb-1 text-green-500" />
                                         <span className="text-lg font-bold">{quiz.stats?.completions || 0}</span>
-                                        <span className="text-xs text-muted-foreground">Finais</span>
+                                        <span className="text-xs text-muted-foreground">Conclusões</span>
                                     </div>
                                 </div>
 

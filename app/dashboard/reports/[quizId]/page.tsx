@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { QuizService } from '@/lib/services/quiz-service';
@@ -8,7 +8,9 @@ import { AnalyticsService } from '@/lib/services/analytics-service';
 import type { Quiz, QuizAttempt } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Play, CheckCircle, Mail } from 'lucide-react';
+import { QuizPlayer } from '@/components/quiz/quiz-player';
+import { ArrowLeft, Eye, Play, CheckCircle2, Mail, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
     BarChart,
     Bar,
@@ -29,7 +31,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 
 const getFunnelTooltipLabel = (label: string) => {
     if (label === 'Inícios') return 'início';
-    if (label === 'Finais') return 'final';
+    if (label === 'Conclusões') return 'conclusão';
     if (/^P\d+/i.test(label)) return `pergunta ${label.replace(/\D/g, '')}`;
     return label.toLowerCase();
 };
@@ -53,10 +55,12 @@ const FunnelTooltip = ({ active, payload }: { active?: boolean; payload?: any[] 
     );
 };
 
-const PieTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
+const PieTooltip = ({ active, payload, total }: { active?: boolean; payload?: any[]; total: number }) => {
     if (!active || !payload?.length) return null;
 
     const data = payload[0].payload;
+    const value = data.value;
+    const percent = total > 0 ? (value / total) * 100 : 0;
     
     return (
         <div className="rounded-md bg-card px-3 py-2 shadow-md border border-border">
@@ -64,7 +68,7 @@ const PieTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) 
                 {data.rawName}
             </p>
             <p className="text-sm text-muted-foreground">
-                {data.value} pessoas ({((data.percent || 0) * 100).toFixed(0)}%)
+                {value} {value === 1 ? 'pessoa' : 'pessoas'} ({percent.toFixed(0)}%)
             </p>
         </div>
     );
@@ -79,6 +83,7 @@ export default function QuizReportPage() {
     const [quiz, setQuiz] = useState<Quiz | null>(null);
     const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
     useEffect(() => {
         async function fetchData() {
@@ -169,7 +174,7 @@ export default function QuizReportPage() {
             value: funnelCounts[qId],
             fill: '#82ca9d'
         })),
-        { name: 'Finais', value: funnelCounts.completed, fill: '#4ade80' }
+        { name: 'Conclusões', value: funnelCounts.completed, fill: '#4ade80' }
     ];
 
     // 2. Result Distribution
@@ -189,7 +194,16 @@ export default function QuizReportPage() {
         };
     });
 
+    // Calculate total for percentage in tooltip
+    const resultTotal = resultData.reduce((sum, item) => sum + item.value, 0);
+
     // 3. CTA Clicks (If we tracked them... MVP skips this for now or assumes conversion if needed)
+    const totalViews = quiz.stats?.views ?? 0;
+    const totalStarts = attempts.length;
+    const totalCompletions = funnelCounts.completed;
+    const totalLeads = attempts.filter(a => a.lead && (a.lead.email || a.lead.phone)).length;
+    const startRate = totalViews ? Math.round((totalStarts / totalViews) * 100) : 0;
+    const completionRate = totalStarts ? Math.round((totalCompletions / totalStarts) * 100) : 0;
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -206,41 +220,54 @@ export default function QuizReportPage() {
                     </p>
                 </div>
                 <div className="flex gap-4">
-                    {/* Placeholder for export if needed specifically for this report */}
+                    <Button variant="outline" onClick={() => setIsPreviewOpen(true)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Pré-visualizar
+                    </Button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <Card>
                     <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 text-muted-foreground">
-                        <CardTitle className="text-sm font-medium">Inícios Totais</CardTitle>
-                        <Play className="h-4 w-4" />
+                        <CardTitle className="text-sm font-medium">Visitas totais</CardTitle>
+                        <Eye className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{attempts.length}</div>
+                        <div className="text-3xl font-bold">{totalViews}</div>
+                        <p className="text-xs text-muted-foreground mt-1">Acessaram o link do quiz</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 text-muted-foreground">
+                        <CardTitle className="text-sm font-medium">Inícios totais</CardTitle>
+                        <Play className="h-4 w-4 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold">{totalStarts}</div>
+                        <p className="text-xs text-muted-foreground mt-1">{startRate}% iniciaram o quiz</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 text-muted-foreground">
                         <CardTitle className="text-sm font-medium">Conclusões</CardTitle>
-                        <CheckCircle className="h-4 w-4" />
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{funnelCounts.completed}</div>
+                        <div className="text-3xl font-bold">{totalCompletions}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Taxa: {attempts.length ? Math.round((funnelCounts.completed / attempts.length) * 100) : 0}%
+                            {completionRate}% concluíram o quiz
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 text-muted-foreground">
-                        <CardTitle className="text-sm font-medium">Leads Capturados</CardTitle>
-                        <Mail className="h-4 w-4" />
+                        <CardTitle className="text-sm font-medium">Leads capturados</CardTitle>
+                        <Mail className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">
-                            {attempts.filter(a => a.lead && (a.lead.email || a.lead.phone)).length}
-                        </div>
+                        <div className="text-3xl font-bold">{totalLeads}</div>
+                        <p className="text-xs text-muted-foreground mt-1">Leads com contato informado</p>
                     </CardContent>
                 </Card>
             </div>
@@ -308,7 +335,11 @@ export default function QuizReportPage() {
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip content={<PieTooltip />} />
+                                    <Tooltip 
+                                        content={({ active, payload }) => (
+                                            <PieTooltip active={active} payload={payload} total={resultTotal} />
+                                        )} 
+                                    />
                                     <Legend 
                                         layout="horizontal" 
                                         verticalAlign="bottom" 
@@ -326,6 +357,39 @@ export default function QuizReportPage() {
                 </Card>
 
             </div>
+
+            <AnimatePresence>
+                {isPreviewOpen && (
+                    <motion.div
+                        initial={{ y: '100%' }}
+                        animate={{ y: 0 }}
+                        exit={{ y: '100%' }}
+                        transition={{
+                            type: 'spring',
+                            damping: 30,
+                            stiffness: 300,
+                            mass: 0.8,
+                        }}
+                        className="fixed inset-0 z-50 flex bg-background/95 backdrop-blur-sm"
+                    >
+                        <div className="relative flex h-full w-full flex-col bg-background">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setIsPreviewOpen(false)}
+                                className="absolute top-4 right-4 z-10 rounded-full bg-background/60 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background/80 hover:text-foreground"
+                                aria-label="Fechar pré-visualização"
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                            <main className="flex-1 overflow-auto bg-muted/40">
+                                <QuizPlayer quiz={quiz} mode="preview" onExit={() => setIsPreviewOpen(false)} />
+                            </main>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
