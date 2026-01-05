@@ -141,11 +141,50 @@ export default function LeadsPage() {
     const visibleLeadCount = hasProAccess ? filteredLeads.length : leads.length;
     const visibleLeadLabel = leadLabel(visibleLeadCount);
     const totalLeadLabel = leadLabel(totalLeadCount);
-    const lockedLeadLabel = leadLabel(lockedLeadCount);
 
-    const lockedRows = Math.max(0, lockedLeadCount);
-    const placeholderRows = Array.from({ length: lockedRows });
-    const lockedRowPadding = lockedRows === 1 ? 'py-5' : 'py-3';
+    // Ensure we render enough height to cover the upgrade card
+    // Use a transparent spacer row if actual locked rows aren't tall enough
+    const MAX_LOCKED_ROWS_DISPLAY = 20;
+    const displayLockedRows = lockedLeadCount > 0 
+        ? Math.min(lockedLeadCount, MAX_LOCKED_ROWS_DISPLAY) 
+        : 0;
+    
+    const placeholderRows = Array.from({ length: displayLockedRows });
+    const lockedRowPadding = 'py-3';
+    const columnWidths = {
+        date: 'min-w-[9.5rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
+        name: 'min-w-[9rem] sm:min-w-[auto]',
+        email: 'min-w-[12.5rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
+        phone: 'min-w-[10rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
+        quiz: 'min-w-[15rem] sm:min-w-[auto]',
+        result: 'min-w-[11rem] sm:min-w-[auto]',
+    };
+    const renderUpgradeCard = (className: string) => (
+        <Card className={`shadow-lg border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 ${className}`}>
+            <CardContent className="flex flex-col items-center text-center p-6 gap-4">
+                <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                    <Lock className="h-5 w-5" />
+                </div>
+                <div className="space-y-1.5">
+                    <h3 className="font-semibold text-lg">Desbloqueie todos os seus leads</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        Você está vendo <span className="font-medium text-foreground">{visibleLeadLabel}</span> de <span className="font-medium text-foreground">{totalLeadLabel}</span>.
+                        <br />
+                        No plano Pro você acessa os dados de todos os leads que responderam o seu quiz.
+                    </p>
+                </div>
+                <Button onClick={handleUpgradeClick} className="w-full sm:w-auto min-w-[200px]">
+                    Fazer upgrade
+                </Button>
+            </CardContent>
+        </Card>
+    );
+    
+    // Calculate if we need extra space for the upgrade card (approx 384px height)
+    const ESTIMATED_ROW_HEIGHT = 53;
+    const MIN_SECTION_HEIGHT = 384;
+    const currentSectionHeight = displayLockedRows * ESTIMATED_ROW_HEIGHT;
+    const spacerHeight = Math.max(0, MIN_SECTION_HEIGHT - currentSectionHeight);
 
     if (loading) {
         return <div className="p-8">Carregando leads...</div>;
@@ -153,29 +192,18 @@ export default function LeadsPage() {
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold">Gerenciamento de Leads</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Visualize e exporte os contatos capturados pelos seus quizzes.
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Você tem {totalLeadCount} leads capturados.
-                    </p>
-                </div>
-                <Button onClick={handleExportClick} disabled={hasProAccess && filteredLeads.length === 0}>
-                    {hasProAccess ? (
-                        <Download className="mr-2 h-4 w-4" />
-                    ) : (
-                        <Lock className="mr-2 h-4 w-4" />
-                    )}
-                    {hasProAccess ? 'Exportar CSV' : 'Exportar CSV (Pro)'}
-                </Button>
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold">
+                    {totalLeadCount === 1 ? '1 lead capturado' : `${totalLeadCount} leads capturados`}
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                    Visualize e exporte os contatos capturados pelos seus quizzes.
+                </p>
             </div>
 
             <Card>
                 <CardHeader className="pb-4">
-                    <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex flex-col md:flex-row gap-4 md:items-center">
                         <div className="flex-1">
                             <div className="relative">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -200,23 +228,36 @@ export default function LeadsPage() {
                                 </SelectContent>
                             </Select>
                         </div>
+                        <Button
+                            variant="outline"
+                            className="md:self-start h-10"
+                            onClick={handleExportClick}
+                            disabled={hasProAccess && filteredLeads.length === 0}
+                        >
+                            {hasProAccess ? (
+                                <Download className="mr-2 h-4 w-4" />
+                            ) : (
+                                <Lock className="mr-2 h-4 w-4" />
+                            )}
+                            {hasProAccess ? 'Exportar CSV' : 'Exportar CSV (Pro)'}
+                        </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-md border">
+                    <div className="relative rounded-md border">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Data</TableHead>
-                                    <TableHead>Nome</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Telefone</TableHead>
-                                    <TableHead>Quiz</TableHead>
-                                    <TableHead>Resultado</TableHead>
+                                    <TableHead className={columnWidths.date}>Data</TableHead>
+                                    <TableHead className={columnWidths.name}>Nome</TableHead>
+                                    <TableHead className={columnWidths.email}>Email</TableHead>
+                                    <TableHead className={columnWidths.phone}>Telefone</TableHead>
+                                    <TableHead className={columnWidths.quiz}>Quiz</TableHead>
+                                    <TableHead className={columnWidths.result}>Resultado</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredLeads.length === 0 && lockedRows === 0 ? (
+                                {filteredLeads.length === 0 && displayLockedRows === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-24 text-center">
                                             Nenhum lead encontrado.
@@ -230,35 +271,24 @@ export default function LeadsPage() {
 
                                             return (
                                                 <TableRow key={lead.id}>
-                                                    <TableCell>
+                                                    <TableCell className={columnWidths.date}>
                                                         {lead.startedAt ? format(new Date(lead.startedAt), 'dd/MM/yyyy HH:mm') : '-'}
                                                     </TableCell>
-                                                    <TableCell className="font-medium">{lead.lead?.name || '-'}</TableCell>
-                                                    <TableCell>{lead.lead?.email || '-'}</TableCell>
-                                                    <TableCell>{lead.lead?.phone || '-'}</TableCell>
-                                                    <TableCell>{quiz?.title || 'Desconhecido'}</TableCell>
-                                                    <TableCell>{resultName}</TableCell>
+                                                    <TableCell className={`${columnWidths.name} font-medium`}>{lead.lead?.name || '-'}</TableCell>
+                                                    <TableCell className={columnWidths.email}>{lead.lead?.email || '-'}</TableCell>
+                                                    <TableCell className={columnWidths.phone}>{lead.lead?.phone || '-'}</TableCell>
+                                                    <TableCell className={columnWidths.quiz}>{quiz?.title || 'Desconhecido'}</TableCell>
+                                                    <TableCell className={columnWidths.result}>{resultName}</TableCell>
                                                 </TableRow>
                                             );
                                         })}
-                                        {lockedRows > 0 && (
+                                        {displayLockedRows > 0 && (
                                             <>
-                                                <TableRow className="hover:bg-transparent">
-                                                    <TableCell colSpan={6} className="p-0">
-                                                        <div className="border-t border-border bg-muted/10">
-                                                            <div className="flex flex-col gap-3 border-b border-border bg-background/90 p-4 md:flex-row md:items-center md:justify-between">
-                                                                <div>
-                                                                    <p className="text-sm font-semibold">
-                                                                        Você está vendo {visibleLeadLabel} de {totalLeadLabel}.
-                                                                    </p>
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        No plano gratuito mostramos apenas {visibleLeadLabel}. Desbloqueie os outros {lockedLeadLabel} no Plano Pro.
-                                                                    </p>
-                                                                </div>
-                                                                <Button size="sm" onClick={handleUpgradeClick}>
-                                                                    <Lock className="mr-2 h-4 w-4" />
-                                                                    Fazer upgrade
-                                                                </Button>
+                                                <TableRow className="hidden sm:table-row hover:bg-transparent border-0 relative h-0">
+                                                    <TableCell colSpan={6} className="p-0 border-0 h-0">
+                                                        <div className="relative w-full h-0">
+                                                            <div className="absolute left-1/2 -translate-x-1/2 top-8 z-10 w-full max-w-md px-4">
+                                                                {renderUpgradeCard('w-full')}
                                                             </div>
                                                         </div>
                                                     </TableCell>
@@ -266,34 +296,46 @@ export default function LeadsPage() {
                                                 {placeholderRows.map((_, index) => (
                                                     <TableRow
                                                         key={`locked-${index}`}
-                                                        className="bg-muted/10 text-muted-foreground/65 hover:bg-muted/20"
+                                                        className="bg-muted/10 text-muted-foreground/65 hover:bg-muted/20 blur-[2px] select-none pointer-events-none"
                                                     >
-                                                        <TableCell className={lockedRowPadding}>
+                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.date}`}>
                                                             <div className="h-3 w-full max-w-[9.5rem] rounded bg-muted/55" />
                                                         </TableCell>
-                                                        <TableCell className={lockedRowPadding}>
+                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.name}`}>
                                                             <div className="h-3 w-full max-w-[8rem] rounded bg-muted/55" />
                                                         </TableCell>
-                                                        <TableCell className={lockedRowPadding}>
+                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.email}`}>
                                                             <div className="h-3 w-full max-w-[13rem] rounded bg-muted/55" />
                                                         </TableCell>
-                                                        <TableCell className={lockedRowPadding}>
+                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.phone}`}>
                                                             <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
                                                         </TableCell>
-                                                        <TableCell className={lockedRowPadding}>
+                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.quiz}`}>
                                                             <div className="h-3 w-full max-w-[16rem] rounded bg-muted/55" />
                                                         </TableCell>
-                                                        <TableCell className={lockedRowPadding}>
+                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.result}`}>
                                                             <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
                                                         </TableCell>
                                                     </TableRow>
                                                 ))}
+                                                {spacerHeight > 0 && (
+                                                    <TableRow className="hover:bg-transparent border-0" style={{ height: `${spacerHeight}px` }}>
+                                                        <TableCell colSpan={6} className="p-0 border-0" />
+                                                    </TableRow>
+                                                )}
                                             </>
                                         )}
                                     </>
                                 )}
                             </TableBody>
                         </Table>
+                        {displayLockedRows > 0 && (
+                            <div className="pointer-events-none absolute inset-x-0 top-44 z-10 flex justify-center px-4 sm:hidden">
+                                <div className="pointer-events-auto w-full">
+                                    {renderUpgradeCard('w-full')}
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="mt-4 text-sm text-muted-foreground">
                         Exibindo {filteredLeads.length} de {totalLeadCount} leads

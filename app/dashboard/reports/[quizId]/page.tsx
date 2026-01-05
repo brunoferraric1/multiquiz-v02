@@ -333,14 +333,19 @@ export default function QuizReportPage() {
     const lockedRows = Math.max(0, lockedLeadCount);
     const placeholderRows = Array.from({ length: lockedRows });
     const lockedRowPadding = lockedRows === 1 ? 'py-5' : 'py-3';
+    const leadsTitle = leadsLoading
+        ? 'Leads capturados'
+        : totalLeadCount === 1
+            ? '1 lead capturado'
+            : `${totalLeadCount} leads capturados`;
 
     return (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-12">
+            <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.back()}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
             </Button>
-            <div className="mb-4">
+            <div className="mb-3">
                 {quiz.isPublished ? (
                     <Badge variant="published" className="flex items-center gap-1 rounded shadow-sm border-none w-fit">
                         <Globe size={10} /> Publicado
@@ -499,37 +504,39 @@ export default function QuizReportPage() {
             </div>
 
             <div className="mt-10">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <div>
-                        <h2 className="text-2xl font-semibold">Leads capturados</h2>
-                        <p className="text-muted-foreground mt-1">
-                            Visualize os contatos gerados por este quiz.
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Você tem {totalLeadCount} leads capturados.
-                        </p>
-                    </div>
-                    <Button onClick={handleExportClick} disabled={hasProAccess && filteredLeads.length === 0}>
-                        {hasProAccess ? (
-                            <Download className="mr-2 h-4 w-4" />
-                        ) : (
-                            <Lock className="mr-2 h-4 w-4" />
-                        )}
-                        {hasProAccess ? 'Exportar CSV' : 'Exportar CSV (Pro)'}
-                    </Button>
+                <div className="mb-6">
+                    <h2 className="text-2xl font-semibold">{leadsTitle}</h2>
+                    <p className="text-muted-foreground mt-1">
+                        Veja os contatos gerados por este quiz.
+                    </p>
                 </div>
                 <Card>
                     <CardHeader className="pb-4">
-                        <div className="flex-1">
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Buscar por nome, email..."
-                                    className="pl-8"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+                        <div className="flex flex-col md:flex-row gap-4 md:items-center">
+                            <div className="flex-1">
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Buscar por nome, email..."
+                                        className="pl-8"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
                             </div>
+                            <Button
+                                variant="outline"
+                                className="md:self-start h-10"
+                                onClick={handleExportClick}
+                                disabled={hasProAccess && filteredLeads.length === 0}
+                            >
+                                {hasProAccess ? (
+                                    <Download className="mr-2 h-4 w-4" />
+                                ) : (
+                                    <Lock className="mr-2 h-4 w-4" />
+                                )}
+                                {hasProAccess ? 'Exportar CSV' : 'Exportar CSV (Pro)'}
+                            </Button>
                         </div>
                     </CardHeader>
                     <CardContent>
