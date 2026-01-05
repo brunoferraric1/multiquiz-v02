@@ -7,6 +7,7 @@ const EXTRACTION_MODEL =
 const PLACEHOLDER_KEYWORDS = ['string', 'texto', 'description', 'descricao', 'url', 'cta', 'imagem', 'image', 'link'];
 const NULLISH_VALUES = new Set(['none', 'null', 'undefined', 'n/a', 'na']);
 const INTERNAL_LEAK_PATTERNS = [
+  // Tool names and API references
   /update_quiz/i,
   /set_cover_image/i,
   /set_outcome_image/i,
@@ -16,33 +17,235 @@ const INTERNAL_LEAK_PATTERNS = [
   /\bleadgen\b/i,
   /\bcontexto do editor\b/i,
   /\bnota_privada\b/i,
+  
+  // Self-referential analysis about user
+  /\bo usuario quer\b/i,
+  /\bo usuario esta\b/i,
   /\bo usuario pediu\b/i,
+  /\bo usuario disse\b/i,
+  /\bo usuario mencionou\b/i,
+  /\bo usuario confirmou\b/i,
+  /\bo usuario aprovou\b/i,
+  /\bele mencionou\b/i,
+  /\bele disse\b/i,
+  /\bele confirmou\b/i,
+  /\bele aprovou\b/i,
+  /\bela mencionou\b/i,
+  /\bela disse\b/i,
+  /\bela confirmou\b/i,
+  /\bela aprovou\b/i,
+  /\bisso indica que\b/i,
+  /\bisso significa que\b/i,
+  /\bisso sugere que\b/i,
+  
+  // Meta-commentary about conversation
   /\bminha ultima resposta\b/i,
+  /\bna ultima interacao\b/i,
+  /\bna ultima resposta\b/i,
+  /\bna resposta anterior\b/i,
+  /\bno entanto,? na ultima\b/i,
+  /\beu sugeri\b/i,
+  /\beu disse\b/i,
+  /\beu devo\b/i,
+  /\beu preciso\b/i,
+  /\beu vou\b/i,
+  /\bdevo ter pulado\b/i,
+  /\bo problema e que\b/i,
+  
+  // Planning and internal reasoning
   /\bmelhor abordagem\b/i,
   /\bpreciso confirmar\b/i,
+  /\bpreciso apresentar\b/i,
+  /\bpreciso garantir\b/i,
+  /\bpreciso verificar\b/i,
   /\bcontexto atual\b/i,
   /\bfluxo correto\b/i,
+  /\bfluxo de trabalho\b/i,
+  /\bo que eu preciso fazer\b/i,
+  /\bvamos reconfirmar\b/i,
   /\bgarantir que as\b/i,
+  /\bmapeadas corretamente\b/i,
+  
+  // ID and technical data leakage
   /\bos outcomeid existentes sao\b/i,
   /\bos ids existentes sao\b/i,
   /\bid new-question-id\b/i,
   /\bid [a-z0-9-]{36}\b/i,
   /\ba pergunta \d+ \(id\b/i,
-  /\bpreciso garantir\b/i,
-  /\bmapeadas corretamente\b/i,
+  /^\s*\(\d+\)\s*id=[a-z0-9-]+/i,
+  /\bctaText=\b/i,
+  /\bctaUrl=\b/i,
+  /\btargetOutcomeId\b/i,
+  
+  // YAML-like structured data leaks (standalone field names at start of line)
+  /^\s*title:\s*["']?[A-Z]/i,
+  /^\s*description:\s*["']?[A-Z]/i,
+  /^\s*outcomes:\s*$/i,
+  /^\s*questions:\s*$/i,
+  /^\s*options:\s*$/i,
+  /^\s*ctaText:\s*["']/i,
+  /^\s*ctaUrl:\s*["']/i,
+  /^\s*id:\s*[a-z0-9-]{8,}/i,
+  /^\s*text:\s*["'][A-Z]/i,
+  
+  // Chain-of-thought markers
+  /\bretornamos a\b/i,
+  /\ba resposta deve ser\b/i,
+  /\bentao,? a resposta\b/i,
+  /\bresultados aprovados anteriormente\b/i,
 ];
+
+// Patterns that indicate the start of an internal thinking block
+const THINKING_BLOCK_START_PATTERNS = [
+  /^o usuario quer/i,
+  /^o usuario esta/i,
+  /^ele mencionou/i,
+  /^ela mencionou/i,
+  /^isso indica/i,
+  /^no entanto/i,
+  /^o problema e/i,
+  /^preciso /i,
+  /^devo /i,
+  /^vamos reconfirmar/i,
+  /^o fluxo de trabalho/i,
+  /^a nota privada/i,
+  /^\(\d+\) id=/i,
+];
+
+// Detect if a line looks like internal reasoning (for block detection)
+const looksLikeInternalReasoning = (line: string): boolean => {
+  const normalized = line
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  
+  if (!normalized) return false;
+  
+  // Check against thinking block start patterns
+  if (THINKING_BLOCK_START_PATTERNS.some(p => p.test(normalized))) return true;
+  
+  // Lines with structured data patterns
+  if (/^\(\d+\)\s*id=/.test(normalized)) return true;
+  if (/^id:\s*[a-z0-9-]{8,}/.test(normalized)) return true;
+  if (/^(title|description|outcomes|questions|options|ctatext|ctaurl):\s*/.test(normalized)) return true;
+  
+  return false;
+};
 
 const stripInternalProcess = (text: string): string => {
   const lines = text.split('\n');
-  const filtered = lines.filter((line) => {
+  const filtered: string[] = [];
+  let inThinkingBlock = false;
+  let consecutiveInternalLines = 0;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const normalized = line
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
-    return !INTERNAL_LEAK_PATTERNS.some((pattern) => pattern.test(normalized));
-  });
+    
+    // Check if line matches any internal leak pattern
+    const matchesLeakPattern = INTERNAL_LEAK_PATTERNS.some((pattern) => pattern.test(normalized));
+    
+    // Check if line looks like internal reasoning
+    const isInternalReasoning = looksLikeInternalReasoning(line);
+    
+    // Detect start of thinking block
+    if (THINKING_BLOCK_START_PATTERNS.some(p => p.test(normalized.trim()))) {
+      inThinkingBlock = true;
+      consecutiveInternalLines = 0;
+    }
+    
+    // If we're in a thinking block, skip lines until we find clean user-facing content
+    if (inThinkingBlock) {
+      consecutiveInternalLines++;
+      
+      // Exit thinking block if we find a line that:
+      // 1. Starts with a greeting or friendly response
+      // 2. Contains bullet points with actual content (not structured data)
+      // 3. After enough clean lines in a row
+      const looksLikeFriendlyResponse = /^(ola|oi|claro|perfeito|otimo|pronto|entendi|ah,|bora|vamos)/i.test(normalized.trim());
+      const isContentBullet = /^[-•]\s+[A-Z]/i.test(line.trim()) && !/^[-•]\s*\(\d+\)/.test(line.trim());
+      
+      if (looksLikeFriendlyResponse || (isContentBullet && consecutiveInternalLines > 3)) {
+        inThinkingBlock = false;
+        filtered.push(line);
+        continue;
+      }
+      
+      // Skip this line (it's internal)
+      continue;
+    }
+    
+    // Normal filtering for lines not in a thinking block
+    if (matchesLeakPattern || isInternalReasoning) {
+      // Start tracking potential thinking block
+      consecutiveInternalLines++;
+      if (consecutiveInternalLines >= 2) {
+        inThinkingBlock = true;
+      }
+      continue;
+    }
+    
+    // Reset counter for clean lines
+    consecutiveInternalLines = 0;
+    filtered.push(line);
+  }
+  
   return filtered.join('\n').trim();
 };
+
+/**
+ * Detects if text contains a large block of internal reasoning/thinking
+ * Returns the cleaned text with the thinking block removed
+ */
+function removeThinkingBlocks(text: string): string {
+  // Pattern to detect blocks that look like internal reasoning
+  // These typically start with phrases analyzing user intent
+  const thinkingBlockPatterns = [
+    // Blocks starting with user analysis
+    /(?:^|\n)O usuário quer[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+    /(?:^|\n)O usuário está[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+    /(?:^|\n)O usuário pediu[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+    /(?:^|\n)O usuário disse[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+    
+    // Blocks with numbered IDs like "(1) id=..."
+    /(?:^|\n)\(\d+\)\s*id=[a-z0-9-]+[\s\S]*?(?=\n\n(?:[A-Z]|$))/gi,
+    
+    // YAML-like structured data blocks
+    /(?:^|\n)(?:title|outcomes|questions):\s*\n[\s\S]*?(?=\n\n(?:[A-Z]|━|---|\*\*|$))/gi,
+    
+    // Blocks starting with "O fluxo de trabalho"
+    /(?:^|\n)O fluxo de trabalho[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+    
+    // Blocks with internal notes
+    /(?:^|\n)A nota privada[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+    
+    // "Preciso" blocks (internal planning)
+    /(?:^|\n)Preciso (?:apresentar|verificar|garantir|confirmar)[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+    
+    // "Vamos reconfirmar" blocks
+    /(?:^|\n)Vamos reconfirmar[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+    
+    // "E na última interação" analysis blocks
+    /(?:^|\n)E na última interação[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+    
+    // "No entanto" analysis blocks
+    /(?:^|\n)No entanto,[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+    
+    // "Então, a resposta deve ser" planning blocks
+    /(?:^|\n)Então,? a resposta[\s\S]*?(?=\n(?:Ola|Olá|Oi|Claro|Perfeito|Pronto|Entendi|Bora|Vamos|━|---|\*\*|$))/gi,
+  ];
+  
+  let result = text;
+  for (const pattern of thinkingBlockPatterns) {
+    result = result.replace(pattern, '\n').trim();
+  }
+  
+  return result;
+}
 
 /**
  * Sanitizes AI response to remove internal thoughts and repetitive loops
@@ -58,6 +261,9 @@ function cleanAIResponse(text: string): string {
 
   // Remove any accidental code blocks
   cleaned = cleaned.replace(/```[\s\S]*?```/g, '').trim();
+  
+  // Remove large thinking/reasoning blocks (before line-by-line filtering)
+  cleaned = removeThinkingBlocks(cleaned);
 
   // Strip tool names, internal planning or implementation hints
   cleaned = stripInternalProcess(cleaned);
@@ -95,8 +301,48 @@ function cleanAIResponse(text: string): string {
     outputLines.push(line);
     uniqueLines.add(trimmed);
   }
+  
+  // Final pass: if the result still looks like it starts with internal reasoning, 
+  // try to find where the actual user-facing response begins
+  let result = outputLines.join('\n').trim();
+  
+  // Check if result starts with internal reasoning patterns
+  const internalStartPatterns = [
+    /^O usuário/i,
+    /^Ele mencionou/i,
+    /^Ela mencionou/i,
+    /^Isso indica/i,
+    /^Preciso/i,
+    /^Devo/i,
+    /^No entanto/i,
+    /^O fluxo/i,
+    /^A nota privada/i,
+    /^\(\d+\)\s*id=/i,
+  ];
+  
+  const startsWithInternal = internalStartPatterns.some(p => p.test(result.trim()));
+  
+  if (startsWithInternal) {
+    // Try to find where the actual response begins
+    // Look for common response starters
+    const responseStarters = [
+      /\n(Olá|Ola|Oi|Claro|Perfeito|Ótimo|Otimo|Pronto|Entendi|Ah,|Bora|Vamos|Ok|Certo|Beleza)[\s,!]/i,
+      /\n(Aqui estão|Aqui está|Títulos dos resultados|Resultados:|Perguntas:)/i,
+      /\n━+\n/,
+      /\n---\n/,
+      /\n\*\*[A-Z]/,
+    ];
+    
+    for (const starter of responseStarters) {
+      const match = result.match(starter);
+      if (match && match.index !== undefined) {
+        result = result.slice(match.index + 1).trim();
+        break;
+      }
+    }
+  }
 
-  return outputLines.join('\n').trim();
+  return result;
 }
 
 /**
@@ -249,12 +495,36 @@ export type OutcomeImageRequest = {
 const BASE_SYSTEM_PROMPT = `Você é um Arquiteto de Quizzes especializado em criar quizzes engajantes e personalizados.
 
 IMPORTANTE: Sempre responda em português brasileiro de forma amigável, conversacional e CONCISA, mas nunca omita itens solicitados ou deixe listas incompletas.
-NUNCA mostre seu processo de pensamento, tags como <think> ou [NOTA_PRIVADA].
-NUNCA mostre IDs internos, UUIDs ou lógica de validação no chat.
-NUNCA repita a mesma frase múltiplas vezes na mesma resposta. Seja direto.
+
+⛔ REGRA CRÍTICA - NUNCA EXPONHA SEU RACIOCÍNIO INTERNO:
+O usuário JAMAIS deve ver seu processo de pensamento. Isso inclui:
+- NÃO comece respostas com "O usuário quer...", "O usuário pediu...", "Ele mencionou...", "Ela disse..."
+- NÃO escreva análises como "Isso indica que...", "Isso significa que...", "O problema é que..."
+- NÃO exponha planejamento interno como "Preciso verificar...", "Devo fazer...", "O fluxo é..."
+- NÃO mostre dados estruturados como "id=...", "ctaText=...", "title: ...", "outcomes: ..."
+- NÃO mencione conversas anteriores como "Na última interação eu sugeri...", "Minha última resposta foi..."
+- NÃO use tags como <think>, [NOTA_PRIVADA], ou qualquer marcador interno
+- NÃO liste IDs internos, UUIDs ou estruturas de dados técnicas
+- NÃO repita a mesma frase múltiplas vezes na mesma resposta
+
+✅ COMO RESPONDER CORRETAMENTE:
+- Comece DIRETO com uma saudação amigável ou confirmação da ação
+- Fale APENAS o resultado final de forma natural e conversacional
+- Se precisar confirmar algo, pergunte diretamente sem explicar seu raciocínio
+- Seja CONCISO - vá direto ao ponto
+
+EXEMPLO ERRADO (NUNCA FAÇA ISSO):
+"O usuário quer renomear os resultados. Ele mencionou que os títulos são Resultado 1, Resultado 2... Na última interação eu sugeri... Preciso confirmar..."
+
+EXEMPLO CORRETO:
+"Perfeito! Aqui estão os novos títulos dos resultados:
+- O Explorador de Novidades
+- O Produtivo Essencial
+..."
 
 CHECKLIST ANTES DE ENVIAR:
 - Se mencionar qualquer ferramenta (update_quiz, set_cover_image, set_outcome_image, leadGen) ou etapas internas, apague e reescreva em linguagem natural sem citar ferramentas.
+- Se começou a resposta analisando o que o usuário quer, APAGUE TUDO e comece de novo com uma resposta direta.
 - Não diga "preciso perguntar" ou "vou perguntar"; faça a pergunta direto, em 1 linha clara.
 
 REGRA CRÍTICA - RESPEITE O ESTADO ATUAL DO EDITOR:
