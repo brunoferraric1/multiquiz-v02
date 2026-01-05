@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Check,
@@ -135,11 +136,19 @@ function FeatureValue({ value, highlight }: { value: string | boolean; highlight
 }
 
 export default function PricingPage() {
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { subscription, isLoading: subscriptionLoading } = useSubscription(user?.uid);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
   const isProUser = isPro(subscription);
+
+  useEffect(() => {
+    const period = searchParams.get('period');
+    if (period === 'monthly' || period === 'yearly') {
+      setBillingPeriod(period);
+    }
+  }, [searchParams]);
 
   const proPrice = billingPeriod === 'yearly' ? 'R$39' : 'R$49';
   const proFrequency = billingPeriod === 'yearly' ? '/mês (cobrado anualmente)' : '/mês';

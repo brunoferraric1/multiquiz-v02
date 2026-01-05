@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Check, X, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { createCheckoutSession } from '@/lib/services/subscription-service';
 
 const FREE_FEATURES = [
   { text: '1 quiz publicado', included: true },
@@ -54,33 +53,18 @@ export const PricingSection = () => {
   const proFrequency = isYearly ? '/mês (cobrado anualmente)' : '/mês';
   const yearlyTotal = isYearly ? 'R$468/ano' : null;
 
-  const handleProClick = async () => {
+  const handleProClick = () => {
+    const period = isYearly ? 'yearly' : 'monthly';
+
     if (!user) {
       // Redirect to login with upgrade intent
-      router.push(`/login?redirect=/dashboard&upgrade=true&period=${isYearly ? 'yearly' : 'monthly'}`);
+      const redirectUrl = encodeURIComponent(`/pricing?period=${period}`);
+      router.push(`/login?redirect=${redirectUrl}&upgrade=true&period=${period}`);
       return;
     }
 
     setIsLoading(true);
-    try {
-      const checkoutUrl = await createCheckoutSession(
-        user.uid,
-        user.email || '',
-        isYearly ? 'yearly' : 'monthly'
-      );
-
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
-      } else {
-        console.error('Failed to create checkout session');
-        alert('Erro ao iniciar pagamento. Por favor, tente novamente.');
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Erro ao iniciar pagamento. Por favor, tente novamente.');
-    } finally {
-      setIsLoading(false);
-    }
+    router.push(`/pricing?period=${period}`);
   };
 
   return (
@@ -242,4 +226,3 @@ export const PricingSection = () => {
     </section>
   );
 };
-

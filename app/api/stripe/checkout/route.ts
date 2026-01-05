@@ -75,7 +75,22 @@ export async function POST(request: NextRequest) {
 
         console.log('[Checkout] Existing customer ID:', stripeCustomerId);
 
-        // Create Stripe customer if doesn't exist
+        if (stripeCustomerId) {
+            try {
+                const customer = await stripe.customers.retrieve(stripeCustomerId);
+                if ('deleted' in customer && customer.deleted) {
+                    console.warn('[Checkout] Stripe customer deleted, recreating');
+                    stripeCustomerId = undefined;
+                }
+            } catch (error) {
+                console.warn('[Checkout] Stored Stripe customer invalid, recreating', {
+                    stripeCustomerId,
+                });
+                stripeCustomerId = undefined;
+            }
+        }
+
+        // Create Stripe customer if doesn't exist or is invalid
         if (!stripeCustomerId) {
             step = 'create_customer';
             console.log('[Checkout] Creating new Stripe customer...');
@@ -110,8 +125,11 @@ export async function POST(request: NextRequest) {
                     quantity: 1,
                 },
             ],
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500'}/dashboard?checkout=success`,
+            success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500'}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3500'}/dashboard?checkout=canceled`,
+            metadata: {
+                firebaseUserId: userId,
+            },
             subscription_data: {
                 metadata: {
                     firebaseUserId: userId,

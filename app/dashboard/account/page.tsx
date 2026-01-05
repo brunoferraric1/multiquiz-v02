@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, User, CreditCard, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useSubscription, isPro, createCheckoutSession, createPortalSession } from '@/lib/services/subscription-service';
+import { useSubscription, isPro, createPortalSession } from '@/lib/services/subscription-service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,17 +58,7 @@ export default function AccountPage() {
                     toast.error('Erro ao abrir portal de assinatura.');
                 }
             } else {
-                // Upgrade to Pro (Checkout)
-                // Default to monthly for account page upgrade
-                const url = await createCheckoutSession(user.uid, user.email || '', 'monthly');
-                if (url && url !== 'redirecting') {
-                    // For client-side checkout it handles redirect internally, 
-                    // but if it returned a URL (server-side fallback), we use it.
-                    // If it returns 'redirecting', we do nothing.
-                    window.location.href = url;
-                } else if (!url) {
-                    toast.error('Erro ao iniciar checkout.');
-                }
+                router.push('/pricing?period=monthly');
             }
         } catch (error) {
             console.error('Subscription action error:', error);

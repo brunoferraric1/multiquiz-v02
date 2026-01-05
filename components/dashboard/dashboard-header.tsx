@@ -103,6 +103,17 @@ export function DashboardHeader() {
                   variant="ghost"
                   className={cn(
                     "w-full justify-start text-base",
+                    isActiveRoute('/pricing') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                  onClick={() => handleNavigation('/pricing')}
+                  aria-current={isActiveRoute('/pricing') ? 'page' : undefined}
+                >
+                  Planos
+                </Button>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start text-base",
                     isActiveRoute('/dashboard/account') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
                   )}
                   onClick={() => handleNavigation('/dashboard/account')}
@@ -135,7 +146,7 @@ export function DashboardHeader() {
                 ) : (
                   !isProUser && (
                     <Button asChild size="sm" className="w-full">
-                      <Link href="/dashboard?upgrade=true&period=monthly">
+                      <Link href="/pricing?period=monthly" onClick={() => setMenuOpen(false)}>
                         Fazer upgrade para Pro
                       </Link>
                     </Button>

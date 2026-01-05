@@ -8,7 +8,6 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { createCheckoutSession } from '@/lib/services/subscription-service';
 
 function LoginContent() {
   const router = useRouter();
@@ -18,41 +17,18 @@ function LoginContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get query parameters
-  const redirect = searchParams.get('redirect') || '/dashboard';
+  const redirect = searchParams.get('redirect');
   const upgrade = searchParams.get('upgrade') === 'true';
   const period = searchParams.get('period') || 'monthly';
 
   useEffect(() => {
     async function handlePostLoginUpgrade() {
       if (!loading && user && upgrade) {
-        // User just logged in and wants to upgrade
         setIsSubmitting(true);
-        console.log('[Login] Attempting checkout for upgrade intent...');
-        try {
-          const checkoutUrl = await createCheckoutSession(
-            user.uid,
-            user.email || '',
-            period as 'monthly' | 'yearly'
-          );
-
-          if (checkoutUrl) {
-            console.log('[Login] Checkout URL received, redirecting...');
-            window.location.href = checkoutUrl;
-          } else {
-            console.error('[Login] Failed to create checkout session - no URL returned');
-            alert('Erro ao iniciar checkout. Tente novamente pelo dashboard.');
-            // Preserve upgrade intent for dashboard to retry
-            router.push(`/dashboard?upgrade=true&period=${period}`);
-          }
-        } catch (error) {
-          console.error('[Login] Checkout error after login:', error);
-          alert('Erro ao conectar com Stripe. Tente novamente.');
-          // Preserve upgrade intent for dashboard to retry
-          router.push(`/dashboard?upgrade=true&period=${period}`);
-        }
+        const upgradeRedirect = redirect || `/pricing?period=${period}`;
+        router.push(upgradeRedirect);
       } else if (!loading && user && !upgrade) {
-        // Regular login, just redirect
-        router.push(redirect);
+        router.push(redirect || '/dashboard');
       }
     }
 
@@ -164,4 +140,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-

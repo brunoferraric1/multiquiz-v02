@@ -6,7 +6,6 @@ import { Plus, LayoutGrid, List } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useUserQuizzesQuery, useDeleteQuizMutation } from '@/lib/hooks/use-quiz-queries';
-import { createCheckoutSession } from '@/lib/services/subscription-service';
 
 import { QuizCard } from '@/components/dashboard/quiz-card';
 import { QuizListItem } from '@/components/dashboard/quiz-list-item';
@@ -72,70 +71,72 @@ function DashboardContent() {
   const { data: quizzes, isLoading: quizzesLoading } = useUserQuizzesQuery(user?.uid);
   const deleteQuizMutation = useDeleteQuizMutation();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
+  const [isRedirectingUpgrade, setIsRedirectingUpgrade] = useState(false);
   const hasProcessedUpgrade = useRef(false);
+  const hasProcessedCheckout = useRef(false);
 
   const clearUpgradeParams = () => {
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.delete('upgrade');
     newUrl.searchParams.delete('period');
     newUrl.searchParams.delete('checkout');
+    newUrl.searchParams.delete('session_id');
     window.history.replaceState({}, '', newUrl.toString());
   };
 
   // Handle post-login upgrade intent
   useEffect(() => {
-    const handleUpgrade = async () => {
-      const upgrade = searchParams.get('upgrade') === 'true';
-      const period = searchParams.get('period') || 'monthly';
-      const checkoutStatus = searchParams.get('checkout');
+    const upgrade = searchParams.get('upgrade') === 'true';
+    const period = searchParams.get('period') || 'monthly';
+    const checkoutStatus = searchParams.get('checkout');
+    const sessionId = searchParams.get('session_id');
 
-      // If user came back from successful checkout, show success message
-      if (checkoutStatus === 'success') {
-        toast.success('Assinatura ativada com sucesso!');
-        // Remove params to clean URL
-        clearUpgradeParams();
-        return;
-      }
+    if (authLoading || !user) {
+      return;
+    }
 
-      // If upgrade intent is present and user is logged in
-      if (upgrade && user && !isProcessingUpgrade && !hasProcessedUpgrade.current) {
-        hasProcessedUpgrade.current = true;
-        setIsProcessingUpgrade(true);
-        try {
-          const checkoutUrl = await createCheckoutSession(
-            user.uid,
-            user.email || '',
-            period as 'monthly' | 'yearly'
-          );
+    const syncCheckout = async () => {
+      if (!user) return;
+      try {
+        const response = await fetch('/api/stripe/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.uid, sessionId }),
+        });
 
-          if (checkoutUrl) {
-            window.location.href = checkoutUrl;
-          } else {
-            console.error('Failed to create checkout session');
-            toast.error('Erro ao iniciar pagamento. Tente novamente.');
-            setIsProcessingUpgrade(false);
-            clearUpgradeParams();
-          }
-        } catch (error) {
-          console.error('Checkout error:', error);
-          toast.error('Erro ao processar upgrade.');
-          setIsProcessingUpgrade(false);
-          clearUpgradeParams();
+        if (!response.ok) {
+          console.error('Failed to sync subscription', await response.json());
+          toast.error('Pagamento confirmado, mas não conseguimos atualizar seu plano.');
+          return;
         }
+
+        toast.success('Assinatura ativada com sucesso!');
+      } catch (error) {
+        console.error('Subscription sync error:', error);
+        toast.error('Erro ao atualizar seu plano. Tente novamente.');
+      } finally {
+        clearUpgradeParams();
       }
     };
 
-    if (!authLoading && user) {
-      handleUpgrade();
+    if (checkoutStatus === 'success' && !hasProcessedCheckout.current) {
+      hasProcessedCheckout.current = true;
+      syncCheckout();
+      return;
     }
-  }, [user, authLoading, searchParams, isProcessingUpgrade]);
 
-  if (isProcessingUpgrade) {
+    if (upgrade && user && !hasProcessedUpgrade.current) {
+      hasProcessedUpgrade.current = true;
+      setIsRedirectingUpgrade(true);
+      router.replace(`/pricing?period=${period}`);
+    }
+  }, [user, authLoading, searchParams, router]);
+
+  if (isRedirectingUpgrade) {
     return (
       <div className="flex flex-col h-screen items-center justify-center space-y-4">
         <LoadingSpinner size="lg" />
-        <p className="text-muted-foreground animate-pulse">Iniciando checkout seguro...</p>
+        <p className="text-muted-foreground animate-pulse">Abrindo planos disponíveis...</p>
       </div>
     );
   }
