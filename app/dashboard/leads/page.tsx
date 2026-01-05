@@ -133,8 +133,19 @@ export default function LeadsPage() {
         handleExportCSV();
     };
 
+    const handleUpgradeClick = () => {
+        setShowUpgradeModal(true);
+    };
+
+    const leadLabel = (count: number) => (count === 1 ? '1 lead' : `${count} leads`);
+    const visibleLeadCount = hasProAccess ? filteredLeads.length : leads.length;
+    const visibleLeadLabel = leadLabel(visibleLeadCount);
+    const totalLeadLabel = leadLabel(totalLeadCount);
+    const lockedLeadLabel = leadLabel(lockedLeadCount);
+
     const lockedRows = Math.max(0, lockedLeadCount);
     const placeholderRows = Array.from({ length: lockedRows });
+    const lockedRowPadding = lockedRows === 1 ? 'py-5' : 'py-3';
 
     if (loading) {
         return <div className="p-8">Carregando leads...</div>;
@@ -230,28 +241,55 @@ export default function LeadsPage() {
                                                 </TableRow>
                                             );
                                         })}
-                                        {placeholderRows.map((_, index) => (
-                                            <TableRow key={`locked-${index}`} className="text-muted-foreground">
-                                                <TableCell>
-                                                    <div className="h-4 w-24 rounded bg-muted/60 blur-sm" />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="h-4 w-28 rounded bg-muted/60 blur-sm" />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="h-4 w-32 rounded bg-muted/60 blur-sm" />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="h-4 w-24 rounded bg-muted/60 blur-sm" />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="h-4 w-32 rounded bg-muted/60 blur-sm" />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="h-4 w-20 rounded bg-muted/60 blur-sm" />
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
+                                        {lockedRows > 0 && (
+                                            <>
+                                                <TableRow className="hover:bg-transparent">
+                                                    <TableCell colSpan={6} className="p-0">
+                                                        <div className="border-t border-border bg-muted/10">
+                                                            <div className="flex flex-col gap-3 border-b border-border bg-background/90 p-4 md:flex-row md:items-center md:justify-between">
+                                                                <div>
+                                                                    <p className="text-sm font-semibold">
+                                                                        Você está vendo {visibleLeadLabel} de {totalLeadLabel}.
+                                                                    </p>
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        No plano gratuito mostramos apenas {visibleLeadLabel}. Desbloqueie os outros {lockedLeadLabel} no Plano Pro.
+                                                                    </p>
+                                                                </div>
+                                                                <Button size="sm" onClick={handleUpgradeClick}>
+                                                                    <Lock className="mr-2 h-4 w-4" />
+                                                                    Fazer upgrade
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                                {placeholderRows.map((_, index) => (
+                                                    <TableRow
+                                                        key={`locked-${index}`}
+                                                        className="bg-muted/10 text-muted-foreground/65 hover:bg-muted/20"
+                                                    >
+                                                        <TableCell className={lockedRowPadding}>
+                                                            <div className="h-3 w-full max-w-[9.5rem] rounded bg-muted/55" />
+                                                        </TableCell>
+                                                        <TableCell className={lockedRowPadding}>
+                                                            <div className="h-3 w-full max-w-[8rem] rounded bg-muted/55" />
+                                                        </TableCell>
+                                                        <TableCell className={lockedRowPadding}>
+                                                            <div className="h-3 w-full max-w-[13rem] rounded bg-muted/55" />
+                                                        </TableCell>
+                                                        <TableCell className={lockedRowPadding}>
+                                                            <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
+                                                        </TableCell>
+                                                        <TableCell className={lockedRowPadding}>
+                                                            <div className="h-3 w-full max-w-[16rem] rounded bg-muted/55" />
+                                                        </TableCell>
+                                                        <TableCell className={lockedRowPadding}>
+                                                            <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </TableBody>
