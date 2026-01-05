@@ -8,7 +8,7 @@ import { useSubscription, isPro, createPortalSession } from '@/lib/services/subs
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 
@@ -16,13 +16,8 @@ export default function AccountPage() {
     const { user, updateUserProfile, signOut } = useAuth();
     const { subscription, isLoading: isLoadingSubscription } = useSubscription(user?.uid);
     const router = useRouter();
-    const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-    const firebaseAuthDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
-    const showDebug = (firebaseProjectId || '').includes('staging');
-
     const [isLoading, setIsLoading] = useState(false);
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-    const [isSyncingSubscription, setIsSyncingSubscription] = useState(false);
     const [name, setName] = useState('');
 
     useEffect(() => {
@@ -72,39 +67,6 @@ export default function AccountPage() {
         }
     };
 
-    const handleSyncSubscription = async () => {
-        if (!user) return;
-
-        try {
-            setIsSyncingSubscription(true);
-            const response = await fetch('/api/stripe/sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.uid }),
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                let errorPayload: unknown = errorText;
-                try {
-                    errorPayload = errorText ? JSON.parse(errorText) : errorText;
-                } catch (parseError) {
-                    console.error('Failed to parse sync error payload', parseError);
-                }
-                console.error('Failed to sync subscription', errorPayload);
-                toast.error('Não conseguimos atualizar sua assinatura.');
-                return;
-            }
-
-            toast.success('Assinatura atualizada com sucesso!');
-        } catch (error) {
-            console.error('Subscription sync error:', error);
-            toast.error('Erro ao atualizar assinatura. Tente novamente.');
-        } finally {
-            setIsSyncingSubscription(false);
-        }
-    };
-
     const handleLogout = async () => {
         try {
             await signOut();
@@ -119,7 +81,7 @@ export default function AccountPage() {
     const isProUser = isPro(subscription);
 
     return (
-        <div className="container max-w-4xl py-8 space-y-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Minha Conta</h1>
                 <p className="text-muted-foreground mt-2">
@@ -267,22 +229,6 @@ export default function AccountPage() {
                             )}
                         </Button>
 
-                        <Button
-                            className="w-full"
-                            variant="ghost"
-                            onClick={handleSyncSubscription}
-                            disabled={!isSubscriptionReady || isSyncingSubscription}
-                        >
-                            {isSyncingSubscription ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Atualizando...
-                                </>
-                            ) : (
-                                'Atualizar assinatura'
-                            )}
-                        </Button>
-
                         {isProUser && (
                             <p className="text-xs text-center text-muted-foreground">
                                 Gerencie formas de pagamento e faturas através do portal seguro da Stripe.
@@ -294,49 +240,17 @@ export default function AccountPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Segurança da conta</CardTitle>
+                    <CardTitle>Encerrar sessão</CardTitle>
                     <CardDescription>
-                        Finalize sua sessão ou revise seu acesso.
+                        Finalize sua sessão neste dispositivo quando terminar.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <p className="text-sm text-muted-foreground">
-                        Use este botão para sair da sua conta com segurança.
-                    </p>
+                <CardContent>
                     <Button variant="outline" onClick={handleLogout}>
                         Sair
                     </Button>
                 </CardContent>
             </Card>
-
-            {showDebug && (
-                <Card className="border-dashed bg-muted/30">
-                    <CardHeader>
-                        <CardTitle className="text-sm">Debug (Staging)</CardTitle>
-                        <CardDescription>
-                            Confirme o projeto Firebase e o UID atual.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground space-y-2">
-                        <div>
-                            <span className="font-medium text-foreground">UID:</span>{' '}
-                            <span>{user?.uid || 'n/a'}</span>
-                        </div>
-                        <div>
-                            <span className="font-medium text-foreground">Project ID:</span>{' '}
-                            <span>{firebaseProjectId || 'n/a'}</span>
-                        </div>
-                        <div>
-                            <span className="font-medium text-foreground">Auth Domain:</span>{' '}
-                            <span>{firebaseAuthDomain || 'n/a'}</span>
-                        </div>
-                        <div>
-                            <span className="font-medium text-foreground">Doc path:</span>{' '}
-                            <span>{user ? `users/${user.uid}` : 'n/a'}</span>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
         </div>
     );
 }

@@ -183,11 +183,11 @@ function DashboardContent() {
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto self-start sm:self-end">
-            <Button onClick={handleNewQuiz} className="w-full sm:w-auto">
+            <Button onClick={handleNewQuiz} className="w-full sm:w-auto order-1 sm:order-2">
               <Plus size={18} className="mr-2" />
               Novo Quiz
             </Button>
-            <div className="grid grid-cols-2 w-full sm:w-auto bg-muted p-1 rounded-lg">
+            <div className="grid grid-cols-2 w-full sm:w-auto bg-muted p-1 rounded-lg order-2 sm:order-1">
               <Button
                 variant="ghost"
                 size="sm"
