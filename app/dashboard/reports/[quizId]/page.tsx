@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import { QuizService } from '@/lib/services/quiz-service';
 import { AnalyticsService } from '@/lib/services/analytics-service';
 import { auth } from '@/lib/firebase';
@@ -105,6 +106,8 @@ export default function QuizReportPage() {
     const quizId = params?.quizId as string;
     const { user } = useAuth();
     const router = useRouter();
+    const { subscription } = useSubscription(user?.uid);
+    const isProUser = isPro(subscription);
 
     const [quiz, setQuiz] = useState<Quiz | null>(null);
     const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
@@ -395,8 +398,19 @@ export default function QuizReportPage() {
                         <Play className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{totalStarts}</div>
-                        <p className="text-xs text-muted-foreground mt-1">{startRate}% iniciaram o quiz</p>
+                        <div className="text-3xl font-bold">
+                            {isProUser ? (
+                                totalStarts
+                            ) : (
+                                <span className="inline-flex items-center">
+                                    <Lock className="h-7 w-7 text-muted-foreground" />
+                                    <span className="sr-only">Disponível no Pro</span>
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {isProUser ? `${startRate}% iniciaram o quiz` : '? iniciaram o quiz'}
+                        </p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -405,9 +419,18 @@ export default function QuizReportPage() {
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{totalCompletions}</div>
+                        <div className="text-3xl font-bold">
+                            {isProUser ? (
+                                totalCompletions
+                            ) : (
+                                <span className="inline-flex items-center">
+                                    <Lock className="h-7 w-7 text-muted-foreground" />
+                                    <span className="sr-only">Disponível no Pro</span>
+                                </span>
+                            )}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {completionRate}% concluíram o quiz
+                            {isProUser ? `${completionRate}% concluíram o quiz` : '? concluíram o quiz'}
                         </p>
                     </CardContent>
                 </Card>
@@ -417,7 +440,16 @@ export default function QuizReportPage() {
                         <Mail className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{totalLeads}</div>
+                        <div className="text-3xl font-bold">
+                            {isProUser ? (
+                                totalLeads
+                            ) : (
+                                <span className="inline-flex items-center">
+                                    <Lock className="h-7 w-7 text-muted-foreground" />
+                                    <span className="sr-only">Disponível no Pro</span>
+                                </span>
+                            )}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-1">Leads com contato informado</p>
                     </CardContent>
                 </Card>

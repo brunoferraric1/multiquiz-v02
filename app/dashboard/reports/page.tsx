@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import { QuizService } from '@/lib/services/quiz-service';
 import type { Quiz } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -13,6 +14,8 @@ import { useRouter } from 'next/navigation';
 export default function ReportsPage() {
     const { user } = useAuth();
     const router = useRouter();
+    const { subscription } = useSubscription(user?.uid);
+    const isProUser = isPro(subscription);
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -83,12 +86,30 @@ export default function ReportsPage() {
                                     </div>
                                     <div className="flex flex-col items-center text-center p-2 bg-muted/50 rounded-lg">
                                         <Play className="h-4 w-4 mb-1 text-blue-500" />
-                                        <span className="text-lg font-bold">{quiz.stats?.starts || 0}</span>
+                                        <span className="text-lg font-bold flex items-center justify-center">
+                                            {isProUser ? (
+                                                quiz.stats?.starts || 0
+                                            ) : (
+                                                <>
+                                                    <Lock className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="sr-only">Disponível no Pro</span>
+                                                </>
+                                            )}
+                                        </span>
                                         <span className="text-xs text-muted-foreground">Inícios totais</span>
                                     </div>
                                     <div className="flex flex-col items-center text-center p-2 bg-muted/50 rounded-lg">
                                         <CheckCircle2 className="h-4 w-4 mb-1 text-green-500" />
-                                        <span className="text-lg font-bold">{quiz.stats?.completions || 0}</span>
+                                        <span className="text-lg font-bold flex items-center justify-center">
+                                            {isProUser ? (
+                                                quiz.stats?.completions || 0
+                                            ) : (
+                                                <>
+                                                    <Lock className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="sr-only">Disponível no Pro</span>
+                                                </>
+                                            )}
+                                        </span>
                                         <span className="text-xs text-muted-foreground">Conclusões</span>
                                     </div>
                                 </div>
