@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 
 export default function AccountPage() {
-    const { user, updateUserProfile } = useAuth();
+    const { user, updateUserProfile, signOut } = useAuth();
     const { subscription, isLoading: isLoadingSubscription } = useSubscription(user?.uid);
     const router = useRouter();
     const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -102,6 +102,16 @@ export default function AccountPage() {
             toast.error('Erro ao atualizar assinatura. Tente novamente.');
         } finally {
             setIsSyncingSubscription(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+            router.push('/login');
+        } catch (error) {
+            console.error('Logout error:', error);
+            toast.error('Erro ao sair. Tente novamente.');
         }
     };
 
@@ -281,6 +291,23 @@ export default function AccountPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Segurança da conta</CardTitle>
+                    <CardDescription>
+                        Finalize sua sessão ou revise seu acesso.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <p className="text-sm text-muted-foreground">
+                        Use este botão para sair da sua conta com segurança.
+                    </p>
+                    <Button variant="outline" onClick={handleLogout}>
+                        Sair
+                    </Button>
+                </CardContent>
+            </Card>
 
             {showDebug && (
                 <Card className="border-dashed bg-muted/30">

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Menu, Plus, LogOut } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { isPro, useSubscription } from '@/lib/services/subscription-service';
 import { cn } from '@/lib/utils';
@@ -23,19 +23,10 @@ import Link from 'next/link';
 export function DashboardHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
-  const { subscription, isLoading: subscriptionLoading } = useSubscription(user?.uid);
+  const { user } = useAuth();
+  const { subscription } = useSubscription(user?.uid);
   const [menuOpen, setMenuOpen] = useState(false);
   const isProUser = isPro(subscription);
-
-  const handleNewQuiz = () => {
-    router.push('/builder');
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    router.push('/login');
-  };
 
   const handleNavigation = (path: string) => {
     router.push(path);
@@ -50,12 +41,11 @@ export function DashboardHeader() {
 
   return (
     <header className="bg-card border-b sticky top-0 z-10">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Navigation */}
-        <div className="flex items-center space-x-3">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Abrir menu">
+              <Button variant="ghost" size="icon" aria-label="Abrir menu" className="md:hidden">
                 <Menu size={20} />
               </Button>
             </SheetTrigger>
@@ -97,7 +87,7 @@ export function DashboardHeader() {
                   onClick={() => handleNavigation('/dashboard/leads')}
                   aria-current={isActiveRoute('/dashboard/leads') ? 'page' : undefined}
                 >
-                  Leads
+                  Seus Leads
                 </Button>
                 <Button
                   variant="ghost"
@@ -123,11 +113,11 @@ export function DashboardHeader() {
                 </Button>
               </nav>
 
-              <div className="mt-10 border-t pt-6 space-y-4">
+              <div className="mt-10 border-t pt-6">
                 <Link
                   href="/dashboard/account"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 mb-2"
+                  className="flex items-center gap-3"
                 >
                   <Avatar>
                     <AvatarImage src={user?.photoURL ?? undefined} />
@@ -141,28 +131,6 @@ export function DashboardHeader() {
                     <span className="text-xs text-muted-foreground">{user?.email}</span>
                   </div>
                 </Link>
-                {subscriptionLoading ? (
-                  <div className="h-9 w-full rounded-md bg-muted/60 animate-pulse" aria-hidden="true" />
-                ) : (
-                  !isProUser && (
-                    <Button asChild size="sm" className="w-full">
-                      <Link href="/pricing?period=monthly" onClick={() => setMenuOpen(false)}>
-                        Fazer upgrade para Pro
-                      </Link>
-                    </Button>
-                  )
-                )}
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={async () => {
-                    await handleLogout();
-                    setMenuOpen(false);
-                  }}
-                >
-                  <LogOut size={18} className="mr-2" />
-                  Sair
-                </Button>
               </div>
             </SheetContent>
           </Sheet>
@@ -181,14 +149,70 @@ export function DashboardHeader() {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center space-x-3">
-          {/* New Quiz Button */}
-          <Button onClick={handleNewQuiz}>
-            <Plus size={20} className="mr-2" />
-            Novo Quiz
+        <nav className="hidden md:flex flex-1 items-center justify-center gap-2 lg:gap-4 xl:gap-6">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "text-sm",
+              isActiveRoute('/dashboard') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+            )}
+            aria-current={isActiveRoute('/dashboard') ? 'page' : undefined}
+          >
+            <Link href="/dashboard">Quizzes</Link>
           </Button>
-        </div>
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "text-sm",
+              isActiveRoute('/dashboard/reports') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+            )}
+            aria-current={isActiveRoute('/dashboard/reports') ? 'page' : undefined}
+          >
+            <Link href="/dashboard/reports">Relatórios</Link>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "text-sm",
+              isActiveRoute('/dashboard/leads') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+            )}
+            aria-current={isActiveRoute('/dashboard/leads') ? 'page' : undefined}
+          >
+            <Link href="/dashboard/leads">Seus Leads</Link>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "text-sm",
+              isActiveRoute('/pricing') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+            )}
+            aria-current={isActiveRoute('/pricing') ? 'page' : undefined}
+          >
+            <Link href="/pricing">Planos</Link>
+          </Button>
+        </nav>
+
+        <Link
+          href="/dashboard/account"
+          className="hidden md:flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted"
+        >
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={user?.photoURL ?? undefined} />
+            <AvatarFallback>{user?.email?.[0]?.toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="hidden lg:flex items-center gap-2">
+            <span className="text-sm font-medium">{user?.displayName?.split(' ')[0] || 'Conta'}</span>
+            {isProUser && <Badge variant="secondary">Pro</Badge>}
+          </div>
+        </Link>
       </div>
     </header>
   );

@@ -182,25 +182,33 @@ function DashboardContent() {
             </p>
           </div>
 
-          <div className="flex bg-muted p-1 rounded-lg self-start sm:self-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              className={`h-8 w-8 p-0 ${viewMode === 'grid' ? 'text-yellow-500' : ''}`}
-              title="Visualização em Grade"
-            >
-              <LayoutGrid size={16} />
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto self-start sm:self-end">
+            <Button onClick={handleNewQuiz} className="w-full sm:w-auto">
+              <Plus size={18} className="mr-2" />
+              Novo Quiz
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className={`h-8 w-8 p-0 ${viewMode === 'list' ? 'text-yellow-500' : ''}`}
-              title="Visualização em Lista"
-            >
-              <List size={16} />
-            </Button>
+            <div className="grid grid-cols-2 w-full sm:w-auto bg-muted p-1 rounded-lg">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className={`h-8 px-3 sm:w-8 sm:px-0 ${viewMode === 'grid' ? 'text-yellow-500' : ''}`}
+                title="Visualização em Grade"
+              >
+                <LayoutGrid size={16} />
+                <span className="ml-2 text-xs font-medium sm:hidden">Grid</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={`h-8 px-3 sm:w-8 sm:px-0 ${viewMode === 'list' ? 'text-yellow-500' : ''}`}
+                title="Visualização em Lista"
+              >
+                <List size={16} />
+                <span className="ml-2 text-xs font-medium sm:hidden">Lista</span>
+              </Button>
+            </div>
           </div>
         </div>
 
