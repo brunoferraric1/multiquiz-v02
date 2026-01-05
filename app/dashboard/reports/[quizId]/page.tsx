@@ -27,7 +27,8 @@ import {
 } from 'recharts';
 
 // Colors for charts
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+const FUNNEL_START_COLOR = '#8884d8';
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', FUNNEL_START_COLOR, '#82ca9d'];
 
 const getFunnelTooltipLabel = (label: string) => {
     if (label === 'Inícios') return 'início';
@@ -55,7 +56,7 @@ const FunnelTooltip = ({ active, payload }: { active?: boolean; payload?: any[] 
     );
 };
 
-const PieTooltip = ({ active, payload, total }: { active?: boolean; payload?: any[]; total: number }) => {
+const PieTooltip = ({ active, payload, total }: { active?: boolean; payload?: readonly any[]; total: number }) => {
     if (!active || !payload?.length) return null;
 
     const data = payload[0].payload;
@@ -168,7 +169,7 @@ export default function QuizReportPage() {
     });
 
     const funnelData = [
-        { name: 'Inícios', value: funnelCounts.start, fill: '#8884d8' },
+        { name: 'Inícios', value: funnelCounts.start, fill: FUNNEL_START_COLOR },
         ...questionOrder.map(qId => ({
             name: questionLabels[qId],
             value: funnelCounts[qId],
@@ -209,7 +210,7 @@ export default function QuizReportPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para Relatórios
+                Voltar
             </Button>
 
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -231,7 +232,7 @@ export default function QuizReportPage() {
                 <Card>
                     <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 text-muted-foreground">
                         <CardTitle className="text-sm font-medium">Visitas totais</CardTitle>
-                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        <Eye className="h-4 w-4" style={{ color: FUNNEL_START_COLOR }} />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{totalViews}</div>
@@ -327,9 +328,9 @@ export default function QuizReportPage() {
                                         cy="45%"
                                         labelLine={true}
                                         outerRadius={90}
-                                        fill="#8884d8"
+                                        fill={FUNNEL_START_COLOR}
                                         dataKey="value"
-                                        label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                                        label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
                                     >
                                         {resultData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

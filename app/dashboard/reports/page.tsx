@@ -5,8 +5,9 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { QuizService } from '@/lib/services/quiz-service';
 import type { Quiz } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BarChart3, Eye, Play, CheckCircle2, ArrowRight } from 'lucide-react';
+import { BarChart3, Eye, Play, CheckCircle2, Globe, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function ReportsPage() {
@@ -56,7 +57,18 @@ export default function ReportsPage() {
                     {quizzes.map((quiz) => (
                         <Card key={quiz.id} className="hover:shadow-md transition-shadow">
                             <CardHeader className="pb-2">
-                                <CardTitle className="truncate text-lg">{quiz.title}</CardTitle>
+                                <div className="flex items-start justify-between gap-2">
+                                    <CardTitle className="truncate text-lg min-w-0">{quiz.title}</CardTitle>
+                                    {quiz.isPublished ? (
+                                        <Badge variant="published" className="flex items-center gap-1 rounded shadow-sm border-none shrink-0">
+                                            <Globe size={10} /> Publicado
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="draft" className="flex items-center gap-1 rounded shadow-sm border-none shrink-0">
+                                            <Lock size={10} /> Rascunho
+                                        </Badge>
+                                    )}
+                                </div>
                                 <CardDescription className="line-clamp-1">{quiz.description || 'Sem descrição'}</CardDescription>
                             </CardHeader>
                             <CardContent>
