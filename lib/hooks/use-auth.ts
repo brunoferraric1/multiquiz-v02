@@ -9,6 +9,7 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { upsertUserProfile } from '@/lib/services/user-profile-service';
 import type { AuthUser } from '@/types';
 
 export function useAuth() {
@@ -18,11 +19,16 @@ export function useAuth() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        setUser({
+        const nextUser: AuthUser = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           photoURL: firebaseUser.photoURL,
+        };
+
+        setUser(nextUser);
+        void upsertUserProfile(nextUser).catch((error) => {
+          console.warn('[useAuth] Failed to sync user profile', error);
         });
       } else {
         setUser(null);
@@ -56,10 +62,17 @@ export function useAuth() {
     if (!auth.currentUser) throw new Error('No user logged in');
     try {
       await updateProfile(auth.currentUser, data);
-      // Update local state
-      setUser((prev) =>
-        prev ? { ...prev, ...data } : null
-      );
+      const updatedUser: AuthUser = {
+        uid: auth.currentUser.uid,
+        email: auth.currentUser.email,
+        displayName: auth.currentUser.displayName,
+        photoURL: auth.currentUser.photoURL,
+      };
+
+      setUser(updatedUser);
+      void upsertUserProfile(updatedUser).catch((error) => {
+        console.warn('[useAuth] Failed to sync updated profile', error);
+      });
     } catch (error: any) {
       throw new Error(error.message || 'Failed to update profile');
     }

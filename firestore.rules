@@ -57,6 +57,7 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated() && request.auth.uid == userId;
     }
   }
 }
