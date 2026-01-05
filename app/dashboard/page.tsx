@@ -105,7 +105,14 @@ function DashboardContent() {
         });
 
         if (!response.ok) {
-          console.error('Failed to sync subscription', await response.json());
+          const errorText = await response.text();
+          let errorPayload: unknown = errorText;
+          try {
+            errorPayload = errorText ? JSON.parse(errorText) : errorText;
+          } catch (parseError) {
+            console.error('Failed to parse sync error payload', parseError);
+          }
+          console.error('Failed to sync subscription', errorPayload);
           toast.error('Pagamento confirmado, mas não conseguimos atualizar seu plano.');
           return;
         }
@@ -122,6 +129,13 @@ function DashboardContent() {
     if (checkoutStatus === 'success' && !hasProcessedCheckout.current) {
       hasProcessedCheckout.current = true;
       syncCheckout();
+      return;
+    }
+
+    if (checkoutStatus === 'canceled' && !hasProcessedCheckout.current) {
+      hasProcessedCheckout.current = true;
+      toast.info('Checkout cancelado. Você pode tentar novamente quando quiser.');
+      clearUpgradeParams();
       return;
     }
 

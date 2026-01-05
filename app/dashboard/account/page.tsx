@@ -19,6 +19,7 @@ export default function AccountPage() {
 
     const [isLoading, setIsLoading] = useState(false);
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+    const [isSyncingSubscription, setIsSyncingSubscription] = useState(false);
     const [name, setName] = useState('');
 
     useEffect(() => {
@@ -65,6 +66,39 @@ export default function AccountPage() {
             toast.error('Ocorreu um erro. Tente novamente.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleSyncSubscription = async () => {
+        if (!user) return;
+
+        try {
+            setIsSyncingSubscription(true);
+            const response = await fetch('/api/stripe/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.uid }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorPayload: unknown = errorText;
+                try {
+                    errorPayload = errorText ? JSON.parse(errorText) : errorText;
+                } catch (parseError) {
+                    console.error('Failed to parse sync error payload', parseError);
+                }
+                console.error('Failed to sync subscription', errorPayload);
+                toast.error('Não conseguimos atualizar sua assinatura.');
+                return;
+            }
+
+            toast.success('Assinatura atualizada com sucesso!');
+        } catch (error) {
+            console.error('Subscription sync error:', error);
+            toast.error('Erro ao atualizar assinatura. Tente novamente.');
+        } finally {
+            setIsSyncingSubscription(false);
         }
     };
 
@@ -217,6 +251,22 @@ export default function AccountPage() {
                                 'Gerenciar Assinatura'
                             ) : (
                                 'Fazer Upgrade para Pro'
+                            )}
+                        </Button>
+
+                        <Button
+                            className="w-full"
+                            variant="ghost"
+                            onClick={handleSyncSubscription}
+                            disabled={!isSubscriptionReady || isSyncingSubscription}
+                        >
+                            {isSyncingSubscription ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Atualizando...
+                                </>
+                            ) : (
+                                'Atualizar assinatura'
                             )}
                         </Button>
 
