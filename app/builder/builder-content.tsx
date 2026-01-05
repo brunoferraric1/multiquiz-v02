@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -13,7 +13,6 @@ import {
   Plus,
   Rocket,
   X,
-  GripVertical,
   MessageSquare,
   MoreVertical,
   PenSquare,
@@ -49,8 +48,8 @@ import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import {
   SidebarCard,
   SidebarCardActionTrigger,
-  SidebarCardDragHandle,
 } from '@/components/builder/sidebar-card';
+import { SortableQuestionsList } from '@/components/builder/sortable-questions-list';
 
 import {
   Sheet,
@@ -157,8 +156,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   });
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [brandKitDialogOpen, setBrandKitDialogOpen] = useState(false);
-  const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<number | null>(null);
-  const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
   const [mobileView, setMobileView] = useState<MobileViewMode>('chat');
   const [showUpdateConfirmModal, setShowUpdateConfirmModal] = useState(false);
   const [ctaWarningOpen, setCtaWarningOpen] = useState(false);
@@ -166,7 +163,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [pendingPublishType, setPendingPublishType] = useState<'publish' | 'update' | null>(null);
   const pendingPublishResolveRef = useRef<(() => void) | null>(null);
   const pendingPublishRejectRef = useRef<((error?: Error) => void) | null>(null);
-  const questionCardRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const clearPendingPublishPromises = (shouldReject = false) => {
     if (shouldReject) {
       pendingPublishRejectRef.current?.();
@@ -315,10 +311,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
 
   const questions = quiz.questions ?? [];
   const outcomes = quiz.outcomes ?? [];
-  const canReorderQuestions = questions.length > 1;
-  const isDraggingQuestion = draggedQuestionIndex !== null;
-  const shouldShowDropIndicator = (position: number) =>
-    canReorderQuestions && isDraggingQuestion && dropIndicatorIndex === position;
 
   const editingQuestion = editingQuestionId
     ? questions.find((question) => question.id === editingQuestionId) ?? null
@@ -544,65 +536,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       setActiveSheet(null);
     }
     toast.success('Resultado removido');
-  };
-
-  const resetQuestionDragState = () => {
-    setDraggedQuestionIndex(null);
-    setDropIndicatorIndex(null);
-  };
-
-  const handleQuestionDragStart = (
-    event: DragEvent<HTMLElement>,
-    index: number,
-    dragImageEl?: HTMLElement | null
-  ) => {
-    if (!canReorderQuestions) return;
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', String(index));
-    if (dragImageEl) {
-      const { width, height } = dragImageEl.getBoundingClientRect();
-      event.dataTransfer.setDragImage(dragImageEl, width / 2, height / 2);
-    }
-    setDraggedQuestionIndex(index);
-    setDropIndicatorIndex(index);
-  };
-
-  const handleQuestionDragOver = (event: DragEvent<HTMLButtonElement>, index: number) => {
-    if (draggedQuestionIndex === null) return;
-    event.preventDefault();
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const offsetY = event.clientY - bounds.top;
-    const shouldPlaceBefore = offsetY < bounds.height / 2;
-    const targetIndex = shouldPlaceBefore ? index : index + 1;
-    setDropIndicatorIndex(targetIndex);
-    event.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleQuestionDrop = (event: DragEvent<HTMLButtonElement>) => {
-    if (draggedQuestionIndex === null || dropIndicatorIndex === null) return;
-    event.preventDefault();
-    event.stopPropagation();
-    reorderQuestions(draggedQuestionIndex, dropIndicatorIndex);
-    resetQuestionDragState();
-  };
-
-  const handleQuestionDragEnd = (event?: DragEvent<HTMLElement>) => {
-    event?.currentTarget?.blur?.();
-    resetQuestionDragState();
-  };
-
-  const handleEndDropZoneDragOver = (event: DragEvent<HTMLDivElement>) => {
-    if (draggedQuestionIndex === null) return;
-    event.preventDefault();
-    setDropIndicatorIndex(questions.length);
-    event.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleEndDropZoneDrop = (event: DragEvent<HTMLDivElement>) => {
-    if (draggedQuestionIndex === null) return;
-    event.preventDefault();
-    reorderQuestions(draggedQuestionIndex, questions.length);
-    resetQuestionDragState();
   };
 
   const findOutcomesMissingCtaUrl = () => {
@@ -1062,162 +995,14 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             </button>
           </div>
 
-          <div className="space-y-3">
-            {questions.length === 0 && (
-              <button
-                type="button"
-                onClick={handleAddQuestion}
-                className="w-full rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground transition hover:border-border/80 hover:bg-muted/40 cursor-[var(--cursor-interactive)]"
-                aria-label="Adicionar primeira pergunta do quiz"
-              >
-                Adicione a primeira pergunta do quiz
-              </button>
-            )}
-            {questions.map((question, index) => {
-              const isDragging = draggedQuestionIndex === index;
-
-              return (
-                <div key={question.id ?? index} className="space-y-2">
-                  {shouldShowDropIndicator(index) && (
-                    <div
-                      className="h-0.5 rounded-full bg-primary"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <LoadingCard isLoading={loadingSections.questions}>
-                    <div className="relative group">
-                      {canReorderQuestions && (
-                        <SidebarCardDragHandle
-                          draggable={canReorderQuestions}
-                          aria-grabbed={isDragging}
-                          onDragStart={(event) =>
-                            handleQuestionDragStart(
-                              event,
-                              index,
-                              questionCardRefs.current[index]
-                            )
-                          }
-                          onDragEnd={handleQuestionDragEnd}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                          }}
-                          aria-label="Reordenar pergunta"
-                          isDragging={isDragging}
-                        >
-                          <GripVertical className="h-4 w-4" aria-hidden="true" />
-                        </SidebarCardDragHandle>
-                      )}
-
-                      <SidebarCard
-                        draggable={canReorderQuestions}
-                        data-question-card
-                        ref={(el) => {
-                          questionCardRefs.current[index] = el;
-                        }}
-                        onClick={() =>
-                          question.id && setEditingQuestionId(question.id)
-                        }
-                        onDragStart={(event) =>
-                          handleQuestionDragStart(event, index, event.currentTarget)
-                        }
-                        onDragOver={(event) => handleQuestionDragOver(event, index)}
-                        onDrop={handleQuestionDrop}
-                        onDragEnd={handleQuestionDragEnd}
-                        withActionPadding
-                        isDragging={isDragging}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="relative h-14 w-14 flex-shrink-0">
-                            <div className="h-full w-full overflow-hidden rounded-2xl border border-border bg-muted/60">
-                              {question.imageUrl ? (
-                                <img
-                                  src={question.imageUrl}
-                                  alt="Imagem da pergunta"
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                  <ImageIcon className="h-5 w-5" aria-hidden="true" />
-                                </div>
-                              )}
-                            </div>
-                            <span className="absolute -top-1.5 -right-1.5 flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-primary px-2 text-xs font-semibold text-primary-foreground shadow-sm">
-                              {index + 1}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground">
-                              {question.text || 'Pergunta sem texto'}
-                            </p>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                              {(question.options?.length ?? 0)} opções
-                            </p>
-                          </div>
-                        </div>
-                      </SidebarCard>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <SidebarCardActionTrigger
-                            onPointerDown={(event) => event.stopPropagation()}
-                            onClick={(event) => event.stopPropagation()}
-                            onDragStart={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }}
-                            aria-label="Opções da pergunta"
-                            className="absolute right-3 top-3"
-                          >
-                            <MoreVertical className="h-4 w-4" aria-hidden="true" />
-                          </SidebarCardActionTrigger>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuItem
-                            onSelect={(event) => {
-                              event.preventDefault();
-                              if (question.id) {
-                                setEditingQuestionId(question.id);
-                              }
-                            }}
-                          >
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onSelect={(event) => {
-                              event.preventDefault();
-                              handleDeleteQuestion(question.id);
-                            }}
-                          >
-                            Deletar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </LoadingCard>
-                </div>
-              );
-            })}
-            {canReorderQuestions && (
-              <div
-                onDragOver={handleEndDropZoneDragOver}
-                onDrop={handleEndDropZoneDrop}
-                onDragLeave={() => {
-                  setDropIndicatorIndex((current) =>
-                    current === questions.length ? null : current
-                  );
-                }}
-                className={cn(
-                  'my-2 h-0.5 rounded-full transition-colors',
-                  shouldShowDropIndicator(questions.length)
-                    ? 'bg-primary'
-                    : 'bg-transparent'
-                )}
-                aria-hidden="true"
-              />
-            )}
-          </div>
+          <SortableQuestionsList
+            questions={questions}
+            isLoading={loadingSections.questions}
+            onReorder={reorderQuestions}
+            onEdit={setEditingQuestionId}
+            onDelete={handleDeleteQuestion}
+            onAdd={handleAddQuestion}
+          />
         </section>
 
         <section ref={leadGenRef} className="space-y-3 pb-8">

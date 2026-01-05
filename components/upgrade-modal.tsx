@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-type UpgradeReason = 'draft-limit' | 'publish-limit' | 'brand-kit';
+type UpgradeReason = 'draft-limit' | 'publish-limit' | 'brand-kit' | 'pro-feature';
 
 const copy: Record<UpgradeReason, { title: string; description: string }> = {
   'draft-limit': {
@@ -20,6 +20,10 @@ const copy: Record<UpgradeReason, { title: string; description: string }> = {
   'publish-limit': {
     title: 'Limite de publicação atingido',
     description: 'Você já publicou 1 quiz no plano gratuito. Faça upgrade para publicar quantos quizzes quiser.',
+  },
+  'pro-feature': {
+    title: 'Funcionalidade do Plano Pro',
+    description: 'Esse recurso é exclusivo do plano Pro. Faça upgrade para desbloquear todos os detalhes e exportações.',
   },
   'brand-kit': {
     title: 'Kit da marca disponível no Pro',

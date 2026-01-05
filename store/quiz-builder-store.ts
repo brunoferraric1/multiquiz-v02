@@ -169,14 +169,15 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             sourceIndex < 0 ||
             destinationIndex < 0 ||
             sourceIndex >= questions.length ||
-            destinationIndex > questions.length
+            destinationIndex >= questions.length ||
+            sourceIndex === destinationIndex
           ) {
             return state;
           }
 
+          // Simple array reorder: remove from source, insert at destination
           const [movedQuestion] = questions.splice(sourceIndex, 1);
-          const insertIndex = destinationIndex > sourceIndex ? destinationIndex - 1 : destinationIndex;
-          questions.splice(insertIndex, 0, movedQuestion);
+          questions.splice(destinationIndex, 0, movedQuestion);
 
           return {
             quiz: { ...state.quiz, questions },

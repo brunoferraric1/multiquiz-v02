@@ -64,9 +64,10 @@ export const SidebarCardDragHandle = React.forwardRef<
     ref={ref}
     type={type}
     className={cn(
-      'absolute -left-4 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors duration-150',
-      'cursor-grab active:cursor-grabbing hover:text-foreground focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-      isDragging && 'opacity-70',
+      'absolute -left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition-all duration-150',
+      'hover:text-foreground hover:bg-muted/80 hover:scale-110',
+      'focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      isDragging ? 'cursor-grabbing text-foreground scale-110' : 'cursor-grab',
       className
     )}
     {...props}

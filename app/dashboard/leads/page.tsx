@@ -3,22 +3,45 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { QuizService } from '@/lib/services/quiz-service';
-import { AnalyticsService } from '@/lib/services/analytics-service';
-import type { Quiz, QuizAttempt } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { auth } from '@/lib/firebase';
+import type { Quiz } from '@/types';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Search } from 'lucide-react';
+import { UpgradeModal } from '@/components/upgrade-modal';
+import { Download, Lock, Search } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+
+type LeadPreview = {
+    id: string;
+    quizId: string;
+    startedAt: number;
+    lead?: {
+        name?: string;
+        email?: string;
+        phone?: string;
+    };
+    resultOutcomeId?: string;
+};
+
+type LeadsResponse = {
+    totalCount: number;
+    lockedCount: number;
+    leads: LeadPreview[];
+    isPro: boolean;
+};
 
 export default function LeadsPage() {
     const { user } = useAuth();
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-    const [leads, setLeads] = useState<QuizAttempt[]>([]);
+    const [leads, setLeads] = useState<LeadPreview[]>([]);
+    const [totalLeadCount, setTotalLeadCount] = useState(0);
+    const [lockedLeadCount, setLockedLeadCount] = useState(0);
+    const [hasProAccess, setHasProAccess] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const [selectedQuizId, setSelectedQuizId] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');
@@ -30,13 +53,26 @@ export default function LeadsPage() {
                 const quizzesData = await QuizService.getUserQuizzes(user.uid);
                 setQuizzes(quizzesData);
 
-                // Fetch leads for all quizzes
-                // Optimization: In a real app we might fetch only when selected or paginate
-                const allLeadsPromises = quizzesData.map(q => AnalyticsService.getQuizLeads(q.id));
-                const allLeadsResults = await Promise.all(allLeadsPromises);
-                const flatLeads = allLeadsResults.flat().sort((a, b) => b.startedAt - a.startedAt);
+                const token = await auth?.currentUser?.getIdToken();
+                if (!token) {
+                    throw new Error('Missing auth token');
+                }
 
-                setLeads(flatLeads);
+                const response = await fetch('/api/leads', {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch leads');
+                }
+
+                const data = (await response.json()) as LeadsResponse;
+                setLeads(data.leads);
+                setTotalLeadCount(data.totalCount);
+                setLockedLeadCount(data.lockedCount);
+                setHasProAccess(data.isPro);
             } catch (error) {
                 console.error('Failed to fetch leads data', error);
             } finally {
@@ -89,6 +125,17 @@ export default function LeadsPage() {
         document.body.removeChild(link);
     };
 
+    const handleExportClick = () => {
+        if (!hasProAccess) {
+            setShowUpgradeModal(true);
+            return;
+        }
+        handleExportCSV();
+    };
+
+    const lockedRows = Math.max(0, lockedLeadCount);
+    const placeholderRows = Array.from({ length: lockedRows });
+
     if (loading) {
         return <div className="p-8">Carregando leads...</div>;
     }
@@ -101,10 +148,17 @@ export default function LeadsPage() {
                     <p className="text-muted-foreground mt-1">
                         Visualize e exporte os contatos capturados pelos seus quizzes.
                     </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Você tem {totalLeadCount} leads capturados.
+                    </p>
                 </div>
-                <Button onClick={handleExportCSV} disabled={filteredLeads.length === 0}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Exportar CSV
+                <Button onClick={handleExportClick} disabled={hasProAccess && filteredLeads.length === 0}>
+                    {hasProAccess ? (
+                        <Download className="mr-2 h-4 w-4" />
+                    ) : (
+                        <Lock className="mr-2 h-4 w-4" />
+                    )}
+                    {hasProAccess ? 'Exportar CSV' : 'Exportar CSV (Pro)'}
                 </Button>
             </div>
 
@@ -151,39 +205,69 @@ export default function LeadsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredLeads.length === 0 ? (
+                                {filteredLeads.length === 0 && lockedRows === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-24 text-center">
                                             Nenhum lead encontrado.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    filteredLeads.map((lead) => {
-                                        const quiz = quizzes.find(q => q.id === lead.quizId);
-                                        const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || '-';
+                                    <>
+                                        {filteredLeads.map((lead) => {
+                                            const quiz = quizzes.find(q => q.id === lead.quizId);
+                                            const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || '-';
 
-                                        return (
-                                            <TableRow key={lead.id}>
+                                            return (
+                                                <TableRow key={lead.id}>
+                                                    <TableCell>
+                                                        {lead.startedAt ? format(new Date(lead.startedAt), 'dd/MM/yyyy HH:mm') : '-'}
+                                                    </TableCell>
+                                                    <TableCell className="font-medium">{lead.lead?.name || '-'}</TableCell>
+                                                    <TableCell>{lead.lead?.email || '-'}</TableCell>
+                                                    <TableCell>{lead.lead?.phone || '-'}</TableCell>
+                                                    <TableCell>{quiz?.title || 'Desconhecido'}</TableCell>
+                                                    <TableCell>{resultName}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                        {placeholderRows.map((_, index) => (
+                                            <TableRow key={`locked-${index}`} className="text-muted-foreground">
                                                 <TableCell>
-                                                    {lead.startedAt ? format(new Date(lead.startedAt), 'dd/MM/yyyy HH:mm') : '-'}
+                                                    <div className="h-4 w-24 rounded bg-muted/60 blur-sm" />
                                                 </TableCell>
-                                                <TableCell className="font-medium">{lead.lead?.name || '-'}</TableCell>
-                                                <TableCell>{lead.lead?.email || '-'}</TableCell>
-                                                <TableCell>{lead.lead?.phone || '-'}</TableCell>
-                                                <TableCell>{quiz?.title || 'Desconhecido'}</TableCell>
-                                                <TableCell>{resultName}</TableCell>
+                                                <TableCell>
+                                                    <div className="h-4 w-28 rounded bg-muted/60 blur-sm" />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="h-4 w-32 rounded bg-muted/60 blur-sm" />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="h-4 w-24 rounded bg-muted/60 blur-sm" />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="h-4 w-32 rounded bg-muted/60 blur-sm" />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="h-4 w-20 rounded bg-muted/60 blur-sm" />
+                                                </TableCell>
                                             </TableRow>
-                                        );
-                                    })
+                                        ))}
+                                    </>
                                 )}
                             </TableBody>
                         </Table>
                     </div>
                     <div className="mt-4 text-sm text-muted-foreground">
-                        Total de {filteredLeads.length} leads encontrados
+                        Exibindo {filteredLeads.length} de {totalLeadCount} leads
                     </div>
                 </CardContent>
             </Card>
+
+            <UpgradeModal
+                open={showUpgradeModal}
+                reason="pro-feature"
+                onOpenChange={setShowUpgradeModal}
+            />
         </div>
     );
 }
