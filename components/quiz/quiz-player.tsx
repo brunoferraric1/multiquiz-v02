@@ -344,7 +344,7 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
           />
         )}
       </div>
-      <div className="pointer-events-auto fixed bottom-4 left-1/2 z-10 -translate-x-1/2">
+      <div className="pointer-events-auto fixed bottom-4 right-4 z-10">
         {isLive ? (
           <a
             href="/"
