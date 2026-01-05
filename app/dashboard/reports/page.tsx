@@ -81,12 +81,14 @@ export default function ReportsPage() {
                                 <div className="grid grid-cols-3 gap-2 mt-2">
                                     <div className="flex flex-col items-center text-center p-2 bg-muted/50 rounded-lg">
                                         <Eye className="h-4 w-4 mb-1 text-muted-foreground" />
-                                        <span className="text-lg font-bold">{quiz.stats?.views || 0}</span>
+                                        <div className="text-lg font-bold h-7 flex items-center justify-center">
+                                            {quiz.stats?.views || 0}
+                                        </div>
                                         <span className="text-xs text-muted-foreground">Visitas totais</span>
                                     </div>
                                     <div className="flex flex-col items-center text-center p-2 bg-muted/50 rounded-lg">
                                         <Play className="h-4 w-4 mb-1 text-blue-500" />
-                                        <span className="text-lg font-bold flex items-center justify-center">
+                                        <div className="text-lg font-bold h-7 flex items-center justify-center">
                                             {isProUser ? (
                                                 quiz.stats?.starts || 0
                                             ) : (
@@ -95,12 +97,12 @@ export default function ReportsPage() {
                                                     <span className="sr-only">Disponível no Pro</span>
                                                 </>
                                             )}
-                                        </span>
+                                        </div>
                                         <span className="text-xs text-muted-foreground">Inícios totais</span>
                                     </div>
                                     <div className="flex flex-col items-center text-center p-2 bg-muted/50 rounded-lg">
                                         <CheckCircle2 className="h-4 w-4 mb-1 text-green-500" />
-                                        <span className="text-lg font-bold flex items-center justify-center">
+                                        <div className="text-lg font-bold h-7 flex items-center justify-center">
                                             {isProUser ? (
                                                 quiz.stats?.completions || 0
                                             ) : (
@@ -109,7 +111,7 @@ export default function ReportsPage() {
                                                     <span className="sr-only">Disponível no Pro</span>
                                                 </>
                                             )}
-                                        </span>
+                                        </div>
                                         <span className="text-xs text-muted-foreground">Conclusões</span>
                                     </div>
                                 </div>

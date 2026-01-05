@@ -22,6 +22,7 @@ type LeadsTableProps = {
     totalCount: number;
     onUpgradeClick: () => void;
     showFooter?: boolean;
+    showPreviewCounts?: boolean;
 };
 
 const MAX_LOCKED_ROWS_DISPLAY = 20;
@@ -47,6 +48,7 @@ export function LeadsTable({
     totalCount,
     onUpgradeClick,
     showFooter = true,
+    showPreviewCounts = true,
 }: LeadsTableProps) {
     const displayLockedRows = !loading && lockedCount > 0
         ? Math.min(lockedCount, MAX_LOCKED_ROWS_DISPLAY)
@@ -55,6 +57,7 @@ export function LeadsTable({
     const spacerHeight = Math.max(0, MIN_SECTION_HEIGHT - displayLockedRows * ESTIMATED_ROW_HEIGHT);
     const visibleLeadLabel = leadLabel(visibleCount);
     const totalLeadLabel = leadLabel(totalCount);
+    const showCounts = showPreviewCounts && totalCount > 0;
 
     const renderUpgradeCard = (className: string) => (
         <Card className={`shadow-lg border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 ${className}`}>
@@ -65,8 +68,12 @@ export function LeadsTable({
                 <div className="space-y-1.5">
                     <h3 className="font-semibold text-lg">Desbloqueie todos os seus leads</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                        Você está vendo <span className="font-medium text-foreground">{visibleLeadLabel}</span> de <span className="font-medium text-foreground">{totalLeadLabel}</span>.
-                        <br />
+                        {showCounts && (
+                            <>
+                                Você está vendo <span className="font-medium text-foreground">{visibleLeadLabel}</span> de <span className="font-medium text-foreground">{totalLeadLabel}</span>.
+                                <br />
+                            </>
+                        )}
                         No plano Pro você acessa os dados de todos os leads que responderam o seu quiz.
                     </p>
                 </div>
@@ -120,15 +127,6 @@ export function LeadsTable({
                                 ))}
                                 {displayLockedRows > 0 && (
                                     <>
-                                        <TableRow className="hidden sm:table-row hover:bg-transparent border-0 relative h-0">
-                                            <TableCell colSpan={6} className="p-0 border-0 h-0">
-                                                <div className="relative w-full h-0">
-                                                    <div className="absolute left-1/2 -translate-x-1/2 top-8 z-10 w-full max-w-md px-4">
-                                                        {renderUpgradeCard('w-full')}
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
                                         {placeholderRows.map((_, index) => (
                                             <TableRow
                                                 key={`locked-${index}`}
@@ -165,9 +163,9 @@ export function LeadsTable({
                         )}
                     </TableBody>
                 </Table>
-                                {displayLockedRows > 0 && (
-                    <div className="pointer-events-none absolute inset-x-0 top-44 z-10 flex justify-center px-4 sm:hidden">
-                        <div className="pointer-events-auto w-full">
+                {displayLockedRows > 0 && (
+                    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-4">
+                        <div className="pointer-events-auto w-full max-w-md">
                             {renderUpgradeCard('w-full')}
                         </div>
                     </div>

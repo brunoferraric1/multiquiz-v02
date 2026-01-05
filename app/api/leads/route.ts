@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp, getAdminDb, getUserSubscription } from '@/lib/firebase-admin';
 
-const FREE_LEAD_PREVIEW_LIMIT = 2;
-
 type LeadPreview = {
   id: string;
   quizId: string;
@@ -97,13 +95,20 @@ export async function GET(request: Request) {
     allLeads.sort((a, b) => b.startedAt - a.startedAt);
 
     const totalCount = allLeads.length;
-    const visibleLeads = isPro ? allLeads : allLeads.slice(0, FREE_LEAD_PREVIEW_LIMIT);
-    const lockedCount = Math.max(0, totalCount - visibleLeads.length);
+
+    if (!isPro) {
+      return NextResponse.json({
+        totalCount: 0,
+        lockedCount: 0,
+        leads: [],
+        isPro,
+      });
+    }
 
     return NextResponse.json({
       totalCount,
-      lockedCount,
-      leads: visibleLeads,
+      lockedCount: 0,
+      leads: allLeads,
       isPro,
     });
   } catch (error) {

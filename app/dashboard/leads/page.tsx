@@ -137,7 +137,6 @@ export default function LeadsPage() {
         setShowUpgradeModal(true);
     };
 
-    const visibleLeadCount = hasProAccess ? filteredLeads.length : leads.length;
     const leadRows = filteredLeads.map((lead) => {
         const quiz = quizzes.find(q => q.id === lead.quizId);
         const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || '-';
@@ -152,6 +151,7 @@ export default function LeadsPage() {
             resultTitle: resultName,
         };
     });
+    const displayLockedCount = hasProAccess ? lockedLeadCount : 10;
 
     if (loading) {
         return <div className="p-8">Carregando leads...</div>;
@@ -160,9 +160,7 @@ export default function LeadsPage() {
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold">
-                    {totalLeadCount === 1 ? '1 lead capturado' : `${totalLeadCount} leads capturados`}
-                </h1>
+                <h1 className="text-3xl font-bold">Leads capturados</h1>
                 <p className="text-muted-foreground mt-1">
                     Visualize e exporte os contatos capturados pelos seus quizzes.
                 </p>
@@ -213,10 +211,11 @@ export default function LeadsPage() {
                 <CardContent>
                     <LeadsTable
                         rows={leadRows}
-                        lockedCount={lockedLeadCount}
-                        visibleCount={visibleLeadCount}
+                        lockedCount={displayLockedCount}
                         totalCount={totalLeadCount}
                         onUpgradeClick={handleUpgradeClick}
+                        showPreviewCounts={false}
+                        visibleCount={filteredLeads.length}
                     />
                 </CardContent>
             </Card>

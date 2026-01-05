@@ -466,11 +466,8 @@ export default function QuizReportPage() {
             resultTitle: resultName,
         };
     });
-    const leadsTitle = leadsLoading || !isProUser
-        ? 'Leads capturados'
-        : totalLeadCount === 1
-            ? '1 lead capturado'
-            : `${totalLeadCount} leads capturados`;
+    const leadsTitle = 'Leads capturados';
+    const displayLockedCount = hasProAccess ? lockedLeadCount : 10;
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-12">
@@ -512,7 +509,7 @@ export default function QuizReportPage() {
                         <Eye className="h-4 w-4" style={{ color: FUNNEL_START_COLOR }} />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{totalViews}</div>
+                        <div className="text-3xl font-bold h-9 flex items-center">{totalViews}</div>
                         <p className="text-xs text-muted-foreground mt-1">Acessaram o link do quiz</p>
                     </CardContent>
                 </Card>
@@ -522,12 +519,12 @@ export default function QuizReportPage() {
                         <Play className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">
+                        <div className="text-3xl font-bold h-9 flex items-center">
                             {isProUser ? (
                                 totalStarts
                             ) : (
-                                <span className="inline-flex items-center">
-                                    <Lock className="h-7 w-7 text-muted-foreground" />
+                                <span className="inline-flex items-center justify-center">
+                                    <Lock className="h-6 w-6 text-muted-foreground" />
                                     <span className="sr-only">Disponível no Pro</span>
                                 </span>
                             )}
@@ -543,12 +540,12 @@ export default function QuizReportPage() {
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">
+                        <div className="text-3xl font-bold h-9 flex items-center">
                             {isProUser ? (
                                 totalCompletions
                             ) : (
-                                <span className="inline-flex items-center">
-                                    <Lock className="h-7 w-7 text-muted-foreground" />
+                                <span className="inline-flex items-center justify-center">
+                                    <Lock className="h-6 w-6 text-muted-foreground" />
                                     <span className="sr-only">Disponível no Pro</span>
                                 </span>
                             )}
@@ -564,12 +561,12 @@ export default function QuizReportPage() {
                         <Mail className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">
+                        <div className="text-3xl font-bold h-9 flex items-center">
                             {isProUser ? (
                                 totalLeads
                             ) : (
-                                <span className="inline-flex items-center">
-                                    <Lock className="h-7 w-7 text-muted-foreground" />
+                                <span className="inline-flex items-center justify-center">
+                                    <Lock className="h-6 w-6 text-muted-foreground" />
                                     <span className="sr-only">Disponível no Pro</span>
                                 </span>
                             )}
@@ -706,11 +703,12 @@ export default function QuizReportPage() {
                             <LeadsTable
                                 rows={leadRows}
                                 loading={leadsLoading}
-                                lockedCount={lockedLeadCount}
+                                lockedCount={displayLockedCount}
                                 visibleCount={visibleLeadCount}
                                 totalCount={totalLeadCount}
                                 onUpgradeClick={handleUpgradeClick}
                                 showFooter={!leadsLoading}
+                                showPreviewCounts={false}
                             />
                         </CardContent>
                     </Card>
