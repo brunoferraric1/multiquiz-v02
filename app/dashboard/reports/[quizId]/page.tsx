@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { LeadsTable } from '@/components/dashboard/leads-table';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
 import { ArrowLeft, CheckCircle2, Download, Eye, Globe, Lock, Mail, Play, Search, X } from 'lucide-react';
@@ -325,14 +325,20 @@ export default function QuizReportPage() {
         setShowUpgradeModal(true);
     };
 
-    const leadLabel = (count: number) => (count === 1 ? '1 lead' : `${count} leads`);
     const visibleLeadCount = hasProAccess ? filteredLeads.length : leads.length;
-    const visibleLeadLabel = leadLabel(visibleLeadCount);
-    const totalLeadLabel = leadLabel(totalLeadCount);
-    const lockedLeadLabel = leadLabel(lockedLeadCount);
-    const lockedRows = Math.max(0, lockedLeadCount);
-    const placeholderRows = Array.from({ length: lockedRows });
-    const lockedRowPadding = lockedRows === 1 ? 'py-5' : 'py-3';
+    const leadRows = filteredLeads.map((lead) => {
+        const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || '-';
+
+        return {
+            id: lead.id,
+            startedAt: lead.startedAt,
+            name: lead.lead?.name,
+            email: lead.lead?.email,
+            phone: lead.lead?.phone,
+            quizTitle: quiz?.title || 'Desconhecido',
+            resultTitle: resultName,
+        };
+    });
     const leadsTitle = leadsLoading
         ? 'Leads capturados'
         : totalLeadCount === 1
@@ -540,108 +546,15 @@ export default function QuizReportPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Data</TableHead>
-                                        <TableHead>Nome</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>Telefone</TableHead>
-                                        <TableHead>Quiz</TableHead>
-                                        <TableHead>Resultado</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {leadsLoading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                                Carregando leads...
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : filteredLeads.length === 0 && lockedRows === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="h-24 text-center">
-                                                Nenhum lead encontrado.
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        <>
-                                            {filteredLeads.map((lead) => {
-                                                const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || '-';
-
-                                                return (
-                                                    <TableRow key={lead.id}>
-                                                        <TableCell>
-                                                            {lead.startedAt ? format(new Date(lead.startedAt), 'dd/MM/yyyy HH:mm') : '-'}
-                                                        </TableCell>
-                                                        <TableCell className="font-medium">{lead.lead?.name || '-'}</TableCell>
-                                                        <TableCell>{lead.lead?.email || '-'}</TableCell>
-                                                        <TableCell>{lead.lead?.phone || '-'}</TableCell>
-                                                        <TableCell>{quiz.title}</TableCell>
-                                                        <TableCell>{resultName}</TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-                                            {!leadsLoading && lockedRows > 0 && (
-                                                <>
-                                                    <TableRow className="hover:bg-transparent">
-                                                        <TableCell colSpan={6} className="p-0">
-                                                            <div className="border-t border-border bg-muted/10">
-                                                                <div className="flex flex-col gap-3 border-b border-border bg-background/90 p-4 md:flex-row md:items-center md:justify-between">
-                                                                    <div>
-                                                                        <p className="text-sm font-semibold">
-                                                                            Você está vendo {visibleLeadLabel} de {totalLeadLabel}.
-                                                                        </p>
-                                                                        <p className="text-xs text-muted-foreground">
-                                                                            No plano gratuito mostramos apenas {visibleLeadLabel}. Desbloqueie os outros {lockedLeadLabel} no Plano Pro.
-                                                                        </p>
-                                                                    </div>
-                                                                    <Button size="sm" onClick={handleUpgradeClick}>
-                                                                        <Lock className="mr-2 h-4 w-4" />
-                                                                        Fazer upgrade
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                    {placeholderRows.map((_, index) => (
-                                                        <TableRow
-                                                            key={`locked-${index}`}
-                                                            className="bg-muted/10 text-muted-foreground/65 hover:bg-muted/20"
-                                                        >
-                                                            <TableCell className={lockedRowPadding}>
-                                                                <div className="h-3 w-full max-w-[9.5rem] rounded bg-muted/55" />
-                                                            </TableCell>
-                                                            <TableCell className={lockedRowPadding}>
-                                                                <div className="h-3 w-full max-w-[8rem] rounded bg-muted/55" />
-                                                            </TableCell>
-                                                            <TableCell className={lockedRowPadding}>
-                                                                <div className="h-3 w-full max-w-[13rem] rounded bg-muted/55" />
-                                                            </TableCell>
-                                                            <TableCell className={lockedRowPadding}>
-                                                                <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
-                                                            </TableCell>
-                                                            <TableCell className={lockedRowPadding}>
-                                                                <div className="h-3 w-full max-w-[16rem] rounded bg-muted/55" />
-                                                            </TableCell>
-                                                            <TableCell className={lockedRowPadding}>
-                                                                <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    ))}
-                                                </>
-                                            )}
-                                        </>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                        {!leadsLoading && (
-                            <div className="mt-4 text-sm text-muted-foreground">
-                                Exibindo {filteredLeads.length} de {totalLeadCount} leads
-                            </div>
-                        )}
+                        <LeadsTable
+                            rows={leadRows}
+                            loading={leadsLoading}
+                            lockedCount={lockedLeadCount}
+                            visibleCount={visibleLeadCount}
+                            totalCount={totalLeadCount}
+                            onUpgradeClick={handleUpgradeClick}
+                            showFooter={!leadsLoading}
+                        />
                     </CardContent>
                 </Card>
             </div>

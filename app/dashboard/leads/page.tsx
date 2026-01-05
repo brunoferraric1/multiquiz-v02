@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { LeadsTable } from '@/components/dashboard/leads-table';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { Download, Lock, Search } from 'lucide-react';
 import { format } from 'date-fns';
@@ -137,54 +137,21 @@ export default function LeadsPage() {
         setShowUpgradeModal(true);
     };
 
-    const leadLabel = (count: number) => (count === 1 ? '1 lead' : `${count} leads`);
     const visibleLeadCount = hasProAccess ? filteredLeads.length : leads.length;
-    const visibleLeadLabel = leadLabel(visibleLeadCount);
-    const totalLeadLabel = leadLabel(totalLeadCount);
+    const leadRows = filteredLeads.map((lead) => {
+        const quiz = quizzes.find(q => q.id === lead.quizId);
+        const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || '-';
 
-    // Ensure we render enough height to cover the upgrade card
-    // Use a transparent spacer row if actual locked rows aren't tall enough
-    const MAX_LOCKED_ROWS_DISPLAY = 20;
-    const displayLockedRows = lockedLeadCount > 0 
-        ? Math.min(lockedLeadCount, MAX_LOCKED_ROWS_DISPLAY) 
-        : 0;
-    
-    const placeholderRows = Array.from({ length: displayLockedRows });
-    const lockedRowPadding = 'py-3';
-    const columnWidths = {
-        date: 'min-w-[9.5rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
-        name: 'min-w-[9rem] sm:min-w-[auto]',
-        email: 'min-w-[12.5rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
-        phone: 'min-w-[10rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
-        quiz: 'min-w-[15rem] sm:min-w-[auto]',
-        result: 'min-w-[11rem] sm:min-w-[auto]',
-    };
-    const renderUpgradeCard = (className: string) => (
-        <Card className={`shadow-lg border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 ${className}`}>
-            <CardContent className="flex flex-col items-center text-center p-6 gap-4">
-                <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center">
-                    <Lock className="h-5 w-5" />
-                </div>
-                <div className="space-y-1.5">
-                    <h3 className="font-semibold text-lg">Desbloqueie todos os seus leads</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                        Você está vendo <span className="font-medium text-foreground">{visibleLeadLabel}</span> de <span className="font-medium text-foreground">{totalLeadLabel}</span>.
-                        <br />
-                        No plano Pro você acessa os dados de todos os leads que responderam o seu quiz.
-                    </p>
-                </div>
-                <Button onClick={handleUpgradeClick} className="w-full sm:w-auto min-w-[200px]">
-                    Fazer upgrade
-                </Button>
-            </CardContent>
-        </Card>
-    );
-    
-    // Calculate if we need extra space for the upgrade card (approx 384px height)
-    const ESTIMATED_ROW_HEIGHT = 53;
-    const MIN_SECTION_HEIGHT = 384;
-    const currentSectionHeight = displayLockedRows * ESTIMATED_ROW_HEIGHT;
-    const spacerHeight = Math.max(0, MIN_SECTION_HEIGHT - currentSectionHeight);
+        return {
+            id: lead.id,
+            startedAt: lead.startedAt,
+            name: lead.lead?.name,
+            email: lead.lead?.email,
+            phone: lead.lead?.phone,
+            quizTitle: quiz?.title || 'Desconhecido',
+            resultTitle: resultName,
+        };
+    });
 
     if (loading) {
         return <div className="p-8">Carregando leads...</div>;
@@ -244,102 +211,13 @@ export default function LeadsPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="relative rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className={columnWidths.date}>Data</TableHead>
-                                    <TableHead className={columnWidths.name}>Nome</TableHead>
-                                    <TableHead className={columnWidths.email}>Email</TableHead>
-                                    <TableHead className={columnWidths.phone}>Telefone</TableHead>
-                                    <TableHead className={columnWidths.quiz}>Quiz</TableHead>
-                                    <TableHead className={columnWidths.result}>Resultado</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredLeads.length === 0 && displayLockedRows === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">
-                                            Nenhum lead encontrado.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    <>
-                                        {filteredLeads.map((lead) => {
-                                            const quiz = quizzes.find(q => q.id === lead.quizId);
-                                            const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || '-';
-
-                                            return (
-                                                <TableRow key={lead.id}>
-                                                    <TableCell className={columnWidths.date}>
-                                                        {lead.startedAt ? format(new Date(lead.startedAt), 'dd/MM/yyyy HH:mm') : '-'}
-                                                    </TableCell>
-                                                    <TableCell className={`${columnWidths.name} font-medium`}>{lead.lead?.name || '-'}</TableCell>
-                                                    <TableCell className={columnWidths.email}>{lead.lead?.email || '-'}</TableCell>
-                                                    <TableCell className={columnWidths.phone}>{lead.lead?.phone || '-'}</TableCell>
-                                                    <TableCell className={columnWidths.quiz}>{quiz?.title || 'Desconhecido'}</TableCell>
-                                                    <TableCell className={columnWidths.result}>{resultName}</TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                        {displayLockedRows > 0 && (
-                                            <>
-                                                <TableRow className="hidden sm:table-row hover:bg-transparent border-0 relative h-0">
-                                                    <TableCell colSpan={6} className="p-0 border-0 h-0">
-                                                        <div className="relative w-full h-0">
-                                                            <div className="absolute left-1/2 -translate-x-1/2 top-8 z-10 w-full max-w-md px-4">
-                                                                {renderUpgradeCard('w-full')}
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                                {placeholderRows.map((_, index) => (
-                                                    <TableRow
-                                                        key={`locked-${index}`}
-                                                        className="bg-muted/10 text-muted-foreground/65 hover:bg-muted/20 blur-[2px] select-none pointer-events-none"
-                                                    >
-                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.date}`}>
-                                                            <div className="h-3 w-full max-w-[9.5rem] rounded bg-muted/55" />
-                                                        </TableCell>
-                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.name}`}>
-                                                            <div className="h-3 w-full max-w-[8rem] rounded bg-muted/55" />
-                                                        </TableCell>
-                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.email}`}>
-                                                            <div className="h-3 w-full max-w-[13rem] rounded bg-muted/55" />
-                                                        </TableCell>
-                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.phone}`}>
-                                                            <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
-                                                        </TableCell>
-                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.quiz}`}>
-                                                            <div className="h-3 w-full max-w-[16rem] rounded bg-muted/55" />
-                                                        </TableCell>
-                                                        <TableCell className={`${lockedRowPadding} ${columnWidths.result}`}>
-                                                            <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                                {spacerHeight > 0 && (
-                                                    <TableRow className="hover:bg-transparent border-0" style={{ height: `${spacerHeight}px` }}>
-                                                        <TableCell colSpan={6} className="p-0 border-0" />
-                                                    </TableRow>
-                                                )}
-                                            </>
-                                        )}
-                                    </>
-                                )}
-                            </TableBody>
-                        </Table>
-                        {displayLockedRows > 0 && (
-                            <div className="pointer-events-none absolute inset-x-0 top-44 z-10 flex justify-center px-4 sm:hidden">
-                                <div className="pointer-events-auto w-full">
-                                    {renderUpgradeCard('w-full')}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    <div className="mt-4 text-sm text-muted-foreground">
-                        Exibindo {filteredLeads.length} de {totalLeadCount} leads
-                    </div>
+                    <LeadsTable
+                        rows={leadRows}
+                        lockedCount={lockedLeadCount}
+                        visibleCount={visibleLeadCount}
+                        totalCount={totalLeadCount}
+                        onUpgradeClick={handleUpgradeClick}
+                    />
                 </CardContent>
             </Card>
 

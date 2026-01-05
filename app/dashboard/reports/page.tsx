@@ -57,42 +57,39 @@ export default function ReportsPage() {
                     {quizzes.map((quiz) => (
                         <Card key={quiz.id} className="hover:shadow-md transition-shadow">
                             <CardHeader className="pb-2">
-                                <div className="flex items-start justify-between gap-2">
-                                    <CardTitle className="truncate text-lg min-w-0">{quiz.title}</CardTitle>
+                                <div className="flex flex-col gap-2">
                                     {quiz.isPublished ? (
-                                        <Badge variant="published" className="flex items-center gap-1 rounded shadow-sm border-none shrink-0">
+                                        <Badge
+                                            variant="published"
+                                            className="flex items-center gap-1 rounded shadow-sm border-none shrink-0 self-start"
+                                        >
                                             <Globe size={10} /> Publicado
                                         </Badge>
                                     ) : (
-                                        <Badge variant="draft" className="flex items-center gap-1 rounded shadow-sm border-none shrink-0">
+                                        <Badge variant="draft" className="flex items-center gap-1 rounded shadow-sm border-none shrink-0 self-start">
                                             <Lock size={10} /> Rascunho
                                         </Badge>
                                     )}
+                                    <CardTitle className="truncate text-lg min-w-0">{quiz.title}</CardTitle>
                                 </div>
                                 <CardDescription className="line-clamp-1">{quiz.description || 'Sem descrição'}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-3 gap-2 mt-2">
-                                    <div className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
+                                    <div className="flex flex-col items-center text-center p-2 bg-muted/50 rounded-lg">
                                         <Eye className="h-4 w-4 mb-1 text-muted-foreground" />
                                         <span className="text-lg font-bold">{quiz.stats?.views || 0}</span>
                                         <span className="text-xs text-muted-foreground">Visitas totais</span>
                                     </div>
-                                    <div className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
+                                    <div className="flex flex-col items-center text-center p-2 bg-muted/50 rounded-lg">
                                         <Play className="h-4 w-4 mb-1 text-blue-500" />
                                         <span className="text-lg font-bold">{quiz.stats?.starts || 0}</span>
                                         <span className="text-xs text-muted-foreground">Inícios totais</span>
                                     </div>
-                                    <div className="flex flex-col items-center p-2 bg-muted/50 rounded-lg">
+                                    <div className="flex flex-col items-center text-center p-2 bg-muted/50 rounded-lg">
                                         <CheckCircle2 className="h-4 w-4 mb-1 text-green-500" />
                                         <span className="text-lg font-bold">{quiz.stats?.completions || 0}</span>
                                         <span className="text-xs text-muted-foreground">Conclusões</span>
-                                    </div>
-                                </div>
-
-                                <div className="mt-4 flex items-center justify-between text-sm">
-                                    <div className="text-muted-foreground">
-                                        Taxa de Conclusão: {quiz.stats?.starts ? Math.round(((quiz.stats.completions || 0) / quiz.stats.starts) * 100) : 0}%
                                     </div>
                                 </div>
                             </CardContent>
