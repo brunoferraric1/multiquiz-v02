@@ -192,7 +192,7 @@ function DashboardContent() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('grid')}
-                className={`h-8 px-3 sm:w-8 sm:px-0 ${viewMode === 'grid' ? 'text-yellow-500' : ''}`}
+                className={`h-8 px-3 sm:w-8 sm:px-0 ${viewMode === 'grid' ? 'bg-card text-foreground ring-1 ring-border/70' : 'text-muted-foreground'}`}
                 title="Visualização em Grade"
               >
                 <LayoutGrid size={16} />
@@ -202,7 +202,7 @@ function DashboardContent() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('list')}
-                className={`h-8 px-3 sm:w-8 sm:px-0 ${viewMode === 'list' ? 'text-yellow-500' : ''}`}
+                className={`h-8 px-3 sm:w-8 sm:px-0 ${viewMode === 'list' ? 'bg-card text-foreground ring-1 ring-border/70' : 'text-muted-foreground'}`}
                 title="Visualização em Lista"
               >
                 <List size={16} />
