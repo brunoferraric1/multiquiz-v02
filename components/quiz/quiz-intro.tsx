@@ -33,9 +33,9 @@ export function QuizIntro({
 
   return (
     <div className="space-y-5 text-center">
-      <div className="flex justify-center">
-        <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-          {coverImageUrl ? (
+      {coverImageUrl && (
+        <div className="flex justify-center">
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
             <div className="aspect-[4/3]">
               <img
                 src={coverImageUrl}
@@ -43,13 +43,9 @@ export function QuizIntro({
                 className="h-full w-full object-cover"
               />
             </div>
-          ) : (
-            <div className="flex aspect-[4/3] items-center justify-center text-sm text-muted-foreground bg-muted/60">
-              Adicione uma imagem de capa para o quiz
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground" />
 
