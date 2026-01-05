@@ -5,12 +5,18 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { QuizService } from '@/lib/services/quiz-service';
 import { AnalyticsService } from '@/lib/services/analytics-service';
+import { auth } from '@/lib/firebase';
 import type { Quiz, QuizAttempt } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { UpgradeModal } from '@/components/upgrade-modal';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
-import { ArrowLeft, Eye, Play, CheckCircle2, Mail, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Download, Eye, Globe, Lock, Mail, Play, Search, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { format } from 'date-fns';
 import {
     BarChart,
     Bar,
@@ -29,6 +35,25 @@ import {
 // Colors for charts
 const FUNNEL_START_COLOR = '#8884d8';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', FUNNEL_START_COLOR, '#82ca9d'];
+
+type LeadPreview = {
+    id: string;
+    quizId: string;
+    startedAt: number;
+    lead?: {
+        name?: string;
+        email?: string;
+        phone?: string;
+    };
+    resultOutcomeId?: string;
+};
+
+type LeadsResponse = {
+    totalCount: number;
+    lockedCount: number;
+    leads: LeadPreview[];
+    isPro: boolean;
+};
 
 const getFunnelTooltipLabel = (label: string) => {
     if (label === 'Inícios') return 'início';
@@ -85,6 +110,13 @@ export default function QuizReportPage() {
     const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
     const [loading, setLoading] = useState(true);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [leads, setLeads] = useState<LeadPreview[]>([]);
+    const [totalLeadCount, setTotalLeadCount] = useState(0);
+    const [lockedLeadCount, setLockedLeadCount] = useState(0);
+    const [hasProAccess, setHasProAccess] = useState(false);
+    const [leadsLoading, setLeadsLoading] = useState(true);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         async function fetchData() {
@@ -117,6 +149,41 @@ export default function QuizReportPage() {
         }
 
         fetchData();
+    }, [user, quizId]);
+
+    useEffect(() => {
+        async function fetchLeads() {
+            if (!user || !quizId) return;
+            setLeadsLoading(true);
+            try {
+                const token = await auth?.currentUser?.getIdToken();
+                if (!token) {
+                    throw new Error('Missing auth token');
+                }
+
+                const response = await fetch(`/api/leads?quizId=${encodeURIComponent(quizId)}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch leads');
+                }
+
+                const data = (await response.json()) as LeadsResponse;
+                setLeads(data.leads);
+                setTotalLeadCount(data.totalCount);
+                setLockedLeadCount(data.lockedCount);
+                setHasProAccess(data.isPro);
+            } catch (error) {
+                console.error('Failed to fetch leads data', error);
+            } finally {
+                setLeadsLoading(false);
+            }
+        }
+
+        fetchLeads();
     }, [user, quizId]);
 
     if (loading) {
@@ -206,12 +273,84 @@ export default function QuizReportPage() {
     const startRate = totalViews ? Math.round((totalStarts / totalViews) * 100) : 0;
     const completionRate = totalStarts ? Math.round((totalCompletions / totalStarts) * 100) : 0;
 
+    const filteredLeads = leads.filter(lead => {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+            lead.lead?.name?.toLowerCase().includes(searchLower) ||
+            lead.lead?.email?.toLowerCase().includes(searchLower) ||
+            lead.lead?.phone?.includes(searchLower)
+        );
+    });
+
+    const handleExportCSV = () => {
+        if (filteredLeads.length === 0) return;
+
+        const headers = ['Data', 'Nome', 'Email', 'Telefone', 'Quiz', 'Resultado'];
+        const csvContent = [
+            headers.join(','),
+            ...filteredLeads.map(lead => {
+                const quizTitle = quiz?.title || 'Quiz Desconhecido';
+                const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || 'N/A';
+
+                return [
+                    format(new Date(lead.startedAt), 'dd/MM/yyyy HH:mm'),
+                    `"${lead.lead?.name || ''}"`,
+                    `"${lead.lead?.email || ''}"`,
+                    `"${lead.lead?.phone || ''}"`,
+                    `"${quizTitle}"`,
+                    `"${resultName}"`
+                ].join(',');
+            })
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `leads_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleExportClick = () => {
+        if (!hasProAccess) {
+            setShowUpgradeModal(true);
+            return;
+        }
+        handleExportCSV();
+    };
+
+    const handleUpgradeClick = () => {
+        setShowUpgradeModal(true);
+    };
+
+    const leadLabel = (count: number) => (count === 1 ? '1 lead' : `${count} leads`);
+    const visibleLeadCount = hasProAccess ? filteredLeads.length : leads.length;
+    const visibleLeadLabel = leadLabel(visibleLeadCount);
+    const totalLeadLabel = leadLabel(totalLeadCount);
+    const lockedLeadLabel = leadLabel(lockedLeadCount);
+    const lockedRows = Math.max(0, lockedLeadCount);
+    const placeholderRows = Array.from({ length: lockedRows });
+    const lockedRowPadding = lockedRows === 1 ? 'py-5' : 'py-3';
+
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
             </Button>
+            <div className="mb-4">
+                {quiz.isPublished ? (
+                    <Badge variant="published" className="flex items-center gap-1 rounded shadow-sm border-none w-fit">
+                        <Globe size={10} /> Publicado
+                    </Badge>
+                ) : (
+                    <Badge variant="draft" className="flex items-center gap-1 rounded shadow-sm border-none w-fit">
+                        <Lock size={10} /> Rascunho
+                    </Badge>
+                )}
+            </div>
 
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                 <div>
@@ -358,6 +497,153 @@ export default function QuizReportPage() {
                 </Card>
 
             </div>
+
+            <div className="mt-10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 className="text-2xl font-semibold">Leads capturados</h2>
+                        <p className="text-muted-foreground mt-1">
+                            Visualize os contatos gerados por este quiz.
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Você tem {totalLeadCount} leads capturados.
+                        </p>
+                    </div>
+                    <Button onClick={handleExportClick} disabled={hasProAccess && filteredLeads.length === 0}>
+                        {hasProAccess ? (
+                            <Download className="mr-2 h-4 w-4" />
+                        ) : (
+                            <Lock className="mr-2 h-4 w-4" />
+                        )}
+                        {hasProAccess ? 'Exportar CSV' : 'Exportar CSV (Pro)'}
+                    </Button>
+                </div>
+                <Card>
+                    <CardHeader className="pb-4">
+                        <div className="flex-1">
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Buscar por nome, email..."
+                                    className="pl-8"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Data</TableHead>
+                                        <TableHead>Nome</TableHead>
+                                        <TableHead>Email</TableHead>
+                                        <TableHead>Telefone</TableHead>
+                                        <TableHead>Quiz</TableHead>
+                                        <TableHead>Resultado</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {leadsLoading ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                                Carregando leads...
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : filteredLeads.length === 0 && lockedRows === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-24 text-center">
+                                                Nenhum lead encontrado.
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        <>
+                                            {filteredLeads.map((lead) => {
+                                                const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || '-';
+
+                                                return (
+                                                    <TableRow key={lead.id}>
+                                                        <TableCell>
+                                                            {lead.startedAt ? format(new Date(lead.startedAt), 'dd/MM/yyyy HH:mm') : '-'}
+                                                        </TableCell>
+                                                        <TableCell className="font-medium">{lead.lead?.name || '-'}</TableCell>
+                                                        <TableCell>{lead.lead?.email || '-'}</TableCell>
+                                                        <TableCell>{lead.lead?.phone || '-'}</TableCell>
+                                                        <TableCell>{quiz.title}</TableCell>
+                                                        <TableCell>{resultName}</TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                            {!leadsLoading && lockedRows > 0 && (
+                                                <>
+                                                    <TableRow className="hover:bg-transparent">
+                                                        <TableCell colSpan={6} className="p-0">
+                                                            <div className="border-t border-border bg-muted/10">
+                                                                <div className="flex flex-col gap-3 border-b border-border bg-background/90 p-4 md:flex-row md:items-center md:justify-between">
+                                                                    <div>
+                                                                        <p className="text-sm font-semibold">
+                                                                            Você está vendo {visibleLeadLabel} de {totalLeadLabel}.
+                                                                        </p>
+                                                                        <p className="text-xs text-muted-foreground">
+                                                                            No plano gratuito mostramos apenas {visibleLeadLabel}. Desbloqueie os outros {lockedLeadLabel} no Plano Pro.
+                                                                        </p>
+                                                                    </div>
+                                                                    <Button size="sm" onClick={handleUpgradeClick}>
+                                                                        <Lock className="mr-2 h-4 w-4" />
+                                                                        Fazer upgrade
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {placeholderRows.map((_, index) => (
+                                                        <TableRow
+                                                            key={`locked-${index}`}
+                                                            className="bg-muted/10 text-muted-foreground/65 hover:bg-muted/20"
+                                                        >
+                                                            <TableCell className={lockedRowPadding}>
+                                                                <div className="h-3 w-full max-w-[9.5rem] rounded bg-muted/55" />
+                                                            </TableCell>
+                                                            <TableCell className={lockedRowPadding}>
+                                                                <div className="h-3 w-full max-w-[8rem] rounded bg-muted/55" />
+                                                            </TableCell>
+                                                            <TableCell className={lockedRowPadding}>
+                                                                <div className="h-3 w-full max-w-[13rem] rounded bg-muted/55" />
+                                                            </TableCell>
+                                                            <TableCell className={lockedRowPadding}>
+                                                                <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
+                                                            </TableCell>
+                                                            <TableCell className={lockedRowPadding}>
+                                                                <div className="h-3 w-full max-w-[16rem] rounded bg-muted/55" />
+                                                            </TableCell>
+                                                            <TableCell className={lockedRowPadding}>
+                                                                <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        {!leadsLoading && (
+                            <div className="mt-4 text-sm text-muted-foreground">
+                                Exibindo {filteredLeads.length} de {totalLeadCount} leads
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+
+            <UpgradeModal
+                open={showUpgradeModal}
+                reason="pro-feature"
+                onOpenChange={setShowUpgradeModal}
+            />
 
             <AnimatePresence>
                 {isPreviewOpen && (

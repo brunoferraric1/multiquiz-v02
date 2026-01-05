@@ -30,6 +30,8 @@ const toMillis = (value: unknown) => {
 };
 
 export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const quizIdFilter = requestUrl.searchParams.get('quizId');
   const authHeader = request.headers.get('authorization') || '';
   if (!authHeader.startsWith('Bearer ')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -54,15 +56,20 @@ export async function GET(request: Request) {
     const db = getAdminDb();
     const quizzesSnapshot = await db.collection('quizzes').where('ownerId', '==', userId).get();
     const quizIds = quizzesSnapshot.docs.map((doc) => doc.id);
+    const filteredQuizIds = quizIdFilter && quizIds.includes(quizIdFilter)
+      ? [quizIdFilter]
+      : quizIdFilter
+        ? []
+        : quizIds;
 
-    if (quizIds.length === 0) {
+    if (filteredQuizIds.length === 0) {
       return NextResponse.json({ totalCount: 0, lockedCount: 0, leads: [], isPro });
     }
 
     const attemptsSnapshots = await Promise.all(
-      quizIds.map((quizId) => (
+      filteredQuizIds.map((filteredQuizId) => (
         db.collection('quiz_attempts')
-          .where('quizId', '==', quizId)
+          .where('quizId', '==', filteredQuizId)
           .orderBy('startedAt', 'desc')
           .get()
       ))
