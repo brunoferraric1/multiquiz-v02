@@ -20,7 +20,8 @@ import {
     PieChart,
     Pie,
     Cell,
-    Legend
+    Legend,
+    LabelList
 } from 'recharts';
 
 // Colors for charts
@@ -36,13 +37,34 @@ const getFunnelTooltipLabel = (label: string) => {
 const FunnelTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
     if (!active || !payload?.length) return null;
 
-    const [{ name, value }] = payload;
-    const stageLabel = getFunnelTooltipLabel(String(name));
+    const data = payload[0].payload;
+    const value = payload[0].value;
+    const stageLabel = getFunnelTooltipLabel(String(data.name));
 
     return (
-        <div className="rounded-md bg-card px-3 py-2 shadow-md">
-            <p className="text-sm text-card-foreground">
-                Pessoas que chegaram a {stageLabel}: {value ?? 0}
+        <div className="rounded-md bg-card px-3 py-2 shadow-md border border-border">
+            <p className="text-sm font-medium">
+                {stageLabel.charAt(0).toUpperCase() + stageLabel.slice(1)}
+            </p>
+            <p className="text-sm text-muted-foreground">
+                {value ?? 0} pessoas
+            </p>
+        </div>
+    );
+};
+
+const PieTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
+    if (!active || !payload?.length) return null;
+
+    const data = payload[0].payload;
+    
+    return (
+        <div className="rounded-md bg-card px-3 py-2 shadow-md border border-border">
+            <p className="text-sm font-medium">
+                {data.rawName}
+            </p>
+            <p className="text-sm text-muted-foreground">
+                {data.value} pessoas ({((data.percent || 0) * 100).toFixed(0)}%)
             </p>
         </div>
     );
@@ -159,9 +181,11 @@ export default function QuizReportPage() {
 
     const resultData = Object.entries(resultCounts).map(([rId, count]) => {
         const outcome = quiz.outcomes?.find(o => o.id === rId);
+        const name = outcome?.title || 'Desconhecido';
         return {
-            name: outcome?.title || 'Desconhecido',
-            value: count
+            name: `${name} (${count})`, // This is used for the Legend
+            value: count,
+            rawName: name // Use this for tooltip to avoid duplication
         };
     });
 
@@ -227,7 +251,13 @@ export default function QuizReportPage() {
                 <Card className="col-span-1">
                     <CardHeader>
                         <CardTitle>Funil de Conversão</CardTitle>
-                        <CardDescription>Onde os usuários estão abandonando o quiz</CardDescription>
+                        <CardDescription>
+                            Onde os usuários estão abandonando o quiz
+                            <br />
+                            <span className="text-xs font-normal opacity-80">
+                                Número de pessoas que chegaram à cada etapa
+                            </span>
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -237,6 +267,14 @@ export default function QuizReportPage() {
                                 <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
                                 <Tooltip cursor={{ fill: 'transparent' }} content={<FunnelTooltip />} />
                                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                                    <LabelList 
+                                        dataKey="value" 
+                                        position="insideRight" 
+                                        fill="#fff" 
+                                        fontSize={12} 
+                                        fontWeight="bold"
+                                        offset={10}
+                                    />
                                     {funnelData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.fill} />
                                     ))}
@@ -252,26 +290,31 @@ export default function QuizReportPage() {
                         <CardTitle>Distribuição de Resultados</CardTitle>
                         <CardDescription>Quais resultados os usuários estão obtendo</CardDescription>
                     </CardHeader>
-                    <CardContent className="h-[300px]">
+                    <CardContent className="h-[400px]">
                         {resultData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
+                                <PieChart margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
                                     <Pie
                                         data={resultData}
                                         cx="50%"
-                                        cy="50%"
-                                        labelLine={false}
-                                        outerRadius={80}
+                                        cy="45%"
+                                        labelLine={true}
+                                        outerRadius={90}
                                         fill="#8884d8"
                                         dataKey="value"
-                                        label={({ name, percent }: { name?: string; percent?: number }) => `${((percent || 0) * 100).toFixed(0)}%`}
+                                        label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                                     >
                                         {resultData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip />
-                                    <Legend layout="vertical" verticalAlign="middle" align="right" />
+                                    <Tooltip content={<PieTooltip />} />
+                                    <Legend 
+                                        layout="horizontal" 
+                                        verticalAlign="bottom" 
+                                        align="center"
+                                        wrapperStyle={{ paddingTop: '20px' }}
+                                    />
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
