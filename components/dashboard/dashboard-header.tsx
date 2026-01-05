@@ -40,7 +40,7 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="bg-card border-b sticky top-0 z-10">
+    <header className="bg-card border-b sticky top-0 z-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
         <div className="flex items-center gap-3">
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
