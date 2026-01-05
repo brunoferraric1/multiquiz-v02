@@ -72,7 +72,7 @@ const ReportsGate = ({ show, onUpgradeClick, children }: ReportsGateProps) => {
     return (
         <div className="relative">
             <div className="sticky top-[20vh] z-30 flex justify-center pointer-events-none h-0">
-                <div className="pointer-events-auto w-full max-w-md px-4 translate-y-8 md:translate-y-12">
+                <div className="pointer-events-auto w-full max-w-md px-4 translate-y-12 md:translate-y-16">
                     <Card className="shadow-lg border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
                         <CardContent className="flex flex-col items-center text-center p-6 gap-4">
                             <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center">
@@ -91,10 +91,10 @@ const ReportsGate = ({ show, onUpgradeClick, children }: ReportsGateProps) => {
                     </Card>
                 </div>
             </div>
-            <div className="relative z-0 opacity-20 blur-[2px] pointer-events-none select-none">
+            <div className="relative z-0 opacity-30 pointer-events-none select-none">
                 {children}
             </div>
-            <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-[6px] pointer-events-none" />
+            <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[4px] pointer-events-none" />
         </div>
     );
 };
