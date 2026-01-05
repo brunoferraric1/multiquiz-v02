@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
-  ArrowLeft,
   Check,
   Loader2,
   Sparkles,
@@ -189,12 +188,6 @@ function PricingContent() {
     }
   };
 
-  const currentPlanLabel = subscriptionLoading
-    ? 'Carregando...'
-    : isProUser
-    ? 'MultiQuiz Pro'
-    : 'Gratuito';
-
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
@@ -207,16 +200,6 @@ function PricingContent() {
           <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl space-y-4">
-                <Button
-                  asChild
-                  variant="ghost"
-                  className="cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)] -ml-4"
-                >
-                  <Link href="/dashboard">
-                    <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-                    Voltar ao painel
-                  </Link>
-                </Button>
                 <div>
                   <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
                     Compare o gratuito com o Pro
@@ -226,50 +209,6 @@ function PricingContent() {
                     e escalar com relatórios completos.
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div className="mt-8 flex flex-col gap-4 rounded-[var(--radius-lg)] border border-border bg-card/50 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Seu plano atual:</span>
-                <Badge variant={subscriptionLoading ? 'disabled' : isProUser ? 'secondary' : 'outline'}>
-                  {currentPlanLabel}
-                </Badge>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 rounded-full border border-border bg-muted/40 p-1 text-sm">
-                <button
-                  type="button"
-                  onClick={() => setBillingPeriod('monthly')}
-                  className={cn(
-                    'rounded-full px-4 py-1 font-medium transition-colors',
-                    billingPeriod === 'monthly'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  Mensal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBillingPeriod('yearly')}
-                  className={cn(
-                    'rounded-full px-4 py-1 font-medium transition-colors flex items-center gap-2',
-                    billingPeriod === 'yearly'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  Anual
-                  <span className={cn(
-                    "rounded-full px-2 py-0.5 text-xs font-semibold transition-colors",
-                    billingPeriod === 'yearly'
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-primary/10 text-primary"
-                  )}>
-                    Economize 20%
-                  </span>
-                </button>
               </div>
             </div>
 
@@ -328,7 +267,32 @@ function PricingContent() {
 
               <Card className="relative overflow-hidden border-primary/60 bg-card/70">
                 <div className="absolute right-6 top-6">
-                  <Badge>Mais popular</Badge>
+                  <div className="flex flex-wrap items-center gap-1 rounded-full border border-border bg-muted/40 p-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setBillingPeriod('monthly')}
+                      className={cn(
+                        'rounded-full px-3 py-1 font-medium transition-colors cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]',
+                        billingPeriod === 'monthly'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      Mensal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBillingPeriod('yearly')}
+                      className={cn(
+                        'rounded-full px-3 py-1 font-medium transition-colors cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]',
+                        billingPeriod === 'yearly'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      Anual (-20%)
+                    </button>
+                  </div>
                 </div>
                 <CardHeader className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
