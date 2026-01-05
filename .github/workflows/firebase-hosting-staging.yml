@@ -47,10 +47,27 @@ jobs:
           echo "NEXT_PUBLIC_APP_URL=${{ secrets.STAGING_NEXT_PUBLIC_APP_URL }}" >> .env.staging
       - name: Use staging env file for Next build
         run: cp .env.staging .env.production
-      - name: Debug - Verify env file (remove after fix)
+      - name: Validate Firebase staging env
         run: |
-          echo "=== Checking .env.production ==="
-          grep -E "^NEXT_PUBLIC_FIREBASE_(AUTH_DOMAIN|PROJECT_ID)" .env.production || echo "Variables not found!"
+          PROJECT_ID=$(grep "^NEXT_PUBLIC_FIREBASE_PROJECT_ID=" .env.production | cut -d= -f2-)
+          STORAGE_BUCKET=$(grep "^NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=" .env.production | cut -d= -f2-)
+          if [ -z "$PROJECT_ID" ]; then
+            echo "Missing NEXT_PUBLIC_FIREBASE_PROJECT_ID in .env.production"
+            exit 1
+          fi
+          if [ -z "$STORAGE_BUCKET" ]; then
+            echo "Missing NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET in .env.production"
+            exit 1
+          fi
+          if echo "$PROJECT_ID" | grep -Eq "firebasestorage\\.app|appspot\\.com"; then
+            echo "Invalid NEXT_PUBLIC_FIREBASE_PROJECT_ID ($PROJECT_ID) - looks like a storage bucket"
+            exit 1
+          fi
+          if [ "$PROJECT_ID" = "$STORAGE_BUCKET" ]; then
+            echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID matches NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ($PROJECT_ID)"
+            exit 1
+          fi
+          echo "Validated Firebase env: projectId=$PROJECT_ID, bucket=$STORAGE_BUCKET"
       - run: npm ci
       - run: npm run build
       - name: Deploy to Firebase
