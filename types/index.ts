@@ -173,6 +173,8 @@ export type QuizBuilderState = {
   publishedAt: number | null;
   // Loading sections for sidebar animations
   loadingSections: LoadingSections;
+  // Track when user manually removes cover image (prevents auto-suggestion)
+  userRemovedCoverImage: boolean;
 
   // Actions
   setQuiz: (quiz: QuizDraft) => void;
@@ -200,6 +202,8 @@ export type QuizBuilderState = {
   // Loading sections actions
   setLoadingSections: (sections: Partial<LoadingSections>) => void;
   clearLoadingSections: () => void;
+  // Cover image removal tracking
+  setUserRemovedCoverImage: (value: boolean) => void;
 };
 
 export type AuthUser = {

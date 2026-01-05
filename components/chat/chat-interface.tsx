@@ -596,6 +596,8 @@ export function ChatInterface({
   const updateOutcome = useQuizBuilderStore((state) => state.updateOutcome);
   const setQuiz = useQuizBuilderStore((state) => state.setQuiz);
   const isSaving = useQuizBuilderStore((state) => state.isSaving);
+  const userRemovedCoverImage = useQuizBuilderStore((state) => state.userRemovedCoverImage);
+  const setUserRemovedCoverImage = useQuizBuilderStore((state) => state.setUserRemovedCoverImage);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isCoverSuggesting, setIsCoverSuggesting] = useState(false);
@@ -761,6 +763,15 @@ export function ChatInterface({
       'ruim',
       'sem relação',
       'off topic',
+      // Add terms for explicitly requesting a cover
+      'adicionar',
+      'adiciona',
+      'colocar',
+      'coloca',
+      'add',
+      'quero',
+      'gerar',
+      'criar',
     ];
     const explicitPhrases = ['imagem da capa', 'foto da capa', 'imagem de capa', 'foto de capa'];
     const mentionsCover = coverTerms.some((term) => text.includes(term));
@@ -800,7 +811,14 @@ export function ChatInterface({
       return;
     }
 
-    const latestQuiz = useQuizBuilderStore.getState().quiz;
+    // Check if user manually removed the cover - don't auto-suggest unless explicitly forced
+    const storeState = useQuizBuilderStore.getState();
+    if (storeState.userRemovedCoverImage && !options?.force) {
+      console.log('[Cover] Skipped: user manually removed cover image');
+      return;
+    }
+
+    const latestQuiz = storeState.quiz;
     const currentCover = incomingCoverUrl || latestQuiz.coverImageUrl;
     const isAutoCover = Boolean(currentCover && (currentCover.includes('unsplash.com') || currentCover.includes('source.unsplash.com')));
     const coverIsSuggested = currentCover && currentCover === lastSuggestedCoverUrl;
@@ -853,6 +871,11 @@ export function ChatInterface({
         setQuiz({ ...currentQuiz, coverImageUrl: data.url });
         setLastCoverPrompt(effectivePrompt);
         setLastSuggestedCoverUrl(data.url);
+        // Reset the "user removed cover" flag since we just added a new one
+        // (either user explicitly asked for it, or it's the initial auto-suggestion)
+        if (options?.force || useQuizBuilderStore.getState().userRemovedCoverImage) {
+          setUserRemovedCoverImage(false);
+        }
         console.log('[Cover] Applied successfully', { url: data.url.slice(0, 60) });
       } else {
         console.log('[Cover] No URL in response');

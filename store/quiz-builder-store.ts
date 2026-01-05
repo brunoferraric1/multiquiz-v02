@@ -108,17 +108,28 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
         outcomes: false,
         leadGen: false,
       },
+      userRemovedCoverImage: false,
 
       setQuiz: (quiz) => set({ quiz }),
 
       updateQuizField: (field, value) =>
-        set((state) => ({
-          quiz: { ...state.quiz, [field]: value },
-          pendingManualChanges: pushManualChange(
-            state.pendingManualChanges,
-            createManualChange({ scope: 'quiz', field: String(field), value })
-          ),
-        })),
+        set((state) => {
+          // Track when user manually removes cover image
+          const isRemovingCover = field === 'coverImageUrl' && (!value || value === '');
+          const hadCoverBefore = Boolean(state.quiz.coverImageUrl);
+          const userRemovedCoverImage = isRemovingCover && hadCoverBefore
+            ? true
+            : state.userRemovedCoverImage;
+
+          return {
+            quiz: { ...state.quiz, [field]: value },
+            pendingManualChanges: pushManualChange(
+              state.pendingManualChanges,
+              createManualChange({ scope: 'quiz', field: String(field), value })
+            ),
+            userRemovedCoverImage,
+          };
+        }),
 
       addQuestion: (question) =>
         set((state) => ({
@@ -248,6 +259,7 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             outcomes: false,
             leadGen: false,
           },
+          userRemovedCoverImage: false,
         }),
 
       loadQuiz: (quiz: Quiz) => {
@@ -278,6 +290,7 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
           pendingManualChanges: [],
           publishedVersion: quiz.publishedVersion || null,
           publishedAt: quiz.publishedAt || null,
+          userRemovedCoverImage: false, // Reset when loading a quiz
         });
       },
 
@@ -317,6 +330,8 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             leadGen: false,
           },
         }),
+
+      setUserRemovedCoverImage: (value: boolean) => set({ userRemovedCoverImage: value }),
     }),
     { name: 'QuizBuilderStore' }
   )
