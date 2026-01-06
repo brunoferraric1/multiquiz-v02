@@ -19,6 +19,7 @@ interface QuizLeadGenProps {
     config: LeadGenConfig;
     primaryColor?: string;
     onSubmit: (data: Record<string, string>) => void;
+    useBrandKitInputs?: boolean;
 }
 
 const fieldLabels: Record<string, string> = {
@@ -58,7 +59,7 @@ const formatPhone = (value: string) => {
     return r;
 };
 
-export function QuizLeadGen({ config, primaryColor, onSubmit }: QuizLeadGenProps) {
+export function QuizLeadGen({ config, primaryColor, onSubmit, useBrandKitInputs }: QuizLeadGenProps) {
     const [formData, setFormData] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -120,7 +121,20 @@ export function QuizLeadGen({ config, primaryColor, onSubmit }: QuizLeadGenProps
                             placeholder={fieldPlaceholders[field]}
                             value={formData[field] || ''}
                             onChange={(e) => handleInputChange(field, e.target.value)}
-                            className="h-12 text-card-foreground placeholder:text-card-foreground/60"
+                            className={
+                                useBrandKitInputs
+                                    ? 'h-12 placeholder:text-[color:var(--quiz-input-placeholder,var(--color-muted-foreground))]'
+                                    : 'h-12 text-card-foreground placeholder:text-card-foreground/60'
+                            }
+                            style={
+                                useBrandKitInputs
+                                    ? {
+                                          backgroundColor: 'var(--quiz-input-bg)',
+                                          borderColor: 'var(--quiz-input-border)',
+                                          color: 'var(--quiz-input-foreground, var(--color-card-foreground))',
+                                      }
+                                    : undefined
+                            }
                             maxLength={field === 'phone' ? 15 : undefined}
                         />
                     </div>

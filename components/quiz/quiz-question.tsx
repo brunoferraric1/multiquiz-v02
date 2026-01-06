@@ -95,7 +95,11 @@ export function QuizQuestion({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-        <Button variant="ghost" onClick={onBack} className="gap-2">
+        <Button
+          variant="ghost"
+          onClick={onBack}
+          className="gap-2 hover:bg-primary/15 hover:text-foreground"
+        >
           <ChevronLeft className="h-4 w-4" />
           Voltar
         </Button>

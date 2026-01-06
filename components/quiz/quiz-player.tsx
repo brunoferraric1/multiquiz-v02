@@ -41,6 +41,8 @@ const DEFAULT_PURPLE = '#4F46E5';
 const DARK_TEXT = '#0f172a';
 const LIGHT_TEXT = '#f8fafc';
 type BrandKitStyle = CSSProperties & Record<`--${string}`, string>;
+const WHITE_HEX = '#ffffff';
+const BLACK_HEX = '#000000';
 
 const hexToRgb = (value: string) => {
   const normalized = value.trim().replace('#', '');
@@ -71,6 +73,42 @@ const getReadableTextColor = (value: string) => {
   return relativeLuminance(value) > 0.6 ? DARK_TEXT : LIGHT_TEXT;
 };
 
+const clampChannel = (value: number) => Math.max(0, Math.min(255, Math.round(value)));
+
+const rgbToHex = (r: number, g: number, b: number) => {
+  const toHex = (channel: number) => clampChannel(channel).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
+const mixColors = (base: string, target: string, amount: number) => {
+  const baseRgb = hexToRgb(base);
+  const targetRgb = hexToRgb(target);
+  if (!baseRgb || !targetRgb) return base;
+  const mix = (from: number, to: number) => from + (to - from) * amount;
+  return rgbToHex(
+    mix(baseRgb.r, targetRgb.r),
+    mix(baseRgb.g, targetRgb.g),
+    mix(baseRgb.b, targetRgb.b)
+  );
+};
+
+const adjustColor = (value: string, amount: number) => {
+  if (amount === 0) return value;
+  const target = amount > 0 ? WHITE_HEX : BLACK_HEX;
+  return mixColors(value, target, Math.abs(amount));
+};
+
+const getInputBackground = (cardColor: string) => {
+  const cardLum = relativeLuminance(cardColor);
+  return cardLum < 0.5
+    ? mixColors(cardColor, WHITE_HEX, 0.08)
+    : mixColors(cardColor, BLACK_HEX, 0.04);
+};
+
+const getInputBorder = (inputColor: string, inputForeground: string) => {
+  return mixColors(inputColor, inputForeground, 0.1);
+};
+
 const getPreviewCopy = (quiz: QuizDraft | Quiz) => ({
   title: quiz.title?.trim() || 'Meu Novo Quiz',
   description:
@@ -90,6 +128,16 @@ export function QuizPlayer({
   brandKitLogoUrl,
 }: QuizPlayerProps) {
   const { title, description, coverImageUrl, primaryColor, ctaText } = getPreviewCopy(quiz);
+  const defaultThemeVars = useMemo<BrandKitStyle | undefined>(() => {
+    if (typeof window === 'undefined') return undefined;
+    const styles = getComputedStyle(document.documentElement);
+    const read = (name: string, fallback: string) => styles.getPropertyValue(name).trim() || fallback;
+    return {
+      '--color-card': read('--color-card', '#232936'),
+      '--color-muted-foreground': read('--color-muted-foreground', '#94a3b8'),
+      '--color-foreground': read('--color-foreground', '#f8fafc'),
+    };
+  }, []);
   const brandKitStyle = useMemo(() => {
     if (quiz.brandKitMode !== 'custom') return undefined;
 
@@ -97,18 +145,34 @@ export function QuizPlayer({
     const style: BrandKitStyle = {
       '--color-primary': primary,
       '--color-primary-foreground': getReadableTextColor(primary),
+      '--color-accent': primary,
+      '--color-accent-foreground': getReadableTextColor(primary),
       '--color-ring': primary,
     };
 
     if (brandKitColors) {
-      const secondary = brandKitColors.secondary;
-      const accent = brandKitColors.accent;
-      style['--color-secondary'] = secondary;
-      style['--color-secondary-foreground'] = getReadableTextColor(secondary);
-      style['--color-accent'] = accent;
-      style['--color-accent-foreground'] = getReadableTextColor(accent);
-      style['--color-card'] = secondary;
-      style['--color-card-foreground'] = getReadableTextColor(secondary);
+      const cardColor = brandKitColors.secondary;
+      const backgroundColor = brandKitColors.accent;
+      const inputBackground = getInputBackground(cardColor);
+      const inputForeground = getReadableTextColor(inputBackground);
+      const inputBorder = getInputBorder(inputBackground, inputForeground);
+      const mutedForeground = mixColors(
+        getReadableTextColor(backgroundColor),
+        backgroundColor,
+        0.45
+      );
+      style['--color-secondary'] = cardColor;
+      style['--color-secondary-foreground'] = getReadableTextColor(cardColor);
+      style['--color-background'] = backgroundColor;
+      style['--color-foreground'] = getReadableTextColor(backgroundColor);
+      style['--color-muted-foreground'] = mutedForeground;
+      style['--color-card'] = cardColor;
+      style['--color-card-foreground'] = getReadableTextColor(cardColor);
+      style['--color-input'] = inputBorder;
+      style['--quiz-input-bg'] = inputBackground;
+      style['--quiz-input-border'] = inputBorder;
+      style['--quiz-input-foreground'] = inputForeground;
+      style['--quiz-input-placeholder'] = mixColors(inputForeground, inputBackground, 0.55);
     }
 
     return style;
@@ -367,14 +431,12 @@ export function QuizPlayer({
       style={brandKitStyle}
     >
       {showBrandLogo && (
-        <div className="absolute left-4 top-4 z-10 flex items-center">
-          <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-            <img
-              src={brandKitLogoUrl as string}
-              alt="Logo da marca"
-              className="h-full w-full object-contain"
-            />
-          </div>
+        <div className="absolute left-6 top-6 z-10 flex items-center sm:left-10 sm:top-8">
+          <img
+            src={brandKitLogoUrl as string}
+            alt="Logo da marca"
+            className="h-14 w-auto max-w-[200px] object-contain sm:h-16"
+          />
         </div>
       )}
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
@@ -409,6 +471,7 @@ export function QuizPlayer({
             config={leadGenConfig}
             primaryColor={primaryColor}
             onSubmit={handleLeadGenSubmit}
+            useBrandKitInputs={quiz.brandKitMode === 'custom' && Boolean(brandKitColors)}
           />
         )}
         {phase === 'result' && resultOutcome && (
@@ -430,6 +493,7 @@ export function QuizPlayer({
             rel="noreferrer"
             className="group flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur transition-all hover:text-foreground hover:bg-card/90 sm:flex-row sm:gap-2"
             aria-label="Made with MultiQuiz"
+            style={defaultThemeVars}
           >
             <span>Made with</span>
             <span className="flex items-center gap-1 transition-colors">
@@ -442,7 +506,10 @@ export function QuizPlayer({
             </span>
           </a>
         ) : (
-          <div className="group flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur sm:flex-row sm:gap-2">
+          <div
+            className="group flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur sm:flex-row sm:gap-2"
+            style={defaultThemeVars}
+          >
             <span>Made with</span>
             <span className="flex items-center gap-1">
               <img 

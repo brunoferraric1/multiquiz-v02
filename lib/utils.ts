@@ -11,7 +11,7 @@ export function cn(...inputs: ClassValue[]) {
  * @param file - The image file to compress
  * @param maxWidth - Maximum width in pixels (default: 1200)
  * @param maxHeight - Maximum height in pixels (default: 1200)
- * @param quality - JPEG quality 0-1 (default: 0.8)
+ * @param quality - JPEG quality 0-1 (default: 0.8). PNG keeps transparency.
  * @returns Promise that resolves to a base64 data URL string
  */
 export async function compressImage(
@@ -53,8 +53,13 @@ export async function compressImage(
 
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to base64 with compression
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        const outputType = file.type === 'image/jpeg' || file.type === 'image/jpg'
+          ? 'image/jpeg'
+          : 'image/png';
+        const compressedDataUrl =
+          outputType === 'image/jpeg'
+            ? canvas.toDataURL('image/jpeg', quality)
+            : canvas.toDataURL('image/png');
         resolve(compressedDataUrl);
       };
       img.onerror = () => reject(new Error('Failed to load image'));

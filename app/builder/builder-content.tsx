@@ -275,8 +275,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const brandKitColorFields = useMemo<Array<{ key: keyof BrandKitColors; label: string; helper: string }>>(
     () => [
       { key: 'primary', label: 'Cor do botão', helper: 'Botões, barra de progresso e seleção de respostas.' },
-      { key: 'secondary', label: 'Cor do fundo (cards)', helper: 'Fundo dos cards e áreas de conteúdo. O fundo da página permanece padrão.' },
-      { key: 'accent', label: 'Cor de destaque', helper: 'Hover e elementos secundários.' },
+      { key: 'secondary', label: 'Cor dos cards', helper: 'Fundo dos cards e áreas de conteúdo. Também influencia o fundo dos campos.' },
+      { key: 'accent', label: 'Cor do fundo', helper: 'Fundo da página do quiz.' },
     ],
     []
   );
@@ -1688,7 +1688,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                               <span
                                 className="h-7 w-7 rounded-full border border-border/60"
                                 style={{ backgroundColor: brandKit.colors.accent }}
-                                aria-label="Cor de destaque do kit"
+                                aria-label="Cor de fundo do kit"
                               />
                             </div>
                           </div>
