@@ -99,6 +99,7 @@ export type BrandKitColors = {
 };
 
 export type BrandKit = {
+  name?: string;
   logoUrl?: string | null;
   colors: BrandKitColors;
   updatedAt?: number;

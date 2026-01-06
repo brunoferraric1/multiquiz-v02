@@ -25,6 +25,7 @@ export async function getBrandKit(userId: string): Promise<BrandKit | null> {
         : undefined;
 
   return {
+    name: typeof brandKit.name === 'string' ? brandKit.name : undefined,
     logoUrl: brandKit.logoUrl ?? null,
     colors: {
       primary: brandKit.colors.primary,
@@ -43,6 +44,7 @@ export async function saveBrandKit(userId: string, brandKit: BrandKit): Promise<
     userRef,
     {
       brandKit: {
+        name: brandKit.name?.trim() || null,
         logoUrl: brandKit.logoUrl ?? null,
         colors: brandKit.colors,
         updatedAt: serverTimestamp(),

@@ -177,6 +177,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [brandKitDialogOpen, setBrandKitDialogOpen] = useState(false);
   const [brandKitDeleteDialogOpen, setBrandKitDeleteDialogOpen] = useState(false);
   const [brandKit, setBrandKit] = useState<BrandKit | null>(null);
+  const [brandKitName, setBrandKitName] = useState('');
   const [brandKitColors, setBrandKitColors] = useState<BrandKitColors>({
     primary: '',
     secondary: '',
@@ -880,6 +881,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       secondary: brandKit?.colors.secondary ?? defaults.secondary,
       accent: brandKit?.colors.accent ?? defaults.accent,
     });
+    setBrandKitName(brandKit?.name ?? '');
     setBrandKitLogoPreview(brandKit?.logoUrl ?? '');
     setBrandKitLogoFile(null);
     setBrandKitDialogOpen(true);
@@ -903,6 +905,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     try {
       setIsBrandKitSaving(true);
       const nextKit: BrandKit = {
+        name: brandKitName.trim() || undefined,
         logoUrl: brandKitLogoPreview || null,
         colors: normalizedColors,
       };
@@ -930,6 +933,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       setIsBrandKitDeleting(true);
       await deleteBrandKit(user.uid);
       setBrandKit(null);
+      setBrandKitName('');
       setBrandKitColors({
         primary: themeColorDefaults.primary,
         secondary: themeColorDefaults.secondary,
@@ -1540,7 +1544,9 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-foreground">Seu kit da marca</p>
+                            <p className="text-sm font-semibold text-foreground">
+                              {brandKit.name || 'Seu kit da marca'}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               Salvo para aplicar em todos os quizzes.
                             </p>
@@ -1711,6 +1717,15 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto pr-1 space-y-4">
+              <div className="space-y-2">
+                <p className={fieldLabelClass}>Nome do kit (opcional)</p>
+                <Input
+                  value={brandKitName}
+                  onChange={(event) => setBrandKitName(event.target.value)}
+                  placeholder="Ex: Kit Principal"
+                  autoFocus={false}
+                />
+              </div>
               <div className="space-y-2">
                 <p className={fieldLabelClass}>Logo da marca</p>
                 <Upload
