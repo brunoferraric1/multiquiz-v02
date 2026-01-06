@@ -12,6 +12,7 @@ import {
   Palette,
   Plus,
   Rocket,
+  Trash2,
   X,
   MessageSquare,
   MoreVertical,
@@ -26,7 +27,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
 import { cn, compressImage } from '@/lib/utils';
-import type { Outcome, Question } from '@/types';
+import type { BrandKit, BrandKitColors, Outcome, Question } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +45,7 @@ import { LoadingCard } from '@/components/ui/loading-card';
 import { LeadGenSheet } from '@/components/builder/lead-gen-sheet';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
 import { QuizService } from '@/lib/services/quiz-service';
+import { deleteBrandKit, getBrandKit, saveBrandKit } from '@/lib/services/brand-kit-service';
 import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import {
   SidebarCard,
@@ -81,6 +83,23 @@ type ActiveSheet =
 type MobileViewMode = 'chat' | 'editor';
 
 const fieldLabelClass = 'text-sm font-medium text-muted-foreground';
+const fullHexColorRegex = /^#([0-9a-fA-F]{6})$/;
+const shortHexColorRegex = /^#([0-9a-fA-F]{3})$/;
+
+function normalizeHexColor(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const withHash = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+  if (shortHexColorRegex.test(withHash)) {
+    const hex = withHash.slice(1);
+    return `#${hex.split('').map((char) => char + char).join('')}`;
+  }
+  return withHash;
+}
+
+function isValidHexColor(value: string): boolean {
+  return fullHexColorRegex.test(value);
+}
 
 // UUID v4 generator with crypto.randomUUID fallback
 function generateUUID(): string {
@@ -156,6 +175,18 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   });
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [brandKitDialogOpen, setBrandKitDialogOpen] = useState(false);
+  const [brandKitDeleteDialogOpen, setBrandKitDeleteDialogOpen] = useState(false);
+  const [brandKit, setBrandKit] = useState<BrandKit | null>(null);
+  const [brandKitColors, setBrandKitColors] = useState<BrandKitColors>({
+    primary: '',
+    secondary: '',
+    accent: '',
+  });
+  const [brandKitLogoFile, setBrandKitLogoFile] = useState<File | null>(null);
+  const [brandKitLogoPreview, setBrandKitLogoPreview] = useState('');
+  const [isBrandKitLoading, setIsBrandKitLoading] = useState(false);
+  const [isBrandKitSaving, setIsBrandKitSaving] = useState(false);
+  const [isBrandKitDeleting, setIsBrandKitDeleting] = useState(false);
   const [mobileView, setMobileView] = useState<MobileViewMode>('chat');
   const [showUpdateConfirmModal, setShowUpdateConfirmModal] = useState(false);
   const [ctaWarningOpen, setCtaWarningOpen] = useState(false);
@@ -225,6 +256,28 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   });
   const { subscription, isLoading: isSubscriptionLoading } = useSubscription(user?.uid);
   const isProUser = isPro(subscription);
+  const themeColorDefaults = useMemo<BrandKitColors>(() => {
+    if (typeof window === 'undefined') {
+      return { primary: '#000000', secondary: '#000000', accent: '#000000' };
+    }
+
+    const styles = getComputedStyle(document.documentElement);
+    const getValue = (variable: string) => styles.getPropertyValue(variable).trim() || '#000000';
+
+    return {
+      primary: getValue('--color-primary'),
+      secondary: getValue('--color-secondary'),
+      accent: getValue('--color-accent'),
+    };
+  }, []);
+  const brandKitColorFields = useMemo<Array<{ key: keyof BrandKitColors; label: string; helper: string }>>(
+    () => [
+      { key: 'primary', label: 'Cor primária', helper: 'Use como cor principal do quiz.' },
+      { key: 'secondary', label: 'Cor secundária', helper: 'Apoio para fundos e cards.' },
+      { key: 'accent', label: 'Cor de destaque', helper: 'Realce botões e links.' },
+    ],
+    []
+  );
 
   const resolvedUserName = useMemo(() => {
     const fromDisplayName = user?.displayName?.trim();
@@ -239,6 +292,35 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     const normalizedFirstName = firstName.charAt(0).toLocaleUpperCase('pt-BR') + firstName.slice(1);
     return normalizedFirstName;
   }, [user?.displayName, user?.email]);
+
+  useEffect(() => {
+    if (!user?.uid) {
+      setBrandKit(null);
+      return;
+    }
+
+    let isActive = true;
+    setIsBrandKitLoading(true);
+
+    getBrandKit(user.uid)
+      .then((kit) => {
+        if (!isActive) return;
+        setBrandKit(kit);
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        console.error('Error loading brand kit:', error);
+        toast.error('Erro ao carregar kit da marca');
+      })
+      .finally(() => {
+        if (!isActive) return;
+        setIsBrandKitLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [user?.uid]);
 
   // Refs for sidebar sections (for auto-scroll)
   const introductionRef = useRef<HTMLElement>(null);
@@ -765,18 +847,105 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     setShowPublishModal(true);
   };
 
+  const handleBrandKitLogoChange = async (file: File | null) => {
+    setBrandKitLogoFile(file);
+
+    if (!file) {
+      setBrandKitLogoPreview('');
+      return;
+    }
+
+    try {
+      const compressedDataUrl = await compressImage(file, 800, 800, 0.8);
+      setBrandKitLogoPreview(compressedDataUrl);
+    } catch (error) {
+      console.error('Error compressing brand kit logo:', error);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setBrandKitLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleOpenBrandKitDialog = () => {
     if (isSubscriptionLoading) return;
     if (!isProUser) {
       openUpgradeModal('brand-kit');
       return;
     }
+    const defaults = brandKit?.colors ?? themeColorDefaults;
+    setBrandKitColors({
+      primary: brandKit?.colors.primary ?? defaults.primary,
+      secondary: brandKit?.colors.secondary ?? defaults.secondary,
+      accent: brandKit?.colors.accent ?? defaults.accent,
+    });
+    setBrandKitLogoPreview(brandKit?.logoUrl ?? '');
+    setBrandKitLogoFile(null);
     setBrandKitDialogOpen(true);
   };
 
-  const handleGoToAccount = () => {
-    setBrandKitDialogOpen(false);
-    router.push('/dashboard/account');
+  const handleSaveBrandKit = async () => {
+    if (!user?.uid) return;
+
+    const normalizedColors = {
+      primary: normalizeHexColor(brandKitColors.primary),
+      secondary: normalizeHexColor(brandKitColors.secondary),
+      accent: normalizeHexColor(brandKitColors.accent),
+    };
+
+    const invalidColors = Object.values(normalizedColors).some((color) => !isValidHexColor(color));
+    if (invalidColors) {
+      toast.error('Informe cores válidas no formato #RRGGBB.');
+      return;
+    }
+
+    try {
+      setIsBrandKitSaving(true);
+      const nextKit: BrandKit = {
+        logoUrl: brandKitLogoPreview || null,
+        colors: normalizedColors,
+      };
+      await saveBrandKit(user.uid, nextKit);
+      setBrandKit(nextKit);
+      setBrandKitDialogOpen(false);
+      toast.success('Kit da marca salvo');
+    } catch (error) {
+      console.error('Error saving brand kit:', error);
+      toast.error('Erro ao salvar kit da marca');
+    } finally {
+      setIsBrandKitSaving(false);
+    }
+  };
+
+  const handleDeleteBrandKit = async () => {
+    if (isSubscriptionLoading) return;
+    if (!isProUser) {
+      openUpgradeModal('brand-kit');
+      return;
+    }
+    if (!user?.uid) return;
+
+    try {
+      setIsBrandKitDeleting(true);
+      await deleteBrandKit(user.uid);
+      setBrandKit(null);
+      setBrandKitColors({
+        primary: themeColorDefaults.primary,
+        secondary: themeColorDefaults.secondary,
+        accent: themeColorDefaults.accent,
+      });
+      setBrandKitLogoPreview('');
+      setBrandKitLogoFile(null);
+      setBrandKitDialogOpen(false);
+      setBrandKitDeleteDialogOpen(false);
+      toast.success('Kit da marca removido');
+    } catch (error) {
+      console.error('Error deleting brand kit:', error);
+      toast.error('Erro ao remover kit da marca');
+    } finally {
+      setIsBrandKitDeleting(false);
+    }
   };
 
   const introDescription = quiz.description
@@ -1367,38 +1536,117 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 p-4 space-y-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-foreground">Criar kit da marca</p>
-                        {isBrandKitLocked && (
-                          <Badge variant="outline" className="gap-1">
-                            <Lock className="h-3.5 w-3.5" />
-                            Pro
-                          </Badge>
+                    {brandKit ? (
+                      <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">Seu kit da marca</p>
+                            <p className="text-xs text-muted-foreground">
+                              Salvo para aplicar em todos os quizzes.
+                            </p>
+                          </div>
+                          <Badge variant="secondary">Personalizado</Badge>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                          {brandKit.logoUrl ? (
+                            <div className="h-12 w-12 overflow-hidden rounded-xl border border-border bg-muted/50">
+                              <img
+                                src={brandKit.logoUrl}
+                                alt="Logo do kit da marca"
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted/50 text-muted-foreground">
+                              <ImageIcon className="h-5 w-5" />
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="h-7 w-7 rounded-full border border-border/60"
+                              style={{ backgroundColor: brandKit.colors.primary }}
+                              aria-label="Cor primária do kit"
+                            />
+                            <span
+                              className="h-7 w-7 rounded-full border border-border/60"
+                              style={{ backgroundColor: brandKit.colors.secondary }}
+                              aria-label="Cor secundária do kit"
+                            />
+                            <span
+                              className="h-7 w-7 rounded-full border border-border/60"
+                              style={{ backgroundColor: brandKit.colors.accent }}
+                              aria-label="Cor de destaque do kit"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            onClick={handleOpenBrandKitDialog}
+                            disabled={isBrandKitLoading || isBrandKitSaving || isBrandKitDeleting}
+                          >
+                            Editar kit da marca
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline-destructive"
+                            className="w-full"
+                            onClick={() => {
+                              if (isBrandKitLocked) {
+                                openUpgradeModal('brand-kit');
+                                return;
+                              }
+                              setBrandKitDeleteDialogOpen(true);
+                            }}
+                            disabled={isBrandKitLoading || isBrandKitSaving || isBrandKitDeleting}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir kit
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 p-4 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-foreground">Criar kit da marca</p>
+                          {isBrandKitLocked && (
+                            <Badge variant="outline" className="gap-1">
+                              <Lock className="h-3.5 w-3.5" />
+                              Pro
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Personalize logo e cores para todos os seus quizzes.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={handleOpenBrandKitDialog}
+                          disabled={isBrandKitLoading}
+                        >
+                          {isProUser ? (
+                            <>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Criar kit da marca
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="mr-2 h-4 w-4" />
+                              Criar kit da marca
+                            </>
+                          )}
+                        </Button>
+                        {isBrandKitLoading && (
+                          <p className="text-xs text-muted-foreground">
+                            Carregando kit da marca...
+                          </p>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Personalize logo e cores para todos os seus quizzes.
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleOpenBrandKitDialog}
-                      >
-                        {isProUser ? (
-                          <>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Criar kit da marca
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="mr-2 h-4 w-4" />
-                            Criar kit da marca
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                    )}
                   </div>
                   <div className="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
                 </div>
@@ -1455,26 +1703,124 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         />
 
         <Dialog open={brandKitDialogOpen} onOpenChange={setBrandKitDialogOpen}>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
             <DialogHeader>
-              <DialogTitle>Criar kit da marca</DialogTitle>
+              <DialogTitle>{brandKit ? 'Editar kit da marca' : 'Criar kit da marca'}</DialogTitle>
               <DialogDescription>
-                O kit da marca é configurado na sua conta e vale para todos os quizzes.
+                Personalize logo e cores do seu kit.
               </DialogDescription>
             </DialogHeader>
-            <div className="rounded-lg border border-dashed border-border/60 bg-muted/40 p-4 text-sm text-muted-foreground">
-              Personalize logo e cores no seu perfil para aplicar automaticamente em todos os quizzes.
+            <div className="flex-1 overflow-y-auto pr-1 space-y-4">
+              <div className="space-y-2">
+                <p className={fieldLabelClass}>Logo da marca</p>
+                <Upload
+                  file={brandKitLogoFile}
+                  previewUrl={brandKitLogoPreview || undefined}
+                  onFileChange={handleBrandKitLogoChange}
+                  accept="image/*"
+                  previewClassName="h-32 sm:h-36"
+                  previewImageClassName="object-contain bg-muted/40"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Recomendado: PNG com fundo transparente.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex flex-col gap-1">
+                  <p className={fieldLabelClass}>Cores do kit</p>
+                </div>
+                <div className="grid gap-3">
+                  {brandKitColorFields.map((field) => {
+                    const currentValue = brandKitColors[field.key];
+                    const normalizedValue = normalizeHexColor(currentValue);
+                    const colorInputValue = isValidHexColor(normalizedValue)
+                      ? normalizedValue
+                      : themeColorDefaults[field.key];
+
+                    return (
+                      <div
+                        key={field.key}
+                        className="rounded-xl border border-border/60 bg-muted/40 p-3"
+                      >
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                          <p className="text-sm font-semibold text-foreground sm:min-w-[140px]">
+                            {field.label}
+                          </p>
+                          <Input
+                            value={currentValue}
+                            onChange={(event) =>
+                              setBrandKitColors((prev) => ({
+                                ...prev,
+                                [field.key]: event.target.value,
+                              }))
+                            }
+                            placeholder="#RRGGBB"
+                            autoFocus={false}
+                            className="sm:flex-1"
+                          />
+                          <input
+                            type="color"
+                            aria-label={`Selecionar ${field.label}`}
+                            className="h-10 w-12 rounded-md border border-input bg-muted/40 p-1 cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]"
+                            value={colorInputValue}
+                            onChange={(event) =>
+                              setBrandKitColors((prev) => ({
+                                ...prev,
+                                [field.key]: event.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setBrandKitDialogOpen(false)}
+                disabled={isBrandKitSaving}
               >
-                Agora não
+                Cancelar
               </Button>
-              <Button type="button" onClick={handleGoToAccount}>
-                Ir para Minha Conta
+              <Button
+                type="button"
+                onClick={handleSaveBrandKit}
+                disabled={isBrandKitSaving || isBrandKitDeleting}
+              >
+                {isBrandKitSaving ? 'Salvando...' : 'Salvar kit'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={brandKitDeleteDialogOpen} onOpenChange={setBrandKitDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Excluir kit da marca</DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja remover o kit da marca? Você pode criar outro depois.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setBrandKitDeleteDialogOpen(false)}
+                disabled={isBrandKitDeleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="outline-destructive"
+                onClick={handleDeleteBrandKit}
+                disabled={isBrandKitDeleting}
+              >
+                {isBrandKitDeleting ? 'Excluindo...' : 'Excluir kit'}
               </Button>
             </DialogFooter>
           </DialogContent>

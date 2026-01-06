@@ -11,10 +11,24 @@ export type UploadProps = React.HTMLAttributes<HTMLDivElement> & {
   previewUrl?: string;
   onFileChange: (file: File | null) => void;
   accept?: string;
+  previewClassName?: string;
+  previewImageClassName?: string;
 };
 
 export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
-  ({ className, file, previewUrl, onFileChange, accept, ...props }, ref) => {
+  (
+    {
+      className,
+      file,
+      previewUrl,
+      onFileChange,
+      accept,
+      previewClassName,
+      previewImageClassName,
+      ...props
+    },
+    ref
+  ) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
 
     const handleSelect = (files: FileList | null) => {
@@ -83,21 +97,24 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
           {previewUrl ? (
             <button
               type="button"
-              className="relative aspect-video w-full overflow-hidden rounded-2xl border-none p-0 cursor-[var(--cursor-interactive)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className={cn(
+                "relative w-full overflow-hidden rounded-2xl border-none p-0 cursor-[var(--cursor-interactive)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                previewClassName || "aspect-video"
+              )}
               onClick={() => setIsPreviewViewerOpen(true)}
               aria-label="Abrir imagem em tela cheia"
             >
               <img
                 src={previewUrl}
                 alt="Preview da imagem do quiz"
-                className="block h-full w-full object-cover"
+                className={cn("block h-full w-full object-cover", previewImageClassName)}
               />
             </button>
           ) : (
             <>
               <div className="flex flex-col items-center gap-1 text-muted-foreground mb-2">
                 <ImageIcon className="h-6 w-6" />
-                <p className="text-xs font-semibold">Arraste ou solte uma imagem aqui</p>
+                <p className="text-xs font-semibold">Arraste e solte seu logo aqui</p>
               </div>
               <Button
                 type="button"
@@ -110,7 +127,7 @@ export const Upload = React.forwardRef<HTMLDivElement, UploadProps>(
                 }}
               >
                 <UploadCloud className="mr-2 h-3 w-3" />
-                Fazer Upload de Imagem
+                Fazer upload do logo
               </Button>
             </>
           )}

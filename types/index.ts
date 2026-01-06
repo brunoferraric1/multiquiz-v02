@@ -92,6 +92,18 @@ export type QuizStats = z.infer<typeof QuizStatsSchema>;
 export type QuizSnapshot = z.infer<typeof QuizSnapshotSchema>;
 export type Quiz = z.infer<typeof QuizSchema>;
 
+export type BrandKitColors = {
+  primary: string;
+  secondary: string;
+  accent: string;
+};
+
+export type BrandKit = {
+  logoUrl?: string | null;
+  colors: BrandKitColors;
+  updatedAt?: number;
+};
+
 // Partial types for draft states
 export type QuizDraft = Partial<Omit<Quiz, 'questions' | 'outcomes'>> & {
   questions?: Partial<Question>[];
