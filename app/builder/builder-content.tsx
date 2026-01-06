@@ -177,6 +177,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [brandKitDialogOpen, setBrandKitDialogOpen] = useState(false);
   const [brandKitDeleteDialogOpen, setBrandKitDeleteDialogOpen] = useState(false);
   const [brandKit, setBrandKit] = useState<BrandKit | null>(null);
+  const [selectedBrandKit, setSelectedBrandKit] = useState<'default' | 'custom'>('default');
   const [brandKitName, setBrandKitName] = useState('');
   const [brandKitColors, setBrandKitColors] = useState<BrandKitColors>({
     primary: '',
@@ -297,6 +298,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   useEffect(() => {
     if (!user?.uid) {
       setBrandKit(null);
+      setSelectedBrandKit('default');
       return;
     }
 
@@ -307,6 +309,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       .then((kit) => {
         if (!isActive) return;
         setBrandKit(kit);
+        setSelectedBrandKit(kit ? 'custom' : 'default');
       })
       .catch((error) => {
         if (!isActive) return;
@@ -911,6 +914,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       };
       await saveBrandKit(user.uid, nextKit);
       setBrandKit(nextKit);
+      setSelectedBrandKit('custom');
       setBrandKitDialogOpen(false);
       toast.success('Kit da marca salvo');
     } catch (error) {
@@ -934,6 +938,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       await deleteBrandKit(user.uid);
       setBrandKit(null);
       setBrandKitName('');
+      setSelectedBrandKit('default');
       setBrandKitColors({
         primary: themeColorDefaults.primary,
         secondary: themeColorDefaults.secondary,
@@ -956,6 +961,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     ? quiz.description
     : 'Conte mais sobre o que torna esse quiz especial.';
   const coverImagePreview = quiz.coverImageUrl ? quiz.coverImageUrl : undefined;
+  const isDefaultBrandKitSelected = selectedBrandKit === 'default';
+  const isCustomBrandKitSelected = selectedBrandKit === 'custom';
+  const activeBrandKitColors =
+    selectedBrandKit === 'custom' && brandKit ? brandKit.colors : themeColorDefaults;
+  const activeBrandKitName =
+    selectedBrandKit === 'custom' && brandKit?.name ? brandKit.name : 'Padrão MultiQuiz';
 
   const sheetOpen = Boolean(activeSheet);
   const isBrandKitLocked = !isSubscriptionLoading && !isProUser;
@@ -1019,17 +1030,17 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
             Kit da Marca
           </div>
-          <SidebarCard onClick={() => setActiveSheet({ type: 'brand-kit' })}>
+          <SidebarCard
+            onClick={() => setActiveSheet({ type: 'brand-kit' })}
+            className="relative"
+          >
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary">
                 <Palette className="h-5 w-5" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground">
-                  Padrão MultiQuiz
-                </p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Logo e cores padrão
+                  {activeBrandKitName}
                 </p>
               </div>
               {isBrandKitLocked && (
@@ -1038,6 +1049,23 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   Pro
                 </Badge>
               )}
+            </div>
+            <div className="absolute bottom-4 right-4 flex items-center -space-x-2">
+              <span
+                className="h-4 w-4 rounded-full border border-border"
+                style={{ backgroundColor: activeBrandKitColors.primary }}
+                aria-hidden="true"
+              />
+              <span
+                className="h-4 w-4 rounded-full border border-border"
+                style={{ backgroundColor: activeBrandKitColors.secondary }}
+                aria-hidden="true"
+              />
+              <span
+                className="h-4 w-4 rounded-full border border-border"
+                style={{ backgroundColor: activeBrandKitColors.accent }}
+                aria-hidden="true"
+              />
             </div>
           </SidebarCard>
         </section>
@@ -1519,9 +1547,19 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                     Defina o visual dos seus quizzes com logo e cores personalizadas.
                   </SheetDescription>
                 </SheetHeader>
-                <div className="flex-1 overflow-y-auto relative min-h-0">
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+                <div className="flex-1 overflow-y-auto overflow-x-visible relative min-h-0">
+                  <div className="space-y-4 px-1 py-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBrandKit('default')}
+                      aria-pressed={isDefaultBrandKitSelected}
+                      className={cn(
+                        "w-full rounded-2xl border-2 p-4 text-left transition-colors",
+                        isDefaultBrandKitSelected
+                          ? "border-border/60 bg-card ring-2 ring-ring ring-offset-2 ring-offset-background"
+                          : "border-border/60 bg-card hover:ring-2 hover:ring-ring hover:ring-offset-2 hover:ring-offset-background"
+                      )}
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-foreground">
@@ -1531,61 +1569,79 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                             Logo e paleta padrão do MultiQuiz.
                           </p>
                         </div>
-                        <Badge variant="secondary">Padrão</Badge>
+                        {isDefaultBrandKitSelected && (
+                          <Badge variant="published">Selecionado</Badge>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="mt-3 flex items-center gap-2">
                         <span className="h-6 w-6 rounded-full bg-primary" aria-hidden="true" />
                         <span className="h-6 w-6 rounded-full bg-secondary" aria-hidden="true" />
                         <span className="h-6 w-6 rounded-full bg-accent" aria-hidden="true" />
                       </div>
-                    </div>
+                    </button>
 
                     {brandKit ? (
-                      <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">
-                              {brandKit.name || 'Seu kit da marca'}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Salvo para aplicar em todos os quizzes.
-                            </p>
+                      <div
+                        className={cn(
+                          "rounded-2xl border-2 p-4 transition-colors",
+                          isCustomBrandKitSelected
+                            ? "border-border/60 bg-card ring-2 ring-ring ring-offset-2 ring-offset-background"
+                            : "border-border/60 bg-card hover:ring-2 hover:ring-ring hover:ring-offset-2 hover:ring-offset-background"
+                        )}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBrandKit('custom')}
+                          aria-pressed={isCustomBrandKitSelected}
+                          className="w-full text-left"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">
+                                {brandKit.name || 'Seu kit da marca'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Salvo para aplicar em todos os quizzes.
+                              </p>
+                            </div>
+                            {isCustomBrandKitSelected && (
+                              <Badge variant="published">Selecionado</Badge>
+                            )}
                           </div>
-                          <Badge variant="secondary">Personalizado</Badge>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                          {brandKit.logoUrl ? (
-                            <div className="h-12 w-12 overflow-hidden rounded-xl border border-border bg-muted/50">
-                              <img
-                                src={brandKit.logoUrl}
-                                alt="Logo do kit da marca"
-                                className="h-full w-full object-cover"
+                          <div className="mt-3 flex flex-wrap items-center gap-3">
+                            {brandKit.logoUrl ? (
+                              <div className="h-12 w-12 overflow-hidden rounded-xl border border-border bg-muted/50">
+                                <img
+                                  src={brandKit.logoUrl}
+                                  alt="Logo do kit da marca"
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted/50 text-muted-foreground">
+                                <ImageIcon className="h-5 w-5" />
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="h-7 w-7 rounded-full border border-border/60"
+                                style={{ backgroundColor: brandKit.colors.primary }}
+                                aria-label="Cor primária do kit"
+                              />
+                              <span
+                                className="h-7 w-7 rounded-full border border-border/60"
+                                style={{ backgroundColor: brandKit.colors.secondary }}
+                                aria-label="Cor secundária do kit"
+                              />
+                              <span
+                                className="h-7 w-7 rounded-full border border-border/60"
+                                style={{ backgroundColor: brandKit.colors.accent }}
+                                aria-label="Cor de destaque do kit"
                               />
                             </div>
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted/50 text-muted-foreground">
-                              <ImageIcon className="h-5 w-5" />
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="h-7 w-7 rounded-full border border-border/60"
-                              style={{ backgroundColor: brandKit.colors.primary }}
-                              aria-label="Cor primária do kit"
-                            />
-                            <span
-                              className="h-7 w-7 rounded-full border border-border/60"
-                              style={{ backgroundColor: brandKit.colors.secondary }}
-                              aria-label="Cor secundária do kit"
-                            />
-                            <span
-                              className="h-7 w-7 rounded-full border border-border/60"
-                              style={{ backgroundColor: brandKit.colors.accent }}
-                              aria-label="Cor de destaque do kit"
-                            />
                           </div>
-                        </div>
-                        <div className="flex flex-col gap-2 sm:flex-row">
+                        </button>
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                           <Button
                             type="button"
                             variant="outline"
