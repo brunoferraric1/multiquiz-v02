@@ -28,6 +28,7 @@ type LeadsTableProps = {
 const MAX_LOCKED_ROWS_DISPLAY = 20;
 const ESTIMATED_ROW_HEIGHT = 53;
 const MIN_SECTION_HEIGHT = 384;
+const SKELETON_ROW_COUNT = 6;
 
 const columnWidths = {
     date: 'min-w-[9.5rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
@@ -54,6 +55,7 @@ export function LeadsTable({
         ? Math.min(lockedCount, MAX_LOCKED_ROWS_DISPLAY)
         : 0;
     const placeholderRows = Array.from({ length: displayLockedRows });
+    const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT });
     const spacerHeight = Math.max(0, MIN_SECTION_HEIGHT - displayLockedRows * ESTIMATED_ROW_HEIGHT);
     const visibleLeadLabel = leadLabel(visibleCount);
     const totalLeadLabel = leadLabel(totalCount);
@@ -86,6 +88,7 @@ export function LeadsTable({
 
     return (
         <>
+            {loading && <span className="sr-only">Carregando leads...</span>}
             <div className="relative rounded-md border">
                 <Table>
                     <TableHeader>
@@ -98,13 +101,32 @@ export function LeadsTable({
                             <TableHead className={columnWidths.result}>Resultado</TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className={loading ? 'animate-pulse' : undefined}>
                         {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                    Carregando leads...
-                                </TableCell>
-                            </TableRow>
+                            <>
+                                {skeletonRows.map((_, index) => (
+                                    <TableRow key={`skeleton-${index}`} className="hover:bg-transparent">
+                                        <TableCell className={`py-4 ${columnWidths.date}`}>
+                                            <div className="h-3 w-full max-w-[9.5rem] rounded bg-muted/60" />
+                                        </TableCell>
+                                        <TableCell className={`py-4 ${columnWidths.name}`}>
+                                            <div className="h-3 w-full max-w-[8rem] rounded bg-muted/60" />
+                                        </TableCell>
+                                        <TableCell className={`py-4 ${columnWidths.email}`}>
+                                            <div className="h-3 w-full max-w-[13rem] rounded bg-muted/60" />
+                                        </TableCell>
+                                        <TableCell className={`py-4 ${columnWidths.phone}`}>
+                                            <div className="h-3 w-full max-w-[9rem] rounded bg-muted/60" />
+                                        </TableCell>
+                                        <TableCell className={`py-4 ${columnWidths.quiz}`}>
+                                            <div className="h-3 w-full max-w-[16rem] rounded bg-muted/60" />
+                                        </TableCell>
+                                        <TableCell className={`py-4 ${columnWidths.result}`}>
+                                            <div className="h-3 w-full max-w-[9rem] rounded bg-muted/60" />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </>
                         ) : rows.length === 0 && displayLockedRows === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="h-24 text-center">
@@ -164,8 +186,8 @@ export function LeadsTable({
                     </TableBody>
                 </Table>
                 {displayLockedRows > 0 && (
-                    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-4">
-                        <div className="pointer-events-auto w-full max-w-md">
+                    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-4 animate-in fade-in-0 motion-reduce:animate-none">
+                        <div className="pointer-events-auto w-full max-w-md animate-fade-in-up-soft motion-reduce:animate-none">
                             {renderUpgradeCard('w-full')}
                         </div>
                     </div>

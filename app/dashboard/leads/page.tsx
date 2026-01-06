@@ -153,10 +153,6 @@ export default function LeadsPage() {
     });
     const displayLockedCount = hasProAccess ? lockedLeadCount : 10;
 
-    if (loading) {
-        return <div className="p-8">Carregando leads...</div>;
-    }
-
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="mb-8">
@@ -197,7 +193,7 @@ export default function LeadsPage() {
                             variant="outline"
                             className="md:self-start h-10"
                             onClick={handleExportClick}
-                            disabled={hasProAccess && filteredLeads.length === 0}
+                            disabled={loading || (hasProAccess && filteredLeads.length === 0)}
                         >
                             {hasProAccess ? (
                                 <Download className="mr-2 h-4 w-4" />
@@ -214,6 +210,8 @@ export default function LeadsPage() {
                         lockedCount={displayLockedCount}
                         totalCount={totalLeadCount}
                         onUpgradeClick={handleUpgradeClick}
+                        loading={loading}
+                        showFooter={!loading}
                         showPreviewCounts={false}
                         visibleCount={filteredLeads.length}
                     />

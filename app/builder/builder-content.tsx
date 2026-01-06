@@ -193,6 +193,18 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const hasShownOnboardingRef = useRef(false);
   // Track previous title to detect transition from default -> set
   const prevTitleRef = useRef(quiz.title);
+  const onboardingStorageKey = useMemo(() => {
+    return quiz.id ? `builder-onboarding-${quiz.id}` : null;
+  }, [quiz.id]);
+
+  const markOnboardingSeen = useCallback(() => {
+    if (!onboardingStorageKey || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(onboardingStorageKey, 'true');
+    } catch (error) {
+      console.warn('[Onboarding] Failed to persist seen state', error);
+    }
+  }, [onboardingStorageKey]);
 
   const openUpgradeModal = useCallback((reason: 'draft-limit' | 'publish-limit' | 'brand-kit') => {
     setUpgradeModalState({ open: true, reason });
@@ -346,25 +358,36 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   useEffect(() => {
     // Helper to check if title is "default" or empty
     const isDefaultTitle = (t: string | undefined) => !t || t === 'Meu Novo Quiz';
-    
+
     const wasDefault = isDefaultTitle(prevTitleRef.current);
     const isNowSet = !isDefaultTitle(quiz.title);
     const hasDescription = Boolean(quiz.description);
+    const hasSeenOnboarding = (() => {
+      if (!onboardingStorageKey || typeof window === 'undefined') return false;
+      try {
+        return localStorage.getItem(onboardingStorageKey) === 'true';
+      } catch (error) {
+        console.warn('[Onboarding] Failed to read seen state', error);
+        return false;
+      }
+    })();
 
     // Trigger ONLY when transitioning from Default -> Set AND description exists
     // This avoids triggering on page load if the quiz was already created
-    if (wasDefault && isNowSet && hasDescription && !hasShownOnboardingRef.current) {
+    if (wasDefault && isNowSet && hasDescription && !hasShownOnboardingRef.current && !hasSeenOnboarding) {
       // Add a small delay to ensure UI is ready and animation is smooth
       const timer = setTimeout(() => {
         setShowOnboarding(true);
         hasShownOnboardingRef.current = true;
+        markOnboardingSeen();
       }, 1000);
       return () => clearTimeout(timer);
     }
 
     // Update ref for next render
     prevTitleRef.current = quiz.title;
-  }, [quiz.title, quiz.description]);
+  }, [quiz.title, quiz.description, onboardingStorageKey, markOnboardingSeen]);
+
 
   // Sync draft state when Introduction sheet opens
   useEffect(() => {
@@ -1034,6 +1057,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   );
   const handleDismissOnboarding = () => {
     setShowOnboarding(false);
+    markOnboardingSeen();
   };
 
   return (
