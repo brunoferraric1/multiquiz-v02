@@ -1,9 +1,10 @@
 'use client';
 
-import { ArrowLeft, ChevronRight, RefreshCcw } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ensureProtocol } from '@/lib/utils';
 import { FormattedText } from './formatted-text';
+import { QuizSurface } from './quiz-surface';
 
 type QuizResultProps = {
   outcome: {
@@ -37,7 +38,7 @@ export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick, primary
           Resultado
         </p>
 
-        <div className="rounded-2xl border border-border/60 bg-secondary/30 p-8 text-card-foreground">
+        <QuizSurface className="p-8">
           {outcome.imageUrl && (
             <div className="flex justify-center mb-8">
               <div className="w-full overflow-hidden rounded-2xl shadow-sm aspect-[4/3]">
@@ -79,7 +80,7 @@ export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick, primary
               </Button>
             </div>
           )}
-        </div>
+        </QuizSurface>
       </div>
     </div>
   );

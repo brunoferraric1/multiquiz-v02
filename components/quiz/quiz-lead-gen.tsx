@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { QuizSurface } from '@/components/quiz/quiz-surface';
 import { ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -101,7 +102,7 @@ export function QuizLeadGen({ config, primaryColor, onSubmit, useBrandKitInputs 
     };
 
     return (
-        <Card className="w-full border-0 shadow-lg">
+        <QuizSurface className="w-full">
             <CardHeader className="text-center pb-4">
                 <CardTitle className="text-2xl font-bold text-card-foreground">
                     {config.title || 'Quase lá!'}
@@ -151,6 +152,6 @@ export function QuizLeadGen({ config, primaryColor, onSubmit, useBrandKitInputs 
                     <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
             </CardFooter>
-        </Card>
+        </QuizSurface>
     );
 }

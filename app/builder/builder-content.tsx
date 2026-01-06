@@ -296,6 +296,27 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   }, [user?.displayName, user?.email]);
 
   const brandKitMode: BrandKitMode = quiz.brandKitMode ?? 'default';
+  const previewCloseButtonStyle = useMemo(() => {
+    if (brandKitMode !== 'custom' || !brandKit?.colors?.primary) return undefined;
+    const hex = brandKit.colors.primary.replace('#', '');
+    if (hex.length !== 6) return undefined;
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    if ([r, g, b].some((channel) => Number.isNaN(channel))) return undefined;
+    const toLinear = (channel: number) => {
+      const normalized = channel / 255;
+      return normalized <= 0.03928
+        ? normalized / 12.92
+        : Math.pow((normalized + 0.055) / 1.055, 2.4);
+    };
+    const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+    const textColor = luminance > 0.6 ? '#0f172a' : '#f8fafc';
+    return {
+      backgroundColor: brandKit.colors.primary,
+      color: textColor,
+    };
+  }, [brandKit?.colors?.primary, brandKitMode]);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -1970,10 +1991,11 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsPreviewOpen(false)}
-                className="absolute top-4 right-4 sm:right-6 lg:right-8 z-10 rounded-full bg-background/60 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background/80 hover:text-foreground"
+                className="absolute top-4 right-4 sm:right-6 lg:right-8 z-10 h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:bg-primary/90 focus-visible:!ring-2 focus-visible:!ring-primary/30"
+                style={previewCloseButtonStyle}
                 aria-label="Fechar pré-visualização"
               >
-                <X size={20} />
+                <X size={20} strokeWidth={2.5} />
               </Button>
               <main className="flex-1 bg-muted/40 overflow-auto">
                 <QuizPlayer

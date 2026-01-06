@@ -36,6 +36,22 @@ import {
 // Colors for charts
 const FUNNEL_START_COLOR = '#8884d8';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', FUNNEL_START_COLOR, '#82ca9d'];
+const getReadableTextColor = (hex: string) => {
+    const sanitized = hex.replace('#', '');
+    if (sanitized.length !== 6) return '#0f172a';
+    const r = parseInt(sanitized.slice(0, 2), 16);
+    const g = parseInt(sanitized.slice(2, 4), 16);
+    const b = parseInt(sanitized.slice(4, 6), 16);
+    if ([r, g, b].some((channel) => Number.isNaN(channel))) return '#0f172a';
+    const toLinear = (channel: number) => {
+        const normalized = channel / 255;
+        return normalized <= 0.03928
+            ? normalized / 12.92
+            : Math.pow((normalized + 0.055) / 1.055, 2.4);
+    };
+    const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+    return luminance > 0.6 ? '#0f172a' : '#f8fafc';
+};
 
 type LeadPreview = {
     id: string;
@@ -202,6 +218,12 @@ export default function QuizReportPage() {
     const [leadsLoading, setLeadsLoading] = useState(true);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const previewCloseButtonStyle = quiz?.brandKitMode === 'custom' && brandKitColors?.primary
+        ? {
+            backgroundColor: brandKitColors.primary,
+            color: getReadableTextColor(brandKitColors.primary),
+        }
+        : undefined;
 
     useEffect(() => {
         async function fetchData() {
@@ -770,10 +792,11 @@ export default function QuizReportPage() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setIsPreviewOpen(false)}
-                                className="absolute top-4 right-4 z-10 rounded-full bg-background/60 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background/80 hover:text-foreground"
+                                className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:bg-primary/90 focus-visible:!ring-2 focus-visible:!ring-primary/30"
+                                style={previewCloseButtonStyle}
                                 aria-label="Fechar pré-visualização"
                             >
-                                <X className="h-4 w-4" />
+                                <X className="h-4 w-4" strokeWidth={2.5} />
                             </Button>
                             <main className="flex-1 overflow-auto bg-muted/40">
                                 <QuizPlayer

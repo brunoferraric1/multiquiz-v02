@@ -128,16 +128,6 @@ export function QuizPlayer({
   brandKitLogoUrl,
 }: QuizPlayerProps) {
   const { title, description, coverImageUrl, primaryColor, ctaText } = getPreviewCopy(quiz);
-  const defaultThemeVars = useMemo<BrandKitStyle | undefined>(() => {
-    if (typeof window === 'undefined') return undefined;
-    const styles = getComputedStyle(document.documentElement);
-    const read = (name: string, fallback: string) => styles.getPropertyValue(name).trim() || fallback;
-    return {
-      '--color-card': read('--color-card', '#232936'),
-      '--color-muted-foreground': read('--color-muted-foreground', '#94a3b8'),
-      '--color-foreground': read('--color-foreground', '#f8fafc'),
-    };
-  }, []);
   const brandKitStyle = useMemo(() => {
     if (quiz.brandKitMode !== 'custom') return undefined;
 
@@ -491,31 +481,27 @@ export function QuizPlayer({
             href="/"
             target="_blank"
             rel="noreferrer"
-            className="group flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur transition-all hover:text-foreground hover:bg-card/90 sm:flex-row sm:gap-2"
+            className="group flex flex-col items-center gap-1 text-xs font-medium text-foreground/60 transition-colors hover:text-foreground sm:flex-row sm:gap-2 cursor-[var(--cursor-interactive)]"
             aria-label="Made with MultiQuiz"
-            style={defaultThemeVars}
           >
-            <span>Made with</span>
-            <span className="flex items-center gap-1 transition-colors">
+            <span className="opacity-70 transition-opacity group-hover:opacity-100">Made with</span>
+            <span className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
               <img 
                 src="/multiquiz-logo.svg" 
                 alt="MultiQuiz" 
-                className="h-4 w-4 opacity-70 transition-opacity group-hover:opacity-100" 
+                className="h-4 w-4"
               />
               <span>MultiQuiz</span>
             </span>
           </a>
         ) : (
-          <div
-            className="group flex flex-col items-center gap-1 rounded-full bg-card/80 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur sm:flex-row sm:gap-2"
-            style={defaultThemeVars}
-          >
-            <span>Made with</span>
-            <span className="flex items-center gap-1">
+          <div className="group flex flex-col items-center gap-1 text-xs font-medium text-foreground/60 sm:flex-row sm:gap-2">
+            <span className="opacity-70 transition-opacity group-hover:opacity-100">Made with</span>
+            <span className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
               <img 
                 src="/multiquiz-logo.svg" 
                 alt="MultiQuiz" 
-                className="h-4 w-4 opacity-70 transition-opacity group-hover:opacity-100" 
+                className="h-4 w-4"
               />
               <span>MultiQuiz</span>
             </span>

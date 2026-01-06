@@ -1,11 +1,12 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, RefreshCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { AnswerOption } from '@/types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { QuizProgressBar } from './quiz-progress-bar';
 import { FormattedText } from './formatted-text';
+import { QuizSurface, quizSurfaceBaseClassName, quizSurfaceInteractiveClassName } from './quiz-surface';
 
 type QuizQuestionProps = {
   question: {
@@ -60,7 +61,7 @@ export function QuizQuestion({
         />
         {question.imageUrl && (
           <div className="flex justify-center">
-            <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+            <QuizSurface className="w-full max-w-sm overflow-hidden">
               <div className="aspect-w-4 aspect-h-3">
                 <img
                   src={question.imageUrl}
@@ -68,7 +69,7 @@ export function QuizQuestion({
                   className="h-full w-full object-cover"
                 />
               </div>
-            </div>
+            </QuizSurface>
           </div>
         )}
       </div>
@@ -82,13 +83,15 @@ export function QuizQuestion({
               type="button"
               onClick={() => option.id && onOptionSelect(option.id)}
               className={cn(
-                'w-full rounded-2xl border border-border/60 bg-background px-4 py-3 text-left transition duration-150 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                quizSurfaceBaseClassName,
+                quizSurfaceInteractiveClassName,
+                'w-full px-4 py-3 text-left text-sm font-medium',
                 isSelected
-                  ? 'border-primary bg-primary/10 text-foreground shadow'
-                  : 'hover:border-primary/70 hover:bg-primary/5'
+                  ? 'border-primary bg-primary/15 text-foreground shadow-md ring-1 ring-primary/25 hover:border-primary hover:bg-primary/15'
+                  : 'hover:border-primary/70 hover:bg-primary/12 hover:shadow-md'
               )}
             >
-              <p className="text-sm font-medium text-foreground">{option.text}</p>
+              <p>{option.text}</p>
             </button>
           );
         })}
