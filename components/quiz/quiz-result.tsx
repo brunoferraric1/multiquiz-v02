@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ensureProtocol } from '@/lib/utils';
 import { FormattedText } from './formatted-text';
@@ -81,6 +81,16 @@ export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick, primary
             </div>
           )}
         </QuizSurface>
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            onClick={onReset}
+            className="gap-2 hover:bg-primary/15 hover:text-foreground"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Refazer quiz
+          </Button>
+        </div>
       </div>
     </div>
   );

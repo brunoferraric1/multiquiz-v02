@@ -88,7 +88,7 @@ export function QuizQuestion({
                 'w-full px-4 py-3 text-left text-sm font-medium',
                 isSelected
                   ? 'border-primary bg-primary/15 text-foreground shadow-md ring-1 ring-primary/25 hover:border-primary hover:bg-primary/15'
-                  : 'hover:border-primary/70 hover:bg-primary/12 hover:shadow-md'
+                  : 'hover:border-primary hover:bg-[color:var(--quiz-card-hover,var(--color-card))] hover:shadow-md hover:ring-2 hover:ring-primary'
               )}
             >
               <p>{option.text}</p>

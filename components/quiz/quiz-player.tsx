@@ -109,6 +109,27 @@ const getInputBorder = (inputColor: string, inputForeground: string) => {
   return mixColors(inputColor, inputForeground, 0.1);
 };
 
+const getCardBorder = (cardColor: string) => {
+  const cardLum = relativeLuminance(cardColor);
+  const target = cardLum < 0.5 ? WHITE_HEX : BLACK_HEX;
+  const amount = cardLum < 0.5 ? 0.12 : 0.08;
+  return mixColors(cardColor, target, amount);
+};
+
+const getCardHoverBackground = (cardColor: string) => {
+  const cardLum = relativeLuminance(cardColor);
+  const target = cardLum < 0.5 ? WHITE_HEX : BLACK_HEX;
+  const amount = cardLum < 0.5 ? 0.14 : 0.08;
+  return mixColors(cardColor, target, amount);
+};
+
+const getCardHoverBorder = (cardColor: string) => {
+  const cardLum = relativeLuminance(cardColor);
+  const target = cardLum < 0.5 ? WHITE_HEX : BLACK_HEX;
+  const amount = cardLum < 0.5 ? 0.22 : 0.16;
+  return mixColors(cardColor, target, amount);
+};
+
 const getPreviewCopy = (quiz: QuizDraft | Quiz) => ({
   title: quiz.title?.trim() || 'Meu Novo Quiz',
   description:
@@ -146,6 +167,9 @@ export function QuizPlayer({
       const inputBackground = getInputBackground(cardColor);
       const inputForeground = getReadableTextColor(inputBackground);
       const inputBorder = getInputBorder(inputBackground, inputForeground);
+      const cardBorder = getCardBorder(cardColor);
+      const cardHover = getCardHoverBackground(cardColor);
+      const cardHoverBorder = getCardHoverBorder(cardColor);
       const mutedForeground = mixColors(
         getReadableTextColor(backgroundColor),
         backgroundColor,
@@ -158,6 +182,9 @@ export function QuizPlayer({
       style['--color-muted-foreground'] = mutedForeground;
       style['--color-card'] = cardColor;
       style['--color-card-foreground'] = getReadableTextColor(cardColor);
+      style['--color-border'] = cardBorder;
+      style['--quiz-card-hover'] = cardHover;
+      style['--quiz-card-hover-border'] = cardHoverBorder;
       style['--color-input'] = inputBorder;
       style['--quiz-input-bg'] = inputBackground;
       style['--quiz-input-border'] = inputBorder;
@@ -422,11 +449,18 @@ export function QuizPlayer({
     >
       {showBrandLogo && (
         <div className="absolute left-6 top-6 z-10 flex items-center sm:left-10 sm:top-8">
-          <img
-            src={brandKitLogoUrl as string}
-            alt="Logo da marca"
-            className="h-14 w-auto max-w-[200px] object-contain sm:h-16"
-          />
+          <button
+            type="button"
+            onClick={resetQuiz}
+            aria-label="Voltar ao início do quiz"
+            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-[var(--cursor-interactive)]"
+          >
+            <img
+              src={brandKitLogoUrl as string}
+              alt="Logo da marca"
+              className="h-14 w-auto max-w-[200px] object-contain sm:h-16"
+            />
+          </button>
         </div>
       )}
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
