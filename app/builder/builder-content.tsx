@@ -1034,7 +1034,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             onClick={() => setActiveSheet({ type: 'brand-kit' })}
             className="relative"
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 pr-12">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10 text-primary">
                 <Palette className="h-5 w-5" />
               </div>
@@ -1050,19 +1050,19 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 </Badge>
               )}
             </div>
-            <div className="absolute bottom-4 right-4 flex items-center -space-x-2">
+            <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center -space-x-1">
               <span
-                className="h-4 w-4 rounded-full border border-border"
+                className="h-4 w-4 rounded-full border border-border/40 ring-1 ring-white/10"
                 style={{ backgroundColor: activeBrandKitColors.primary }}
                 aria-hidden="true"
               />
               <span
-                className="h-4 w-4 rounded-full border border-border"
+                className="h-4 w-4 rounded-full border border-border/40 ring-1 ring-white/10"
                 style={{ backgroundColor: activeBrandKitColors.secondary }}
                 aria-hidden="true"
               />
               <span
-                className="h-4 w-4 rounded-full border border-border"
+                className="h-4 w-4 rounded-full border border-border/40 ring-1 ring-white/10"
                 style={{ backgroundColor: activeBrandKitColors.accent }}
                 aria-hidden="true"
               />
@@ -1556,8 +1556,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       className={cn(
                         "w-full rounded-2xl border-2 p-4 text-left transition-colors",
                         isDefaultBrandKitSelected
-                          ? "border-border/60 bg-card ring-2 ring-ring ring-offset-2 ring-offset-background"
-                          : "border-border/60 bg-card hover:ring-2 hover:ring-ring hover:ring-offset-2 hover:ring-offset-background"
+                          ? "!border-primary bg-card"
+                          : "border-border/60 bg-card hover:!border-primary"
                       )}
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -1585,8 +1585,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                         className={cn(
                           "rounded-2xl border-2 p-4 transition-colors",
                           isCustomBrandKitSelected
-                            ? "border-border/60 bg-card ring-2 ring-ring ring-offset-2 ring-offset-background"
-                            : "border-border/60 bg-card hover:ring-2 hover:ring-ring hover:ring-offset-2 hover:ring-offset-background"
+                            ? "!border-primary bg-card"
+                            : "border-border/60 bg-card hover:!border-primary"
                         )}
                       >
                         <button
