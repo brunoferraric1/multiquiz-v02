@@ -5,8 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import { QuizService } from '@/lib/services/quiz-service';
+import { getBrandKit } from '@/lib/services/brand-kit-service';
 import { auth } from '@/lib/firebase';
-import type { Quiz, QuizAttempt } from '@/types';
+import type { BrandKitColors, Quiz, QuizAttempt } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -189,6 +190,8 @@ export default function QuizReportPage() {
     const isProUser = isPro(subscription);
 
     const [quiz, setQuiz] = useState<Quiz | null>(null);
+    const [brandKitColors, setBrandKitColors] = useState<BrandKitColors | null>(null);
+    const [brandKitLogoUrl, setBrandKitLogoUrl] = useState<string | null>(null);
     const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
     const [loading, setLoading] = useState(true);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -223,6 +226,32 @@ export default function QuizReportPage() {
 
         fetchData();
     }, [user, quizId]);
+
+    useEffect(() => {
+        if (!user?.uid || !quiz || quiz.brandKitMode !== 'custom') {
+            setBrandKitColors(null);
+            setBrandKitLogoUrl(null);
+            return;
+        }
+
+        let isActive = true;
+        getBrandKit(user.uid)
+            .then((kit) => {
+                if (!isActive) return;
+                setBrandKitColors(kit?.colors ?? null);
+                setBrandKitLogoUrl(kit?.logoUrl ?? null);
+            })
+            .catch((error) => {
+                if (!isActive) return;
+                console.error('Failed to load brand kit for preview', error);
+                setBrandKitColors(null);
+                setBrandKitLogoUrl(null);
+            });
+
+        return () => {
+            isActive = false;
+        };
+    }, [quiz, user?.uid]);
 
     useEffect(() => {
         async function fetchReports() {
@@ -747,7 +776,13 @@ export default function QuizReportPage() {
                                 <X className="h-4 w-4" />
                             </Button>
                             <main className="flex-1 overflow-auto bg-muted/40">
-                                <QuizPlayer quiz={quiz} mode="preview" onExit={() => setIsPreviewOpen(false)} />
+                                <QuizPlayer
+                                    quiz={quiz}
+                                    mode="preview"
+                                    onExit={() => setIsPreviewOpen(false)}
+                                    brandKitColors={brandKitColors}
+                                    brandKitLogoUrl={brandKitLogoUrl}
+                                />
                             </main>
                         </div>
                     </motion.div>

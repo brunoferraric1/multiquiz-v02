@@ -102,17 +102,17 @@ export function QuizLeadGen({ config, primaryColor, onSubmit }: QuizLeadGenProps
     return (
         <Card className="w-full border-0 shadow-lg">
             <CardHeader className="text-center pb-4">
-                <CardTitle className="text-2xl font-bold">
+                <CardTitle className="text-2xl font-bold text-card-foreground">
                     {config.title || 'Quase lá!'}
                 </CardTitle>
-                <CardDescription className="text-base">
+                <CardDescription className="text-base text-card-foreground/70">
                     {config.description || 'Preencha seus dados para ver o resultado'}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 {config.fields.map((field) => (
                     <div key={field} className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">
+                        <label className="text-sm font-medium text-card-foreground">
                             {fieldLabels[field]}
                         </label>
                         <Input
@@ -120,7 +120,7 @@ export function QuizLeadGen({ config, primaryColor, onSubmit }: QuizLeadGenProps
                             placeholder={fieldPlaceholders[field]}
                             value={formData[field] || ''}
                             onChange={(e) => handleInputChange(field, e.target.value)}
-                            className="h-12"
+                            className="h-12 text-card-foreground placeholder:text-card-foreground/60"
                             maxLength={field === 'phone' ? 15 : undefined}
                         />
                     </div>

@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { QuizService } from '@/lib/services/quiz-service';
+import { getBrandKit } from '@/lib/services/brand-kit-service';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
-import type { Quiz } from '@/types';
+import type { BrandKitColors, Quiz } from '@/types';
 
 export default function PublicQuizPage() {
   const params = useParams();
@@ -12,6 +13,8 @@ export default function PublicQuizPage() {
   const quizId = params.id as string;
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [brandKitColors, setBrandKitColors] = useState<BrandKitColors | null>(null);
+  const [brandKitLogoUrl, setBrandKitLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +69,32 @@ export default function PublicQuizPage() {
     }
   }, [quizId]);
 
+  useEffect(() => {
+    if (!quiz?.ownerId || quiz.brandKitMode !== 'custom') {
+      setBrandKitColors(null);
+      setBrandKitLogoUrl(null);
+      return;
+    }
+
+    let isActive = true;
+    getBrandKit(quiz.ownerId)
+      .then((kit) => {
+        if (!isActive) return;
+        setBrandKitColors(kit?.colors ?? null);
+        setBrandKitLogoUrl(kit?.logoUrl ?? null);
+      })
+      .catch((err) => {
+        if (!isActive) return;
+        console.error('[PublicQuiz] Error loading brand kit:', err);
+        setBrandKitColors(null);
+        setBrandKitLogoUrl(null);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [quiz]);
+
   const handleExit = () => {
     router.push('/');
   };
@@ -115,7 +144,13 @@ export default function PublicQuizPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <QuizPlayer quiz={quiz} mode="live" onExit={handleExit} />
+      <QuizPlayer
+        quiz={quiz}
+        mode="live"
+        onExit={handleExit}
+        brandKitColors={brandKitColors}
+        brandKitLogoUrl={brandKitLogoUrl}
+      />
     </div>
   );
 }

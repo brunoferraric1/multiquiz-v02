@@ -66,6 +66,7 @@ function NewQuizInitializer() {
       questions: [],
       outcomes: [],
       primaryColor: '#4F46E5',
+      brandKitMode: 'default',
       isPublished: false,
     });
     initializedRef.current = true;

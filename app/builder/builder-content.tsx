@@ -27,7 +27,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
 import { cn, compressImage } from '@/lib/utils';
-import type { BrandKit, BrandKitColors, Outcome, Question } from '@/types';
+import type { BrandKit, BrandKitColors, BrandKitMode, Outcome, Question } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,6 +85,7 @@ type MobileViewMode = 'chat' | 'editor';
 const fieldLabelClass = 'text-sm font-medium text-muted-foreground';
 const fullHexColorRegex = /^#([0-9a-fA-F]{6})$/;
 const shortHexColorRegex = /^#([0-9a-fA-F]{3})$/;
+const DEFAULT_PRIMARY_COLOR = '#4F46E5';
 
 function normalizeHexColor(value: string): string {
   const trimmed = value.trim();
@@ -177,7 +178,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   const [brandKitDialogOpen, setBrandKitDialogOpen] = useState(false);
   const [brandKitDeleteDialogOpen, setBrandKitDeleteDialogOpen] = useState(false);
   const [brandKit, setBrandKit] = useState<BrandKit | null>(null);
-  const [selectedBrandKit, setSelectedBrandKit] = useState<'default' | 'custom'>('default');
   const [brandKitName, setBrandKitName] = useState('');
   const [brandKitColors, setBrandKitColors] = useState<BrandKitColors>({
     primary: '',
@@ -274,9 +274,9 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
   }, []);
   const brandKitColorFields = useMemo<Array<{ key: keyof BrandKitColors; label: string; helper: string }>>(
     () => [
-      { key: 'primary', label: 'Cor primária', helper: 'Use como cor principal do quiz.' },
-      { key: 'secondary', label: 'Cor secundária', helper: 'Apoio para fundos e cards.' },
-      { key: 'accent', label: 'Cor de destaque', helper: 'Realce botões e links.' },
+      { key: 'primary', label: 'Cor do botão', helper: 'Botões, barra de progresso e seleção de respostas.' },
+      { key: 'secondary', label: 'Cor do fundo (cards)', helper: 'Fundo dos cards e áreas de conteúdo. O fundo da página permanece padrão.' },
+      { key: 'accent', label: 'Cor de destaque', helper: 'Hover e elementos secundários.' },
     ],
     []
   );
@@ -295,10 +295,11 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     return normalizedFirstName;
   }, [user?.displayName, user?.email]);
 
+  const brandKitMode: BrandKitMode = quiz.brandKitMode ?? 'default';
+
   useEffect(() => {
     if (!user?.uid) {
       setBrandKit(null);
-      setSelectedBrandKit('default');
       return;
     }
 
@@ -309,7 +310,6 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       .then((kit) => {
         if (!isActive) return;
         setBrandKit(kit);
-        setSelectedBrandKit(kit ? 'custom' : 'default');
       })
       .catch((error) => {
         if (!isActive) return;
@@ -325,6 +325,13 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       isActive = false;
     };
   }, [user?.uid]);
+
+  useEffect(() => {
+    if (brandKitMode !== 'custom' || !brandKit) return;
+    if (quiz.primaryColor !== brandKit.colors.primary) {
+      updateQuizField('primaryColor', brandKit.colors.primary);
+    }
+  }, [brandKit, brandKitMode, quiz.primaryColor, updateQuizField]);
 
   // Refs for sidebar sections (for auto-scroll)
   const introductionRef = useRef<HTMLElement>(null);
@@ -371,6 +378,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       coverImageUrl: quiz.coverImageUrl,
       ctaText: quiz.ctaText,
       primaryColor: quiz.primaryColor,
+      brandKitMode: quiz.brandKitMode ?? 'default',
       questions: quiz.questions,
       outcomes: quiz.outcomes,
       leadGen: quiz.leadGen,
@@ -381,16 +389,19 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     const comparablePublishedVersion = {
       ...publishedVersion,
       leadGen: publishedVersion.leadGen, // will be undefined for legacy
+      brandKitMode: publishedVersion.brandKitMode ?? 'default',
     };
 
     // For comparison, normalize both: if one has undefined leadGen and other has default, treat as equal
     const normalizedCurrent = {
       ...currentSnapshot,
       leadGen: currentSnapshot.leadGen?.enabled ? currentSnapshot.leadGen : undefined,
+      brandKitMode: currentSnapshot.brandKitMode ?? 'default',
     };
     const normalizedPublished = {
       ...comparablePublishedVersion,
       leadGen: comparablePublishedVersion.leadGen?.enabled ? comparablePublishedVersion.leadGen : undefined,
+      brandKitMode: comparablePublishedVersion.brandKitMode ?? 'default',
     };
 
     return stableStringify(normalizedCurrent) !== stableStringify(normalizedPublished);
@@ -401,6 +412,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     quiz.coverImageUrl,
     quiz.ctaText,
     quiz.primaryColor,
+    quiz.brandKitMode,
     quiz.leadGen,
     questionsJson,
     outcomesJson,
@@ -690,7 +702,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         description: quiz.description || '',
         coverImageUrl: quiz.coverImageUrl,
         ctaText: quiz.ctaText,
-        primaryColor: quiz.primaryColor || '#4F46E5',
+        primaryColor: quiz.primaryColor || DEFAULT_PRIMARY_COLOR,
+        brandKitMode: quiz.brandKitMode ?? 'default',
         questions: (quiz.questions || []) as any,
         outcomes: (quiz.outcomes || []) as any,
         leadGen: quiz.leadGen,
@@ -732,7 +745,8 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
         description: quiz.description || '',
         coverImageUrl: quiz.coverImageUrl,
         ctaText: quiz.ctaText,
-        primaryColor: quiz.primaryColor || '#4F46E5',
+        primaryColor: quiz.primaryColor || DEFAULT_PRIMARY_COLOR,
+        brandKitMode: quiz.brandKitMode ?? 'default',
         questions: (quiz.questions || []) as any,
         outcomes: (quiz.outcomes || []) as any,
         leadGen: quiz.leadGen,
@@ -872,6 +886,33 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     }
   };
 
+  const applyBrandKitMode = useCallback(
+    (mode: BrandKitMode) => {
+      if (mode === 'custom') {
+        if (!brandKit) {
+          toast.error('Crie um kit da marca para aplicar.');
+          return;
+        }
+        if (quiz.brandKitMode !== 'custom') {
+          updateQuizField('brandKitMode', 'custom');
+        }
+        const nextPrimaryColor = brandKit.colors.primary;
+        if (quiz.primaryColor !== nextPrimaryColor) {
+          updateQuizField('primaryColor', nextPrimaryColor);
+        }
+        return;
+      }
+
+      if (quiz.brandKitMode !== 'default') {
+        updateQuizField('brandKitMode', 'default');
+      }
+      if (quiz.primaryColor !== DEFAULT_PRIMARY_COLOR) {
+        updateQuizField('primaryColor', DEFAULT_PRIMARY_COLOR);
+      }
+    },
+    [brandKit, quiz.brandKitMode, quiz.primaryColor, updateQuizField]
+  );
+
   const handleOpenBrandKitDialog = () => {
     if (isSubscriptionLoading) return;
     if (!isProUser) {
@@ -914,7 +955,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       };
       await saveBrandKit(user.uid, nextKit);
       setBrandKit(nextKit);
-      setSelectedBrandKit('custom');
+      if (quiz.brandKitMode !== 'custom') {
+        updateQuizField('brandKitMode', 'custom');
+      }
+      if (quiz.primaryColor !== nextKit.colors.primary) {
+        updateQuizField('primaryColor', nextKit.colors.primary);
+      }
       setBrandKitDialogOpen(false);
       toast.success('Kit da marca salvo');
     } catch (error) {
@@ -938,7 +984,12 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       await deleteBrandKit(user.uid);
       setBrandKit(null);
       setBrandKitName('');
-      setSelectedBrandKit('default');
+      if (quiz.brandKitMode !== 'default') {
+        updateQuizField('brandKitMode', 'default');
+      }
+      if (quiz.primaryColor !== DEFAULT_PRIMARY_COLOR) {
+        updateQuizField('primaryColor', DEFAULT_PRIMARY_COLOR);
+      }
       setBrandKitColors({
         primary: themeColorDefaults.primary,
         secondary: themeColorDefaults.secondary,
@@ -961,12 +1012,13 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
     ? quiz.description
     : 'Conte mais sobre o que torna esse quiz especial.';
   const coverImagePreview = quiz.coverImageUrl ? quiz.coverImageUrl : undefined;
-  const isDefaultBrandKitSelected = selectedBrandKit === 'default';
-  const isCustomBrandKitSelected = selectedBrandKit === 'custom';
+  const isDefaultBrandKitSelected = brandKitMode === 'default';
+  const isCustomBrandKitSelected = brandKitMode === 'custom';
   const activeBrandKitColors =
-    selectedBrandKit === 'custom' && brandKit ? brandKit.colors : themeColorDefaults;
-  const activeBrandKitName =
-    selectedBrandKit === 'custom' && brandKit?.name ? brandKit.name : 'Padrão MultiQuiz';
+    isCustomBrandKitSelected && brandKit ? brandKit.colors : themeColorDefaults;
+  const activeBrandKitName = isCustomBrandKitSelected
+    ? brandKit?.name || 'Seu kit da marca'
+    : 'Padrão MultiQuiz';
 
   const sheetOpen = Boolean(activeSheet);
   const isBrandKitLocked = !isSubscriptionLoading && !isProUser;
@@ -1551,7 +1603,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                   <div className="space-y-4 px-1 py-2">
                     <button
                       type="button"
-                      onClick={() => setSelectedBrandKit('default')}
+                      onClick={() => applyBrandKitMode('default')}
                       aria-pressed={isDefaultBrandKitSelected}
                       className={cn(
                         "w-full rounded-2xl border-2 p-4 text-left transition-colors",
@@ -1591,7 +1643,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                       >
                         <button
                           type="button"
-                          onClick={() => setSelectedBrandKit('custom')}
+                          onClick={() => applyBrandKitMode('custom')}
                           aria-pressed={isCustomBrandKitSelected}
                           className="w-full text-left"
                         >
@@ -1924,7 +1976,13 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 <X size={20} />
               </Button>
               <main className="flex-1 bg-muted/40 overflow-auto">
-                <QuizPlayer quiz={quiz} mode="preview" onExit={() => setIsPreviewOpen(false)} />
+                <QuizPlayer
+                  quiz={quiz}
+                  mode="preview"
+                  onExit={() => setIsPreviewOpen(false)}
+                  brandKitColors={brandKit?.colors}
+                  brandKitLogoUrl={brandKit?.logoUrl ?? null}
+                />
               </main>
             </div>
           </motion.div>

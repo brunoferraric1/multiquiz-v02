@@ -18,6 +18,7 @@ const quizFieldLabels: Record<string, string> = {
   coverImageUrl: 'Imagem principal',
   ctaText: 'Texto do CTA',
   ctaUrl: 'URL do CTA',
+  brandKitMode: 'Kit da marca',
 };
 
 const formatValuePreview = (field: string, value: unknown): string | undefined => {
@@ -83,6 +84,7 @@ const initialQuizState: QuizDraft = {
   questions: [],
   outcomes: [],
   primaryColor: undefined,
+  brandKitMode: 'default',
   isPublished: false,
   leadGen: {
     enabled: false,
@@ -273,6 +275,7 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             ctaText: quiz.ctaText,
             ctaUrl: quiz.ctaUrl,
             primaryColor: quiz.primaryColor,
+            brandKitMode: quiz.brandKitMode ?? 'default',
             questions: quiz.questions,
             outcomes: quiz.outcomes,
             isPublished: quiz.isPublished,
@@ -309,6 +312,7 @@ export const useQuizBuilderStore = create<QuizBuilderState>()(
             coverImageUrl: publishedVersion.coverImageUrl,
             ctaText: publishedVersion.ctaText,
             primaryColor: publishedVersion.primaryColor,
+            brandKitMode: publishedVersion.brandKitMode ?? 'default',
             questions: publishedVersion.questions as Partial<Question>[],
             outcomes: publishedVersion.outcomes as Partial<Outcome>[],
             leadGen: publishedVersion.leadGen,

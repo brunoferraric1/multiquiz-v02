@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState, useEffect, useRef } from 'react';
-import type { AnswerOption, Quiz, QuizDraft } from '@/types';
+import { useMemo, useState, useEffect, useRef, type CSSProperties } from 'react';
+import type { AnswerOption, BrandKitColors, Quiz, QuizDraft } from '@/types';
 import { QuizIntro } from './quiz-intro';
 import { QuizQuestion } from './quiz-question';
 import { QuizResult } from './quiz-result';
@@ -31,11 +31,45 @@ type QuizPlayerProps = {
   quiz: QuizDraft | Quiz;
   mode?: 'preview' | 'live';
   onExit?: () => void;
+  brandKitColors?: BrandKitColors | null;
+  brandKitLogoUrl?: string | null;
 };
 
 type SelectionState = Record<string, string[]>;
 
 const DEFAULT_PURPLE = '#4F46E5';
+const DARK_TEXT = '#0f172a';
+const LIGHT_TEXT = '#f8fafc';
+type BrandKitStyle = CSSProperties & Record<`--${string}`, string>;
+
+const hexToRgb = (value: string) => {
+  const normalized = value.trim().replace('#', '');
+  if (normalized.length !== 6) return null;
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  if ([r, g, b].some((channel) => Number.isNaN(channel))) return null;
+  return { r, g, b };
+};
+
+const relativeLuminance = (value: string) => {
+  const rgb = hexToRgb(value);
+  if (!rgb) return 0;
+  const transform = (channel: number) => {
+    const normalized = channel / 255;
+    return normalized <= 0.03928
+      ? normalized / 12.92
+      : Math.pow((normalized + 0.055) / 1.055, 2.4);
+  };
+  const r = transform(rgb.r);
+  const g = transform(rgb.g);
+  const b = transform(rgb.b);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+const getReadableTextColor = (value: string) => {
+  return relativeLuminance(value) > 0.6 ? DARK_TEXT : LIGHT_TEXT;
+};
 
 const getPreviewCopy = (quiz: QuizDraft | Quiz) => ({
   title: quiz.title?.trim() || 'Meu Novo Quiz',
@@ -48,8 +82,37 @@ const getPreviewCopy = (quiz: QuizDraft | Quiz) => ({
   ctaText: quiz.ctaText,
 });
 
-export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
+export function QuizPlayer({
+  quiz,
+  mode = 'live',
+  onExit,
+  brandKitColors,
+  brandKitLogoUrl,
+}: QuizPlayerProps) {
   const { title, description, coverImageUrl, primaryColor, ctaText } = getPreviewCopy(quiz);
+  const brandKitStyle = useMemo(() => {
+    if (quiz.brandKitMode !== 'custom') return undefined;
+
+    const primary = brandKitColors?.primary || quiz.primaryColor || DEFAULT_PURPLE;
+    const style: BrandKitStyle = {
+      '--color-primary': primary,
+      '--color-primary-foreground': getReadableTextColor(primary),
+      '--color-ring': primary,
+    };
+
+    if (brandKitColors) {
+      const secondary = brandKitColors.secondary;
+      const accent = brandKitColors.accent;
+      style['--color-secondary'] = secondary;
+      style['--color-secondary-foreground'] = getReadableTextColor(secondary);
+      style['--color-accent'] = accent;
+      style['--color-accent-foreground'] = getReadableTextColor(accent);
+      style['--color-card'] = secondary;
+      style['--color-card-foreground'] = getReadableTextColor(secondary);
+    }
+
+    return style;
+  }, [brandKitColors, quiz.brandKitMode, quiz.primaryColor]);
 
   // Attempt Tracking
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -296,9 +359,24 @@ export function QuizPlayer({ quiz, mode = 'live', onExit }: QuizPlayerProps) {
         : currentQuestionIndex + 1;
 
   const isLive = mode === 'live';
+  const showBrandLogo = quiz.brandKitMode === 'custom' && Boolean(brandKitLogoUrl);
 
   return (
-    <div className="relative min-h-screen w-full px-4 py-8 pb-20 sm:px-8 sm:pb-24 flex flex-col justify-center">
+    <div
+      className="relative min-h-screen w-full bg-background px-4 py-8 pb-20 text-foreground sm:px-8 sm:pb-24 flex flex-col justify-center"
+      style={brandKitStyle}
+    >
+      {showBrandLogo && (
+        <div className="absolute left-4 top-4 z-10 flex items-center">
+          <div className="h-12 w-12 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+            <img
+              src={brandKitLogoUrl as string}
+              alt="Logo da marca"
+              className="h-full w-full object-contain"
+            />
+          </div>
+        </div>
+      )}
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
         {phase === 'intro' && (
           <QuizIntro

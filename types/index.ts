@@ -44,6 +44,7 @@ export const QuizSnapshotSchema = z.object({
   coverImageUrl: z.string().optional(),
   ctaText: z.string().optional(),
   primaryColor: z.string().optional(),
+  brandKitMode: z.enum(['default', 'custom']).optional(),
   questions: z.array(QuestionSchema),
   outcomes: z.array(OutcomeSchema),
   leadGen: z.object({
@@ -63,6 +64,7 @@ export const QuizSchema = z.object({
   ctaText: z.string().optional(),
   ctaUrl: z.string().url().optional(),
   primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+  brandKitMode: z.enum(['default', 'custom']).optional(),
   questions: z.array(QuestionSchema),
   outcomes: z.array(OutcomeSchema),
   createdAt: z.number(),
@@ -91,6 +93,8 @@ export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 export type QuizStats = z.infer<typeof QuizStatsSchema>;
 export type QuizSnapshot = z.infer<typeof QuizSnapshotSchema>;
 export type Quiz = z.infer<typeof QuizSchema>;
+
+export type BrandKitMode = 'default' | 'custom';
 
 export type BrandKitColors = {
   primary: string;

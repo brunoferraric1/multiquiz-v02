@@ -37,7 +37,7 @@ export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick, primary
           Resultado
         </p>
 
-        <div className="rounded-2xl border border-border/60 bg-secondary/30 p-8">
+        <div className="rounded-2xl border border-border/60 bg-secondary/30 p-8 text-card-foreground">
           {outcome.imageUrl && (
             <div className="flex justify-center mb-8">
               <div className="w-full overflow-hidden rounded-2xl shadow-sm aspect-[4/3]">
@@ -54,7 +54,7 @@ export function QuizResult({ outcome, mode, onReset, onExit, onCtaClick, primary
           <FormattedText
             text={outcome.description}
             fallback="Adicione uma descrição para este resultado."
-            className="mt-2 text-sm text-muted-foreground"
+            className="mt-2 text-sm text-card-foreground/70"
           />
 
           {outcome.ctaText && (
