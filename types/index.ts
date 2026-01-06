@@ -37,6 +37,18 @@ export const QuizStatsSchema = z.object({
   completions: z.number().int().nonnegative(),
 });
 
+export const BrandKitColorsSchema = z.object({
+  primary: z.string(),
+  secondary: z.string(),
+  accent: z.string(),
+});
+
+export const BrandKitSchema = z.object({
+  name: z.string().optional(),
+  logoUrl: z.string().nullable().optional(),
+  colors: BrandKitColorsSchema,
+});
+
 // Snapshot of quiz content for published version (frozen state)
 export const QuizSnapshotSchema = z.object({
   title: z.string(),
@@ -45,6 +57,7 @@ export const QuizSnapshotSchema = z.object({
   ctaText: z.string().optional(),
   primaryColor: z.string().optional(),
   brandKitMode: z.enum(['default', 'custom']).optional(),
+  brandKit: BrandKitSchema.optional(),
   questions: z.array(QuestionSchema),
   outcomes: z.array(OutcomeSchema),
   leadGen: z.object({
@@ -65,6 +78,7 @@ export const QuizSchema = z.object({
   ctaUrl: z.string().url().optional(),
   primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
   brandKitMode: z.enum(['default', 'custom']).optional(),
+  brandKit: BrandKitSchema.optional(),
   questions: z.array(QuestionSchema),
   outcomes: z.array(OutcomeSchema),
   createdAt: z.number(),

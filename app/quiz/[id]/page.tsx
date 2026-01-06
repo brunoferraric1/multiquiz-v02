@@ -76,6 +76,12 @@ export default function PublicQuizPage() {
       return;
     }
 
+    if (quiz.brandKit?.colors) {
+      setBrandKitColors(quiz.brandKit.colors);
+      setBrandKitLogoUrl(quiz.brandKit.logoUrl ?? null);
+      return;
+    }
+
     let isActive = true;
     getBrandKit(quiz.ownerId)
       .then((kit) => {

@@ -12,7 +12,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Quiz, QuizDraft, QuizSnapshot } from '@/types';
+import type { BrandKit, Quiz, QuizDraft, QuizSnapshot } from '@/types';
 import { QuizSchema } from '@/types';
 import { TIER_LIMITS } from '@/lib/stripe';
 
@@ -304,7 +304,7 @@ export class QuizService {
   /**
    * Create a snapshot of the current quiz for publishing
    */
-  private static createSnapshot(quiz: Quiz): QuizSnapshot {
+  private static createSnapshot(quiz: Quiz, brandKit?: BrandKit | null): QuizSnapshot {
     return {
       title: quiz.title,
       description: quiz.description,
@@ -312,6 +312,7 @@ export class QuizService {
       ctaText: quiz.ctaText,
       primaryColor: quiz.primaryColor || '#4F46E5',
       brandKitMode: quiz.brandKitMode ?? 'default',
+      brandKit: quiz.brandKitMode === 'custom' ? brandKit ?? undefined : undefined,
       questions: quiz.questions || [],
       outcomes: quiz.outcomes || [],
       leadGen: quiz.leadGen,
@@ -352,7 +353,20 @@ export class QuizService {
       }
 
       const now = Date.now();
-      const snapshot = this.createSnapshot(quiz);
+      const brandKit =
+        quiz.brandKitMode === 'custom' && userData?.brandKit?.colors
+          ? {
+              name:
+                typeof userData.brandKit.name === 'string' ? userData.brandKit.name : undefined,
+              logoUrl: userData.brandKit.logoUrl ?? null,
+              colors: {
+                primary: userData.brandKit.colors.primary,
+                secondary: userData.brandKit.colors.secondary,
+                accent: userData.brandKit.colors.accent,
+              },
+            }
+          : null;
+      const snapshot = this.createSnapshot(quiz, brandKit);
       const cleanedSnapshot = removeUndefinedDeep(snapshot);
 
       const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
