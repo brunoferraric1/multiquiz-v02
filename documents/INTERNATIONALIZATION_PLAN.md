@@ -15,20 +15,16 @@ This document outlines the scope, tasks, milestones, and risks for enabling mult
 - Multi-currency pricing if not required by the business.
 
 ## Key Decisions Required (Before Implementation)
-1. **Routing strategy**
-   - Option A: Locale-prefixed routes (`/pt-BR/...`, `/en/...`, `/es/...`) with middleware redirect.
-   - Option B: Single routes with client-only translations and locale stored in cookie.
-2. **Quiz content language**
-   - Option A: UI-only localization; quiz content stays as authored.
-   - Option B: Per-quiz language (quiz has a `language` field; player uses it).
-   - Option C: Multi-language quiz variants (separate translations per quiz).
-3. **Translation management**
-   - Option A: Simple JSON dictionaries in repo.
-   - Option B: Integrate library (e.g., next-intl) for message formatting.
-4. **Pricing and currency**
-   - BRL only across locales, or locale-based currency/pricing tables.
-5. **SEO**
-   - Landing pages localized with `lang`, `hreflang`, and localized metadata.
+1. **Routing strategy (Confirmed)**
+   - Locale-prefixed routes (`/pt-BR/...`, `/en/...`, `/es/...`) with middleware redirect.
+2. **Quiz content language (Confirmed)**
+   - UI-only localization; quiz content stays as authored by the user.
+3. **Translation management (Confirmed)**
+   - Simple JSON dictionaries in repo with a lightweight `t()` helper.
+4. **Pricing and currency (Confirmed)**
+   - BRL for `pt-BR`, USD for `en` and `es`.
+5. **SEO (Confirmed)**
+   - Localized landing pages with `lang`, `hreflang`, and localized metadata.
 
 ## Current Baseline (Impacts)
 - `app/layout.tsx` sets `lang="pt-BR"` and Portuguese metadata.
@@ -54,7 +50,7 @@ Use Next.js App Router locale segment: `app/[lang]/...` with a middleware redire
 - Add middleware to redirect missing locale to preferred/default locale.
 - Create `app/[lang]/layout.tsx` and move routes under `app/[lang]/...`.
 - Add `generateStaticParams` for all locales to pre-render static pages.
-- Add a `LocaleProvider` or translation hook with dictionary loading.
+- Add a `LocaleProvider` or translation hook with dictionary loading (JSON).
 - Add locale-aware `metadata` generation for landing pages.
 
 ### M2. Translation System + Content Inventory (3-5 days)
@@ -80,7 +76,7 @@ Use Next.js App Router locale segment: `app/[lang]/...` with a middleware redire
 - Add locale-aware labels for statuses (Published/Draft), buttons, and empty states.
 
 ### M5. AI and Backend Localization (4-7 days)
-- Add language context to AI system prompts and extraction.
+- Add language context to AI system prompts and extraction so the bot answers in the user’s preferred language.
 - Update AI fallback message language based on locale.
 - Update image keyword translation to handle EN/ES input; keep PT->EN fallback.
 - If per-quiz language is chosen, persist it with quiz drafts and published snapshots.
@@ -122,6 +118,7 @@ Use Next.js App Router locale segment: `app/[lang]/...` with a middleware redire
 - Centralize date formatting in a utility.
 - Swap `date-fns` locale at runtime.
 - Use `Intl.NumberFormat` for prices and reports.
+- Map currency by locale: BRL for `pt-BR`, USD for `en` and `es`.
 
 ### UI Translation Targets (Representative)
 - Landing components: `components/landing/*`.
