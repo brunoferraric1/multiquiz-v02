@@ -10,11 +10,11 @@ This document outlines the scope, tasks, milestones, and risks for enabling mult
 - Preserve current behavior and URLs with minimal disruption.
 
 ## Non-Goals (for initial release)
-- Full translation of user-generated quiz content (unless explicitly decided).
+- Full translation of user-generated quiz content.
 - Automatic translation of existing quizzes or AI conversation history.
-- Multi-currency pricing if not required by the business.
+- Multi-currency pricing beyond BRL (pt-BR) and USD (en/es).
 
-## Key Decisions Required (Before Implementation)
+## Key Decisions (Confirmed)
 1. **Routing strategy (Confirmed)**
    - Locale-prefixed routes (`/pt-BR/...`, `/en/...`, `/es/...`) with middleware redirect.
 2. **Quiz content language (Confirmed)**
@@ -25,6 +25,8 @@ This document outlines the scope, tasks, milestones, and risks for enabling mult
    - BRL for `pt-BR`, USD for `en` and `es`.
 5. **SEO (Confirmed)**
    - Localized landing pages with `lang`, `hreflang`, and localized metadata.
+6. **Bot language (Confirmed)**
+   - Bot responds in the user’s preferred language.
 
 ## Current Baseline (Impacts)
 - `app/layout.tsx` sets `lang="pt-BR"` and Portuguese metadata.
@@ -39,10 +41,8 @@ Use Next.js App Router locale segment: `app/[lang]/...` with a middleware redire
 ## Milestones and Tasks
 
 ### M0. Architecture Decisions (1-2 days)
-- Decide on routing strategy and locale storage (cookie + user profile).
-- Decide on translation method (local JSON vs library).
-- Decide on quiz content language strategy.
-- Decide on pricing currency per locale.
+- Confirm locale storage (cookie + user profile) and fallback behavior.
+- Confirm currency mapping by locale and Stripe price mapping.
 - Produce an implementation checklist and migration plan.
 
 ### M1. i18n Infrastructure (3-5 days)
@@ -79,7 +79,6 @@ Use Next.js App Router locale segment: `app/[lang]/...` with a middleware redire
 - Add language context to AI system prompts and extraction so the bot answers in the user’s preferred language.
 - Update AI fallback message language based on locale.
 - Update image keyword translation to handle EN/ES input; keep PT->EN fallback.
-- If per-quiz language is chosen, persist it with quiz drafts and published snapshots.
 
 ### M6. SEO, Analytics, and URLs (2-4 days)
 - Add `hreflang` and localized metadata for landing routes.
@@ -94,39 +93,93 @@ Use Next.js App Router locale segment: `app/[lang]/...` with a middleware redire
 - Staged rollout with feature flag or percentage rollout.
 - Monitor errors and missing translations.
 
+## Progress Checklist (To-Dos + Watchouts)
+
+### Phase 1: i18n Infrastructure
+- [ ] Add `i18n-config.ts` with locales and default locale.
+- [ ] Add middleware locale redirect (skip `/_next`, `/api`, assets).
+- [ ] Move routes under `app/[lang]/...` and add `generateStaticParams`.
+- [ ] Ensure legacy routes redirect to `/<defaultLocale>`.
+- Watchouts: 404 regressions; middleware loops; missing locale on server redirects.
+
+### Phase 2: Dictionary System
+- [ ] Create `locales/pt-BR.json`, `locales/en.json`, `locales/es.json`.
+- [ ] Add JSON loader + `t()` helper for Server/Client usage.
+- [ ] Add missing-key warnings in dev builds.
+- [ ] Bind `<html lang>` to active locale.
+- Watchouts: avoid bundling all locales on every route; ensure keys are stable.
+
+### Phase 3: Landing Page Localization (SEO First)
+- [ ] Translate landing components and CTA labels.
+- [ ] Add language switcher in header/footer.
+- [ ] Localize metadata + `hreflang` for landing routes.
+- [ ] Preserve locale in anchor links (e.g., `#pricing`).
+- Watchouts: SEO duplication without `hreflang`; broken anchor navigation.
+
+### Phase 4: Navigation Hardening
+- [ ] Centralize locale-aware navigation helpers.
+- [ ] Update all `Link` and `router.push` usages to keep locale.
+- [ ] Ensure auth, pricing, and checkout redirects keep locale.
+- Watchouts: accidental navigation to non-prefixed routes.
+
+### Phase 5: Product UI Localization
+- [ ] Translate dashboard, builder, quiz player, reports, leads, modals, toasts.
+- [ ] Centralize date/time formatting and replace ad hoc usage.
+- [ ] Confirm status labels and empty states are localized.
+- Watchouts: hidden PT strings in errors/toasts; layout overflow in EN/ES.
+
+### Phase 6: AI Localization
+- [ ] Pass user locale into AI system prompts.
+- [ ] Localize AI fallback messages per locale.
+- [ ] Update image-suggestion translation to handle EN/ES input.
+- Watchouts: bot replying in PT when locale is EN/ES; do not translate quiz content.
+
+### Phase 7: Currency and Formatting
+- [ ] Centralize currency formatting with `Intl.NumberFormat`.
+- [ ] Map currency by locale: BRL for `pt-BR`, USD for `en` and `es`.
+- [ ] Align displayed prices with Stripe price IDs per locale.
+- Watchouts: mismatched price/currency vs Stripe product; inconsistent billing copy.
+
+### Phase 8: QA and Rollout
+- [ ] Run locale smoke tests (landing, auth, dashboard, builder, quiz).
+- [ ] Validate locale persistence (cookie + user profile).
+- [ ] Verify legacy URL redirects and 404s.
+- [ ] Monitor missing-key warnings and 404 logs post-launch.
+- Watchouts: mixed-language UI; SEO regressions; broken deep links.
+
 ## Task Breakdown (Detailed)
 
 ### Routing and Middleware
-- Create `app/[lang]/(landing)/page.tsx` and move landing content.
-- Create `app/[lang]/dashboard/...` route tree.
-- Add middleware to:
-  - Detect locale from cookie or `Accept-Language`.
-  - Redirect missing locale to `/<locale>`.
-  - Skip API and static assets.
+- [ ] Create `app/[lang]/(landing)/page.tsx` and move landing content.
+- [ ] Create `app/[lang]/dashboard/...` route tree.
+- [ ] Add middleware locale handling.
+- [ ] Detect locale from cookie or `Accept-Language`.
+- [ ] Redirect missing locale to `/<locale>`.
+- [ ] Skip API and static assets in middleware.
 
 ### Translation Utilities
-- Add translation loader with memoization per locale.
-- Add `useTranslations()` hook with typing for keys.
-- Add a simple `t('key')` helper for Server Components.
+- [ ] Add translation loader with memoization per locale.
+- [ ] Add `useTranslations()` hook with typing for keys.
+- [ ] Add a simple `t('key')` helper for Server Components.
 
 ### Locale Preferences
-- Add `language` to user profile (Firestore user doc).
-- Persist language change to cookie and profile on selection.
-- Use cookie for unauthenticated sessions (landing page users).
+- [ ] Add `language` to user profile (Firestore user doc).
+- [ ] Persist language change to cookie and profile on selection.
+- [ ] Use cookie for unauthenticated sessions (landing page users).
 
 ### Date, Time, and Currency
-- Centralize date formatting in a utility.
-- Swap `date-fns` locale at runtime.
-- Use `Intl.NumberFormat` for prices and reports.
-- Map currency by locale: BRL for `pt-BR`, USD for `en` and `es`.
+- [ ] Centralize date formatting in a utility.
+- [ ] Swap `date-fns` locale at runtime.
+- [ ] Use `Intl.NumberFormat` for prices and reports.
+- [ ] Map currency by locale: BRL for `pt-BR`, USD for `en` and `es`.
 
 ### UI Translation Targets (Representative)
-- Landing components: `components/landing/*`.
-- Quiz player: `components/quiz/*`.
-- Builder: `components/builder/*`, `app/builder/*`.
-- Dashboard: `app/dashboard/*`, `components/dashboard/*`.
-- Auth: `app/(auth)/login/page.tsx`.
-- Toasts and errors: `lib/services/*`, `components/*`.
+- [ ] Landing components: `components/landing/*`.
+- [ ] Quiz player: `components/quiz/*`.
+- [ ] Builder: `components/builder/*`, `app/builder/*`.
+- [ ] Dashboard: `app/dashboard/*`, `components/dashboard/*`.
+- [ ] Auth: `app/(auth)/login/page.tsx`.
+- [ ] Toasts and errors: `lib/services/*`, `components/*`.
 
 ## Risks and Mitigations
 - **Routing breakage**: Legacy URLs may break when using locale prefixes.
@@ -142,8 +195,8 @@ Use Next.js App Router locale segment: `app/[lang]/...` with a middleware redire
 
 ## Dependencies
 - Access to translation resources for EN/ES copy.
-- Product decisions on currency and quiz content localization.
-- Agreement on i18n library vs custom dictionary approach.
+- Stripe USD price IDs and BRL price IDs confirmed.
+- Dictionary key conventions agreed (`feature.title`, `cta.primary`, etc.).
 
 ## Acceptance Criteria
 - User can switch between PT-BR, EN, ES on landing and product.
