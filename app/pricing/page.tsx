@@ -212,7 +212,7 @@ function PricingContent() {
               </div>
             </div>
 
-            <div className="mt-10 grid gap-6 lg:grid-cols-2">
+            <div className="mt-10 grid gap-6 md:grid-cols-2">
               <Card className="relative overflow-hidden border-border bg-card/60">
                 <CardHeader className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
@@ -255,45 +255,51 @@ function PricingContent() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button
-                    asChild
-                    variant="secondary"
-                    className="w-full cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]"
-                  >
-                    <Link href="/dashboard">Continuar no plano gratuito</Link>
-                  </Button>
+                  {!isProUser ? (
+                    <Button
+                      asChild
+                      variant="secondary"
+                      className="w-full cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]"
+                    >
+                      <Link href="/dashboard">Continuar no plano gratuito</Link>
+                    </Button>
+                  ) : (
+                    <div className="h-10" /> // Espaçador para manter simetria visual
+                  )}
                 </CardFooter>
               </Card>
 
               <Card className="relative overflow-hidden border-primary/60 bg-card/70">
-                <div className="absolute right-6 top-6">
-                  <div className="flex flex-wrap items-center gap-1 rounded-full border border-border bg-muted/40 p-1 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setBillingPeriod('monthly')}
-                      className={cn(
-                        'rounded-full px-3 py-1 font-medium transition-colors cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]',
-                        billingPeriod === 'monthly'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      Mensal
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBillingPeriod('yearly')}
-                      className={cn(
-                        'rounded-full px-3 py-1 font-medium transition-colors cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]',
-                        billingPeriod === 'yearly'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      Anual (-20%)
-                    </button>
+                {!subscriptionLoading && !isProUser && (
+                  <div className="absolute right-6 top-6">
+                    <div className="flex flex-wrap items-center gap-1 rounded-full border border-border bg-muted/40 p-1 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setBillingPeriod('monthly')}
+                        className={cn(
+                          'rounded-full px-3 py-1 font-medium transition-colors cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]',
+                          billingPeriod === 'monthly'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        Mensal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBillingPeriod('yearly')}
+                        className={cn(
+                          'rounded-full px-3 py-1 font-medium transition-colors cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]',
+                          billingPeriod === 'yearly'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        Anual (-20%)
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
                 <CardHeader className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="secondary">Pro</Badge>
@@ -349,9 +355,15 @@ function PricingContent() {
                       'Fazer upgrade para Pro'
                     )}
                   </Button>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Pagamento seguro via Stripe. Cancele quando quiser.
-                  </p>
+                  {!isProUser ? (
+                    <p className="text-xs text-center text-muted-foreground">
+                      Pagamento seguro via Stripe. Cancele quando quiser.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-center text-primary/80 font-medium">
+                      Sua assinatura está ativa e segura.
+                    </p>
+                  )}
                 </CardFooter>
               </Card>
             </div>

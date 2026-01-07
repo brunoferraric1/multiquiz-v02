@@ -107,7 +107,7 @@ export const PricingSection = () => {
           ref={ref}
           initial="hidden"
           animate={controls}
-          className="mt-12 grid max-w-lg gap-8 mx-auto lg:max-w-4xl lg:grid-cols-2"
+          className="mt-12 grid max-w-lg gap-8 mx-auto md:max-w-4xl md:grid-cols-2"
         >
           {/* Free Tier */}
           <motion.div
