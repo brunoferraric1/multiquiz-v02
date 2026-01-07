@@ -13,8 +13,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 
 export default function AccountPage() {
-    const { user, updateUserProfile, signOut } = useAuth();
-    const { subscription, isLoading: isLoadingSubscription } = useSubscription(user?.uid);
+    const { user, loading: authLoading, updateUserProfile, signOut } = useAuth();
+    const { subscription, isLoading: subscriptionLoading } = useSubscription(user?.uid);
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
@@ -77,7 +77,8 @@ export default function AccountPage() {
         }
     };
 
-    const isSubscriptionReady = !isLoadingSubscription;
+    // Consider loading until BOTH auth and subscription are ready
+    const isSubscriptionReady = !authLoading && !subscriptionLoading;
     const isProUser = isPro(subscription);
 
     return (
@@ -159,7 +160,7 @@ export default function AccountPage() {
                 </Card>
 
                 {/* Subscription Section */}
-                <Card className={isProUser ? "border-primary/50 bg-primary/5" : ""}>
+                <Card className={isSubscriptionReady && isProUser ? "border-primary/50 bg-primary/5" : ""}>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <CreditCard className="h-5 w-5 text-primary" />
@@ -170,69 +171,81 @@ export default function AccountPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
-                                <div>
-                                    <p className="font-medium">Plano Atual</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className={`text-lg font-bold ${isProUser ? 'text-primary' : ''}`}>
-                                            {isSubscriptionReady ? (isProUser ? 'MultiQuiz Pro' : 'Gratuito') : 'Carregando...'}
-                                        </span>
-                                        {isSubscriptionReady && isProUser && (
-                                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                                                Ativo
-                                            </span>
+                        {!isSubscriptionReady ? (
+                            // Loading skeleton
+                            <div className="space-y-4 animate-pulse">
+                                <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                                    <div className="space-y-2">
+                                        <div className="h-4 w-24 bg-muted rounded" />
+                                        <div className="h-6 w-32 bg-muted rounded" />
+                                    </div>
+                                    <div className="h-8 w-8 rounded-full bg-muted" />
+                                </div>
+                                <div className="h-10 w-full bg-muted rounded" />
+                            </div>
+                        ) : (
+                            // Actual content
+                            <>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                                        <div>
+                                            <p className="font-medium">Plano Atual</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className={`text-lg font-bold ${isProUser ? 'text-primary' : ''}`}>
+                                                    {isProUser ? 'MultiQuiz Pro' : 'Gratuito'}
+                                                </span>
+                                                {isProUser && (
+                                                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                                        Ativo
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {isProUser ? (
+                                            <Sparkles className="h-8 w-8 text-primary opacity-50" />
+                                        ) : (
+                                            <div className="h-8 w-8 rounded-full bg-muted" />
                                         )}
                                     </div>
+
+                                    {!isProUser && (
+                                        <div className="rounded-lg bg-muted p-4 space-y-3">
+                                            <p className="text-sm font-medium">Faça upgrade para o Pro:</p>
+                                            <ul className="text-sm text-muted-foreground space-y-1">
+                                                <li>• Quizzes ilimitados</li>
+                                                <li>• Geração com IA ilimitada</li>
+                                                <li>• Relatórios avançados</li>
+                                                <li>• Exportação de Leads (CSV)</li>
+                                                <li>• Remoção da marca d&apos;água</li>
+                                            </ul>
+                                        </div>
+                                    )}
                                 </div>
-                                {isProUser ? (
-                                    <Sparkles className="h-8 w-8 text-primary opacity-50" />
-                                ) : (
-                                    <div className="h-8 w-8 rounded-full bg-muted" />
+
+                                <Button
+                                    className="w-full"
+                                    variant={isProUser ? "outline" : "default"}
+                                    onClick={handleManageSubscription}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Processando...
+                                        </>
+                                    ) : isProUser ? (
+                                        'Gerenciar Assinatura'
+                                    ) : (
+                                        'Fazer Upgrade para Pro'
+                                    )}
+                                </Button>
+
+                                {isProUser && (
+                                    <p className="text-xs text-center text-muted-foreground">
+                                        Gerencie formas de pagamento e faturas através do portal seguro da Stripe.
+                                    </p>
                                 )}
-                            </div>
-
-                            {isSubscriptionReady && !isProUser && (
-                                <div className="rounded-lg bg-muted p-4 space-y-3">
-                                    <p className="text-sm font-medium">Faça upgrade para o Pro:</p>
-                                    <ul className="text-sm text-muted-foreground space-y-1">
-                                        <li>• Quizzes ilimitados</li>
-                                        <li>• Geração com IA ilimitada</li>
-                                        <li>• Relatórios avançados</li>
-                                        <li>• Exportação de Leads (CSV)</li>
-                                        <li>• Remoção da marca d'água</li>
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-
-                        <Button
-                            className="w-full"
-                            variant={isProUser ? "outline" : "default"}
-                            onClick={handleManageSubscription}
-                            disabled={isLoading || !isSubscriptionReady}
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Processando...
-                                </>
-                            ) : !isSubscriptionReady ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Carregando plano...
-                                </>
-                            ) : isProUser ? (
-                                'Gerenciar Assinatura'
-                            ) : (
-                                'Fazer Upgrade para Pro'
-                            )}
-                        </Button>
-
-                        {isProUser && (
-                            <p className="text-xs text-center text-muted-foreground">
-                                Gerencie formas de pagamento e faturas através do portal seguro da Stripe.
-                            </p>
+                            </>
                         )}
                     </CardContent>
                 </Card>

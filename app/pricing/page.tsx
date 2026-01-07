@@ -137,10 +137,13 @@ function FeatureValue({ value, highlight }: { value: string | boolean; highlight
 
 function PricingContent() {
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { subscription, isLoading: subscriptionLoading } = useSubscription(user?.uid);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Consider loading until BOTH auth and subscription are ready
+  const dataLoading = authLoading || subscriptionLoading;
   const isProUser = isPro(subscription);
 
   useEffect(() => {
@@ -217,7 +220,7 @@ function PricingContent() {
                 <CardHeader className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="outline">Grátis</Badge>
-                    {!subscriptionLoading && !isProUser && (
+                    {!dataLoading && !isProUser && (
                       <Badge variant="secondary">Plano atual</Badge>
                     )}
                   </div>
@@ -255,7 +258,9 @@ function PricingContent() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  {!isProUser ? (
+                  {dataLoading ? (
+                    <div className="h-10 w-full bg-muted/50 rounded animate-pulse" />
+                  ) : !isProUser ? (
                     <Button
                       asChild
                       variant="secondary"
@@ -264,13 +269,13 @@ function PricingContent() {
                       <Link href="/dashboard">Continuar no plano gratuito</Link>
                     </Button>
                   ) : (
-                    <div className="h-10" /> // Espaçador para manter simetria visual
+                    <div className="h-10" />
                   )}
                 </CardFooter>
               </Card>
 
               <Card className="relative overflow-hidden border-primary/60 bg-card/70">
-                {!subscriptionLoading && !isProUser && (
+                {!dataLoading && !isProUser && (
                   <div className="absolute right-6 top-6">
                     <div className="flex flex-wrap items-center gap-1 rounded-full border border-border bg-muted/40 p-1 text-xs">
                       <button
@@ -303,7 +308,7 @@ function PricingContent() {
                 <CardHeader className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="secondary">Pro</Badge>
-                    {!subscriptionLoading && isProUser && (
+                    {!dataLoading && isProUser && (
                       <Badge variant="secondary">Plano atual</Badge>
                     )}
                   </div>
@@ -335,11 +340,11 @@ function PricingContent() {
                 <CardFooter className="flex flex-col gap-3">
                   <Button
                     onClick={handleProAction}
-                    disabled={subscriptionLoading || isProcessing}
+                    disabled={dataLoading || isProcessing}
                     className="w-full cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]"
-                    variant={isProUser ? 'outline' : 'default'}
+                    variant={!dataLoading && isProUser ? 'outline' : 'default'}
                   >
-                    {subscriptionLoading ? (
+                    {dataLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                         Carregando plano...
@@ -355,7 +360,9 @@ function PricingContent() {
                       'Fazer upgrade para Pro'
                     )}
                   </Button>
-                  {!isProUser ? (
+                  {dataLoading ? (
+                    <div className="h-4 w-48 mx-auto bg-muted/50 rounded animate-pulse" />
+                  ) : !isProUser ? (
                     <p className="text-xs text-center text-muted-foreground">
                       Pagamento seguro via Stripe. Cancele quando quiser.
                     </p>

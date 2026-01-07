@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TIER_LIMITS, SubscriptionTier } from '@/lib/stripe';
@@ -25,41 +25,80 @@ const DEFAULT_SUBSCRIPTION: UserSubscription = {
 // Hook to get and subscribe to user's subscription status
 export function useSubscription(userId: string | undefined) {
     const [subscription, setSubscription] = useState<UserSubscription>(DEFAULT_SUBSCRIPTION);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingInternal, setIsLoadingInternal] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [loadedUserId, setLoadedUserId] = useState<string | undefined>(undefined);
+    const allowCacheRef = useRef(false);
+    const cachedSubscriptionRef = useRef<UserSubscription | null>(null);
 
     useEffect(() => {
         if (!userId || typeof window === 'undefined' || !db) {
-            setIsLoading(false);
+            setSubscription(DEFAULT_SUBSCRIPTION);
+            setIsLoadingInternal(false);
+            setLoadedUserId(undefined);
             return;
         }
 
-        setIsLoading(true);
+        setIsLoadingInternal(true);
         setError(null);
+        allowCacheRef.current = false;
+        cachedSubscriptionRef.current = null;
+
+        const cacheFallbackTimeout = window.setTimeout(() => {
+            allowCacheRef.current = true;
+            if (cachedSubscriptionRef.current) {
+                setSubscription(cachedSubscriptionRef.current);
+                setLoadedUserId(userId);
+                setIsLoadingInternal(false);
+            }
+        }, 1200);
 
         const userRef = doc(db, 'users', userId);
 
         const unsubscribe = onSnapshot(
             userRef,
+            { includeMetadataChanges: true },
             (snapshot) => {
+                if (snapshot.metadata.fromCache) {
+                    if (snapshot.exists()) {
+                        cachedSubscriptionRef.current = snapshot.data()?.subscription || DEFAULT_SUBSCRIPTION;
+                    } else {
+                        cachedSubscriptionRef.current = DEFAULT_SUBSCRIPTION;
+                    }
+
+                    if (allowCacheRef.current && cachedSubscriptionRef.current) {
+                        setSubscription(cachedSubscriptionRef.current);
+                        setLoadedUserId(userId);
+                        setIsLoadingInternal(false);
+                    }
+                    return;
+                }
+
                 if (snapshot.exists()) {
                     const data = snapshot.data();
-                    setSubscription(data?.subscription || DEFAULT_SUBSCRIPTION);
+                    const nextSubscription = data?.subscription || DEFAULT_SUBSCRIPTION;
+                    setSubscription(nextSubscription);
                 } else {
                     setSubscription(DEFAULT_SUBSCRIPTION);
                 }
-                setIsLoading(false);
+                setLoadedUserId(userId);
+                setIsLoadingInternal(false);
             },
             (err) => {
                 console.error('Error fetching subscription:', err);
                 setError('Failed to load subscription');
-                setIsLoading(false);
+                setLoadedUserId(userId);
+                setIsLoadingInternal(false);
             }
         );
 
-        return () => unsubscribe();
+        return () => {
+            window.clearTimeout(cacheFallbackTimeout);
+            unsubscribe();
+        };
     }, [userId]);
 
+    const isLoading = Boolean(userId) && userId !== loadedUserId ? true : isLoadingInternal;
     return { subscription, isLoading, error };
 }
 

@@ -202,15 +202,21 @@ export function DashboardHeader() {
 
         <Link
           href="/dashboard/account"
-          className="hidden md:flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted"
+          className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted ml-auto md:ml-0"
         >
-          <Avatar className="h-9 w-9">
+          <Avatar className="h-8 w-8 md:h-9 md:w-9">
             <AvatarImage src={user?.photoURL ?? undefined} />
             <AvatarFallback>{user?.email?.[0]?.toUpperCase()}</AvatarFallback>
           </Avatar>
-          <div className="hidden lg:flex items-center gap-2">
-            <span className="text-sm font-medium">{user?.displayName?.split(' ')[0] || 'Conta'}</span>
-            {isProUser && <Badge variant="secondary">Pro</Badge>}
+          <div className="flex items-center gap-2">
+            <span className="hidden lg:inline text-sm font-medium">
+              {user?.displayName?.split(' ')[0] || 'Conta'}
+            </span>
+            {isProUser && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 h-4 md:text-xs md:px-2 md:h-5">
+                Pro
+              </Badge>
+            )}
           </div>
         </Link>
       </div>
