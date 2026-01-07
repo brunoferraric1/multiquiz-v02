@@ -20,9 +20,18 @@ export async function getBrandKit(userId: string): Promise<BrandKit | null> {
   const updatedAt =
     typeof brandKit.updatedAt === 'number'
       ? brandKit.updatedAt
-      : typeof (brandKit.updatedAt as { toMillis?: () => number } | undefined)?.toMillis === 'function'
-        ? (brandKit.updatedAt as { toMillis: () => number }).toMillis()
-        : undefined;
+      : (() => {
+          const u = brandKit.updatedAt as unknown;
+          if (
+            typeof u === 'object' &&
+            u !== null &&
+            'toMillis' in u &&
+            typeof (u as { toMillis?: unknown }).toMillis === 'function'
+          ) {
+            return (u as { toMillis: () => number }).toMillis();
+          }
+          return undefined;
+        })();
 
   return {
     name: typeof brandKit.name === 'string' ? brandKit.name : undefined,
