@@ -22,36 +22,90 @@ const DEFAULT_SUBSCRIPTION: UserSubscription = {
     aiMessagesUsed: 0,
 };
 
+const SUBSCRIPTION_CACHE_PREFIX = 'mq:subscription:';
+const SUBSCRIPTION_CACHE_TTL_MS = 1000 * 60 * 30;
+const NON_PRO_HOLD_WITH_PRO_MS = 4000;
+const NON_PRO_HOLD_DEFAULT_MS = 800;
+
+const readCachedSubscription = (userId: string): UserSubscription | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = window.sessionStorage.getItem(`${SUBSCRIPTION_CACHE_PREFIX}${userId}`);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as { subscription?: UserSubscription; updatedAt?: number };
+        if (!parsed?.subscription || typeof parsed.updatedAt !== 'number') return null;
+        if (Date.now() - parsed.updatedAt > SUBSCRIPTION_CACHE_TTL_MS) return null;
+        if (!isPro(parsed.subscription)) return null;
+        return parsed.subscription;
+    } catch {
+        return null;
+    }
+};
+
+const writeCachedSubscription = (userId: string, subscription: UserSubscription) => {
+    if (typeof window === 'undefined') return;
+    try {
+        window.sessionStorage.setItem(
+            `${SUBSCRIPTION_CACHE_PREFIX}${userId}`,
+            JSON.stringify({ subscription, updatedAt: Date.now() })
+        );
+    } catch {
+        // Ignore storage failures (private mode, quota, etc).
+    }
+};
+
+const clearCachedSubscription = (userId: string) => {
+    if (typeof window === 'undefined') return;
+    try {
+        window.sessionStorage.removeItem(`${SUBSCRIPTION_CACHE_PREFIX}${userId}`);
+    } catch {
+        // Ignore storage failures (private mode, quota, etc).
+    }
+};
+
 // Hook to get and subscribe to user's subscription status
 export function useSubscription(userId: string | undefined) {
     const [subscription, setSubscription] = useState<UserSubscription>(DEFAULT_SUBSCRIPTION);
     const [isLoadingInternal, setIsLoadingInternal] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [loadedUserId, setLoadedUserId] = useState<string | undefined>(undefined);
-    const allowCacheRef = useRef(false);
-    const cachedSubscriptionRef = useRef<UserSubscription | null>(null);
+    const pendingDowngradeRef = useRef<UserSubscription | null>(null);
+    const downgradeTimerRef = useRef<number | null>(null);
+    const hadProRef = useRef(false);
+    const syncAttemptRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (!userId || typeof window === 'undefined' || !db) {
             setSubscription(DEFAULT_SUBSCRIPTION);
             setIsLoadingInternal(false);
             setLoadedUserId(undefined);
+            pendingDowngradeRef.current = null;
+            if (downgradeTimerRef.current) {
+                window.clearTimeout(downgradeTimerRef.current);
+                downgradeTimerRef.current = null;
+            }
+            hadProRef.current = false;
             return;
         }
 
-        setIsLoadingInternal(true);
         setError(null);
-        allowCacheRef.current = false;
-        cachedSubscriptionRef.current = null;
+        pendingDowngradeRef.current = null;
+        if (downgradeTimerRef.current) {
+            window.clearTimeout(downgradeTimerRef.current);
+            downgradeTimerRef.current = null;
+        }
+        hadProRef.current = false;
+        syncAttemptRef.current = null;
 
-        const cacheFallbackTimeout = window.setTimeout(() => {
-            allowCacheRef.current = true;
-            if (cachedSubscriptionRef.current) {
-                setSubscription(cachedSubscriptionRef.current);
-                setLoadedUserId(userId);
-                setIsLoadingInternal(false);
-            }
-        }, 1200);
+        const cachedPro = readCachedSubscription(userId);
+        if (cachedPro) {
+            setSubscription(cachedPro);
+            setLoadedUserId(userId);
+            setIsLoadingInternal(false);
+            hadProRef.current = true;
+        } else {
+            setIsLoadingInternal(true);
+        }
 
         const userRef = doc(db, 'users', userId);
 
@@ -60,29 +114,67 @@ export function useSubscription(userId: string | undefined) {
             { includeMetadataChanges: true },
             (snapshot) => {
                 if (snapshot.metadata.fromCache) {
-                    if (snapshot.exists()) {
-                        cachedSubscriptionRef.current = snapshot.data()?.subscription || DEFAULT_SUBSCRIPTION;
-                    } else {
-                        cachedSubscriptionRef.current = DEFAULT_SUBSCRIPTION;
-                    }
-
-                    if (allowCacheRef.current && cachedSubscriptionRef.current) {
-                        setSubscription(cachedSubscriptionRef.current);
+                    if (!snapshot.exists()) return;
+                    const cached = snapshot.data()?.subscription || DEFAULT_SUBSCRIPTION;
+                    if (isPro(cached)) {
+                        setSubscription(cached);
                         setLoadedUserId(userId);
                         setIsLoadingInternal(false);
+                        hadProRef.current = true;
                     }
                     return;
                 }
 
+                let nextSubscription = DEFAULT_SUBSCRIPTION;
                 if (snapshot.exists()) {
                     const data = snapshot.data();
-                    const nextSubscription = data?.subscription || DEFAULT_SUBSCRIPTION;
-                    setSubscription(nextSubscription);
-                } else {
-                    setSubscription(DEFAULT_SUBSCRIPTION);
+                    nextSubscription = data?.subscription || DEFAULT_SUBSCRIPTION;
                 }
-                setLoadedUserId(userId);
-                setIsLoadingInternal(false);
+
+                if (isPro(nextSubscription)) {
+                    if (downgradeTimerRef.current) {
+                        window.clearTimeout(downgradeTimerRef.current);
+                        downgradeTimerRef.current = null;
+                    }
+                    pendingDowngradeRef.current = null;
+                    setSubscription(nextSubscription);
+                    setLoadedUserId(userId);
+                    setIsLoadingInternal(false);
+                    hadProRef.current = true;
+                    writeCachedSubscription(userId, nextSubscription);
+                    return;
+                }
+
+                const holdMs = hadProRef.current ? NON_PRO_HOLD_WITH_PRO_MS : NON_PRO_HOLD_DEFAULT_MS;
+                pendingDowngradeRef.current = nextSubscription;
+                if (!hadProRef.current) {
+                    setIsLoadingInternal(true);
+                }
+
+                if (hadProRef.current && syncAttemptRef.current !== userId) {
+                    syncAttemptRef.current = userId;
+                    void fetch('/api/stripe/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId }),
+                    }).catch((syncError) => {
+                        console.warn('[useSubscription] Sync failed', syncError);
+                    });
+                }
+
+                if (!downgradeTimerRef.current) {
+                    downgradeTimerRef.current = window.setTimeout(() => {
+                        const pending = pendingDowngradeRef.current;
+                        pendingDowngradeRef.current = null;
+                        downgradeTimerRef.current = null;
+                        if (!pending) return;
+                        setSubscription(pending);
+                        setLoadedUserId(userId);
+                        setIsLoadingInternal(false);
+                        hadProRef.current = false;
+                        clearCachedSubscription(userId);
+                    }, holdMs);
+                }
             },
             (err) => {
                 console.error('Error fetching subscription:', err);
@@ -93,7 +185,11 @@ export function useSubscription(userId: string | undefined) {
         );
 
         return () => {
-            window.clearTimeout(cacheFallbackTimeout);
+            if (downgradeTimerRef.current) {
+                window.clearTimeout(downgradeTimerRef.current);
+                downgradeTimerRef.current = null;
+            }
+            pendingDowngradeRef.current = null;
             unsubscribe();
         };
     }, [userId]);
