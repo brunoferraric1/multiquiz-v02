@@ -56,6 +56,46 @@ function removeUndefinedDeep(obj: any): any {
 }
 
 /**
+ * Check if a URL is a temporary blob URL that shouldn't be persisted
+ */
+function isBlobUrl(url: string | undefined | null): boolean {
+  if (!url) return false;
+  return url.startsWith('blob:');
+}
+
+/**
+ * Sanitize an image URL - returns undefined if it's a blob URL (to avoid persisting temporary URLs)
+ */
+function sanitizeImageUrl(url: string | undefined | null): string | undefined {
+  if (!url) return undefined;
+  if (isBlobUrl(url)) {
+    console.warn('[QuizService] Skipping blob URL, will not persist:', url.substring(0, 50));
+    return undefined;
+  }
+  return url;
+}
+
+/**
+ * Sanitize outcomes array - remove blob URLs from imageUrl fields
+ */
+function sanitizeOutcomes(outcomes: any[]): any[] {
+  return outcomes.map(outcome => ({
+    ...outcome,
+    imageUrl: sanitizeImageUrl(outcome.imageUrl),
+  }));
+}
+
+/**
+ * Sanitize questions array - remove blob URLs from imageUrl fields
+ */
+function sanitizeQuestions(questions: any[]): any[] {
+  return questions.map(question => ({
+    ...question,
+    imageUrl: sanitizeImageUrl(question.imageUrl),
+  }));
+}
+
+/**
  * Migrate base64 images in a quiz to Firebase Storage
  * This runs in the background and updates the Firestore document
  */
@@ -228,8 +268,8 @@ export class QuizService {
       description: quiz.description || '',
       primaryColor: quiz.primaryColor || '#4F46E5',
       brandKitMode: quiz.brandKitMode ?? 'default',
-      questions: quiz.questions || [],
-      outcomes: quiz.outcomes || [],
+      questions: sanitizeQuestions(quiz.questions || []),
+      outcomes: sanitizeOutcomes(quiz.outcomes || []),
       createdAt: quiz.createdAt || now,
       updatedAt: now,
       isPublished: quiz.isPublished || false,
@@ -241,9 +281,10 @@ export class QuizService {
       publishedAt: quiz.publishedAt ?? null,
     };
 
-    // Add optional fields only if they have values
-    if (quiz.coverImageUrl) {
-      quizData.coverImageUrl = quiz.coverImageUrl;
+    // Add optional fields only if they have values AND are not blob URLs
+    const sanitizedCoverUrl = sanitizeImageUrl(quiz.coverImageUrl);
+    if (sanitizedCoverUrl) {
+      quizData.coverImageUrl = sanitizedCoverUrl;
     }
     if (quiz.ctaText) {
       quizData.ctaText = quiz.ctaText;
