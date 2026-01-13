@@ -604,8 +604,11 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       const blob = await compressImageToBlob(file);
       const storagePath = getQuizCoverPath(quiz.id);
       const downloadUrl = await uploadImage(storagePath, blob);
+      // Update both draft state AND quiz store state
       setDraftCoverImageUrl(downloadUrl);
+      updateQuizField('coverImageUrl', downloadUrl);
       URL.revokeObjectURL(previewUrl);
+      console.log('[CoverImage] Upload complete and saved to store:', downloadUrl.substring(0, 60));
     } catch (error) {
       console.error('Error uploading cover image:', error);
       toast.error('Erro ao fazer upload da imagem');
@@ -634,8 +637,11 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       const blob = await compressImageToBlob(file);
       const storagePath = getOutcomeImagePath(quiz.id, activeOutcome.id);
       const downloadUrl = await uploadImage(storagePath, blob);
+      // Update both draft state AND quiz store state
       setDraftOutcomeImageUrl(downloadUrl);
+      updateOutcome(activeOutcome.id, { imageUrl: downloadUrl });
       URL.revokeObjectURL(previewUrl);
+      console.log('[OutcomeImage] Upload complete and saved to store:', downloadUrl.substring(0, 60));
     } catch (error) {
       console.error('Error uploading outcome image:', error);
       toast.error('Erro ao fazer upload da imagem');

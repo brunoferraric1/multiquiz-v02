@@ -23,6 +23,8 @@ interface QuizCardProps {
 
 export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) {
   const router = useRouter();
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
   const handleEdit = () => {
     router.push(`/builder/${quiz.id}`);
@@ -32,15 +34,29 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
     <Card onClick={handleEdit} className="flex flex-col h-full group cursor-pointer hover:shadow-lg transition-shadow">
       <CardHeader className="p-0">
         {/* Cover Image */}
-        <div className="h-32 bg-muted relative shrink-0">
-          {quiz.coverImageUrl ? (
-            <img
-              src={quiz.coverImageUrl}
-              alt={quiz.title}
-              className="w-full h-full object-cover rounded-t-lg"
-            />
+        <div className="h-32 bg-muted relative shrink-0 overflow-hidden rounded-t-lg">
+          {quiz.coverImageUrl && !imageError ? (
+            <>
+              {/* Skeleton loader */}
+              {imageLoading && (
+                <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground/60 animate-spin" />
+                </div>
+              )}
+              <img
+                src={quiz.coverImageUrl}
+                alt={quiz.title}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'
+                  }`}
+                onLoad={() => setImageLoading(false)}
+                onError={() => {
+                  setImageError(true);
+                  setImageLoading(false);
+                }}
+              />
+            </>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground rounded-t-lg">
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
               <span className="text-4xl opacity-20">?</span>
             </div>
           )}
@@ -86,3 +102,4 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
     </Card>
   );
 }
+
