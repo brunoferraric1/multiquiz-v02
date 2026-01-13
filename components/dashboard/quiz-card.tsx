@@ -30,12 +30,17 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
     router.push(`/builder/${quiz.id}`);
   };
 
+  // Add cache-busting param to prevent showing stale cached images
+  const coverImageUrl = quiz.coverImageUrl
+    ? `${quiz.coverImageUrl}${quiz.coverImageUrl.includes('?') ? '&' : '?'}v=${quiz.updatedAt}`
+    : null;
+
   return (
     <Card onClick={handleEdit} className="flex flex-col h-full group cursor-pointer hover:shadow-lg transition-shadow">
       <CardHeader className="p-0">
         {/* Cover Image */}
         <div className="h-32 bg-muted relative shrink-0 overflow-hidden rounded-t-lg">
-          {quiz.coverImageUrl && !imageError ? (
+          {coverImageUrl && !imageError ? (
             <>
               {/* Skeleton loader */}
               {imageLoading && (
@@ -44,7 +49,7 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
                 </div>
               )}
               <img
-                src={quiz.coverImageUrl}
+                src={coverImageUrl}
                 alt={quiz.title}
                 className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'
                   }`}

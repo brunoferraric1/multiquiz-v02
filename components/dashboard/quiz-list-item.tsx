@@ -24,6 +24,11 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
         router.push(`/builder/${quiz.id}`);
     };
 
+    // Add cache-busting param to prevent showing stale cached images
+    const coverImageUrl = quiz.coverImageUrl
+        ? `${quiz.coverImageUrl}${quiz.coverImageUrl.includes('?') ? '&' : '?'}v=${quiz.updatedAt}`
+        : null;
+
     return (
         <div
             className="flex items-center justify-between p-4 bg-card border rounded-lg hover:shadow-sm transition-all group"
@@ -34,7 +39,7 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
             >
                 {/* Thumbnail */}
                 <div className="h-12 w-12 rounded-md bg-muted flex-shrink-0 overflow-hidden relative">
-                    {quiz.coverImageUrl && !imageError ? (
+                    {coverImageUrl && !imageError ? (
                         <>
                             {imageLoading && (
                                 <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
@@ -42,7 +47,7 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
                                 </div>
                             )}
                             <img
-                                src={quiz.coverImageUrl}
+                                src={coverImageUrl}
                                 alt={quiz.title}
                                 className={`h-full w-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'
                                     }`}
