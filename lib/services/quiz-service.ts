@@ -12,9 +12,16 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { BrandKit, Quiz, QuizDraft, QuizSnapshot } from '@/types';
+import type { BrandKit, Quiz, QuizDraft, QuizSnapshot, Question, Outcome } from '@/types';
 import { QuizSchema } from '@/types';
 import { TIER_LIMITS } from '@/lib/stripe';
+import {
+  isBase64DataUrl,
+  migrateBase64ToStorage,
+  getQuizCoverPath,
+  getOutcomeImagePath,
+  getQuestionImagePath,
+} from '@/lib/services/storage-service';
 
 const QUIZZES_COLLECTION = 'quizzes';
 const LIMIT_ERRORS = {
@@ -46,6 +53,101 @@ function removeUndefinedDeep(obj: any): any {
   }
 
   return obj;
+}
+
+/**
+ * Migrate base64 images in a quiz to Firebase Storage
+ * This runs in the background and updates the Firestore document
+ */
+async function migrateQuizImages(quiz: Quiz): Promise<Quiz> {
+  if (!quiz.id) return quiz;
+
+  let hasChanges = false;
+  const updates: Record<string, unknown> = {};
+
+  // Migrate cover image
+  if (isBase64DataUrl(quiz.coverImageUrl)) {
+    console.log('[QuizService] Migrating cover image for quiz:', quiz.id);
+    try {
+      const newUrl = await migrateBase64ToStorage(
+        quiz.coverImageUrl!,
+        getQuizCoverPath(quiz.id)
+      );
+      quiz.coverImageUrl = newUrl;
+      updates.coverImageUrl = newUrl;
+      hasChanges = true;
+    } catch (error) {
+      console.error('[QuizService] Failed to migrate cover image:', error);
+    }
+  }
+
+  // Migrate outcome images
+  if (quiz.outcomes?.length) {
+    const migratedOutcomes = await Promise.all(
+      quiz.outcomes.map(async (outcome) => {
+        if (outcome.id && isBase64DataUrl(outcome.imageUrl)) {
+          console.log('[QuizService] Migrating outcome image:', outcome.id);
+          try {
+            const newUrl = await migrateBase64ToStorage(
+              outcome.imageUrl!,
+              getOutcomeImagePath(quiz.id!, outcome.id)
+            );
+            hasChanges = true;
+            return { ...outcome, imageUrl: newUrl };
+          } catch (error) {
+            console.error('[QuizService] Failed to migrate outcome image:', error);
+          }
+        }
+        return outcome;
+      })
+    );
+    if (hasChanges) {
+      quiz.outcomes = migratedOutcomes as Outcome[];
+      updates.outcomes = migratedOutcomes;
+    }
+  }
+
+  // Migrate question images
+  if (quiz.questions?.length) {
+    let questionsChanged = false;
+    const migratedQuestions = await Promise.all(
+      quiz.questions.map(async (question) => {
+        if (question.id && isBase64DataUrl(question.imageUrl)) {
+          console.log('[QuizService] Migrating question image:', question.id);
+          try {
+            const newUrl = await migrateBase64ToStorage(
+              question.imageUrl!,
+              getQuestionImagePath(quiz.id!, question.id)
+            );
+            questionsChanged = true;
+            return { ...question, imageUrl: newUrl };
+          } catch (error) {
+            console.error('[QuizService] Failed to migrate question image:', error);
+          }
+        }
+        return question;
+      })
+    );
+    if (questionsChanged) {
+      quiz.questions = migratedQuestions as Question[];
+      updates.questions = migratedQuestions;
+      hasChanges = true;
+    }
+  }
+
+  // Save migrated data to Firestore
+  if (hasChanges) {
+    try {
+      const quizRef = doc(db, QUIZZES_COLLECTION, quiz.id);
+      updates.updatedAt = Timestamp.fromMillis(Date.now());
+      await updateDoc(quizRef, updates);
+      console.log('[QuizService] Migration complete for quiz:', quiz.id);
+    } catch (error) {
+      console.error('[QuizService] Failed to save migrated quiz:', error);
+    }
+  }
+
+  return quiz;
 }
 
 export type PublishResult = { status: 'published' } | { status: 'limit-reached' };
@@ -226,7 +328,7 @@ export class QuizService {
         throw new Error('Unauthorized access to unpublished quiz');
       }
 
-      const baseQuiz = {
+      let baseQuiz = {
         ...data,
         id: quizDoc.id,
         createdAt: data.createdAt?.toMillis() || Date.now(),
@@ -240,6 +342,18 @@ export class QuizService {
           ...baseQuiz,
           ...data.publishedVersion,
         };
+      }
+
+      // For draft versions, trigger async migration of base64 images (if any)
+      // Only migrate if user is the owner (client-side storage access requires auth)
+      if (version === 'draft' && userId && data.ownerId === userId) {
+        // Run migration in background - don't block the return
+        migrateQuizImages(baseQuiz).then((migratedQuiz) => {
+          // Note: The returned quiz is already updated in place by migrateQuizImages
+          // The Firestore document is also updated, so next load will have migrated data
+        }).catch((error) => {
+          console.error('[QuizService] Background migration error:', error);
+        });
       }
 
       return baseQuiz;
@@ -356,15 +470,15 @@ export class QuizService {
       const brandKit =
         quiz.brandKitMode === 'custom' && userData?.brandKit?.colors
           ? {
-              name:
-                typeof userData.brandKit.name === 'string' ? userData.brandKit.name : undefined,
-              logoUrl: userData.brandKit.logoUrl ?? null,
-              colors: {
-                primary: userData.brandKit.colors.primary,
-                secondary: userData.brandKit.colors.secondary,
-                accent: userData.brandKit.colors.accent,
-              },
-            }
+            name:
+              typeof userData.brandKit.name === 'string' ? userData.brandKit.name : undefined,
+            logoUrl: userData.brandKit.logoUrl ?? null,
+            colors: {
+              primary: userData.brandKit.colors.primary,
+              secondary: userData.brandKit.colors.secondary,
+              accent: userData.brandKit.colors.accent,
+            },
+          }
           : null;
       const snapshot = this.createSnapshot(quiz, brandKit);
       const cleanedSnapshot = removeUndefinedDeep(snapshot);
