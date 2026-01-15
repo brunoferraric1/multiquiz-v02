@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to get quiz owner from Firestore
+    function isQuizOwner(quizId) {
+      return isAuthenticated() &&
+             firestore.get(/databases/(default)/documents/quizzes/$(quizId)).data.ownerId == request.auth.uid;
+    }
+
+    // Helper function to check if quiz is published
+    function isQuizPublished(quizId) {
+      return firestore.get(/databases/(default)/documents/quizzes/$(quizId)).data.isPublished == true;
+    }
+
+    // User-specific files (brand kit logos, etc.)
+    match /users/{userId}/{allPaths=**} {
+      // Only the owner can read/write their own files
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Quiz images (cover, outcomes, questions)
+    match /quizzes/{quizId}/{allPaths=**} {
+      // Quiz owner can read and write
+      allow read, write: if isQuizOwner(quizId);
+      
+      // Anyone can read images from published quizzes
+      allow read: if isQuizPublished(quizId);
+    }
+  }
+}

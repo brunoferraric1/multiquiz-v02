@@ -68,7 +68,7 @@ function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
-  const { data: quizzes, isLoading: quizzesLoading } = useUserQuizzesQuery(user?.uid);
+  const { data: quizzes, isLoading: quizzesLoading, isFetching } = useUserQuizzesQuery(user?.uid);
   const deleteQuizMutation = useDeleteQuizMutation();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isRedirectingUpgrade, setIsRedirectingUpgrade] = useState(false);
@@ -168,7 +168,8 @@ function DashboardContent() {
     router.push('/builder');
   };
 
-  const showSkeleton = authLoading || quizzesLoading || quizzes === undefined;
+  // Show skeleton during initial load OR when refetching to prevent stale image flicker
+  const showSkeleton = authLoading || quizzesLoading || isFetching || quizzes === undefined;
 
   return (
     <div className="min-h-screen pb-20">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Globe, Lock, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -16,10 +17,17 @@ interface QuizListItemProps {
 
 export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) {
     const router = useRouter();
+    const [imageLoading, setImageLoading] = useState(true);
+    const [imageError, setImageError] = useState(false);
 
     const handleEdit = () => {
         router.push(`/builder/${quiz.id}`);
     };
+
+    // Add cache-busting param to prevent showing stale cached images
+    const coverImageUrl = quiz.coverImageUrl
+        ? `${quiz.coverImageUrl}${quiz.coverImageUrl.includes('?') ? '&' : '?'}v=${quiz.updatedAt}`
+        : null;
 
     return (
         <div
@@ -31,12 +39,25 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
             >
                 {/* Thumbnail */}
                 <div className="h-12 w-12 rounded-md bg-muted flex-shrink-0 overflow-hidden relative">
-                    {quiz.coverImageUrl ? (
-                        <img
-                            src={quiz.coverImageUrl}
-                            alt={quiz.title}
-                            className="h-full w-full object-cover"
-                        />
+                    {coverImageUrl && !imageError ? (
+                        <>
+                            {imageLoading && (
+                                <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
+                                    <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground/60 animate-spin" />
+                                </div>
+                            )}
+                            <img
+                                src={coverImageUrl}
+                                alt={quiz.title}
+                                className={`h-full w-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'
+                                    }`}
+                                onLoad={() => setImageLoading(false)}
+                                onError={() => {
+                                    setImageError(true);
+                                    setImageLoading(false);
+                                }}
+                            />
+                        </>
                     ) : (
                         <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs font-bold">
                             ?
@@ -76,3 +97,4 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
         </div>
     );
 }
+

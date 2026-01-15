@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Question, AnswerOption, Outcome } from '@/types';
-import { compressImage } from '@/lib/utils';
+import { compressImageToBlob } from '@/lib/utils';
+import { uploadImage, getQuestionImagePath } from '@/lib/services/storage-service';
 import {
   Sheet,
   SheetContent,
@@ -47,6 +48,7 @@ interface EditQuestionModalProps {
   questionIndex: number | null;
   totalQuestions: number;
   outcomes: Partial<Outcome>[];
+  quizId?: string;
   onSave: (question: Partial<Question>, destinationIndex?: number) => void;
 }
 
@@ -57,6 +59,7 @@ export function EditQuestionModal({
   questionIndex,
   totalQuestions,
   outcomes,
+  quizId,
   onSave,
 }: EditQuestionModalProps) {
   const [questionText, setQuestionText] = useState(question?.text || '');
@@ -142,17 +145,25 @@ export function EditQuestionModal({
       return;
     }
 
+    // Show instant preview using object URL
+    const previewUrl = URL.createObjectURL(file);
+    setDraftQuestionImageUrl(previewUrl);
+
+    // Upload to Firebase Storage in background
+    if (!quizId || !question?.id) {
+      console.warn('[QuestionImage] No quiz/question ID yet, deferring upload');
+      return;
+    }
+
     try {
-      const compressedDataUrl = await compressImage(file);
-      setDraftQuestionImageUrl(compressedDataUrl);
+      const blob = await compressImageToBlob(file);
+      const storagePath = getQuestionImagePath(quizId, question.id);
+      const downloadUrl = await uploadImage(storagePath, blob);
+      setDraftQuestionImageUrl(downloadUrl);
+      URL.revokeObjectURL(previewUrl);
     } catch (error) {
-      console.error('Error compressing question image:', error);
-      // Fallback to original file if compression fails
-      const reader = new FileReader();
-      reader.onload = () => {
-        setDraftQuestionImageUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      console.error('Error uploading question image:', error);
+      toast.error('Erro ao fazer upload da imagem');
     }
   };
 

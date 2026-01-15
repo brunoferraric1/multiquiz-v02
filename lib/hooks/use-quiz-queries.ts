@@ -17,7 +17,8 @@ export function useUserQuizzesQuery(userId: string | undefined) {
     queryKey: ['quizzes', userId],
     queryFn: () => (userId ? QuizService.getUserQuizzes(userId) : []),
     enabled: !!userId,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 0, // Always refetch to prevent stale image cache issues
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 }
 

@@ -26,7 +26,8 @@ import { toast } from 'sonner';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQuizBuilderStore } from '@/store/quiz-builder-store';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
-import { cn, compressImage } from '@/lib/utils';
+import { cn, compressImageToBlob } from '@/lib/utils';
+import { uploadImage, getQuizCoverPath, getOutcomeImagePath, getBrandKitLogoPath } from '@/lib/services/storage-service';
 import type { BrandKit, BrandKitColors, BrandKitMode, Outcome, Question } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -147,7 +148,7 @@ function stableStringify(value: unknown): string {
 export default function BuilderContent({ isEditMode = false }: { isEditMode?: boolean }) {
   const { user } = useAuth();
   const router = useRouter();
-  
+
   // Store hooks - must be at top to be available for other hooks/refs
   const quiz = useQuizBuilderStore((state) => state.quiz);
   const updateQuizField = useQuizBuilderStore((state) => state.updateQuizField);
@@ -589,17 +590,28 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       return;
     }
 
+    // Show instant preview using object URL
+    const previewUrl = URL.createObjectURL(file);
+    setDraftCoverImageUrl(previewUrl);
+
+    // Upload to Firebase Storage in background
+    if (!quiz.id) {
+      console.warn('[CoverImage] No quiz ID yet, deferring upload');
+      return;
+    }
+
     try {
-      const compressedDataUrl = await compressImage(file);
-      setDraftCoverImageUrl(compressedDataUrl);
+      const blob = await compressImageToBlob(file);
+      const storagePath = getQuizCoverPath(quiz.id);
+      const downloadUrl = await uploadImage(storagePath, blob);
+      // Update both draft state AND quiz store state
+      setDraftCoverImageUrl(downloadUrl);
+      updateQuizField('coverImageUrl', downloadUrl);
+      URL.revokeObjectURL(previewUrl);
+      console.log('[CoverImage] Upload complete and saved to store:', downloadUrl.substring(0, 60));
     } catch (error) {
-      console.error('Error compressing cover image:', error);
-      // Fallback to original file if compression fails
-      const reader = new FileReader();
-      reader.onload = () => {
-        setDraftCoverImageUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      console.error('Error uploading cover image:', error);
+      toast.error('Erro ao fazer upload da imagem');
     }
   };
 
@@ -611,17 +623,28 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       return;
     }
 
+    // Show instant preview using object URL
+    const previewUrl = URL.createObjectURL(file);
+    setDraftOutcomeImageUrl(previewUrl);
+
+    // Upload to Firebase Storage in background
+    if (!quiz.id || !activeOutcome?.id) {
+      console.warn('[OutcomeImage] No quiz/outcome ID yet, deferring upload');
+      return;
+    }
+
     try {
-      const compressedDataUrl = await compressImage(file);
-      setDraftOutcomeImageUrl(compressedDataUrl);
+      const blob = await compressImageToBlob(file);
+      const storagePath = getOutcomeImagePath(quiz.id, activeOutcome.id);
+      const downloadUrl = await uploadImage(storagePath, blob);
+      // Update both draft state AND quiz store state
+      setDraftOutcomeImageUrl(downloadUrl);
+      updateOutcome(activeOutcome.id, { imageUrl: downloadUrl });
+      URL.revokeObjectURL(previewUrl);
+      console.log('[OutcomeImage] Upload complete and saved to store:', downloadUrl.substring(0, 60));
     } catch (error) {
-      console.error('Error compressing outcome image:', error);
-      // Fallback to original file if compression fails
-      const reader = new FileReader();
-      reader.onload = () => {
-        setDraftOutcomeImageUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      console.error('Error uploading outcome image:', error);
+      toast.error('Erro ao fazer upload da imagem');
     }
   };
 
@@ -894,16 +917,25 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
       return;
     }
 
+    // Show instant preview using object URL
+    const previewUrl = URL.createObjectURL(file);
+    setBrandKitLogoPreview(previewUrl);
+
+    // Upload to Firebase Storage in background
+    if (!user?.uid) {
+      console.warn('[BrandKitLogo] No user ID, deferring upload');
+      return;
+    }
+
     try {
-      const compressedDataUrl = await compressImage(file, 800, 800, 0.8);
-      setBrandKitLogoPreview(compressedDataUrl);
+      const blob = await compressImageToBlob(file, 800, 800, 0.8);
+      const storagePath = getBrandKitLogoPath(user.uid);
+      const downloadUrl = await uploadImage(storagePath, blob);
+      setBrandKitLogoPreview(downloadUrl);
+      URL.revokeObjectURL(previewUrl);
     } catch (error) {
-      console.error('Error compressing brand kit logo:', error);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setBrandKitLogoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      console.error('Error uploading brand kit logo:', error);
+      toast.error('Erro ao fazer upload do logo');
     }
   };
 
@@ -1351,20 +1383,20 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
               <div className="relative">
                 {/* Arrow pointing to right */}
                 <svg className="absolute -right-24 top-8 w-24 h-24 text-white transform rotate-12" fill="none" stroke="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none">
-                   <path 
-                     strokeWidth="2" 
-                     strokeLinecap="round" 
-                     strokeLinejoin="round" 
-                     d="M10,50 Q40,20 90,50 M80,35 L90,50 L75,60"
-                     className="animate-pulse"
-                   />
+                  <path
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M10,50 Q40,20 90,50 M80,35 L90,50 L75,60"
+                    className="animate-pulse"
+                  />
                 </svg>
-                
+
                 <h3 className="text-xl font-bold mb-2">Edite tudo por aqui!</h3>
                 <p className="text-gray-200 leading-relaxed">
                   Você pode continuar conversando com a IA ou clicar nos cards ao lado para fazer ajustes manuais finos em textos, imagens e opções.
                 </p>
-                <Button 
+                <Button
                   className="mt-4 bg-white text-black hover:bg-gray-100"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1385,7 +1417,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
                 <p className="text-lg font-medium mb-4 text-gray-100">
                   Toque em <span className="font-bold text-white">Editor</span> para ver e ajustar o que a IA criou
                 </p>
-                <Button 
+                <Button
                   size="sm"
                   className="mt-2 bg-white/20 hover:bg-white/30 text-white backdrop-blur-md border border-white/40"
                   onClick={(e) => {
@@ -1429,22 +1461,22 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             {showOnboarding && (
               <div className="absolute inset-0 z-50 rounded-full ring-4 ring-white ring-offset-4 ring-offset-black/60 pointer-events-none" />
             )}
-            
+
             {mobileViewOptions.map((option) => {
               const Icon = option.icon;
               const isActive = mobileView === option.id;
               // Highlight specifically the Editor tab trigger when onboarding is active
               const isOnboardingTarget = showOnboarding && option.id === 'editor';
-              
+
               return (
                 <button
                   key={option.id}
                   type="button"
                   onClick={() => {
-                     setMobileView(option.id);
-                     if (showOnboarding && option.id === 'editor') {
-                       handleDismissOnboarding();
-                     }
+                    setMobileView(option.id);
+                    if (showOnboarding && option.id === 'editor') {
+                      handleDismissOnboarding();
+                    }
                   }}
                   className={cn(
                     'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors cursor-[var(--cursor-interactive)] relative',
@@ -1821,6 +1853,7 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
           questionIndex={editingQuestionIndex >= 0 ? editingQuestionIndex : null}
           totalQuestions={questions.length}
           outcomes={outcomes}
+          quizId={quiz.id}
           onSave={handleQuestionSave}
         />
 
@@ -2023,9 +2056,9 @@ export default function BuilderContent({ isEditMode = false }: { isEditMode?: bo
             clearPendingPublishPromises(true);
           }
         }}
-          >
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
               <span>Botão sem URL (link)</span>
