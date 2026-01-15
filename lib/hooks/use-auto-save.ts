@@ -22,6 +22,8 @@ export function useAutoSave({
   onLimitError,
   isNewQuiz = false,
 }: UseAutoSaveOptions) {
+  // Use shorter debounce for new quizzes to ensure first save happens quickly
+  const effectiveDebounceMs = isNewQuiz ? Math.min(debounceMs, 5000) : debounceMs;
   const queryClient = useQueryClient();
   const quiz = useQuizBuilderStore((state) => state.quiz);
   const chatHistory = useQuizBuilderStore((state) => state.chatHistory);
@@ -45,7 +47,9 @@ export function useAutoSave({
     }
   }, [quiz.id, quiz.coverImageUrl]);
 
-  const saveToFirestore = useCallback(async () => {
+  const saveToFirestore = useCallback(async (options?: { skipGuard?: boolean }) => {
+    const { skipGuard = false } = options || {};
+
     if (!userId) {
       console.log('Auto-save skipped: missing userId');
       return;
@@ -64,7 +68,8 @@ export function useAutoSave({
     }
 
     // Prevent saving default/invalid state (e.g., after Fast Refresh reset)
-    if (!currentQuiz.title && currentQuiz.questions?.length === 0 && currentQuiz.outcomes?.length === 0) {
+    // Skip this check if explicitly requested (e.g., user clicking "Voltar" button)
+    if (!skipGuard && !currentQuiz.title && currentQuiz.questions?.length === 0 && currentQuiz.outcomes?.length === 0) {
       console.log('Auto-save skipped: quiz appears to be in default/uninitialized state');
       return;
     }
@@ -174,7 +179,7 @@ export function useAutoSave({
     // Set new timeout for debounced save
     timeoutRef.current = setTimeout(() => {
       saveToFirestore();
-    }, debounceMs);
+    }, effectiveDebounceMs);
 
     // Cleanup
     return () => {
@@ -182,7 +187,7 @@ export function useAutoSave({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [quiz, chatHistory, enabled, userId, debounceMs, saveToFirestore]);
+  }, [quiz, chatHistory, enabled, userId, effectiveDebounceMs, saveToFirestore]);
 
   // Immediate save when cover image changes to a NEW Unsplash URL (important user action)
   useEffect(() => {
@@ -228,8 +233,8 @@ export function useAutoSave({
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      // Force immediate save (best effort)
-      saveToFirestoreRef.current();
+      // Force immediate save (best effort) - skip guard since user is leaving
+      saveToFirestoreRef.current({ skipGuard: true });
     };
   }, []);
 
@@ -240,7 +245,8 @@ export function useAutoSave({
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      await saveToFirestore();
+      // Skip guard for explicit user actions (e.g., clicking "Voltar")
+      await saveToFirestore({ skipGuard: true });
     },
     cancelPendingSave: () => {
       if (timeoutRef.current) {
