@@ -1513,26 +1513,53 @@ export default function PrototypePage() {
       )}
 
       {/* ADD BLOCK SHEET */}
-      {isAddBlockSheetOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsAddBlockSheetOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Adicionar bloco</h3>
-            <div className="grid grid-cols-4 gap-3">
-              {availableBlocksPerType[activeStep.type === 'result' ? 'result' : activeStep.type].map(type => (
-                <button
-                  key={type}
-                  onClick={() => addBlock(type)}
-                  className="p-3 border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 text-center transition-all"
-                >
-                  <span className="text-xl mb-1 block">{blockIcons[type]}</span>
-                  <span className="text-xs text-gray-700">{blockLabels[type]}</span>
-                </button>
-              ))}
+      {isAddBlockSheetOpen && (() => {
+        // Check which blocks should be disabled
+        const hasOptionsBlock = currentBlocks.some(b => b.type === 'options');
+        const allBlockTypes: BlockType[] = ['text', 'media', 'options', 'fields', 'price', 'button', 'banner', 'list'];
+
+        const isBlockDisabled = (type: BlockType): boolean => {
+          // Options: only one allowed per step (quiz logic conflict)
+          if (type === 'options' && hasOptionsBlock) return true;
+          return false;
+        };
+
+        const getDisabledReason = (type: BlockType): string | null => {
+          if (type === 'options' && hasOptionsBlock) return 'Já existe um bloco de opções';
+          return null;
+        };
+
+        return (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setIsAddBlockSheetOpen(false)} />
+            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Adicionar bloco</h3>
+              <div className="grid grid-cols-4 gap-3">
+                {allBlockTypes.map(type => {
+                  const disabled = isBlockDisabled(type);
+                  const reason = getDisabledReason(type);
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => !disabled && addBlock(type)}
+                      disabled={disabled}
+                      title={reason || blockLabels[type]}
+                      className={`p-3 border-2 rounded-xl text-center transition-all ${
+                        disabled
+                          ? 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-50'
+                          : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50'
+                      }`}
+                    >
+                      <span className="text-xl mb-1 block">{blockIcons[type]}</span>
+                      <span className={`text-xs ${disabled ? 'text-gray-400' : 'text-gray-700'}`}>{blockLabels[type]}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* BRAND KIT MODAL */}
       {isBrandKitOpen && (
