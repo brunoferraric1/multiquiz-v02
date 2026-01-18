@@ -322,6 +322,14 @@ export default function PrototypePage() {
   };
 
   const addBlock = (type: BlockType) => {
+    // Button defaults vary by step type
+    const getButtonDefault = (): ButtonConfig => {
+      if (activeStep.type === 'result') {
+        return { text: 'Ver mais', action: 'url', url: '' };
+      }
+      return { text: 'Continuar', action: 'next_step' };
+    };
+
     const defaultConfigs: Record<BlockType, BlockConfig> = {
       header: { title: 'Título', description: '' } as HeaderConfig,
       text: { content: '' } as TextConfig,
@@ -329,7 +337,7 @@ export default function PrototypePage() {
       options: { items: ['Opção 1', 'Opção 2'], selectionType: 'single' } as OptionsConfig,
       fields: { items: [{ id: `f-${Date.now()}`, label: 'Novo campo', type: 'text', placeholder: '', required: false }] } as FieldsConfig,
       price: { productTitle: 'Produto', value: 'R$ 0,00', highlight: false } as PriceConfig,
-      button: { text: 'Continuar', action: 'next_step' } as ButtonConfig,
+      button: getButtonDefault(),
       banner: { urgency: 'info', text: 'Mensagem importante', emoji: '💡' } as BannerConfig,
       list: { items: [{ id: `l-${Date.now()}`, emoji: '✓', text: 'Item da lista' }] } as ListConfig,
     };
@@ -1058,6 +1066,9 @@ export default function PrototypePage() {
 
       case 'button': {
         const config = block.config as ButtonConfig;
+        const isIntro = activeStep.type === 'intro';
+        const isResult = activeStep.type === 'result';
+
         return (
           <div className="space-y-4">
             <div>
@@ -1069,24 +1080,20 @@ export default function PrototypePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
               />
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Ação</label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => updateBlockConfig(block.id, { action: 'next_step' })}
-                  className={`flex-1 py-2 px-3 rounded text-sm font-medium ${config.action === 'next_step' ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' : 'bg-gray-100 text-gray-600 border-2 border-transparent'}`}
-                >
-                  → Próxima
-                </button>
-                <button
-                  onClick={() => updateBlockConfig(block.id, { action: 'url' })}
-                  className={`flex-1 py-2 px-3 rounded text-sm font-medium ${config.action === 'url' ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' : 'bg-gray-100 text-gray-600 border-2 border-transparent'}`}
-                >
-                  🔗 URL
-                </button>
+
+            {/* Intro: only next_step (no URL option) */}
+            {isIntro && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">→ Próxima etapa</span>
+                  <br />
+                  <span className="text-xs text-gray-500">O botão avança para a primeira pergunta</span>
+                </p>
               </div>
-            </div>
-            {config.action === 'url' && (
+            )}
+
+            {/* Result: only URL option */}
+            {isResult && (
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">URL de destino</label>
                 <input
@@ -1096,7 +1103,43 @@ export default function PrototypePage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
                   placeholder="https://..."
                 />
+                <p className="text-xs text-gray-500 mt-1">O botão direciona para esta URL</p>
               </div>
+            )}
+
+            {/* Other steps: show both options */}
+            {!isIntro && !isResult && (
+              <>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Ação</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updateBlockConfig(block.id, { action: 'next_step' })}
+                      className={`flex-1 py-2 px-3 rounded text-sm font-medium ${config.action === 'next_step' ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' : 'bg-gray-100 text-gray-600 border-2 border-transparent'}`}
+                    >
+                      → Próxima
+                    </button>
+                    <button
+                      onClick={() => updateBlockConfig(block.id, { action: 'url' })}
+                      className={`flex-1 py-2 px-3 rounded text-sm font-medium ${config.action === 'url' ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' : 'bg-gray-100 text-gray-600 border-2 border-transparent'}`}
+                    >
+                      🔗 URL
+                    </button>
+                  </div>
+                </div>
+                {config.action === 'url' && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">URL de destino</label>
+                    <input
+                      type="text"
+                      value={config.url || ''}
+                      onChange={(e) => updateBlockConfig(block.id, { url: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
+                      placeholder="https://..."
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
         );
