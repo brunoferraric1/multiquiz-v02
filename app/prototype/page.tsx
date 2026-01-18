@@ -112,10 +112,10 @@ const createBlock = (type: BlockType, config: BlockConfig, enabled = true): Bloc
 const blockIcons: Record<BlockType, string> = {
   text: '📝',
   media: '🖼',
-  options: '☰',
+  options: '🔘',
   fields: '📋',
   price: '💰',
-  button: '🔘',
+  button: '👆',
   banner: '⚡',
   list: '📌',
 };
@@ -1240,7 +1240,15 @@ export default function PrototypePage() {
           </div>
 
           {/* Preview content */}
-          <div className="flex-1 flex items-center justify-center p-4 pt-20 overflow-auto">
+          <div
+            className="flex-1 flex items-center justify-center p-4 pt-20 overflow-auto"
+            onClick={(e) => {
+              // Deselect block when clicking on gray background (not the preview card)
+              if (e.target === e.currentTarget) {
+                setSelectedBlockId(null);
+              }
+            }}
+          >
             <div className={`bg-white rounded-2xl shadow-lg ${previewDevice === 'mobile' ? 'w-[375px]' : 'w-[600px]'} max-h-full overflow-y-auto`}>
               {/* Header with back button and progress bar */}
               {(activeStep.settings.showProgress || activeStep.settings.allowBack) && (
