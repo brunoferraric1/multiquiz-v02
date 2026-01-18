@@ -143,28 +143,7 @@ const availableBlocksPerType: Record<StepType, BlockType[]> = {
 // INITIAL DATA
 // ============================================
 
-const initialOutcomes: Outcome[] = [
-  {
-    id: 'o1',
-    name: 'Pele Radiante',
-    blocks: [
-      createBlock('text', { title: 'Pele Radiante', description: 'O resultado ideal para você!' } as TextConfig),
-      createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
-      createBlock('price', { productTitle: 'Kit Hidratação', value: 'R$ 149,90', prefix: '20% off', suffix: 'à vista', highlight: true, highlightText: 'RECOMENDADO' } as PriceConfig),
-      createBlock('button', { text: 'Comprar agora', action: 'url', url: 'https://exemplo.com/kit' } as ButtonConfig),
-    ]
-  },
-  {
-    id: 'o2',
-    name: 'Pele Equilibrada',
-    blocks: [
-      createBlock('text', { title: 'Pele Equilibrada', description: 'Controle perfeito!' } as TextConfig),
-      createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
-      createBlock('price', { productTitle: 'Kit Controle', value: 'R$ 99,90', suffix: 'à vista', highlight: false } as PriceConfig),
-      createBlock('button', { text: 'Ver produto', action: 'url', url: '' } as ButtonConfig),
-    ]
-  },
-];
+const initialOutcomes: Outcome[] = [];
 
 const defaultStepSettings: StepSettings = {
   showProgress: true,
@@ -238,7 +217,7 @@ export default function PrototypePage() {
   const [steps, setSteps] = useState<Step[]>(initialSteps);
   const [outcomes, setOutcomes] = useState<Outcome[]>(initialOutcomes);
   const [activeStepId, setActiveStepId] = useState('intro');
-  const [selectedOutcomeId, setSelectedOutcomeId] = useState('o1');
+  const [selectedOutcomeId, setSelectedOutcomeId] = useState<string | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [isAddStepSheetOpen, setIsAddStepSheetOpen] = useState(false);
@@ -250,8 +229,8 @@ export default function PrototypePage() {
   const [editingOutcomeName, setEditingOutcomeName] = useState(false);
 
   const activeStep = steps.find(s => s.id === activeStepId) || steps[0];
-  const selectedOutcome = outcomes.find(o => o.id === selectedOutcomeId) || outcomes[0];
-  const currentBlocks = activeStep.type === 'result' ? selectedOutcome.blocks : activeStep.blocks;
+  const selectedOutcome = selectedOutcomeId ? outcomes.find(o => o.id === selectedOutcomeId) : outcomes[0];
+  const currentBlocks = activeStep.type === 'result' ? (selectedOutcome?.blocks || []) : activeStep.blocks;
   const selectedBlock = currentBlocks.find(b => b.id === selectedBlockId) || null;
 
   // ============================================
@@ -266,6 +245,26 @@ export default function PrototypePage() {
   };
 
   const handleOutcomeChange = (outcomeId: string) => {
+    // If a block is selected, find the equivalent block in the new outcome
+    if (selectedBlockId && activeStep.type === 'result') {
+      const currentOutcome = outcomes.find(o => o.id === selectedOutcomeId);
+      const newOutcome = outcomes.find(o => o.id === outcomeId);
+
+      if (currentOutcome && newOutcome) {
+        const currentBlockIndex = currentOutcome.blocks.findIndex(b => b.id === selectedBlockId);
+        const currentBlock = currentOutcome.blocks[currentBlockIndex];
+
+        // Find equivalent block in new outcome (same index and type)
+        if (currentBlockIndex !== -1 && newOutcome.blocks[currentBlockIndex]?.type === currentBlock?.type) {
+          setSelectedOutcomeId(outcomeId);
+          setSelectedBlockId(newOutcome.blocks[currentBlockIndex].id);
+          setEditingOutcomeName(false);
+          return;
+        }
+      }
+    }
+
+    // Default behavior: deselect block
     setSelectedOutcomeId(outcomeId);
     setSelectedBlockId(null);
     setEditingOutcomeName(false);
@@ -273,6 +272,7 @@ export default function PrototypePage() {
 
   const updateBlockConfig = (blockId: string, configUpdates: Partial<BlockConfig>) => {
     if (activeStep.type === 'result') {
+      // Apply only to selected outcome (content is per-outcome)
       setOutcomes(outcomes.map(o => {
         if (o.id !== selectedOutcomeId) return o;
         return {
@@ -296,13 +296,14 @@ export default function PrototypePage() {
     if (!block) return;
 
     if (activeStep.type === 'result') {
-      setOutcomes(outcomes.map(o => {
-        if (o.id !== selectedOutcomeId) return o;
-        return {
-          ...o,
-          blocks: o.blocks.map(b => b.id === blockId ? { ...b, enabled: !b.enabled } : b)
-        };
-      }));
+      // Toggle affects ALL outcomes (structure is shared)
+      const blockIndex = selectedOutcome?.blocks.findIndex(b => b.id === blockId) ?? -1;
+      if (blockIndex === -1) return;
+
+      setOutcomes(outcomes.map(o => ({
+        ...o,
+        blocks: o.blocks.map((b, i) => i === blockIndex ? { ...b, enabled: !block.enabled } : b)
+      })));
     } else {
       setSteps(steps.map(s => {
         if (s.id !== activeStepId) return s;
@@ -326,29 +327,46 @@ export default function PrototypePage() {
       list: { items: [{ id: `l-${Date.now()}`, emoji: '✓', text: 'Item da lista' }] } as ListConfig,
     };
 
-    const newBlock = createBlock(type, defaultConfigs[type]);
-
     if (activeStep.type === 'result') {
+      // Add block to ALL outcomes (structure is shared, each gets its own block instance with same content)
+      const newBlockIds: Record<string, string> = {};
       setOutcomes(outcomes.map(o => {
-        if (o.id !== selectedOutcomeId) return o;
+        const newBlock = createBlock(type, { ...defaultConfigs[type] });
+        newBlockIds[o.id] = newBlock.id;
         return { ...o, blocks: [...o.blocks, newBlock] };
       }));
+      // Select the block in the current outcome (use timeout to ensure state is updated)
+      if (selectedOutcomeId && outcomes.length > 0) {
+        const currentOutcomeBlocks = outcomes.find(o => o.id === selectedOutcomeId)?.blocks || [];
+        // Will select the last block (newly added) after re-render
+        setTimeout(() => {
+          const updatedOutcome = outcomes.find(o => o.id === selectedOutcomeId);
+          if (updatedOutcome && updatedOutcome.blocks.length > 0) {
+            setSelectedBlockId(updatedOutcome.blocks[updatedOutcome.blocks.length - 1]?.id || null);
+          }
+        }, 0);
+      }
     } else {
+      const newBlock = createBlock(type, defaultConfigs[type]);
       setSteps(steps.map(s => {
         if (s.id !== activeStepId) return s;
         return { ...s, blocks: [...s.blocks, newBlock] };
       }));
+      setSelectedBlockId(newBlock.id);
     }
     setIsAddBlockSheetOpen(false);
-    setSelectedBlockId(newBlock.id);
   };
 
   const removeBlock = (blockId: string) => {
     if (activeStep.type === 'result') {
-      setOutcomes(outcomes.map(o => {
-        if (o.id !== selectedOutcomeId) return o;
-        return { ...o, blocks: o.blocks.filter(b => b.id !== blockId) };
-      }));
+      // Remove from ALL outcomes (structure is shared) - remove by index position
+      const blockIndex = selectedOutcome?.blocks.findIndex(b => b.id === blockId) ?? -1;
+      if (blockIndex === -1) return;
+
+      setOutcomes(outcomes.map(o => ({
+        ...o,
+        blocks: o.blocks.filter((_, i) => i !== blockIndex)
+      })));
     } else {
       setSteps(steps.map(s => {
         if (s.id !== activeStepId) return s;
@@ -366,11 +384,18 @@ export default function PrototypePage() {
     if (direction === 'down' && index === blocks.length - 1) return;
 
     const newIndex = direction === 'up' ? index - 1 : index + 1;
-    [blocks[index], blocks[newIndex]] = [blocks[newIndex], blocks[index]];
 
     if (activeStep.type === 'result') {
-      setOutcomes(outcomes.map(o => o.id === selectedOutcomeId ? { ...o, blocks } : o));
+      // Move in ALL outcomes (structure is shared)
+      setOutcomes(outcomes.map(o => {
+        const outcomeBlocks = [...o.blocks];
+        if (outcomeBlocks.length > Math.max(index, newIndex)) {
+          [outcomeBlocks[index], outcomeBlocks[newIndex]] = [outcomeBlocks[newIndex], outcomeBlocks[index]];
+        }
+        return { ...o, blocks: outcomeBlocks };
+      }));
     } else {
+      [blocks[index], blocks[newIndex]] = [blocks[newIndex], blocks[index]];
       setSteps(steps.map(s => s.id === activeStepId ? { ...s, blocks } : s));
     }
   };
@@ -443,14 +468,17 @@ export default function PrototypePage() {
   const addOutcome = () => {
     const newOutcome: Outcome = {
       id: `o-${Date.now()}`,
-      name: `Resultado ${outcomes.length + 1}`,
+      name: '', // Empty name, will show "Resultado X" as fallback
       blocks: [
-        createBlock('header', { title: 'Novo Resultado', subtitle: 'Descrição do resultado' } as HeaderConfig),
+        createBlock('text', { title: '', description: '' } as TextConfig),
+        createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
         createBlock('button', { text: 'Ver mais', action: 'url', url: '' } as ButtonConfig),
       ]
     };
-    setOutcomes([...outcomes, newOutcome]);
+    setOutcomes(prev => [...prev, newOutcome]);
     setSelectedOutcomeId(newOutcome.id);
+    setSelectedBlockId(null);
+    setEditingOutcomeName(true); // Auto-activate name editing for new outcome
   };
 
   const deleteOutcome = (id: string) => {
@@ -501,6 +529,11 @@ export default function PrototypePage() {
     ));
   };
 
+  // Helper to get outcome display name (handles empty names)
+  const getOutcomeDisplayName = (outcome: Outcome, index: number): string => {
+    return outcome.name.trim() || `Resultado ${index + 1}`;
+  };
+
   // ============================================
   // RENDER BLOCK IN PREVIEW
   // ============================================
@@ -519,7 +552,11 @@ export default function PrototypePage() {
           <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-3 text-center`}>
             {config.title && <h2 className="text-xl font-bold text-gray-900">{config.title}</h2>}
             {config.description && <p className="text-gray-600 mt-1">{config.description}</p>}
-            {!hasContent && <p className="text-gray-400 italic">Clique para adicionar texto</p>}
+            {!hasContent && (
+              <div className="border-2 border-dashed border-amber-300 bg-amber-50 rounded-lg p-3">
+                <p className="text-amber-600 text-sm">⚠️ Texto não configurado</p>
+              </div>
+            )}
           </div>
         );
       }
@@ -528,17 +565,20 @@ export default function PrototypePage() {
         const config = block.config as MediaConfig;
         return (
           <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-2`}>
-            <div className="h-40 bg-gray-100 rounded-lg flex items-center justify-center">
-              {config.url ? (
-                config.type === 'video' ? (
+            {config.url ? (
+              <div className="h-40 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                {config.type === 'video' ? (
                   <div className="text-gray-400">🎬 Vídeo</div>
                 ) : (
                   <img src={config.url} alt="" className="w-full h-full object-cover rounded-lg" />
-                )
-              ) : (
-                <span className="text-gray-400">{config.type === 'video' ? '🎬 Adicionar vídeo' : '🖼 Adicionar imagem'}</span>
-              )}
-            </div>
+                )}
+              </div>
+            ) : (
+              <div className="h-40 border-2 border-dashed border-amber-300 bg-amber-50 rounded-lg flex flex-col items-center justify-center">
+                <span className="text-2xl mb-1 opacity-50">{config.type === 'video' ? '🎬' : '🖼'}</span>
+                <p className="text-amber-600 text-sm">⚠️ {config.type === 'video' ? 'Vídeo' : 'Imagem'} não configurado</p>
+              </div>
+            )}
           </div>
         );
       }
@@ -603,11 +643,18 @@ export default function PrototypePage() {
 
       case 'button': {
         const config = block.config as ButtonConfig;
+        const hasText = config.text && config.text.trim();
         return (
           <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-2`}>
-            <button className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium pointer-events-none">
-              {config.text}
-            </button>
+            {hasText ? (
+              <button className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium pointer-events-none">
+                {config.text}
+              </button>
+            ) : (
+              <div className="w-full py-3 border-2 border-dashed border-amber-300 bg-amber-50 rounded-lg text-center">
+                <p className="text-amber-600 text-sm">⚠️ Botão sem texto</p>
+              </div>
+            )}
           </div>
         );
       }
@@ -1193,7 +1240,7 @@ export default function PrototypePage() {
 
         {/* PREVIEW */}
         <main className="flex-1 flex flex-col bg-gray-50 overflow-hidden relative">
-          {/* Floating controls */}
+          {/* Floating controls - device toggle */}
           <div className="absolute top-4 left-4 z-10 flex items-center gap-1 bg-white rounded-lg shadow-md p-1">
             <button
               onClick={() => setPreviewDevice('mobile')}
@@ -1214,17 +1261,6 @@ export default function PrototypePage() {
                 <line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
             </button>
-            {activeStep.type === 'result' && (
-              <select
-                value={selectedOutcomeId}
-                onChange={(e) => handleOutcomeChange(e.target.value)}
-                className="ml-1 text-sm border border-gray-200 rounded-md px-2 py-2 bg-white"
-              >
-                {outcomes.map(o => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
-            )}
           </div>
 
           <div className="absolute top-4 right-4 z-10">
@@ -1241,7 +1277,7 @@ export default function PrototypePage() {
 
           {/* Preview content */}
           <div
-            className="flex-1 flex items-center justify-center p-4 pt-20 overflow-auto"
+            className="flex-1 flex flex-col items-center justify-center p-4 pt-20 overflow-auto"
             onClick={(e) => {
               // Deselect block when clicking on gray background (not the preview card)
               if (e.target === e.currentTarget) {
@@ -1249,6 +1285,22 @@ export default function PrototypePage() {
               }
             }}
           >
+            {/* Result selector - only shown on result step when there are outcomes */}
+            {activeStep.type === 'result' && outcomes.length > 0 && (
+              <div className="flex items-center gap-2 mb-4 bg-white rounded-lg shadow-sm px-4 py-2">
+                <span className="text-sm text-gray-600 font-medium">Resultado:</span>
+                <select
+                  value={selectedOutcomeId || ''}
+                  onChange={(e) => handleOutcomeChange(e.target.value)}
+                  className="text-sm font-medium text-gray-900 border border-gray-200 rounded-md px-3 py-1.5 bg-white hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {outcomes.map((o, index) => (
+                    <option key={o.id} value={o.id}>{getOutcomeDisplayName(o, index)}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className={`bg-white rounded-2xl shadow-lg ${previewDevice === 'mobile' ? 'w-[375px]' : 'w-[600px]'} max-h-full overflow-y-auto`}>
               {/* Header with back button and progress bar */}
               {(activeStep.settings.showProgress || activeStep.settings.allowBack) && (
@@ -1274,7 +1326,19 @@ export default function PrototypePage() {
                 </div>
               )}
               <div className="p-6 space-y-2">
-                {currentBlocks.length === 0 ? (
+                {activeStep.type === 'result' && outcomes.length === 0 ? (
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50/50">
+                    <div className="text-4xl mb-3 opacity-50">🎯</div>
+                    <h3 className="text-base font-medium text-gray-600 mb-1">Nenhum resultado criado</h3>
+                    <p className="text-sm text-gray-400 mb-4">Crie telas de resultado para mostrar ao final do quiz</p>
+                    <button
+                      onClick={addOutcome}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                    >
+                      + Criar tela resultado
+                    </button>
+                  </div>
+                ) : currentBlocks.length === 0 ? (
                   <div className="text-center text-gray-400 py-8">
                     Nenhum bloco adicionado
                   </div>
@@ -1290,50 +1354,13 @@ export default function PrototypePage() {
         <aside className="hidden md:flex flex-col w-80 bg-white border-l overflow-hidden">
           <div className="p-4 border-b">
             {activeStep.type === 'result' ? (
-              /* For result step, show outcome name */
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {editingOutcomeName ? (
-                    <input
-                      type="text"
-                      defaultValue={selectedOutcome.name}
-                      autoFocus
-                      onBlur={(e) => updateOutcomeName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') updateOutcomeName(e.currentTarget.value);
-                        if (e.key === 'Escape') setEditingOutcomeName(false);
-                      }}
-                      className="flex-1 font-semibold text-gray-900 px-1 py-0.5 border border-blue-300 rounded outline-none"
-                    />
-                  ) : (
-                    <>
-                      <h3 className="font-semibold text-gray-900">{selectedOutcome.name}</h3>
-                      <button
-                        onClick={() => setEditingOutcomeName(true)}
-                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                        title="Editar nome"
-                      >
-                        ✏️
-                      </button>
-                    </>
-                  )}
-                </div>
-                {outcomes.length > 1 && (
-                  <button
-                    onClick={() => {
-                      if (confirm(`Deletar resultado "${selectedOutcome.name}"?`)) {
-                        deleteOutcome(selectedOutcome.id);
-                      }
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                    title="Deletar resultado"
-                  >
-                    🗑
-                  </button>
-                )}
-              </div>
+              /* For result step, show fixed title "Tela de resultados" */
+              <h3 className="font-semibold text-gray-900">Tela de resultados</h3>
+            ) : activeStep.type === 'intro' ? (
+              /* For intro step, show fixed title "Introdução" */
+              <h3 className="font-semibold text-gray-900">Introdução</h3>
             ) : (
-              /* For other steps, show step label */
+              /* For other steps, show step label with edit/delete */
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {isEditingStepLabel ? (
@@ -1351,31 +1378,27 @@ export default function PrototypePage() {
                   ) : (
                     <>
                       <h3 className="font-semibold text-gray-900">{getStepDisplayName(activeStep)}</h3>
-                      {!activeStep.isFixed && (
-                        <button
-                          onClick={() => setIsEditingStepLabel(true)}
-                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                          title="Editar nome"
-                        >
-                          ✏️
-                        </button>
-                      )}
+                      <button
+                        onClick={() => setIsEditingStepLabel(true)}
+                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                        title="Editar nome"
+                      >
+                        ✏️
+                      </button>
                     </>
                   )}
                 </div>
-                {!activeStep.isFixed && (
-                  <button
-                    onClick={() => {
-                      if (confirm(`Deletar "${getStepDisplayName(activeStep)}"?`)) {
-                        deleteStep(activeStep.id);
-                      }
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                    title="Deletar etapa"
-                  >
-                    🗑
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    if (confirm(`Deletar "${getStepDisplayName(activeStep)}"?`)) {
+                      deleteStep(activeStep.id);
+                    }
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                  title="Deletar etapa"
+                >
+                  🗑
+                </button>
               </div>
             )}
           </div>
@@ -1393,6 +1416,23 @@ export default function PrototypePage() {
                     <button onClick={() => removeBlock(selectedBlock.id)} className="p-1 text-red-500 hover:bg-red-50 rounded" title="Remover">🗑</button>
                   </div>
                 </div>
+
+                {/* Result selector dropdown - only for result step */}
+                {activeStep.type === 'result' && (
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <label className="block text-xs text-gray-500 font-medium mb-1.5">Editando conteúdo de:</label>
+                    <select
+                      value={selectedOutcomeId || ''}
+                      onChange={(e) => handleOutcomeChange(e.target.value)}
+                      className="w-full text-sm font-medium text-gray-900 border border-gray-300 rounded-md px-3 py-2 bg-white hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {outcomes.map((o, index) => (
+                        <option key={o.id} value={o.id}>{getOutcomeDisplayName(o, index)}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div className="px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
                   <span className="text-sm text-blue-700 font-semibold">
                     {blockIcons[selectedBlock.type]} {blockLabels[selectedBlock.type]}
@@ -1442,51 +1482,114 @@ export default function PrototypePage() {
                   <div className="pb-4 border-b">
                     <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-2">Resultados</div>
                     <div className="space-y-2">
-                      {outcomes.map(o => (
-                        <div
-                          key={o.id}
-                          onClick={() => handleOutcomeChange(o.id)}
-                          className={`p-2 rounded-lg cursor-pointer flex items-center justify-between ${selectedOutcomeId === o.id ? 'bg-blue-50 border border-blue-300' : 'bg-gray-50 hover:bg-gray-100'}`}
-                        >
-                          <span className="text-sm text-gray-800">{o.name}</span>
-                          {outcomes.length > 1 && (
-                            <button onClick={(e) => { e.stopPropagation(); deleteOutcome(o.id); }} className="text-red-400 hover:text-red-600 text-sm">×</button>
-                          )}
+                      {outcomes.length === 0 ? (
+                        <div className="text-center py-4">
+                          <p className="text-sm text-gray-500 mb-3">Crie telas de resultado para vincular às respostas</p>
+                          <button
+                            onClick={addOutcome}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                          >
+                            + Criar tela resultado
+                          </button>
                         </div>
-                      ))}
-                      <button onClick={addOutcome} className="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500">
-                        + Adicionar resultado
-                      </button>
+                      ) : (
+                        <>
+                          {outcomes.map((o, index) => (
+                            <div
+                              key={o.id}
+                              onClick={() => handleOutcomeChange(o.id)}
+                              className={`group p-2.5 rounded-lg cursor-pointer flex items-center justify-between transition-all ${selectedOutcomeId === o.id ? 'bg-blue-50 border-2 border-blue-300' : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'}`}
+                            >
+                              {editingOutcomeName && selectedOutcomeId === o.id ? (
+                                <input
+                                  type="text"
+                                  defaultValue={o.name}
+                                  placeholder={`Resultado ${index + 1}`}
+                                  autoFocus
+                                  onClick={(e) => e.stopPropagation()}
+                                  onBlur={(e) => updateOutcomeName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') updateOutcomeName(e.currentTarget.value);
+                                    if (e.key === 'Escape') setEditingOutcomeName(false);
+                                  }}
+                                  className="flex-1 text-sm font-medium text-gray-900 px-2 py-1 border border-blue-300 rounded outline-none bg-white"
+                                />
+                              ) : (
+                                <>
+                                  <span className={`text-sm ${selectedOutcomeId === o.id ? 'text-blue-700 font-medium' : 'text-gray-800'}`}>
+                                    {getOutcomeDisplayName(o, index)}
+                                  </span>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOutcomeChange(o.id);
+                                        setEditingOutcomeName(true);
+                                      }}
+                                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
+                                      title="Editar nome"
+                                    >
+                                      ✏️
+                                    </button>
+                                    {outcomes.length > 1 && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (confirm(`Deletar "${getOutcomeDisplayName(o, index)}"?`)) {
+                                            deleteOutcome(o.id);
+                                          }
+                                        }}
+                                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-white rounded"
+                                        title="Deletar"
+                                      >
+                                        🗑
+                                      </button>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                          <button onClick={addOutcome} className="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500">
+                            + Adicionar resultado
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
 
-                <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-2">Blocos</div>
-                {currentBlocks.map((block) => (
-                  <div
-                    key={block.id}
-                    className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${block.enabled ? 'bg-gray-50 hover:bg-gray-100' : 'bg-gray-50 opacity-50'}`}
-                  >
-                    <button onClick={() => moveBlock(block.id, 'up')} className="text-gray-400 hover:text-gray-600 text-xs">↑</button>
-                    <button onClick={() => moveBlock(block.id, 'down')} className="text-gray-400 hover:text-gray-600 text-xs">↓</button>
-                    <div onClick={() => setSelectedBlockId(block.id)} className="flex-1 flex items-center gap-2">
-                      <span>{blockIcons[block.type]}</span>
-                      <span className="text-sm text-gray-700">{blockLabels[block.type]}</span>
-                    </div>
+                {/* Hide blocks section when no outcomes exist on result page */}
+                {!(activeStep.type === 'result' && outcomes.length === 0) && (
+                  <>
+                    <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-2">Blocos</div>
+                    {currentBlocks.map((block) => (
+                      <div
+                        key={block.id}
+                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${block.enabled ? 'bg-gray-50 hover:bg-gray-100' : 'bg-gray-50 opacity-50'}`}
+                      >
+                        <button onClick={() => moveBlock(block.id, 'up')} className="text-gray-400 hover:text-gray-600 text-xs">↑</button>
+                        <button onClick={() => moveBlock(block.id, 'down')} className="text-gray-400 hover:text-gray-600 text-xs">↓</button>
+                        <div onClick={() => setSelectedBlockId(block.id)} className="flex-1 flex items-center gap-2">
+                          <span>{blockIcons[block.type]}</span>
+                          <span className="text-sm text-gray-700">{blockLabels[block.type]}</span>
+                        </div>
+                        <button
+                          onClick={() => toggleBlock(block.id)}
+                          className={`text-xs px-2 py-0.5 rounded ${block.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}
+                        >
+                          {block.enabled ? 'ativo' : 'oculto'}
+                        </button>
+                      </div>
+                    ))}
                     <button
-                      onClick={() => toggleBlock(block.id)}
-                      className={`text-xs px-2 py-0.5 rounded ${block.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}
+                      onClick={() => setIsAddBlockSheetOpen(true)}
+                      className="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500"
                     >
-                      {block.enabled ? 'ativo' : 'oculto'}
+                      + Adicionar bloco
                     </button>
-                  </div>
-                ))}
-                <button
-                  onClick={() => setIsAddBlockSheetOpen(true)}
-                  className="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500"
-                >
-                  + Adicionar bloco
-                </button>
+                  </>
+                )}
               </div>
             )}
           </div>
