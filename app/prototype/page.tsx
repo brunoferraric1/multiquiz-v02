@@ -8,12 +8,16 @@ import { useState } from 'react';
 // ============================================
 
 type StepType = 'intro' | 'question' | 'lead-gen' | 'promo' | 'result';
-type BlockType = 'text' | 'media' | 'options' | 'fields' | 'price' | 'button' | 'banner' | 'list';
+type BlockType = 'header' | 'text' | 'media' | 'options' | 'fields' | 'price' | 'button' | 'banner' | 'list';
 
 // Block configurations
-interface TextConfig {
+interface HeaderConfig {
   title?: string;
   description?: string;
+}
+
+interface TextConfig {
+  content: string;
 }
 
 interface MediaConfig {
@@ -69,7 +73,7 @@ interface ListConfig {
   items: ListItem[];
 }
 
-type BlockConfig = TextConfig | MediaConfig | OptionsConfig | FieldsConfig | PriceConfig | ButtonConfig | BannerConfig | ListConfig;
+type BlockConfig = HeaderConfig | TextConfig | MediaConfig | OptionsConfig | FieldsConfig | PriceConfig | ButtonConfig | BannerConfig | ListConfig;
 
 interface Block {
   id: string;
@@ -110,6 +114,7 @@ const createBlock = (type: BlockType, config: BlockConfig, enabled = true): Bloc
 });
 
 const blockIcons: Record<BlockType, string> = {
+  header: '🏷️',
   text: '📝',
   media: '🖼',
   options: '🔘',
@@ -121,6 +126,7 @@ const blockIcons: Record<BlockType, string> = {
 };
 
 const blockLabels: Record<BlockType, string> = {
+  header: 'Cabeçalho',
   text: 'Texto',
   media: 'Mídia',
   options: 'Opções',
@@ -132,11 +138,11 @@ const blockLabels: Record<BlockType, string> = {
 };
 
 const availableBlocksPerType: Record<StepType, BlockType[]> = {
-  intro: ['text', 'media', 'fields', 'button'],
-  question: ['text', 'media', 'options'],
-  'lead-gen': ['text', 'media', 'fields', 'button'],
-  promo: ['banner', 'text', 'media', 'list', 'button'],
-  result: ['text', 'media', 'price', 'list', 'button'],
+  intro: ['header', 'text', 'media', 'fields', 'button'],
+  question: ['header', 'text', 'media', 'options'],
+  'lead-gen': ['header', 'text', 'media', 'fields', 'button'],
+  promo: ['banner', 'header', 'text', 'media', 'list', 'button'],
+  result: ['header', 'text', 'media', 'price', 'list', 'button'],
 };
 
 // ============================================
@@ -157,7 +163,7 @@ const initialSteps: Step[] = [
     label: 'Intro',
     isFixed: true,
     blocks: [
-      createBlock('text', { title: 'Bem-vindo ao Quiz!', description: 'Descubra qual produto é ideal para você' } as TextConfig),
+      createBlock('header', { title: 'Bem-vindo ao Quiz!', description: 'Descubra qual produto é ideal para você' } as HeaderConfig),
       createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
       createBlock('button', { text: 'Começar', action: 'next_step' } as ButtonConfig),
     ],
@@ -168,7 +174,7 @@ const initialSteps: Step[] = [
     type: 'question',
     label: 'P1',
     blocks: [
-      createBlock('text', { title: 'Qual seu tipo de pele?' } as TextConfig),
+      createBlock('header', { title: 'Qual seu tipo de pele?' } as HeaderConfig),
       createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
       createBlock('options', { items: ['Seca', 'Oleosa', 'Mista', 'Normal'], selectionType: 'single' } as OptionsConfig),
     ],
@@ -179,7 +185,7 @@ const initialSteps: Step[] = [
     type: 'question',
     label: 'P2',
     blocks: [
-      createBlock('text', { title: 'Com que frequência você hidrata?' } as TextConfig),
+      createBlock('header', { title: 'Com que frequência você hidrata?' } as HeaderConfig),
       createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
       createBlock('options', { items: ['Diariamente', 'Às vezes', 'Raramente'], selectionType: 'single' } as OptionsConfig),
     ],
@@ -190,7 +196,7 @@ const initialSteps: Step[] = [
     type: 'lead-gen',
     label: 'Captura',
     blocks: [
-      createBlock('text', { title: 'Quase lá!', description: 'Deixe seus dados para ver o resultado' } as TextConfig),
+      createBlock('header', { title: 'Quase lá!', description: 'Deixe seus dados para ver o resultado' } as HeaderConfig),
       createBlock('fields', { items: [
         { id: 'f1', label: 'Nome', type: 'text', placeholder: 'Seu nome', required: true },
         { id: 'f2', label: 'Email', type: 'email', placeholder: 'seu@email.com', required: true },
@@ -317,7 +323,8 @@ export default function PrototypePage() {
 
   const addBlock = (type: BlockType) => {
     const defaultConfigs: Record<BlockType, BlockConfig> = {
-      text: { title: '', description: '' } as TextConfig,
+      header: { title: 'Título', description: '' } as HeaderConfig,
+      text: { content: '' } as TextConfig,
       media: { type: 'image', url: '' } as MediaConfig,
       options: { items: ['Opção 1', 'Opção 2'], selectionType: 'single' } as OptionsConfig,
       fields: { items: [{ id: `f-${Date.now()}`, label: 'Novo campo', type: 'text', placeholder: '', required: false }] } as FieldsConfig,
@@ -415,15 +422,15 @@ export default function PrototypePage() {
 
     const defaultBlocks: Record<StepType, Block[]> = {
       intro: [
-        createBlock('text', { title: 'Novo título', description: '' } as TextConfig),
+        createBlock('header', { title: 'Novo título', description: '' } as HeaderConfig),
         createBlock('button', { text: 'Começar', action: 'next_step' } as ButtonConfig),
       ],
       question: [
-        createBlock('text', { title: 'Nova pergunta?' } as TextConfig),
+        createBlock('header', { title: 'Nova pergunta?' } as HeaderConfig),
         createBlock('options', { items: ['Opção 1', 'Opção 2'], selectionType: 'single' } as OptionsConfig),
       ],
       'lead-gen': [
-        createBlock('text', { title: 'Seus dados', description: 'Preencha para continuar' } as TextConfig),
+        createBlock('header', { title: 'Seus dados', description: 'Preencha para continuar' } as HeaderConfig),
         createBlock('fields', { items: [
           { id: `f-${Date.now()}-1`, label: 'Email', type: 'email', placeholder: 'seu@email.com', required: true },
         ]} as FieldsConfig),
@@ -431,7 +438,7 @@ export default function PrototypePage() {
       ],
       promo: [
         createBlock('banner', { urgency: 'warning', text: 'Oferta especial!', emoji: '🔥' } as BannerConfig),
-        createBlock('text', { title: 'Oferta Especial!', description: 'Aproveite essa oportunidade' } as TextConfig),
+        createBlock('header', { title: 'Oferta Especial!', description: 'Aproveite essa oportunidade' } as HeaderConfig),
         createBlock('button', { text: 'Quero aproveitar', action: 'url', url: '' } as ButtonConfig),
       ],
       result: [],
@@ -466,19 +473,45 @@ export default function PrototypePage() {
   };
 
   const addOutcome = () => {
-    const newOutcome: Outcome = {
-      id: `o-${Date.now()}`,
-      name: '', // Empty name, will show "Resultado X" as fallback
-      blocks: [
-        createBlock('text', { title: '', description: '' } as TextConfig),
+    // If there are existing outcomes, inherit block structure from the first one
+    const existingOutcome = outcomes[0];
+    let newBlocks: Block[];
+
+    if (existingOutcome) {
+      // Copy block structure but with new IDs and empty/default content
+      newBlocks = existingOutcome.blocks.map(block => {
+        const newBlock = createBlock(block.type, { ...block.config }, block.enabled);
+        // Reset content to defaults for the new outcome
+        if (block.type === 'header') {
+          (newBlock.config as HeaderConfig).title = '';
+          (newBlock.config as HeaderConfig).description = '';
+        } else if (block.type === 'text') {
+          (newBlock.config as TextConfig).content = '';
+        } else if (block.type === 'media') {
+          (newBlock.config as MediaConfig).url = '';
+        } else if (block.type === 'button') {
+          (newBlock.config as ButtonConfig).text = 'Ver mais';
+        }
+        return newBlock;
+      });
+    } else {
+      // Default blocks for first outcome
+      newBlocks = [
+        createBlock('header', { title: 'Título do Resultado', description: 'Descrição do resultado' } as HeaderConfig),
         createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
         createBlock('button', { text: 'Ver mais', action: 'url', url: '' } as ButtonConfig),
-      ]
+      ];
+    }
+
+    const newOutcome: Outcome = {
+      id: `o-${Date.now()}`,
+      name: '',
+      blocks: newBlocks
     };
     setOutcomes(prev => [...prev, newOutcome]);
     setSelectedOutcomeId(newOutcome.id);
     setSelectedBlockId(null);
-    setEditingOutcomeName(true); // Auto-activate name editing for new outcome
+    setEditingOutcomeName(true);
   };
 
   const deleteOutcome = (id: string) => {
@@ -545,17 +578,34 @@ export default function PrototypePage() {
     const baseClasses = `cursor-pointer transition-all ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50 rounded-lg' : 'hover:bg-gray-50 rounded-lg'}`;
 
     switch (block.type) {
-      case 'text': {
-        const config = block.config as TextConfig;
+      case 'header': {
+        const config = block.config as HeaderConfig;
         const hasContent = config.title || config.description;
         return (
           <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-3 text-center`}>
-            {config.title && <h2 className="text-xl font-bold text-gray-900">{config.title}</h2>}
-            {config.description && <p className="text-gray-600 mt-1">{config.description}</p>}
-            {!hasContent && (
-              <div className="border-2 border-dashed border-amber-300 bg-amber-50 rounded-lg p-3">
-                <p className="text-amber-600 text-sm">⚠️ Texto não configurado</p>
-              </div>
+            {hasContent ? (
+              <>
+                {config.title && <h2 className="text-xl font-bold text-gray-900">{config.title}</h2>}
+                {config.description && <p className="text-gray-600 mt-1">{config.description}</p>}
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl font-bold text-gray-400">Título</h2>
+                <p className="text-gray-400 mt-1">Descrição (opcional)</p>
+              </>
+            )}
+          </div>
+        );
+      }
+
+      case 'text': {
+        const config = block.config as TextConfig;
+        return (
+          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-3`}>
+            {config.content ? (
+              <p className="text-gray-700 text-sm whitespace-pre-wrap">{config.content}</p>
+            ) : (
+              <p className="text-gray-400 text-sm italic">Clique para adicionar texto...</p>
             )}
           </div>
         );
@@ -701,8 +751,8 @@ export default function PrototypePage() {
 
   const renderBlockConfig = (block: Block) => {
     switch (block.type) {
-      case 'text': {
-        const config = block.config as TextConfig;
+      case 'header': {
+        const config = block.config as HeaderConfig;
         return (
           <div className="space-y-4">
             <div>
@@ -712,7 +762,7 @@ export default function PrototypePage() {
                 value={config.title || ''}
                 onChange={(e) => updateBlockConfig(block.id, { title: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
-                placeholder="Opcional"
+                placeholder="Digite o título"
               />
             </div>
             <div>
@@ -723,6 +773,24 @@ export default function PrototypePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900 resize-none"
                 placeholder="Opcional"
                 rows={3}
+              />
+            </div>
+          </div>
+        );
+      }
+
+      case 'text': {
+        const config = block.config as TextConfig;
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Conteúdo</label>
+              <textarea
+                value={config.content || ''}
+                onChange={(e) => updateBlockConfig(block.id, { content: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900 resize-none"
+                placeholder="Digite o texto aqui..."
+                rows={5}
               />
             </div>
           </div>

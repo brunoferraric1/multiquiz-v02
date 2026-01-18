@@ -461,7 +461,7 @@ The prototype demonstrates:
 - ✅ Mobile bottom tab bar (resize browser to see)
 - ✅ **Universal block-based architecture:**
   - All step types use blocks (not just Resultado)
-  - Blocks: text, media, options, fields, price, button, banner, list
+  - Blocks: header, text, media, options, fields, price, button, banner, list
   - Click any block in preview to select and edit
   - Block-specific configuration panels
   - Reorder blocks with up/down arrows
@@ -469,16 +469,25 @@ The prototype demonstrates:
   - Add new blocks from available types per step template
   - Remove blocks when selected
   - "← Voltar" navigation to return to block list
-- ✅ **Text block (formerly "Cabeçalho"):**
-  - Title is optional
-  - Description field with textarea
-  - Can be placed anywhere on a page
+- ✅ **Header block (Cabeçalho):**
+  - Title + Description (both optional)
+  - Shows placeholder text when empty
+  - Used for page titles and headers
+- ✅ **Text block (Texto):**
+  - Simple textarea for content
+  - Shows placeholder when empty
+  - Used for body text, explanations, etc.
 - ✅ **Step template defaults:**
-  - Intro: text, media, fields, button
-  - Pergunta: text, media, options
-  - Captura: text, media, fields, button
-  - Promocional: banner, text, media, list, button
-  - Resultado: text, media, price, list, button (per outcome)
+  - Intro: header, text, media, fields, button
+  - Pergunta: header, text, media, options
+  - Captura: header, text, media, fields, button
+  - Promocional: banner, header, text, media, list, button
+  - Resultado: header, text, media, price, list, button (per outcome)
+- ✅ **Results page - shared layout:**
+  - Block structure shared across all results
+  - Content individual per result
+  - New results inherit structure from existing ones
+  - Result selector above preview card
 - ✅ **Floating preview controls:**
   - Device toggle (mobile/desktop) floating top-left with SVG icons
   - Preview button floating top-right with play icon
@@ -504,6 +513,76 @@ The prototype demonstrates:
 ## Changelog
 
 This section tracks the iterations and changes made during the prototyping process.
+
+### Iteration 8 - Results Page Refinement & Block System Update
+**Date:** January 2025
+
+**Changes:**
+
+**1. Results Page - Shared Layout, Individual Content:**
+- **Block structure is now shared** across all results:
+  - Adding a block to one result adds it to all results
+  - Removing a block removes it from all results
+  - Reordering blocks reorders them in all results
+  - Toggling blocks (ativo/oculto) toggles in all results
+- **Content is individual** per result:
+  - Each result has its own text, images, URLs, etc.
+  - Editing content only affects the selected result
+- **Result selector** now appears above the quiz card in preview (not in device toggle area)
+- **Dropdown in block editor** shows which result's content is being edited
+- **New result inherits structure** from existing results automatically
+
+**2. Block System Renamed:**
+- **"Texto" renamed to "Cabeçalho"** (Header block):
+  - Icon: 🏷️
+  - Fields: Title + Description (both optional)
+  - Preview shows placeholder text when empty (not warning)
+  - Used as the main header/title block for pages
+- **New "Texto" block** added for simple paragraphs:
+  - Icon: 📝
+  - Fields: Single textarea for content
+  - Preview shows "Clique para adicionar texto..." when empty
+  - Used for body text, explanations, disclaimers, etc.
+
+**3. Fixed Steps UI:**
+- **Intro and Resultado** step titles are now fixed (not editable):
+  - "Introdução" displays as static header
+  - "Tela de resultados" displays as static header
+- Other steps (Pergunta, Captura, Promocional) remain editable
+
+**4. Empty States Improved:**
+- **Results empty state** shows dotted border container with:
+  - Icon: 🎯 (dimmed)
+  - Message: "Nenhum resultado criado"
+  - CTA: "+ Criar tela resultado"
+- **Creating new result** auto-activates name editing
+- **First result** comes with placeholder content ("Título do Resultado")
+- **Subsequent results** inherit block structure but with empty content
+
+**5. Preview Warnings:**
+- **Media without URL**: Shows amber warning with dashed border
+- **Button without text**: Shows amber warning
+- **Header without content**: Shows gray placeholder text (not warning)
+- **Text block without content**: Shows gray italic placeholder
+
+**Architecture update:**
+```typescript
+type BlockType = 'header' | 'text' | 'media' | 'options' | 'fields' | 'price' | 'button' | 'banner' | 'list';
+
+interface HeaderConfig {
+  title?: string;       // Optional
+  description?: string; // Optional
+}
+
+interface TextConfig {
+  content: string;      // Simple text content
+}
+```
+
+**Rationale:**
+The original "Texto" block was trying to serve two purposes: header/title and body text. Splitting into "Cabeçalho" (header) and "Texto" (body) provides clearer semantics. The shared layout approach for results ensures consistency across outcomes while allowing per-result customization of content. This matches how users think about results: "same structure, different content."
+
+---
 
 ### Iteration 7 - Text Block, Floating Controls & UI Polish
 **Date:** January 2025
