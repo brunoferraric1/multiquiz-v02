@@ -583,14 +583,24 @@ export default function PrototypePage() {
     if (!block.enabled) return null;
 
     const isSelected = selectedBlockId === block.id;
-    const baseClasses = `cursor-pointer transition-all ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50 rounded-lg' : 'hover:bg-gray-50 rounded-lg'}`;
+
+    // Base wrapper classes and hover label for all blocks
+    const wrapperClass = (extra: string = '') =>
+      `group relative cursor-pointer transition-all rounded-lg ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50 hover:ring-2 hover:ring-gray-300'} ${extra}`;
+
+    const hoverLabel = (
+      <div className={`absolute -top-2 right-2 px-2 py-0.5 text-xs font-medium rounded transition-opacity z-10 ${isSelected ? 'bg-blue-500 text-white opacity-100' : 'bg-gray-700 text-white opacity-0 group-hover:opacity-100'}`}>
+        {isSelected ? 'editando' : 'editar'}
+      </div>
+    );
 
     switch (block.type) {
       case 'header': {
         const config = block.config as HeaderConfig;
         const hasContent = config.title || config.description;
         return (
-          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-3 text-center`}>
+          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={wrapperClass('p-3 text-center')}>
+            {hoverLabel}
             {hasContent ? (
               <>
                 {config.title && <h2 className="text-xl font-bold text-gray-900">{config.title}</h2>}
@@ -609,7 +619,8 @@ export default function PrototypePage() {
       case 'text': {
         const config = block.config as TextConfig;
         return (
-          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-3`}>
+          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={wrapperClass('p-3')}>
+            {hoverLabel}
             {config.content ? (
               <p className="text-gray-700 text-sm whitespace-pre-wrap">{config.content}</p>
             ) : (
@@ -622,7 +633,8 @@ export default function PrototypePage() {
       case 'media': {
         const config = block.config as MediaConfig;
         return (
-          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-2`}>
+          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={wrapperClass('p-2')}>
+            {hoverLabel}
             {config.url ? (
               <div className="h-40 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                 {config.type === 'video' ? (
@@ -644,7 +656,8 @@ export default function PrototypePage() {
       case 'options': {
         const config = block.config as OptionsConfig;
         return (
-          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-2 space-y-2`}>
+          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={wrapperClass('p-2 space-y-2')}>
+            {hoverLabel}
             {config.items.map((item, i) => (
               <div key={i} className="p-3 border-2 border-gray-200 rounded-lg flex items-center gap-3 text-gray-800">
                 {config.selectionType === 'multiple' && (
@@ -660,7 +673,8 @@ export default function PrototypePage() {
       case 'fields': {
         const config = block.config as FieldsConfig;
         return (
-          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-2 space-y-3`}>
+          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={wrapperClass('p-2 space-y-3')}>
+            {hoverLabel}
             {config.items.map((field) => (
               <div key={field.id}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -681,7 +695,8 @@ export default function PrototypePage() {
       case 'price': {
         const config = block.config as PriceConfig;
         return (
-          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-2`}>
+          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={wrapperClass('p-2')}>
+            {hoverLabel}
             <div className={`relative p-4 border-2 rounded-xl ${config.highlight ? 'border-blue-400 bg-gradient-to-br from-blue-50 to-white' : 'border-gray-200'}`}>
               {config.highlight && config.highlightText && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-blue-600 text-white text-xs font-bold rounded-full">
@@ -703,7 +718,8 @@ export default function PrototypePage() {
         const config = block.config as ButtonConfig;
         const hasText = config.text && config.text.trim();
         return (
-          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-2`}>
+          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={wrapperClass('p-2')}>
+            {hoverLabel}
             {hasText ? (
               <button className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium pointer-events-none">
                 {config.text}
@@ -725,7 +741,8 @@ export default function PrototypePage() {
           danger: 'bg-red-100 text-red-800',
         };
         return (
-          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses}`}>
+          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={wrapperClass()}>
+            {hoverLabel}
             <div className={`${urgencyColors[config.urgency]} text-center py-2 px-4 text-sm font-medium rounded-lg`}>
               {config.emoji && <span className="mr-2">{config.emoji}</span>}
               {config.text}
@@ -737,7 +754,8 @@ export default function PrototypePage() {
       case 'list': {
         const config = block.config as ListConfig;
         return (
-          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={`${baseClasses} p-2 space-y-2`}>
+          <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={wrapperClass('p-2 space-y-2')}>
+            {hoverLabel}
             {config.items.map((item) => (
               <div key={item.id} className="flex items-center gap-2 text-gray-700">
                 <span>{item.emoji || '•'}</span>
