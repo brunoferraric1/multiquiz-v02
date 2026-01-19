@@ -9,6 +9,7 @@ interface BlockListProps {
   blocks: Block[]
   selectedBlockId?: string
   onBlockSelect?: (blockId: string) => void
+  onDeleteBlock?: (blockId: string) => void
   onInsertBlock?: (index: number) => void
   className?: string
 }
@@ -26,6 +27,7 @@ export function BlockList({
   blocks,
   selectedBlockId,
   onBlockSelect,
+  onDeleteBlock,
   onInsertBlock,
   className,
 }: BlockListProps) {
@@ -61,6 +63,7 @@ export function BlockList({
             block={block}
             isSelected={selectedBlockId === block.id}
             onClick={() => onBlockSelect?.(block.id)}
+            onDelete={onDeleteBlock ? () => onDeleteBlock(block.id) : undefined}
           />
 
           {/* Insertion point after each block */}

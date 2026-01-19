@@ -14,6 +14,7 @@ import {
   ListConfig,
 } from '@/types/blocks'
 import { cn } from '@/lib/utils'
+import { Pencil, Trash2 } from 'lucide-react'
 import { HeaderBlockPreview } from './header-block'
 import { TextBlockPreview } from './text-block'
 import { MediaBlockPreview } from './media-block'
@@ -28,6 +29,7 @@ interface BlockRendererProps {
   block: Block
   isSelected?: boolean
   onClick?: () => void
+  onDelete?: () => void
 }
 
 /**
@@ -36,7 +38,7 @@ interface BlockRendererProps {
  * This component acts as a switch to render the appropriate block preview
  * based on the block type. It handles selection state and click events.
  */
-export function BlockRenderer({ block, isSelected, onClick }: BlockRendererProps) {
+export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRendererProps) {
   // Render the appropriate block component based on type
   const renderBlockContent = () => {
     switch (block.type) {
@@ -91,6 +93,16 @@ export function BlockRenderer({ block, isSelected, onClick }: BlockRendererProps
     )
   }
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onDelete?.()
+  }
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onClick?.()
+  }
+
   return (
     <div
       data-testid={`block-${block.id}`}
@@ -99,8 +111,8 @@ export function BlockRenderer({ block, isSelected, onClick }: BlockRendererProps
       className={cn(
         'relative rounded-lg border transition-all cursor-pointer group',
         isSelected
-          ? 'ring-2 ring-primary border-primary/30 bg-primary/5'
-          : 'border-transparent hover:border-muted-foreground/20 hover:bg-muted/30'
+          ? 'ring-2 ring-primary border-primary bg-primary/5'
+          : 'border-transparent hover:border-muted-foreground/50 hover:bg-muted/20'
       )}
       onClick={onClick}
       role="button"
@@ -112,6 +124,31 @@ export function BlockRenderer({ block, isSelected, onClick }: BlockRendererProps
         }
       }}
     >
+      {/* Hover action buttons */}
+      <div
+        className={cn(
+          'absolute -top-2 -right-2 flex items-center gap-1 z-10',
+          'opacity-0 group-hover:opacity-100 transition-opacity',
+          isSelected && 'opacity-100'
+        )}
+      >
+        <button
+          onClick={handleEdit}
+          className="p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+          aria-label="Editar bloco"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
+        {onDelete && (
+          <button
+            onClick={handleDelete}
+            className="p-1.5 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors shadow-sm"
+            aria-label="Excluir bloco"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
       {renderBlockContent()}
     </div>
   )

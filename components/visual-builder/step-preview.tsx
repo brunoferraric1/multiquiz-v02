@@ -25,6 +25,8 @@ export function StepPreview() {
   const setSelectedBlockId = useVisualBuilderStore((state) => state.setSelectedBlockId)
   const addBlock = useVisualBuilderStore((state) => state.addBlock)
   const addOutcomeBlock = useVisualBuilderStore((state) => state.addOutcomeBlock)
+  const deleteBlock = useVisualBuilderStore((state) => state.deleteBlock)
+  const deleteOutcomeBlock = useVisualBuilderStore((state) => state.deleteOutcomeBlock)
   const setAddBlockSheetOpen = useVisualBuilderStore((state) => state.setAddBlockSheetOpen)
 
   // Get the active step
@@ -65,6 +67,17 @@ export function StepPreview() {
     setAddBlockSheetOpen(true)
   }
 
+  // Handle block deletion
+  const handleDeleteBlock = (blockId: string) => {
+    if (!activeStep) return
+
+    if (activeStep.type === 'result' && selectedOutcomeId) {
+      deleteOutcomeBlock(selectedOutcomeId, blockId)
+    } else if (activeStepId) {
+      deleteBlock(activeStepId, blockId)
+    }
+  }
+
   // Show empty state if no step is selected
   if (!activeStep) {
     return (
@@ -91,6 +104,7 @@ export function StepPreview() {
         blocks={blocks}
         selectedBlockId={selectedBlockId}
         onBlockSelect={handleBlockSelect}
+        onDeleteBlock={handleDeleteBlock}
         onInsertBlock={handleInsertBlock}
       />
     </div>

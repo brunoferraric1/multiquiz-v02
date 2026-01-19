@@ -216,6 +216,81 @@ describe('BlockRenderer', () => {
     })
   })
 
+  describe('Hover actions', () => {
+    it('shows edit button on hover', () => {
+      const block: Block = {
+        id: 'block-1',
+        type: 'header',
+        enabled: true,
+        config: { title: 'Test Title' },
+      }
+
+      render(<BlockRenderer block={block} onClick={vi.fn()} />)
+
+      expect(screen.getByRole('button', { name: /editar bloco/i })).toBeInTheDocument()
+    })
+
+    it('shows delete button when onDelete is provided', () => {
+      const block: Block = {
+        id: 'block-1',
+        type: 'header',
+        enabled: true,
+        config: { title: 'Test Title' },
+      }
+
+      render(<BlockRenderer block={block} onDelete={vi.fn()} />)
+
+      expect(screen.getByRole('button', { name: /excluir bloco/i })).toBeInTheDocument()
+    })
+
+    it('does not show delete button when onDelete is not provided', () => {
+      const block: Block = {
+        id: 'block-1',
+        type: 'header',
+        enabled: true,
+        config: { title: 'Test Title' },
+      }
+
+      render(<BlockRenderer block={block} />)
+
+      expect(screen.queryByRole('button', { name: /excluir bloco/i })).not.toBeInTheDocument()
+    })
+
+    it('calls onDelete when delete button is clicked', async () => {
+      const handleDelete = vi.fn()
+      const user = userEvent.setup()
+      const block: Block = {
+        id: 'block-1',
+        type: 'header',
+        enabled: true,
+        config: { title: 'Test Title' },
+      }
+
+      render(<BlockRenderer block={block} onDelete={handleDelete} />)
+
+      await user.click(screen.getByRole('button', { name: /excluir bloco/i }))
+
+      expect(handleDelete).toHaveBeenCalledTimes(1)
+    })
+
+    it('edit button triggers onClick', async () => {
+      const handleClick = vi.fn()
+      const user = userEvent.setup()
+      const block: Block = {
+        id: 'block-1',
+        type: 'header',
+        enabled: true,
+        config: { title: 'Test Title' },
+      }
+
+      render(<BlockRenderer block={block} onClick={handleClick} />)
+
+      await user.click(screen.getByRole('button', { name: /editar bloco/i }))
+
+      expect(handleClick).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('Accessibility', () => {
     it('has proper role and tabIndex', () => {
       const block: Block = {
