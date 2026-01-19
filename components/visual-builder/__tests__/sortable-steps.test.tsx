@@ -31,50 +31,46 @@ describe('SortableStepsList', () => {
       expect(screen.getByText(/4\. P3/)).toBeInTheDocument()
     })
 
-    it('renders drag handles for non-fixed steps', () => {
+    it('makes non-fixed steps draggable (entire card)', () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
 
       render(<SortableStepsList />)
 
-      // Should have drag handles for q1, q2, q3 (3 non-fixed steps)
-      const dragHandles = screen.getAllByTestId('drag-handle')
-      expect(dragHandles).toHaveLength(3)
+      // Non-fixed steps should have cursor-grab class indicating they are draggable
+      const q1Step = screen.getByTestId('step-item-q1')
+      expect(q1Step).toHaveClass('cursor-grab')
     })
 
-    it('does not render drag handle for fixed steps (intro)', () => {
+    it('does not make fixed steps (intro) draggable', () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
 
       render(<SortableStepsList />)
 
-      // Find the intro step container
-      const introStep = screen.getByText(/1\. Intro/).closest('[data-testid^="step-item"]')
-      expect(introStep).not.toHaveAttribute('data-testid', expect.stringContaining('drag-handle'))
+      // Fixed step (intro) should not have cursor-grab class
+      const introStep = screen.getByTestId('step-item-intro')
+      expect(introStep).not.toHaveClass('cursor-grab')
     })
   })
 
   describe('Drag and Drop', () => {
-    it('updates store when reordering steps via keyboard', async () => {
+    it('supports keyboard reordering on the entire card', async () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
-      const user = userEvent.setup()
 
       render(<SortableStepsList />)
 
-      // Find the drag handle for q2
-      const q2StepItem = screen.getByText(/3\. P2/).closest('[data-testid^="step-item"]')
-      const dragHandle = q2StepItem?.querySelector('[data-testid="drag-handle"]') as HTMLElement | null
+      // The entire card is now draggable - find the q2 step item
+      const q2StepItem = screen.getByTestId('step-item-q2')
 
-      if (dragHandle) {
-        // Focus the drag handle
-        dragHandle.focus()
+      // Focus the draggable item
+      q2StepItem.focus()
 
-        // Simulate keyboard reorder (Space to pick up, Up to move, Space to drop)
-        fireEvent.keyDown(dragHandle, { key: ' ', code: 'Space' })
-        fireEvent.keyDown(dragHandle, { key: 'ArrowUp', code: 'ArrowUp' })
-        fireEvent.keyDown(dragHandle, { key: ' ', code: 'Space' })
-      }
+      // Simulate keyboard reorder (Space to pick up, Up to move, Space to drop)
+      fireEvent.keyDown(q2StepItem, { key: ' ', code: 'Space' })
+      fireEvent.keyDown(q2StepItem, { key: 'ArrowUp', code: 'ArrowUp' })
+      fireEvent.keyDown(q2StepItem, { key: ' ', code: 'Space' })
 
       // Wait for potential state updates
       await new Promise(resolve => setTimeout(resolve, 100))
@@ -112,38 +108,84 @@ describe('SortableStepsList', () => {
   })
 
   describe('Delete Step', () => {
-    it('deletes step when clicking delete button', async () => {
+    it('deletes step when using dropdown menu', async () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
       const user = userEvent.setup()
 
       render(<SortableStepsList />)
 
-      // Find step q1 and its delete button
-      const q1StepItem = screen.getByText(/2\. P1/).closest('[data-testid^="step-item"]')
-      const deleteButton = q1StepItem?.querySelector('[aria-label*="Delete"]')
+      // Find step q1 and open its options menu
+      const optionsButton = screen.getByRole('button', { name: /options for p1/i })
+      await user.click(optionsButton)
 
-      if (deleteButton) {
-        await user.click(deleteButton)
-      }
+      // Click delete option in the dropdown
+      const deleteOption = await screen.findByRole('menuitem', { name: /excluir/i })
+      await user.click(deleteOption)
 
       const { steps } = useVisualBuilderStore.getState()
       expect(steps.find(s => s.id === 'q1')).toBeUndefined()
     })
   })
 
+  describe('Duplicate Step', () => {
+    it('duplicates step when using dropdown menu', async () => {
+      const store = useVisualBuilderStore.getState()
+      store.setSteps(testSteps)
+      const user = userEvent.setup()
+
+      render(<SortableStepsList />)
+
+      // Find step q1 and open its options menu
+      const optionsButton = screen.getByRole('button', { name: /options for p1/i })
+      await user.click(optionsButton)
+
+      // Click duplicate option in the dropdown
+      const duplicateOption = await screen.findByRole('menuitem', { name: /duplicar/i })
+      await user.click(duplicateOption)
+
+      const { steps, activeStepId } = useVisualBuilderStore.getState()
+      // Should have one more step
+      expect(steps.length).toBe(6)
+      // The new step should be after q1 and have "(cópia)" in the label
+      const duplicatedStep = steps.find(s => s.label.includes('(cópia)'))
+      expect(duplicatedStep).toBeDefined()
+      expect(activeStepId).toBe(duplicatedStep?.id)
+    })
+  })
+
   describe('Accessibility', () => {
-    it('has proper ARIA attributes for sortable items', () => {
+    it('has proper ARIA attributes for step items', () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
 
       render(<SortableStepsList />)
 
-      const dragHandles = screen.getAllByTestId('drag-handle')
-      dragHandles.forEach(handle => {
-        expect(handle).toHaveAttribute('aria-label')
-        expect(handle).toHaveAttribute('tabIndex', '0')
-      })
+      // Each clickable step item should have proper role and aria-pressed
+      const stepButtons = screen.getAllByRole('button', { pressed: false })
+      expect(stepButtons.length).toBeGreaterThan(0)
+    })
+
+    it('has accessible options menu for non-fixed steps', () => {
+      const store = useVisualBuilderStore.getState()
+      store.setSteps(testSteps)
+
+      render(<SortableStepsList />)
+
+      // Non-fixed steps should have options menu with proper aria-label
+      expect(screen.getByRole('button', { name: /options for p1/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /options for p2/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /options for p3/i })).toBeInTheDocument()
+    })
+
+    it('does not show options menu for fixed steps', () => {
+      const store = useVisualBuilderStore.getState()
+      store.setSteps(testSteps)
+
+      render(<SortableStepsList />)
+
+      // Fixed step (intro) should not have options menu
+      expect(screen.queryByRole('button', { name: /options for intro/i })).not.toBeInTheDocument()
     })
   })
 })

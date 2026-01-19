@@ -116,19 +116,21 @@ describe('ConnectedVisualBuilder', () => {
   })
 
   describe('Delete Step', () => {
-    it('deletes a step when clicking delete button', async () => {
+    it('deletes a step when using dropdown menu', async () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
       const user = userEvent.setup()
 
       render(<ConnectedVisualBuilder />)
 
-      // Find and delete q1
+      // Find and open options menu for q1
       const sidebar = screen.getByTestId('left-sidebar')
-      const q1Step = within(sidebar).getByText(/2\. P1/).closest('.group') as HTMLElement
-      const deleteButton = within(q1Step).getByRole('button', { name: /delete/i })
+      const optionsButton = within(sidebar).getByRole('button', { name: /options for p1/i })
+      await user.click(optionsButton)
 
-      await user.click(deleteButton)
+      // Click delete option in the dropdown
+      const deleteOption = await screen.findByRole('menuitem', { name: /excluir/i })
+      await user.click(deleteOption)
 
       const { steps } = useVisualBuilderStore.getState()
       expect(steps.find(s => s.id === 'q1')).toBeUndefined()
@@ -141,10 +143,9 @@ describe('ConnectedVisualBuilder', () => {
       render(<ConnectedVisualBuilder />)
 
       const sidebar = screen.getByTestId('left-sidebar')
-      const introStep = within(sidebar).getByText(/1\. Intro/).closest('.group') as HTMLElement
 
-      // Intro step should not have a delete button
-      expect(within(introStep).queryByRole('button', { name: /delete/i })).toBeNull()
+      // Intro step should not have an options menu
+      expect(within(sidebar).queryByRole('button', { name: /options for intro/i })).not.toBeInTheDocument()
     })
   })
 

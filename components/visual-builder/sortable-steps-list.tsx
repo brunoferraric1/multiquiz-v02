@@ -11,7 +11,6 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core'
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -20,7 +19,13 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
 import { useVisualBuilderStore, Step, StepType } from '@/store/visual-builder-store'
-import { GripVertical, Play, HelpCircle, Users, Gift, Trash2 } from 'lucide-react'
+import { Play, HelpCircle, Users, Gift, MoreVertical, Copy, Trash2 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 // Step type icons
 const stepTypeIcons: Record<StepType, React.ReactNode> = {
@@ -37,9 +42,10 @@ interface SortableStepItemProps {
   isActive: boolean
   onSelect: () => void
   onDelete: () => void
+  onDuplicate: () => void
 }
 
-function SortableStepItem({ step, index, isActive, onSelect, onDelete }: SortableStepItemProps) {
+function SortableStepItem({ step, index, isActive, onSelect, onDelete, onDuplicate }: SortableStepItemProps) {
   const {
     attributes,
     listeners,
@@ -62,25 +68,12 @@ function SortableStepItem({ step, index, isActive, onSelect, onDelete }: Sortabl
       style={style}
       data-testid={`step-item-${step.id}`}
       className={cn(
-        'group flex items-start gap-2 rounded-lg transition-all',
-        isDragging && 'opacity-50 z-50'
+        'group relative rounded-lg transition-all',
+        isDragging && 'opacity-50 z-50',
+        !step.isFixed && 'cursor-grab active:cursor-grabbing'
       )}
+      {...(!step.isFixed ? { ...attributes, ...listeners } : {})}
     >
-      {/* Drag handle - only for non-fixed steps */}
-      {!step.isFixed ? (
-        <button
-          data-testid="drag-handle"
-          className="p-2 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
-          aria-label={`Reorder ${step.label}`}
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="w-4 h-4" />
-        </button>
-      ) : (
-        <div className="w-8" /> // Spacer for alignment
-      )}
-
       {/* Step content */}
       <div
         role="button"
@@ -94,10 +87,11 @@ function SortableStepItem({ step, index, isActive, onSelect, onDelete }: Sortabl
           }
         }}
         className={cn(
-          'flex-1 flex items-start gap-3 p-2.5 rounded-lg transition-all text-left cursor-pointer',
+          'flex items-start gap-3 p-2.5 rounded-lg transition-all text-left overflow-hidden',
           isActive
             ? 'bg-primary/10 border border-primary/30'
-            : 'hover:bg-muted/60 border border-transparent'
+            : 'hover:bg-muted/60 border border-transparent',
+          !step.isFixed && 'cursor-grab active:cursor-grabbing'
         )}
       >
         {/* Step icon badge */}
@@ -113,7 +107,7 @@ function SortableStepItem({ step, index, isActive, onSelect, onDelete }: Sortabl
         </div>
 
         {/* Step info */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-hidden">
           <div
             className={cn(
               'text-sm font-medium truncate',
@@ -129,18 +123,42 @@ function SortableStepItem({ step, index, isActive, onSelect, onDelete }: Sortabl
           )}
         </div>
 
-        {/* Delete button (not for fixed steps) */}
+        {/* Actions menu (not for fixed steps) */}
         {!step.isFixed && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete()
-            }}
-            className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-            aria-label={`Delete step ${step.label}`}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="p-1 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 rounded hover:bg-muted"
+                aria-label={`Options for ${step.label}`}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDuplicate()
+                }}
+                className="cursor-pointer"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Duplicar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDelete()
+                }}
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </div>
@@ -163,6 +181,7 @@ export function SortableStepsList() {
   const setActiveStepId = useVisualBuilderStore((state) => state.setActiveStepId)
   const reorderSteps = useVisualBuilderStore((state) => state.reorderSteps)
   const deleteStep = useVisualBuilderStore((state) => state.deleteStep)
+  const duplicateStep = useVisualBuilderStore((state) => state.duplicateStep)
 
   // Filter out result step (it's shown separately in the sidebar)
   const regularSteps = useMemo(
@@ -221,6 +240,7 @@ export function SortableStepsList() {
               isActive={activeStepId === step.id}
               onSelect={() => setActiveStepId(step.id)}
               onDelete={() => deleteStep(step.id)}
+              onDuplicate={() => duplicateStep(step.id)}
             />
           ))}
         </div>

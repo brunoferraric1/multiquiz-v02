@@ -31,6 +31,7 @@ export interface VisualBuilderState {
   addStep: (step: Step, insertAfterStepId?: string) => void
   updateStep: (id: string, updates: Partial<Step>) => void
   deleteStep: (id: string) => void
+  duplicateStep: (id: string) => void
   reorderSteps: (fromIndex: number, toIndex: number) => void
 
   // Actions - Step selection
@@ -157,6 +158,31 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           }
 
           return { steps: newSteps, activeStepId: newActiveStepId }
+        }),
+
+      duplicateStep: (id) =>
+        set((state) => {
+          const stepToDuplicate = state.steps.find(s => s.id === id)
+
+          // Cannot duplicate fixed steps (intro and result)
+          if (!stepToDuplicate || stepToDuplicate.isFixed) {
+            return state
+          }
+
+          const stepIndex = state.steps.findIndex(s => s.id === id)
+          const steps = [...state.steps]
+
+          // Create a duplicate with new ID and updated label
+          const duplicatedStep: Step = {
+            ...stepToDuplicate,
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            label: `${stepToDuplicate.label} (cópia)`,
+          }
+
+          // Insert after the original step
+          steps.splice(stepIndex + 1, 0, duplicatedStep)
+
+          return { steps, activeStepId: duplicatedStep.id }
         }),
 
       reorderSteps: (fromIndex, toIndex) =>

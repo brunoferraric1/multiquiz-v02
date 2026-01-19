@@ -140,6 +140,70 @@ describe('VisualBuilderStore', () => {
     })
   })
 
+  describe('Step Management - Duplicate', () => {
+    it('duplicateStep creates a copy of the step', () => {
+      const store = useVisualBuilderStore.getState()
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', subtitle: 'Original subtitle' })
+      store.duplicateStep('q1')
+
+      const { steps } = useVisualBuilderStore.getState()
+      expect(steps).toHaveLength(4) // intro, q1, duplicated, result
+      const duplicated = steps.find(s => s.label.includes('(cópia)'))
+      expect(duplicated).toBeDefined()
+      expect(duplicated?.type).toBe('question')
+      expect(duplicated?.subtitle).toBe('Original subtitle')
+    })
+
+    it('duplicateStep inserts the copy after the original', () => {
+      const store = useVisualBuilderStore.getState()
+      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
+      store.addStep({ id: 'q2', type: 'question', label: 'P2' })
+      store.duplicateStep('q1')
+
+      const { steps } = useVisualBuilderStore.getState()
+      expect(steps[1].id).toBe('q1')
+      expect(steps[2].label).toBe('P1 (cópia)')
+      expect(steps[3].id).toBe('q2')
+    })
+
+    it('duplicateStep sets the duplicated step as active', () => {
+      const store = useVisualBuilderStore.getState()
+      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
+      store.duplicateStep('q1')
+
+      const { activeStepId, steps } = useVisualBuilderStore.getState()
+      const duplicated = steps.find(s => s.label.includes('(cópia)'))
+      expect(activeStepId).toBe(duplicated?.id)
+    })
+
+    it('duplicateStep cannot duplicate fixed steps (intro)', () => {
+      const store = useVisualBuilderStore.getState()
+      store.duplicateStep('intro')
+
+      const { steps } = useVisualBuilderStore.getState()
+      expect(steps).toHaveLength(2) // Only intro and result
+    })
+
+    it('duplicateStep cannot duplicate fixed steps (result)', () => {
+      const store = useVisualBuilderStore.getState()
+      store.duplicateStep('result')
+
+      const { steps } = useVisualBuilderStore.getState()
+      expect(steps).toHaveLength(2) // Only intro and result
+    })
+
+    it('duplicateStep generates a unique ID for the copy', () => {
+      const store = useVisualBuilderStore.getState()
+      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
+      store.duplicateStep('q1')
+
+      const { steps } = useVisualBuilderStore.getState()
+      const original = steps.find(s => s.id === 'q1')
+      const duplicated = steps.find(s => s.label.includes('(cópia)'))
+      expect(original?.id).not.toBe(duplicated?.id)
+    })
+  })
+
   describe('Step Management - Update', () => {
     it('updateStep updates step properties', () => {
       const store = useVisualBuilderStore.getState()

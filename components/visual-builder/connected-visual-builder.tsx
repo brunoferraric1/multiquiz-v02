@@ -111,7 +111,7 @@ export function ConnectedVisualBuilder({
           </div>
 
           {/* Steps list with drag and drop */}
-          <div className="flex-1 overflow-y-auto p-2">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 pr-3">
             <SortableStepsList />
           </div>
 
