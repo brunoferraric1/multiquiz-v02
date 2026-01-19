@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // ============================================
 // BLOCK-BASED ARCHITECTURE
@@ -281,6 +281,21 @@ export default function PrototypePage() {
   const [activeHeaderTab, setActiveHeaderTab] = useState<'editar' | 'assistente' | 'tema' | 'relatorio' | 'config'>('editar');
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
+
+  // Mobile-specific state
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isBlockDrawerOpen, setIsBlockDrawerOpen] = useState(false);
+  const [draggingStepId, setDraggingStepId] = useState<string | null>(null);
+  const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const activeStep = steps.find(s => s.id === activeStepId) || steps[0];
   const selectedOutcome = selectedOutcomeId ? outcomes.find(o => o.id === selectedOutcomeId) : outcomes[0];
@@ -1423,9 +1438,515 @@ export default function PrototypePage() {
   };
 
   // ============================================
+  // MOBILE STEP REORDER HANDLERS
+  // ============================================
+
+  const handleMobileStepDragStart = (stepId: string) => {
+    setDraggingStepId(stepId);
+  };
+
+  const handleMobileStepDragOver = (stepId: string) => {
+    if (draggingStepId && stepId !== draggingStepId) {
+      setDragOverStepId(stepId);
+    }
+  };
+
+  const handleMobileStepDragEnd = () => {
+    if (draggingStepId && dragOverStepId) {
+      const draggedStep = steps.find(s => s.id === draggingStepId);
+      const targetStep = steps.find(s => s.id === dragOverStepId);
+
+      if (draggedStep && targetStep && !draggedStep.isFixed && !targetStep.isFixed) {
+        const newSteps = [...steps];
+        const fromIndex = newSteps.findIndex(s => s.id === draggingStepId);
+        const toIndex = newSteps.findIndex(s => s.id === dragOverStepId);
+
+        if (fromIndex !== -1 && toIndex !== -1) {
+          const [removed] = newSteps.splice(fromIndex, 1);
+          newSteps.splice(toIndex, 0, removed);
+          setSteps(newSteps);
+        }
+      }
+    }
+    setDraggingStepId(null);
+    setDragOverStepId(null);
+  };
+
+  // Open drawer when block is selected on mobile
+  const handleBlockSelect = (blockId: string | null) => {
+    setSelectedBlockId(blockId);
+    if (isMobile && blockId) {
+      setIsBlockDrawerOpen(true);
+    }
+  };
+
+  // ============================================
   // RENDER
   // ============================================
 
+  // MOBILE LAYOUT
+  if (isMobile) {
+    const regularSteps = steps.filter(s => s.type !== 'result');
+    let stepCounter = 0;
+
+    return (
+      <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
+        {/* MOBILE HEADER */}
+        <header className="h-14 bg-white border-b flex items-center justify-between px-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <button className="p-2 -ml-2 text-gray-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <span className="font-semibold text-gray-900">Quiz Skincare</span>
+          </div>
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-2 -mr-2 text-gray-600"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="1"/>
+              <circle cx="12" cy="5" r="1"/>
+              <circle cx="12" cy="19" r="1"/>
+            </svg>
+          </button>
+        </header>
+
+        {/* MOBILE SUBHEADER - Current step name */}
+        <div className="h-12 bg-white border-b flex items-center justify-between px-4 shrink-0">
+          <span className="text-sm font-medium text-gray-700 uppercase tracking-wide">
+            {activeStep.type === 'result'
+              ? (selectedOutcome ? getOutcomeDisplayName(selectedOutcome, outcomes.indexOf(selectedOutcome)) : 'Resultado')
+              : activeStep.label}
+          </span>
+          <button
+            className="p-2 -mr-2 text-gray-500 hover:text-blue-600"
+            title="Preview"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* MOBILE MAIN CONTENT */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* LEFT STEP RAIL */}
+          <div className="w-14 bg-white border-r flex flex-col py-2 shrink-0">
+            {/* Regular steps */}
+            <div className="flex-1 overflow-y-auto space-y-1 px-1.5">
+              {regularSteps.map((step) => {
+                stepCounter++;
+                const isActive = activeStepId === step.id;
+                const isDragging = draggingStepId === step.id;
+                const isDragOver = dragOverStepId === step.id;
+
+                return (
+                  <button
+                    key={step.id}
+                    onClick={() => handleStepChange(step.id)}
+                    onTouchStart={() => !step.isFixed && handleMobileStepDragStart(step.id)}
+                    onTouchMove={(e) => {
+                      if (draggingStepId) {
+                        const touch = e.touches[0];
+                        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                        const stepButton = element?.closest('[data-step-id]');
+                        if (stepButton) {
+                          handleMobileStepDragOver(stepButton.getAttribute('data-step-id') || '');
+                        }
+                      }
+                    }}
+                    onTouchEnd={handleMobileStepDragEnd}
+                    data-step-id={step.id}
+                    className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center transition-all ${
+                      isActive
+                        ? 'bg-blue-600 text-white'
+                        : isDragOver
+                        ? 'bg-blue-100 border-2 border-blue-400 border-dashed'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    } ${isDragging ? 'opacity-50 scale-95' : ''}`}
+                  >
+                    <div className="scale-75">{stepTypeIcons[step.type]}</div>
+                    <span className="text-[10px] font-medium -mt-0.5">{stepCounter}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Divider */}
+            <div className="mx-2 my-2 border-t border-gray-200" />
+
+            {/* Results section */}
+            <div className="space-y-1 px-1.5">
+              {outcomes.map((outcome, idx) => {
+                const isActive = activeStepId === 'result' && selectedOutcomeId === outcome.id;
+                return (
+                  <button
+                    key={outcome.id}
+                    onClick={() => {
+                      handleStepChange('result');
+                      setSelectedOutcomeId(outcome.id);
+                    }}
+                    className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center transition-all ${
+                      isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 3v18h18"/>
+                      <path d="M18 17V9"/>
+                      <path d="M13 17V5"/>
+                      <path d="M8 17v-3"/>
+                    </svg>
+                    <span className="text-[10px] font-medium -mt-0.5">R{idx + 1}</span>
+                  </button>
+                );
+              })}
+              {/* Add result button */}
+              <button
+                onClick={addOutcome}
+                className="w-11 h-11 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Add step button at bottom */}
+            <div className="mt-2 px-1.5">
+              <button
+                onClick={() => setIsAddStepSheetOpen(true)}
+                className="w-11 h-11 rounded-xl flex items-center justify-center bg-gray-900 text-white hover:bg-gray-800"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* PREVIEW AREA */}
+          <div
+            className="flex-1 overflow-y-auto p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setSelectedBlockId(null);
+                setIsBlockDrawerOpen(false);
+              }
+            }}
+          >
+            {/* Preview Card */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-sm mx-auto">
+              {/* Header with progress */}
+              {(activeStep.settings.showProgress || activeStep.settings.allowBack) && (
+                <div className="px-4 pt-4 space-y-2">
+                  {activeStep.settings.allowBack && (
+                    <button className="flex items-center gap-1 text-gray-500 text-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                      </svg>
+                      Voltar
+                    </button>
+                  )}
+                  {activeStep.settings.showProgress && (
+                    <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full"
+                        style={{ width: `${((steps.findIndex(s => s.id === activeStepId) + 1) / steps.length) * 100}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Blocks */}
+              <div className="p-4 space-y-2">
+                {activeStep.type === 'result' && outcomes.length === 0 ? (
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
+                    <div className="text-3xl mb-2 opacity-50">🎯</div>
+                    <p className="text-sm text-gray-500 mb-3">Nenhum resultado criado</p>
+                    <button
+                      onClick={addOutcome}
+                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium"
+                    >
+                      + Criar resultado
+                    </button>
+                  </div>
+                ) : currentBlocks.length === 0 ? (
+                  <div className="text-center text-gray-400 py-6 text-sm">
+                    Nenhum bloco
+                  </div>
+                ) : (
+                  currentBlocks.map((block) => (
+                    <div
+                      key={block.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBlockSelect(block.id);
+                      }}
+                      className={`relative rounded-lg transition-all cursor-pointer ${
+                        selectedBlockId === block.id
+                          ? 'ring-2 ring-blue-500 ring-offset-2'
+                          : 'hover:ring-2 hover:ring-gray-300'
+                      }`}
+                    >
+                      {renderBlockPreview(block)}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Add block button */}
+            <button
+              onClick={() => setIsAddBlockSheetOpen(true)}
+              className="mt-4 w-full max-w-sm mx-auto flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-400 hover:text-blue-600"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Adicionar bloco
+            </button>
+          </div>
+        </div>
+
+        {/* AI FAB */}
+        <button
+          onClick={() => setIsChatExpanded(true)}
+          className="fixed bottom-6 right-4 w-14 h-14 bg-purple-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-purple-700 z-30"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+
+        {/* MOBILE OVERFLOW MENU */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileMenuOpen(false)} />
+            <div className="absolute top-14 right-4 bg-white rounded-xl shadow-xl overflow-hidden min-w-[200px] animate-in fade-in slide-in-from-top-2">
+              {[
+                { label: 'Publicar', icon: '🚀' },
+                { label: 'Preview', icon: '▶️' },
+                { label: 'Tema', icon: '🎨' },
+                { label: 'Relatório', icon: '📊' },
+                { label: 'Configurações', icon: '⚙️' },
+                { label: 'Deletar', icon: '🗑️', danger: true },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 ${
+                    item.danger ? 'text-red-600' : 'text-gray-700'
+                  }`}
+                >
+                  <span>{item.icon}</span>
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* MOBILE BLOCK EDIT DRAWER */}
+        {isBlockDrawerOpen && selectedBlock && (
+          <div className="fixed inset-0 z-40">
+            <div
+              className="absolute inset-0 bg-black/30"
+              onClick={() => {
+                setIsBlockDrawerOpen(false);
+                setSelectedBlockId(null);
+              }}
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[70vh] overflow-hidden animate-in slide-in-from-bottom">
+              {/* Drawer header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{blockIcons[selectedBlock.type]}</span>
+                  <span className="font-semibold text-gray-900">{blockLabels[selectedBlock.type]}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {/* Move up */}
+                  <button
+                    onClick={() => {
+                      const blocks = activeStep.type === 'result' ? selectedOutcome?.blocks : activeStep.blocks;
+                      if (blocks) {
+                        const idx = blocks.findIndex(b => b.id === selectedBlockId);
+                        if (idx > 0) moveBlock(selectedBlockId!, 'up');
+                      }
+                    }}
+                    className="p-2 text-gray-500 hover:bg-gray-100 rounded"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 15l-6-6-6 6"/>
+                    </svg>
+                  </button>
+                  {/* Move down */}
+                  <button
+                    onClick={() => {
+                      const blocks = activeStep.type === 'result' ? selectedOutcome?.blocks : activeStep.blocks;
+                      if (blocks) {
+                        const idx = blocks.findIndex(b => b.id === selectedBlockId);
+                        if (idx < blocks.length - 1) moveBlock(selectedBlockId!, 'down');
+                      }
+                    }}
+                    className="p-2 text-gray-500 hover:bg-gray-100 rounded"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                  </button>
+                  {/* Delete */}
+                  <button
+                    onClick={() => {
+                      removeBlock(selectedBlockId!);
+                      setIsBlockDrawerOpen(false);
+                      setSelectedBlockId(null);
+                    }}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Drawer content - block config */}
+              <div className="overflow-y-auto max-h-[calc(70vh-60px)] p-4">
+                {renderBlockConfig(selectedBlock)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MOBILE AI CHAT EXPANDED */}
+        {isChatExpanded && (
+          <div className="fixed inset-0 z-50 bg-white flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </div>
+                <span className="font-semibold text-gray-900">Assistente IA</span>
+                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">Beta</span>
+              </div>
+              <button
+                onClick={() => setIsChatExpanded(false)}
+                className="p-2 text-gray-500"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex justify-end">
+                <div className="bg-gray-100 rounded-2xl rounded-tr-sm px-4 py-2 max-w-[85%]">
+                  <p className="text-sm text-gray-800">Adicione mais perguntas para mim</p>
+                </div>
+              </div>
+              <div className="flex justify-start">
+                <div className="bg-purple-50 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[85%]">
+                  <p className="text-sm text-gray-800">Que tipo de perguntas você gostaria? Por exemplo, perguntas sobre preferências, comportamentos ou dados demográficos?</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t">
+              <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-4 py-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-500 shrink-0">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+                <input
+                  type="text"
+                  value={chatMessage}
+                  onChange={(e) => setChatMessage(e.target.value)}
+                  placeholder="Converse com o assistente..."
+                  className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-500 outline-none"
+                />
+                <button className="p-2 text-purple-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ADD STEP SHEET (reuse existing) */}
+        {isAddStepSheetOpen && (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setIsAddStepSheetOpen(false)} />
+            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Adicionar etapa</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { type: 'question' as StepType, icon: '❓', label: 'Pergunta', desc: 'Múltipla escolha' },
+                  { type: 'lead-gen' as StepType, icon: '📋', label: 'Captura', desc: 'Coletar dados' },
+                  { type: 'promo' as StepType, icon: '🎁', label: 'Promocional', desc: 'Oferta especial' },
+                ].map(item => (
+                  <button
+                    key={item.type}
+                    onClick={() => addStep(item.type)}
+                    className="p-4 border-2 border-gray-200 rounded-xl text-center hover:border-blue-400 hover:bg-blue-50"
+                  >
+                    <span className="text-2xl mb-1 block">{item.icon}</span>
+                    <span className="font-medium text-gray-900 text-sm block">{item.label}</span>
+                    <span className="text-xs text-gray-500">{item.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ADD BLOCK SHEET (reuse existing) */}
+        {isAddBlockSheetOpen && (() => {
+          const hasOptionsBlock = currentBlocks.some(b => b.type === 'options');
+          const allBlockTypes: BlockType[] = ['text', 'media', 'options', 'fields', 'price', 'button', 'banner', 'list'];
+          const isBlockDisabled = (type: BlockType): boolean => type === 'options' && hasOptionsBlock;
+
+          return (
+            <div className="fixed inset-0 z-50">
+              <div className="absolute inset-0 bg-black/50" onClick={() => { setIsAddBlockSheetOpen(false); setInsertAtIndex(null); }} />
+              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Adicionar bloco</h3>
+                <div className="grid grid-cols-4 gap-2">
+                  {allBlockTypes.map(type => (
+                    <button
+                      key={type}
+                      onClick={() => !isBlockDisabled(type) && addBlock(type, insertAtIndex ?? undefined)}
+                      disabled={isBlockDisabled(type)}
+                      className={`p-3 border-2 rounded-xl text-center transition-all ${
+                        isBlockDisabled(type)
+                          ? 'border-gray-100 bg-gray-50 opacity-50'
+                          : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50'
+                      }`}
+                    >
+                      <span className="text-lg block">{blockIcons[type]}</span>
+                      <span className="text-xs text-gray-700">{blockLabels[type]}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+    );
+  }
+
+  // DESKTOP LAYOUT
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
       {/* HEADER - Typeform inspired */}
