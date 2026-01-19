@@ -1513,23 +1513,6 @@ export default function PrototypePage() {
           </button>
         </header>
 
-        {/* MOBILE SUBHEADER - Current step name */}
-        <div className="h-12 bg-white border-b flex items-center justify-between px-4 shrink-0">
-          <span className="text-sm font-medium text-gray-700 uppercase tracking-wide">
-            {activeStep.type === 'result'
-              ? (selectedOutcome ? getOutcomeDisplayName(selectedOutcome, outcomes.indexOf(selectedOutcome)) : 'Resultado')
-              : activeStep.label}
-          </span>
-          <button
-            className="p-2 -mr-2 text-gray-500 hover:text-blue-600"
-            title="Preview"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-          </button>
-        </div>
-
         {/* MOBILE MAIN CONTENT */}
         <div className="flex-1 flex overflow-hidden">
           {/* LEFT STEP RAIL */}
@@ -1638,6 +1621,21 @@ export default function PrototypePage() {
               }
             }}
           >
+            {/* Header row: Step name + Preview button */}
+            <div className="max-w-sm mx-auto flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-gray-700">
+                {activeStep.type === 'result'
+                  ? (selectedOutcome ? getOutcomeDisplayName(selectedOutcome, outcomes.indexOf(selectedOutcome)) : 'Resultado')
+                  : activeStep.label}
+              </span>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-gray-500">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Preview
+              </button>
+            </div>
+
             {/* Preview Card */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-sm mx-auto">
               {/* Header with progress */}
@@ -1697,20 +1695,20 @@ export default function PrototypePage() {
                     </div>
                   ))
                 )}
+
+                {/* Add block button - inside card */}
+                <button
+                  onClick={() => setIsAddBlockSheetOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  <span className="text-sm">Adicionar bloco</span>
+                </button>
               </div>
             </div>
-
-            {/* Add block button */}
-            <button
-              onClick={() => setIsAddBlockSheetOpen(true)}
-              className="mt-4 w-full max-w-sm mx-auto flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-400 hover:text-blue-600"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Adicionar bloco
-            </button>
           </div>
         </div>
 
