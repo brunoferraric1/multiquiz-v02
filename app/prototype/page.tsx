@@ -1550,7 +1550,7 @@ export default function PrototypePage() {
                       {/* Step info */}
                       <div className="flex-1 min-w-0">
                         <div className={`text-sm font-medium truncate ${isActive ? 'text-blue-700' : 'text-gray-900'}`}>
-                          {stepNumber}. {step.type === 'intro' ? 'Introdução' : step.type === 'lead-gen' ? 'Captura' : step.type === 'promo' ? 'Promocional' : 'Pergunta'}
+                          {stepNumber}. {step.label}
                         </div>
                         {stepTitle && (
                           <div className="text-xs text-gray-500 truncate mt-0.5">{stepTitle}</div>
@@ -1861,35 +1861,54 @@ export default function PrototypePage() {
             {activeStep.type === 'result' ? (
               selectedOutcome ? (
                 <div className="flex items-center justify-between">
-                  {editingOutcomeName ? (
-                    <input
-                      type="text"
-                      defaultValue={selectedOutcome.name}
-                      placeholder={`Resultado ${outcomes.findIndex(o => o.id === selectedOutcomeId) + 1}`}
-                      autoFocus
-                      onBlur={(e) => updateOutcomeName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') updateOutcomeName(e.currentTarget.value);
-                        if (e.key === 'Escape') setEditingOutcomeName(false);
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {editingOutcomeName ? (
+                      <input
+                        type="text"
+                        defaultValue={selectedOutcome.name}
+                        placeholder={`Resultado ${outcomes.findIndex(o => o.id === selectedOutcomeId) + 1}`}
+                        autoFocus
+                        onBlur={(e) => updateOutcomeName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') updateOutcomeName(e.currentTarget.value);
+                          if (e.key === 'Escape') setEditingOutcomeName(false);
+                        }}
+                        className="flex-1 font-semibold text-gray-900 px-1 py-0.5 border border-blue-300 rounded outline-none"
+                      />
+                    ) : (
+                      <>
+                        <h3 className="font-semibold text-gray-900 truncate">
+                          {getOutcomeDisplayName(selectedOutcome, outcomes.findIndex(o => o.id === selectedOutcomeId))}
+                        </h3>
+                        <button
+                          onClick={() => setEditingOutcomeName(true)}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded shrink-0"
+                          title="Editar nome"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {outcomes.length > 1 && (
+                    <button
+                      onClick={() => {
+                        const outcomeName = getOutcomeDisplayName(selectedOutcome, outcomes.findIndex(o => o.id === selectedOutcomeId));
+                        if (confirm(`Deletar "${outcomeName}"?`)) {
+                          deleteOutcome(selectedOutcome.id);
+                        }
                       }}
-                      className="flex-1 font-semibold text-gray-900 px-1 py-0.5 border border-blue-300 rounded outline-none"
-                    />
-                  ) : (
-                    <>
-                      <h3 className="font-semibold text-gray-900">
-                        {getOutcomeDisplayName(selectedOutcome, outcomes.findIndex(o => o.id === selectedOutcomeId))}
-                      </h3>
-                      <button
-                        onClick={() => setEditingOutcomeName(true)}
-                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                        title="Editar nome"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-                    </>
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded shrink-0"
+                      title="Deletar resultado"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                    </button>
                   )}
                 </div>
               ) : (
@@ -1903,7 +1922,7 @@ export default function PrototypePage() {
                   {isEditingStepLabel ? (
                     <input
                       type="text"
-                      defaultValue={getStepDisplayName(activeStep)}
+                      defaultValue={activeStep.label}
                       autoFocus
                       onBlur={(e) => updateStepLabel(e.target.value)}
                       onKeyDown={(e) => {
@@ -1914,7 +1933,7 @@ export default function PrototypePage() {
                     />
                   ) : (
                     <>
-                      <h3 className="font-semibold text-gray-900">{getStepDisplayName(activeStep)}</h3>
+                      <h3 className="font-semibold text-gray-900">{activeStep.label}</h3>
                       <button
                         onClick={() => setIsEditingStepLabel(true)}
                         className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
@@ -1930,7 +1949,7 @@ export default function PrototypePage() {
                 </div>
                 <button
                   onClick={() => {
-                    if (confirm(`Deletar "${getStepDisplayName(activeStep)}"?`)) {
+                    if (confirm(`Deletar "${activeStep.label}"?`)) {
                       deleteStep(activeStep.id);
                     }
                   }}
