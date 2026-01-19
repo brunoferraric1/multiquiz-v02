@@ -117,7 +117,7 @@ export const getDefaultBlocksForStepType = (type: StepType): Block[] => {
       return [
         { ...createBlock('header'), config: { title: 'Oferta especial', description: '' } },
         { ...createBlock('media'), enabled: false },
-        { ...createBlock('price'), config: { productTitle: '', value: '', prefix: 'R$' } },
+        { ...createBlock('price') },
         { ...createBlock('button'), config: { text: 'Aproveitar', action: 'url' } },
       ]
     case 'result':

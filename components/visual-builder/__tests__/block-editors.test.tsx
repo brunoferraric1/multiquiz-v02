@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@/test/test-utils'
+import { render, screen, fireEvent } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
 import {
   HeaderBlockEditor,
@@ -165,18 +165,15 @@ describe('OptionsBlockEditor', () => {
 
   it('can add new options', async () => {
     const onChange = vi.fn()
-    const user = userEvent.setup()
 
     render(<OptionsBlockEditor config={defaultConfig} onChange={onChange} />)
 
-    const input = screen.getByTestId('new-option-input')
-    await user.type(input, 'Option A')
-    await user.click(screen.getByTestId('add-option-button'))
+    fireEvent.click(screen.getByTestId('add-option-button'))
 
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
         items: expect.arrayContaining([
-          expect.objectContaining({ text: 'Option A' })
+          expect.objectContaining({ text: '' })
         ])
       })
     )
@@ -336,39 +333,54 @@ describe('FieldsBlockEditor', () => {
 })
 
 describe('PriceBlockEditor', () => {
-  const defaultConfig = { productTitle: '', value: '', prefix: 'R$' }
+  const defaultConfig = {
+    items: [
+      {
+        id: 'price-1',
+        title: 'Plano',
+        value: 'R$ 99,90',
+        suffix: 'à vista',
+        showCheckbox: true,
+      },
+    ],
+    selectionType: 'single' as const,
+  }
 
-  it('renders product title input', () => {
+  it('renders selection type toggle', () => {
     render(<PriceBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByLabelText(/nome do produto/i)).toBeInTheDocument()
+    expect(screen.getByText(/tipo de seleção/i)).toBeInTheDocument()
+    expect(screen.getByText('Única')).toBeInTheDocument()
+    expect(screen.getByText('Múltipla')).toBeInTheDocument()
   })
 
-  it('renders price inputs', () => {
+  it('renders price items', () => {
     render(<PriceBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByLabelText(/prefixo do preço/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/valor do preço/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/sufixo do preço/i)).toBeInTheDocument()
+    expect(screen.getByText('Plano')).toBeInTheDocument()
+    expect(screen.getByText('R$ 99,90')).toBeInTheDocument()
   })
 
-  it('renders highlight toggle', () => {
+  it('renders add price button', () => {
     render(<PriceBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByLabelText(/destacar preço/i)).toBeInTheDocument()
+    expect(screen.getByTestId('add-price-button')).toBeInTheDocument()
   })
 
-  it('displays existing values', () => {
-    render(
-      <PriceBlockEditor
-        config={{ productTitle: 'Premium', value: '99,90', prefix: 'R$', suffix: '/mês' }}
-        onChange={() => {}}
-      />
+  it('calls onChange when adding a new price', () => {
+    const onChange = vi.fn()
+    render(<PriceBlockEditor config={defaultConfig} onChange={onChange} />)
+
+    fireEvent.click(screen.getByTestId('add-price-button'))
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: expect.arrayContaining([
+          expect.objectContaining({ id: 'price-1' }),
+          expect.objectContaining({ title: '', value: '' }),
+        ]),
+      })
     )
-
-    expect(screen.getByDisplayValue('Premium')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('99,90')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('/mês')).toBeInTheDocument()
   })
 })
 

@@ -66,13 +66,23 @@ export interface FieldsConfig {
   items: FieldItem[]
 }
 
+// Price item for price block (supports multiple prices)
+export interface PriceItem {
+  id: string
+  title: string           // Product/plan name (e.g., "Plano PRO")
+  prefix?: string         // Text above price (e.g., "10% off")
+  value: string           // Main price (e.g., "R$ 89,90")
+  suffix?: string         // Text below price (e.g., "à vista")
+  originalPrice?: string  // Slashed/strikethrough price (e.g., "R$ 129,90")
+  highlightText?: string  // Badge text (e.g., "MAIS POPULAR")
+  showCheckbox?: boolean  // Show selection checkbox/radio
+  redirectUrl?: string    // URL to redirect when clicked
+}
+
 // Price block configuration
 export interface PriceConfig {
-  productTitle: string
-  value: string
-  prefix?: string
-  suffix?: string
-  highlight?: boolean
+  items: PriceItem[]
+  selectionType?: 'single' | 'multiple'  // Radio or checkbox selection
 }
 
 // Button action types
@@ -157,7 +167,18 @@ export function getDefaultBlockConfig(type: BlockType): BlockConfig {
         ],
       } as FieldsConfig
     case 'price':
-      return { productTitle: '', value: '', prefix: 'R$' } as PriceConfig
+      return {
+        items: [
+          {
+            id: `price-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            title: 'Plano',
+            value: 'R$ 99,90',
+            suffix: 'à vista',
+            showCheckbox: true,
+          },
+        ],
+        selectionType: 'single',
+      } as PriceConfig
     case 'button':
       return { text: 'Continuar', action: 'next_step' } as ButtonConfig
     case 'banner':

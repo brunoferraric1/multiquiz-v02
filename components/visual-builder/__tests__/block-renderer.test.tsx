@@ -90,13 +90,23 @@ describe('BlockRenderer', () => {
         id: 'block-1',
         type: 'price',
         enabled: true,
-        config: { productTitle: 'Product Name', value: '99,90', prefix: 'R$' },
+        config: {
+          items: [
+            {
+              id: 'price-1',
+              title: 'Product Name',
+              value: 'R$ 99,90',
+              showCheckbox: true,
+            },
+          ],
+          selectionType: 'single',
+        },
       }
 
       render(<BlockRenderer block={block} />)
 
       expect(screen.getByText('Product Name')).toBeInTheDocument()
-      expect(screen.getByText('99,90')).toBeInTheDocument()
+      expect(screen.getByText('R$ 99,90')).toBeInTheDocument()
     })
 
     it('renders button block', () => {
