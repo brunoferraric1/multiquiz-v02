@@ -15,7 +15,7 @@ export function HeaderBlockPreview({ config, enabled }: HeaderBlockPreviewProps)
   const { title, description } = config as HeaderConfig
 
   return (
-    <div className={cn('p-4', !enabled && 'opacity-50')}>
+    <div className={cn('p-4 text-center', !enabled && 'opacity-50')}>
       {title ? (
         <h2 className="text-xl font-semibold text-foreground">{title}</h2>
       ) : (

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useVisualBuilderStore } from '@/store/visual-builder-store'
 import { BuilderProperties } from './builder-properties'
 import {
@@ -13,7 +14,7 @@ import {
   BannerBlockEditor,
   ListBlockEditor,
   BlockControls,
-  StepSettingsEditor,
+  StepConfigSheet,
 } from './editors'
 import {
   Block,
@@ -30,6 +31,7 @@ import {
   ListConfig,
 } from '@/types/blocks'
 import { Separator } from '@/components/ui/separator'
+import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import {
   Heading1,
   Type,
@@ -60,6 +62,9 @@ interface ConnectedPropertiesPanelProps {
 }
 
 export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanelProps) {
+  // Local state for config sheet
+  const [isConfigOpen, setIsConfigOpen] = useState(false)
+
   // Read state from store
   const steps = useVisualBuilderStore((state) => state.steps)
   const outcomes = useVisualBuilderStore((state) => state.outcomes)
@@ -71,13 +76,12 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
   const setSelectedBlockId = useVisualBuilderStore((state) => state.setSelectedBlockId)
   const updateBlock = useVisualBuilderStore((state) => state.updateBlock)
   const deleteBlock = useVisualBuilderStore((state) => state.deleteBlock)
-  const toggleBlock = useVisualBuilderStore((state) => state.toggleBlock)
   const reorderBlocks = useVisualBuilderStore((state) => state.reorderBlocks)
   const updateOutcomeBlock = useVisualBuilderStore((state) => state.updateOutcomeBlock)
   const deleteOutcomeBlock = useVisualBuilderStore((state) => state.deleteOutcomeBlock)
-  const toggleOutcomeBlock = useVisualBuilderStore((state) => state.toggleOutcomeBlock)
   const reorderOutcomeBlocks = useVisualBuilderStore((state) => state.reorderOutcomeBlocks)
   const updateStepSettings = useVisualBuilderStore((state) => state.updateStepSettings)
+  const setAddBlockSheetOpen = useVisualBuilderStore((state) => state.setAddBlockSheetOpen)
 
   // Find the active step and selected block
   const activeStep = steps.find((s) => s.id === activeStepId)
@@ -118,16 +122,6 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
       deleteOutcomeBlock(selectedOutcomeId, selectedBlockId)
     } else if (activeStepId) {
       deleteBlock(activeStepId, selectedBlockId)
-    }
-  }
-
-  const handleToggleBlock = () => {
-    if (!selectedBlockId) return
-
-    if (isResultStep && selectedOutcomeId) {
-      toggleOutcomeBlock(selectedOutcomeId, selectedBlockId)
-    } else if (activeStepId) {
-      toggleBlock(activeStepId, selectedBlockId)
     }
   }
 
@@ -233,14 +227,9 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
           <div className="p-2 rounded-lg bg-primary/10 text-primary">
             {blockTypeIcons[selectedBlock.type]}
           </div>
-          <div>
-            <h4 className="font-medium text-foreground">
-              {blockTypeLabels[selectedBlock.type]}
-            </h4>
-            {!selectedBlock.enabled && (
-              <span className="text-xs text-muted-foreground">(desativado)</span>
-            )}
-          </div>
+          <h4 className="font-medium text-foreground">
+            {blockTypeLabels[selectedBlock.type]}
+          </h4>
         </div>
 
         {/* Block editor */}
@@ -250,8 +239,6 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
         {/* Block controls */}
         <BlockControls
-          enabled={selectedBlock.enabled}
-          onToggle={handleToggleBlock}
           onMoveUp={() => handleMoveBlock('up')}
           onMoveDown={() => handleMoveBlock('down')}
           onDelete={handleDeleteBlock}
@@ -275,33 +262,35 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
             Clique em um bloco na prévia para editar seu conteúdo.
           </p>
 
-          {currentBlocks.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Blocos neste resultado</h4>
-                <div className="space-y-1">
-                  {currentBlocks.map((block, index) => (
-                    <button
-                      key={block.id}
-                      onClick={() => setSelectedBlockId(block.id)}
-                      className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
-                    >
-                      <span className="text-muted-foreground">
-                        {blockTypeIcons[block.type]}
-                      </span>
-                      <span className="flex-1 text-sm">
-                        {blockTypeLabels[block.type]}
-                      </span>
-                      {!block.enabled && (
-                        <span className="text-xs text-muted-foreground">(oculto)</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+          <Separator />
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Blocos neste resultado</h4>
+            <div className="space-y-1">
+              {currentBlocks.map((block) => (
+                <button
+                  key={block.id}
+                  onClick={() => setSelectedBlockId(block.id)}
+                  className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
+                >
+                  <span className="text-muted-foreground">
+                    {blockTypeIcons[block.type]}
+                  </span>
+                  <span className="flex-1 text-sm">
+                    {blockTypeLabels[block.type]}
+                  </span>
+                  {!block.enabled && (
+                    <span className="text-xs text-muted-foreground">(oculto)</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <GhostAddButton
+              onClick={() => setAddBlockSheetOpen(true)}
+              aria-label="Adicionar bloco"
+            >
+              Adicionar bloco
+            </GhostAddButton>
+          </div>
         </div>
       </BuilderProperties>
     )
@@ -310,54 +299,69 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
   // If step is selected, show step settings
   if (activeStep) {
     return (
-      <BuilderProperties
-        title={activeStep.label}
-        actions={
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Settings className="w-4 h-4" />
-          </div>
-        }
-        className={className}
-      >
-        <div className="space-y-4">
-          {/* Step settings */}
-          <StepSettingsEditor
-            settings={activeStep.settings || {}}
-            onChange={(settings) => updateStepSettings(activeStep.id, settings)}
-            isIntroStep={isIntroStep}
-            isResultStep={isResultStep}
-          />
+      <>
+        <BuilderProperties
+          title={activeStep.label}
+          actions={
+            <button
+              onClick={() => setIsConfigOpen(true)}
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Abrir configurações"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          }
+          className={className}
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Clique em um bloco na prévia para editar seu conteúdo.
+            </p>
 
-          {/* Block list shortcut */}
-          {currentBlocks.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Blocos nesta etapa</h4>
-                <div className="space-y-1">
-                  {currentBlocks.map((block) => (
-                    <button
-                      key={block.id}
-                      onClick={() => setSelectedBlockId(block.id)}
-                      className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
-                    >
-                      <span className="text-muted-foreground">
-                        {blockTypeIcons[block.type]}
-                      </span>
-                      <span className="flex-1 text-sm">
-                        {blockTypeLabels[block.type]}
-                      </span>
-                      {!block.enabled && (
-                        <span className="text-xs text-muted-foreground">(oculto)</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
+            {/* Block list */}
+            <Separator />
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Blocos nesta etapa</h4>
+              <div className="space-y-1">
+                {currentBlocks.map((block) => (
+                  <button
+                    key={block.id}
+                    onClick={() => setSelectedBlockId(block.id)}
+                    className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
+                  >
+                    <span className="text-muted-foreground">
+                      {blockTypeIcons[block.type]}
+                    </span>
+                    <span className="flex-1 text-sm">
+                      {blockTypeLabels[block.type]}
+                    </span>
+                    {!block.enabled && (
+                      <span className="text-xs text-muted-foreground">(oculto)</span>
+                    )}
+                  </button>
+                ))}
               </div>
-            </>
-          )}
-        </div>
-      </BuilderProperties>
+              <GhostAddButton
+                onClick={() => setAddBlockSheetOpen(true)}
+                aria-label="Adicionar bloco"
+              >
+                Adicionar bloco
+              </GhostAddButton>
+            </div>
+          </div>
+        </BuilderProperties>
+
+        {/* Step config sheet */}
+        <StepConfigSheet
+          open={isConfigOpen}
+          onOpenChange={setIsConfigOpen}
+          settings={activeStep.settings || {}}
+          onChange={(settings) => updateStepSettings(activeStep.id, settings)}
+          stepLabel={activeStep.label}
+          isIntroStep={isIntroStep}
+          isResultStep={isResultStep}
+        />
+      </>
     )
   }
 

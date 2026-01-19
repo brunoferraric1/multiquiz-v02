@@ -5,8 +5,6 @@ import { BlockControls } from '../editors'
 
 describe('BlockControls', () => {
   const defaultProps = {
-    enabled: true,
-    onToggle: vi.fn(),
     onMoveUp: vi.fn(),
     onMoveDown: vi.fn(),
     onDelete: vi.fn(),
@@ -17,39 +15,6 @@ describe('BlockControls', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-  })
-
-  describe('Enable/Disable toggle', () => {
-    it('renders enabled toggle', () => {
-      render(<BlockControls {...defaultProps} />)
-
-      expect(screen.getByTestId('block-enabled-toggle')).toBeInTheDocument()
-    })
-
-    it('shows toggle as checked when enabled', () => {
-      render(<BlockControls {...defaultProps} enabled={true} />)
-
-      const toggle = screen.getByTestId('block-enabled-toggle')
-      expect(toggle).toHaveAttribute('data-state', 'checked')
-    })
-
-    it('shows toggle as unchecked when disabled', () => {
-      render(<BlockControls {...defaultProps} enabled={false} />)
-
-      const toggle = screen.getByTestId('block-enabled-toggle')
-      expect(toggle).toHaveAttribute('data-state', 'unchecked')
-    })
-
-    it('calls onToggle when toggle is clicked', async () => {
-      const onToggle = vi.fn()
-      const user = userEvent.setup()
-
-      render(<BlockControls {...defaultProps} onToggle={onToggle} />)
-
-      await user.click(screen.getByTestId('block-enabled-toggle'))
-
-      expect(onToggle).toHaveBeenCalledTimes(1)
-    })
   })
 
   describe('Reorder controls', () => {

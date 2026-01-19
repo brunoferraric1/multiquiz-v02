@@ -12,3 +12,4 @@ export { ListBlockEditor } from './list-block-editor'
 // Controls and settings
 export { BlockControls } from './block-controls'
 export { StepSettingsEditor } from './step-settings-editor'
+export { StepConfigSheet } from './step-config-sheet'

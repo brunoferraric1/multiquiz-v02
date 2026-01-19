@@ -22,9 +22,18 @@ describe('ConnectedPropertiesPanel', () => {
   })
 
   describe('Step settings view', () => {
-    it('shows step settings when a step is selected', () => {
+    it('shows settings button when a step is selected', () => {
       // The store is initialized with intro step active
       render(<ConnectedPropertiesPanel />)
+
+      expect(screen.getByRole('button', { name: /abrir configurações/i })).toBeInTheDocument()
+    })
+
+    it('opens settings sheet when clicking settings button', async () => {
+      const user = userEvent.setup()
+      render(<ConnectedPropertiesPanel />)
+
+      await user.click(screen.getByRole('button', { name: /abrir configurações/i }))
 
       expect(screen.getByTestId('step-settings-editor')).toBeInTheDocument()
     })
@@ -54,6 +63,21 @@ describe('ConnectedPropertiesPanel', () => {
 
       // Should now show block editor with back button
       expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument()
+    })
+
+    it('shows add block button', () => {
+      render(<ConnectedPropertiesPanel />)
+
+      expect(screen.getByRole('button', { name: /adicionar bloco/i })).toBeInTheDocument()
+    })
+
+    it('opens add block sheet when clicking add block button', async () => {
+      const user = userEvent.setup()
+      render(<ConnectedPropertiesPanel />)
+
+      await user.click(screen.getByRole('button', { name: /adicionar bloco/i }))
+
+      expect(useVisualBuilderStore.getState().isAddBlockSheetOpen).toBe(true)
     })
   })
 
@@ -117,8 +141,8 @@ describe('ConnectedPropertiesPanel', () => {
 
       await user.click(screen.getByRole('button', { name: /voltar/i }))
 
-      // Should now show step settings
-      expect(screen.getByTestId('step-settings-editor')).toBeInTheDocument()
+      // Should now show step view with settings button
+      expect(screen.getByRole('button', { name: /abrir configurações/i })).toBeInTheDocument()
     })
   })
 
@@ -200,19 +224,13 @@ describe('ConnectedPropertiesPanel', () => {
       expect(screen.getByTestId('button-block-editor')).toBeInTheDocument()
     })
 
-    it('shows disabled indicator for disabled blocks', () => {
-      const steps = useVisualBuilderStore.getState().steps
-      const introStep = steps.find(s => s.type === 'intro')
-      const mediaBlock = introStep?.blocks.find(b => b.type === 'media')
-
+    it('shows disabled indicator for disabled blocks in block list', () => {
+      // Don't select any block, just show the step view with block list
       // Media is disabled by default in intro
-      if (mediaBlock) {
-        useVisualBuilderStore.setState({ selectedBlockId: mediaBlock.id })
-      }
-
       render(<ConnectedPropertiesPanel />)
 
-      expect(screen.getByText('(desativado)')).toBeInTheDocument()
+      // The block list shows "(oculto)" for disabled blocks
+      expect(screen.getByText('(oculto)')).toBeInTheDocument()
     })
   })
 })

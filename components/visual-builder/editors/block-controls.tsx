@@ -1,15 +1,12 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BlockControlsProps {
-  enabled: boolean
-  onToggle: () => void
   onMoveUp: () => void
   onMoveDown: () => void
   onDelete: () => void
@@ -19,8 +16,6 @@ interface BlockControlsProps {
 }
 
 export function BlockControls({
-  enabled,
-  onToggle,
   onMoveUp,
   onMoveDown,
   onDelete,
@@ -30,24 +25,6 @@ export function BlockControls({
 }: BlockControlsProps) {
   return (
     <div className="space-y-4" data-testid="block-controls">
-      {/* Enable/Disable toggle */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <Label htmlFor="block-enabled">Bloco ativo</Label>
-          <p className="text-xs text-muted-foreground">
-            {enabled ? 'Visível no quiz' : 'Oculto no quiz'}
-          </p>
-        </div>
-        <Switch
-          id="block-enabled"
-          checked={enabled}
-          onCheckedChange={onToggle}
-          data-testid="block-enabled-toggle"
-        />
-      </div>
-
-      <Separator />
-
       {/* Reorder controls */}
       <div className="space-y-2">
         <Label>Reordenar</Label>
