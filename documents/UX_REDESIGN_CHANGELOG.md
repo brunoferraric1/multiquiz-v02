@@ -13,6 +13,50 @@ Prototype reference: `http://localhost:3500/prototype`
 
 This section tracks the iterations and changes made during the prototyping process.
 
+### Implementation: Milestone 4 - Properties Panel
+**Date:** January 2025
+
+**What was done:**
+Implemented complete properties panel system with dynamic block editors, controls, and step settings.
+
+**Development Approach:**
+- **Test-Driven Development (TDD)** continued
+- 270 tests written and passing (72 new tests for properties panel)
+- Block editors created for all 9 block types
+- Full integration with existing Zustand store
+
+**Block Editors Implemented:**
+1. **HeaderBlockEditor** - Title and description inputs
+2. **TextBlockEditor** - Content textarea
+3. **MediaBlockEditor** - Media type selector (image/video), URL input, alt text
+4. **OptionsBlockEditor** - Selection type toggle, add/edit/delete options
+5. **FieldsBlockEditor** - Add/edit/delete form fields with type, placeholder, required
+6. **PriceBlockEditor** - Product title, price value with prefix/suffix, highlight toggle
+7. **ButtonBlockEditor** - Button text, action type selector (next_step/url), URL input
+8. **BannerBlockEditor** - Urgency level selector, emoji input, banner text
+9. **ListBlockEditor** - Add/edit/delete list items with optional emojis
+
+**Key Features:**
+- Dynamic properties panel changes based on selection state
+- Back navigation from block editor to step overview
+- Block controls: enable/disable toggle, move up/down, delete
+- Step settings: progress bar toggle, back button toggle
+- Block list shortcuts for quick selection
+- Outcome-specific block editing for result steps
+- Context-aware button editor (intro disables URL, result disables next_step)
+
+**Files Created:**
+- `components/visual-builder/editors/` - 11 component files
+- `components/visual-builder/connected-properties-panel.tsx`
+- `components/ui/switch.tsx` - Toggle component
+- `components/ui/separator.tsx` - Divider component
+
+**UI Components Added:**
+- Switch (Radix UI) - For toggle controls
+- Separator (Radix UI) - For visual dividers
+
+---
+
 ### Implementation: Milestone 3 - Block Rendering
 **Date:** January 2025
 

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useVisualBuilderStore, createOutcome } from '@/store/visual-builder-store'
 import { BuilderHeaderNav, HeaderTab } from './builder-header-nav'
 import { BuilderPreview } from './builder-preview'
-import { BuilderProperties } from './builder-properties'
+import { ConnectedPropertiesPanel } from './connected-properties-panel'
 import { AddStepSheet } from './add-step-sheet'
 import { AddBlockSheet } from './add-block-sheet'
 import { SortableStepsList } from './sortable-steps-list'
@@ -49,10 +49,6 @@ export function ConnectedVisualBuilder({
   const setAddStepSheetOpen = useVisualBuilderStore((state) => state.setAddStepSheetOpen)
   const addOutcome = useVisualBuilderStore((state) => state.addOutcome)
   const deleteOutcome = useVisualBuilderStore((state) => state.deleteOutcome)
-
-  // Get the active step for properties panel
-  const activeStep = steps.find((s) => s.id === activeStepId)
-  const propertiesTitle = activeStep?.label || 'Propriedades'
 
   // Find result step for outcome navigation
   const resultStep = steps.find((s) => s.type === 'result')
@@ -248,9 +244,7 @@ export function ConnectedVisualBuilder({
         </BuilderPreview>
 
         {/* RIGHT PANEL - Properties */}
-        <BuilderProperties title={propertiesTitle} className="hidden md:flex">
-          {/* Properties content will be added in next milestone */}
-        </BuilderProperties>
+        <ConnectedPropertiesPanel className="hidden md:flex" />
       </div>
 
       {/* Add Step Sheet */}

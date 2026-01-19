@@ -206,19 +206,45 @@ Every button, label, and message will work in three languages:
 
 ---
 
-### Milestone 4: Properties Panel (Week 5)
+### Milestone 4: Properties Panel (Week 5) ✅ COMPLETED
 *"Installing the control panels"*
 
 **Goal:** Edit any block from the right panel
 
 **Tasks:**
-- [ ] Build dynamic properties panel (changes based on selection)
-- [ ] Build all 9 block config editors
-- [ ] Block controls: enable/disable, move up/down, delete
-- [ ] Step settings: show progress bar, allow back button
-- [ ] Back navigation (block → step list)
+- [x] Build dynamic properties panel (changes based on selection)
+- [x] Build all 9 block config editors
+- [x] Block controls: enable/disable, move up/down, delete
+- [x] Step settings: show progress bar, allow back button
+- [x] Back navigation (block → step list)
 
-**Success:** Can edit every block type, changes reflect in preview instantly
+**Development Approach:** Test-Driven Development (TDD) with Vitest + React Testing Library
+- 270 tests written and passing (72 new tests for properties panel)
+- Block editors for all 9 block types
+- Full integration with Zustand store
+
+**Files Created:**
+- `components/visual-builder/editors/` directory with 11 component files:
+  - `header-block-editor.tsx`, `text-block-editor.tsx`, `media-block-editor.tsx`
+  - `options-block-editor.tsx`, `fields-block-editor.tsx`, `price-block-editor.tsx`
+  - `button-block-editor.tsx`, `banner-block-editor.tsx`, `list-block-editor.tsx`
+  - `block-controls.tsx` - Enable/disable, move up/down, delete
+  - `step-settings-editor.tsx` - Progress bar and back button toggles
+  - `index.ts` - Exports all editors
+- `components/visual-builder/connected-properties-panel.tsx` - Dynamic panel orchestrator
+- `components/ui/switch.tsx` - Toggle component
+- `components/ui/separator.tsx` - Divider component
+
+**Key Features:**
+- Dynamic panel that changes based on selection (step, block, or outcome)
+- All 9 block editors with full configuration support
+- Block controls: enable/disable toggle, move up/down buttons, delete button
+- Step settings: progress bar toggle, back button toggle
+- Back navigation from block editor to step overview
+- Block list shortcuts in step view
+- Outcome-specific block editing for result steps
+
+**Success:** Can edit every block type, changes reflect in preview instantly with 270 passing tests
 
 ---
 
