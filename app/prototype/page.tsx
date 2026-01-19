@@ -1578,15 +1578,19 @@ export default function PrototypePage() {
                             <div key={block.id}>
                               {/* Insertion point before this block */}
                               <div
-                                className="group/insert relative h-0 -my-1 flex items-center justify-center transition-all hover:h-4 hover:my-1"
+                                className="group/insert relative h-3 -my-1 flex items-center justify-center cursor-pointer"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setInsertAtIndex(index);
                                   setIsAddBlockSheetOpen(true);
                                 }}
                               >
-                                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 border-t-2 border-dashed border-blue-300 opacity-0 group-hover/insert:opacity-100 transition-opacity" />
-                                <button className="relative z-10 w-6 h-6 rounded-full bg-blue-500 text-white text-sm font-bold opacity-0 group-hover/insert:opacity-100 transition-all hover:scale-110 shadow-md">
+                                {/* Expanded hover target */}
+                                <div className="absolute inset-x-4 -inset-y-1 rounded" />
+                                {/* Dotted rectangle that appears on hover */}
+                                <div className="absolute inset-x-2 inset-y-0 border border-dashed border-gray-300 rounded-md bg-gray-50/50 opacity-0 group-hover/insert:opacity-100 transition-opacity" />
+                                {/* Plus button */}
+                                <button className="relative z-10 w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold opacity-0 group-hover/insert:opacity-100 transition-all hover:scale-110 shadow-sm flex items-center justify-center">
                                   +
                                 </button>
                               </div>
@@ -1595,15 +1599,16 @@ export default function PrototypePage() {
                           ))}
                           {/* Insertion point at the end */}
                           <div
-                            className="group/insert relative h-0 -my-1 flex items-center justify-center transition-all hover:h-4 hover:my-1"
+                            className="group/insert relative h-3 -my-1 flex items-center justify-center cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
                               setInsertAtIndex(currentBlocks.length);
                               setIsAddBlockSheetOpen(true);
                             }}
                           >
-                            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 border-t-2 border-dashed border-blue-300 opacity-0 group-hover/insert:opacity-100 transition-opacity" />
-                            <button className="relative z-10 w-6 h-6 rounded-full bg-blue-500 text-white text-sm font-bold opacity-0 group-hover/insert:opacity-100 transition-all hover:scale-110 shadow-md">
+                            <div className="absolute inset-x-4 -inset-y-1 rounded" />
+                            <div className="absolute inset-x-2 inset-y-0 border border-dashed border-gray-300 rounded-md bg-gray-50/50 opacity-0 group-hover/insert:opacity-100 transition-opacity" />
+                            <button className="relative z-10 w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold opacity-0 group-hover/insert:opacity-100 transition-all hover:scale-110 shadow-sm flex items-center justify-center">
                               +
                             </button>
                           </div>
