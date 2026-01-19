@@ -223,14 +223,5 @@ describe('ConnectedPropertiesPanel', () => {
 
       expect(screen.getByTestId('button-block-editor')).toBeInTheDocument()
     })
-
-    it('shows disabled indicator for disabled blocks in block list', () => {
-      // Don't select any block, just show the step view with block list
-      // Media is disabled by default in intro
-      render(<ConnectedPropertiesPanel />)
-
-      // The block list shows "(oculto)" for disabled blocks
-      expect(screen.getByText('(oculto)')).toBeInTheDocument()
-    })
   })
 })

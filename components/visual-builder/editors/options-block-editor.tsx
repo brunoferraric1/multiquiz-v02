@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { ToggleGroup } from '@/components/ui/toggle-group'
 import { OptionsConfig, OptionItem } from '@/types/blocks'
-import { cn } from '@/lib/utils'
 import { Plus, Trash2, GripVertical, Circle, Square } from 'lucide-react'
 
 interface OptionsBlockEditorProps {
@@ -56,38 +56,15 @@ export function OptionsBlockEditor({ config, onChange }: OptionsBlockEditorProps
       {/* Selection type */}
       <div className="space-y-2">
         <Label>Tipo de seleção</Label>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => onChange({ selectionType: 'single' })}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors',
-              config.selectionType === 'single'
-                ? 'bg-primary/10 border-primary text-primary'
-                : 'bg-card border-border hover:bg-muted'
-            )}
-            aria-pressed={config.selectionType === 'single'}
-            data-testid="selection-type-single"
-          >
-            <Circle className="w-4 h-4" />
-            <span className="text-sm font-medium">Única</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onChange({ selectionType: 'multiple' })}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors',
-              config.selectionType === 'multiple'
-                ? 'bg-primary/10 border-primary text-primary'
-                : 'bg-card border-border hover:bg-muted'
-            )}
-            aria-pressed={config.selectionType === 'multiple'}
-            data-testid="selection-type-multiple"
-          >
-            <Square className="w-4 h-4" />
-            <span className="text-sm font-medium">Múltipla</span>
-          </button>
-        </div>
+        <ToggleGroup
+          options={[
+            { value: 'single', label: 'Única', icon: <Circle /> },
+            { value: 'multiple', label: 'Múltipla', icon: <Square /> },
+          ]}
+          value={config.selectionType}
+          onChange={(selectionType) => onChange({ selectionType })}
+          aria-label="Tipo de seleção"
+        />
       </div>
 
       {/* Options list */}

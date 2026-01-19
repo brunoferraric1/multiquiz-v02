@@ -3,6 +3,7 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { ToggleGroup } from '@/components/ui/toggle-group'
 import { BannerConfig, BannerUrgency } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { Info, AlertTriangle, AlertCircle } from 'lucide-react'
@@ -36,29 +37,16 @@ export function BannerBlockEditor({ config, onChange }: BannerBlockEditorProps) 
       {/* Urgency level */}
       <div className="space-y-2">
         <Label>Tipo de banner</Label>
-        <div className="flex gap-2">
-          {(Object.keys(urgencyConfig) as BannerUrgency[]).map((urgency) => {
-            const { icon, label, color } = urgencyConfig[urgency]
-            return (
-              <button
-                key={urgency}
-                type="button"
-                onClick={() => onChange({ urgency })}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors',
-                  config.urgency === urgency
-                    ? color
-                    : 'bg-card border-border hover:bg-muted'
-                )}
-                aria-pressed={config.urgency === urgency}
-                data-testid={`urgency-${urgency}`}
-              >
-                {icon}
-                <span className="text-sm font-medium">{label}</span>
-              </button>
-            )
-          })}
-        </div>
+        <ToggleGroup
+          options={[
+            { value: 'info' as BannerUrgency, label: 'Info', icon: <Info /> },
+            { value: 'warning' as BannerUrgency, label: 'Atenção', icon: <AlertTriangle /> },
+            { value: 'danger' as BannerUrgency, label: 'Urgente', icon: <AlertCircle /> },
+          ]}
+          value={config.urgency}
+          onChange={(urgency) => onChange({ urgency })}
+          aria-label="Tipo de banner"
+        />
       </div>
 
       {/* Emoji (optional) */}

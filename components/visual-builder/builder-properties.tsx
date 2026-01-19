@@ -33,24 +33,19 @@ export function BuilderProperties({
       {/* Header */}
       <div
         data-testid="properties-header"
-        className="p-4 border-b flex items-center justify-between gap-2"
+        className="px-4 py-3 border-b flex items-center justify-between gap-2"
       >
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center gap-1 flex-1 min-w-0">
           {showBack && (
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={onBack}
               aria-label="Voltar"
-              className="shrink-0 -ml-2"
+              className="shrink-0 -ml-1 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              Voltar
-            </Button>
+              <ArrowLeft className="w-4 h-4" />
+            </button>
           )}
-          {!showBack && (
-            <h3 className="font-semibold text-foreground truncate">{title}</h3>
-          )}
+          <h3 className="font-semibold text-foreground truncate text-sm">{title}</h3>
         </div>
         {actions && (
           <div className="flex items-center gap-1 shrink-0">

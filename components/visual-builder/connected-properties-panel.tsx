@@ -218,20 +218,11 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
   if (selectedBlock) {
     return (
       <BuilderProperties
+        title={blockTypeLabels[selectedBlock.type]}
         showBack
         onBack={handleBack}
         className={className}
       >
-        {/* Block type header */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-2 rounded-lg bg-primary/10 text-primary">
-            {blockTypeIcons[selectedBlock.type]}
-          </div>
-          <h4 className="font-medium text-foreground">
-            {blockTypeLabels[selectedBlock.type]}
-          </h4>
-        </div>
-
         {/* Block editor */}
         {renderBlockEditor(selectedBlock)}
 
@@ -278,9 +269,6 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
                   <span className="flex-1 text-sm">
                     {blockTypeLabels[block.type]}
                   </span>
-                  {!block.enabled && (
-                    <span className="text-xs text-muted-foreground">(oculto)</span>
-                  )}
                 </button>
               ))}
             </div>
@@ -335,9 +323,6 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
                     <span className="flex-1 text-sm">
                       {blockTypeLabels[block.type]}
                     </span>
-                    {!block.enabled && (
-                      <span className="text-xs text-muted-foreground">(oculto)</span>
-                    )}
                   </button>
                 ))}
               </div>

@@ -74,40 +74,63 @@ describe('MediaBlockEditor', () => {
   it('renders media type buttons', () => {
     render(<MediaBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByTestId('media-type-image')).toBeInTheDocument()
-    expect(screen.getByTestId('media-type-video')).toBeInTheDocument()
+    expect(screen.getByTestId('toggle-image')).toBeInTheDocument()
+    expect(screen.getByTestId('toggle-video')).toBeInTheDocument()
   })
 
   it('shows image type as selected by default', () => {
     render(<MediaBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByTestId('media-type-image')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('media-type-video')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('toggle-image')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('toggle-video')).toHaveAttribute('aria-checked', 'false')
   })
 
-  it('calls onChange when type is changed', async () => {
+  it('calls onChange and clears URL when type is changed', async () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
 
     render(<MediaBlockEditor config={defaultConfig} onChange={onChange} />)
 
-    await user.click(screen.getByTestId('media-type-video'))
+    await user.click(screen.getByTestId('toggle-video'))
 
-    expect(onChange).toHaveBeenCalledWith({ type: 'video' })
+    expect(onChange).toHaveBeenCalledWith({ type: 'video', url: '' })
   })
 
-  it('shows alt text input only for images', () => {
-    const { rerender } = render(
+  it('shows upload area for images', () => {
+    render(
       <MediaBlockEditor config={{ type: 'image', url: '' }} onChange={() => {}} />
     )
 
-    expect(screen.getByLabelText(/texto alternativo/i)).toBeInTheDocument()
+    expect(screen.getByTestId('media-upload-area')).toBeInTheDocument()
+    expect(screen.getByText(/arraste e solte/i)).toBeInTheDocument()
+  })
 
-    rerender(
+  it('shows URL input only for videos', () => {
+    const { rerender } = render(
       <MediaBlockEditor config={{ type: 'video', url: '' }} onChange={() => {}} />
     )
 
-    expect(screen.queryByLabelText(/texto alternativo/i)).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/url do vídeo/i)).toBeInTheDocument()
+    expect(screen.queryByTestId('media-upload-area')).not.toBeInTheDocument()
+
+    rerender(
+      <MediaBlockEditor config={{ type: 'image', url: '' }} onChange={() => {}} />
+    )
+
+    expect(screen.queryByLabelText(/url do vídeo/i)).not.toBeInTheDocument()
+  })
+
+  it('shows image preview when URL is provided', () => {
+    render(
+      <MediaBlockEditor
+        config={{ type: 'image', url: 'https://example.com/image.jpg' }}
+        onChange={() => {}}
+      />
+    )
+
+    expect(screen.getByRole('img', { name: /preview/i })).toBeInTheDocument()
+    expect(screen.getByText(/trocar/i)).toBeInTheDocument()
+    expect(screen.getByText(/remover/i)).toBeInTheDocument()
   })
 })
 
@@ -117,14 +140,14 @@ describe('OptionsBlockEditor', () => {
   it('renders selection type buttons', () => {
     render(<OptionsBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByTestId('selection-type-single')).toBeInTheDocument()
-    expect(screen.getByTestId('selection-type-multiple')).toBeInTheDocument()
+    expect(screen.getByTestId('toggle-single')).toBeInTheDocument()
+    expect(screen.getByTestId('toggle-multiple')).toBeInTheDocument()
   })
 
   it('shows single selection as selected by default', () => {
     render(<OptionsBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByTestId('selection-type-single')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('toggle-single')).toHaveAttribute('aria-checked', 'true')
   })
 
   it('calls onChange when selection type is changed', async () => {
@@ -133,7 +156,7 @@ describe('OptionsBlockEditor', () => {
 
     render(<OptionsBlockEditor config={defaultConfig} onChange={onChange} />)
 
-    await user.click(screen.getByTestId('selection-type-multiple'))
+    await user.click(screen.getByTestId('toggle-multiple'))
 
     expect(onChange).toHaveBeenCalledWith({ selectionType: 'multiple' })
   })
@@ -263,11 +286,11 @@ describe('ButtonBlockEditor', () => {
   it('renders action type buttons when both are enabled', () => {
     render(<ButtonBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByTestId('action-type-next')).toBeInTheDocument()
-    expect(screen.getByTestId('action-type-url')).toBeInTheDocument()
+    expect(screen.getByTestId('toggle-next_step')).toBeInTheDocument()
+    expect(screen.getByTestId('toggle-url')).toBeInTheDocument()
   })
 
-  it('hides next_step button when disabled', () => {
+  it('hides toggle group when only url action is available', () => {
     render(
       <ButtonBlockEditor
         config={defaultConfig}
@@ -276,11 +299,12 @@ describe('ButtonBlockEditor', () => {
       />
     )
 
-    expect(screen.queryByTestId('action-type-next')).not.toBeInTheDocument()
-    expect(screen.getByTestId('action-type-url')).toBeInTheDocument()
+    // Toggle group hidden when only one option - no need to choose
+    expect(screen.queryByTestId('toggle-next_step')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('toggle-url')).not.toBeInTheDocument()
   })
 
-  it('hides url button when disabled', () => {
+  it('hides toggle group when only next_step action is available', () => {
     render(
       <ButtonBlockEditor
         config={defaultConfig}
@@ -289,8 +313,9 @@ describe('ButtonBlockEditor', () => {
       />
     )
 
-    expect(screen.getByTestId('action-type-next')).toBeInTheDocument()
-    expect(screen.queryByTestId('action-type-url')).not.toBeInTheDocument()
+    // Toggle group hidden when only one option - no need to choose
+    expect(screen.queryByTestId('toggle-next_step')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('toggle-url')).not.toBeInTheDocument()
   })
 
   it('shows URL input when action is url', () => {
@@ -311,9 +336,9 @@ describe('BannerBlockEditor', () => {
   it('renders urgency type buttons', () => {
     render(<BannerBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByTestId('urgency-info')).toBeInTheDocument()
-    expect(screen.getByTestId('urgency-warning')).toBeInTheDocument()
-    expect(screen.getByTestId('urgency-danger')).toBeInTheDocument()
+    expect(screen.getByTestId('toggle-info')).toBeInTheDocument()
+    expect(screen.getByTestId('toggle-warning')).toBeInTheDocument()
+    expect(screen.getByTestId('toggle-danger')).toBeInTheDocument()
   })
 
   it('renders emoji input', () => {
@@ -334,7 +359,7 @@ describe('BannerBlockEditor', () => {
 
     render(<BannerBlockEditor config={defaultConfig} onChange={onChange} />)
 
-    await user.click(screen.getByTestId('urgency-warning'))
+    await user.click(screen.getByTestId('toggle-warning'))
 
     expect(onChange).toHaveBeenCalledWith({ urgency: 'warning' })
   })

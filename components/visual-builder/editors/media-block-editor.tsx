@@ -1,10 +1,12 @@
 'use client'
 
+import { useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { ToggleGroup } from '@/components/ui/toggle-group'
 import { MediaConfig } from '@/types/blocks'
-import { cn } from '@/lib/utils'
-import { Image, Video } from 'lucide-react'
+import { Image, Video, ImageIcon, UploadCloud, Trash2 } from 'lucide-react'
 
 interface MediaBlockEditorProps {
   config: MediaConfig
@@ -12,68 +14,142 @@ interface MediaBlockEditorProps {
 }
 
 export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileSelect = (files: FileList | null) => {
+    const file = files && files.length > 0 ? files[0] : null
+    if (file) {
+      // Convert file to data URL for preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        onChange({ url: reader.result as string })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleButtonClick = () => {
+    inputRef.current?.click()
+  }
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    handleFileSelect(event.dataTransfer.files)
+  }
+
+  const handleRemoveImage = () => {
+    onChange({ url: '' })
+    if (inputRef.current) {
+      inputRef.current.value = ''
+    }
+  }
+
   return (
     <div className="space-y-4" data-testid="media-block-editor">
       {/* Media type selector */}
       <div className="space-y-2">
         <Label>Tipo de mídia</Label>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => onChange({ type: 'image' })}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors',
-              config.type === 'image'
-                ? 'bg-primary/10 border-primary text-primary'
-                : 'bg-card border-border hover:bg-muted'
-            )}
-            aria-pressed={config.type === 'image'}
-            data-testid="media-type-image"
-          >
-            <Image className="w-4 h-4" />
-            <span className="text-sm font-medium">Imagem</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onChange({ type: 'video' })}
-            className={cn(
-              'flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors',
-              config.type === 'video'
-                ? 'bg-primary/10 border-primary text-primary'
-                : 'bg-card border-border hover:bg-muted'
-            )}
-            aria-pressed={config.type === 'video'}
-            data-testid="media-type-video"
-          >
-            <Video className="w-4 h-4" />
-            <span className="text-sm font-medium">Vídeo</span>
-          </button>
-        </div>
-      </div>
-
-      {/* URL input */}
-      <div className="space-y-2">
-        <Label htmlFor="media-url">
-          {config.type === 'image' ? 'URL da imagem' : 'URL do vídeo'}
-        </Label>
-        <Input
-          id="media-url"
-          type="url"
-          value={config.url || ''}
-          onChange={(e) => onChange({ url: e.target.value })}
-          placeholder={config.type === 'image' ? 'https://exemplo.com/imagem.jpg' : 'https://youtube.com/watch?v=...'}
+        <ToggleGroup
+          options={[
+            { value: 'image', label: 'Imagem', icon: <Image /> },
+            { value: 'video', label: 'Vídeo', icon: <Video /> },
+          ]}
+          value={config.type}
+          onChange={(type) => onChange({ type, url: '' })}
+          aria-label="Tipo de mídia"
         />
       </div>
 
-      {/* Alt text (for images) */}
+      {/* Image upload area */}
       {config.type === 'image' && (
         <div className="space-y-2">
-          <Label htmlFor="media-alt">Texto alternativo</Label>
+          <Label>Imagem</Label>
+
+          {config.url ? (
+            <div className="space-y-2">
+              {/* Image preview */}
+              <div className="relative rounded-lg overflow-hidden border border-border">
+                <img
+                  src={config.url}
+                  alt="Preview"
+                  className="w-full h-32 object-cover"
+                />
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs"
+                  onClick={handleButtonClick}
+                >
+                  <UploadCloud className="mr-1.5 h-3.5 w-3.5" />
+                  Trocar
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs text-destructive hover:text-destructive"
+                  onClick={handleRemoveImage}
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                  Remover
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 cursor-pointer hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors"
+              onClick={handleButtonClick}
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onDragEnter={(e) => e.preventDefault()}
+              data-testid="media-upload-area"
+            >
+              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Arraste e solte sua imagem aqui
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleButtonClick()
+                }}
+              >
+                <UploadCloud className="mr-1.5 h-3.5 w-3.5" />
+                Fazer upload
+              </Button>
+            </div>
+          )}
+
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => handleFileSelect(e.target.files)}
+            data-testid="media-file-input"
+          />
+        </div>
+      )}
+
+      {/* Video URL input */}
+      {config.type === 'video' && (
+        <div className="space-y-2">
+          <Label htmlFor="media-url">URL do vídeo</Label>
           <Input
-            id="media-alt"
-            value={config.alt || ''}
-            onChange={(e) => onChange({ alt: e.target.value })}
-            placeholder="Descrição da imagem para acessibilidade..."
+            id="media-url"
+            type="url"
+            value={config.url || ''}
+            onChange={(e) => onChange({ url: e.target.value })}
+            placeholder="https://youtube.com/watch?v=..."
           />
         </div>
       )}

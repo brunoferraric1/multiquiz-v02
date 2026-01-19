@@ -1,9 +1,10 @@
 'use client'
 
+import { useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ToggleGroup, ToggleGroupOption } from '@/components/ui/toggle-group'
 import { ButtonConfig, ButtonAction } from '@/types/blocks'
-import { cn } from '@/lib/utils'
 import { ArrowRight, Link } from 'lucide-react'
 
 interface ButtonBlockEditorProps {
@@ -27,6 +28,18 @@ export function ButtonBlockEditor({
     (config.action === 'next_step' && disableNextStep) ? 'url' :
     config.action
 
+  // Build options based on what's enabled
+  const actionOptions = useMemo(() => {
+    const options: ToggleGroupOption<ButtonAction>[] = []
+    if (!disableNextStep) {
+      options.push({ value: 'next_step', label: 'Próxima', icon: <ArrowRight /> })
+    }
+    if (!disableUrl) {
+      options.push({ value: 'url', label: 'Abrir URL', icon: <Link /> })
+    }
+    return options
+  }, [disableNextStep, disableUrl])
+
   return (
     <div className="space-y-4" data-testid="button-block-editor">
       {/* Button text */}
@@ -41,47 +54,17 @@ export function ButtonBlockEditor({
       </div>
 
       {/* Action type */}
-      {!disableUrl || !disableNextStep ? (
+      {actionOptions.length > 1 && (
         <div className="space-y-2">
           <Label>Ação do botão</Label>
-          <div className="flex gap-2">
-            {!disableNextStep && (
-              <button
-                type="button"
-                onClick={() => onChange({ action: 'next_step' })}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors',
-                  effectiveAction === 'next_step'
-                    ? 'bg-primary/10 border-primary text-primary'
-                    : 'bg-card border-border hover:bg-muted'
-                )}
-                aria-pressed={effectiveAction === 'next_step'}
-                data-testid="action-type-next"
-              >
-                <ArrowRight className="w-4 h-4" />
-                <span className="text-sm font-medium">Próxima etapa</span>
-              </button>
-            )}
-            {!disableUrl && (
-              <button
-                type="button"
-                onClick={() => onChange({ action: 'url' })}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-colors',
-                  effectiveAction === 'url'
-                    ? 'bg-primary/10 border-primary text-primary'
-                    : 'bg-card border-border hover:bg-muted'
-                )}
-                aria-pressed={effectiveAction === 'url'}
-                data-testid="action-type-url"
-              >
-                <Link className="w-4 h-4" />
-                <span className="text-sm font-medium">Abrir URL</span>
-              </button>
-            )}
-          </div>
+          <ToggleGroup
+            options={actionOptions}
+            value={effectiveAction}
+            onChange={(action) => onChange({ action })}
+            aria-label="Ação do botão"
+          />
         </div>
-      ) : null}
+      )}
 
       {/* URL input (shown when action is url) */}
       {effectiveAction === 'url' && (
