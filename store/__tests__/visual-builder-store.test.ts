@@ -372,6 +372,204 @@ describe('VisualBuilderStore', () => {
     })
   })
 
+  describe('Block Management (Steps)', () => {
+    it('addBlock adds a block to a step', () => {
+      const store = useVisualBuilderStore.getState()
+      const block = { id: 'block-1', type: 'text' as const, enabled: true, config: { content: 'Hello' } }
+      store.addBlock('intro', block)
+
+      const { steps, selectedBlockId } = useVisualBuilderStore.getState()
+      const introStep = steps.find(s => s.id === 'intro')
+      expect(introStep?.blocks).toContainEqual(block)
+      expect(selectedBlockId).toBe('block-1')
+    })
+
+    it('addBlock inserts at specific index', () => {
+      const store = useVisualBuilderStore.getState()
+      const block1 = { id: 'block-1', type: 'text' as const, enabled: true, config: { content: 'First' } }
+      const block2 = { id: 'block-2', type: 'text' as const, enabled: true, config: { content: 'Second' } }
+      store.addBlock('intro', block1)
+      store.addBlock('intro', block2, 0) // Insert at beginning
+
+      const { steps } = useVisualBuilderStore.getState()
+      const introStep = steps.find(s => s.id === 'intro')
+      // block2 should be at index 0 of user-added blocks (after default blocks)
+      expect(introStep?.blocks.find(b => b.id === 'block-2')).toBeDefined()
+    })
+
+    it('updateBlock updates block config', () => {
+      const store = useVisualBuilderStore.getState()
+      const block = { id: 'block-1', type: 'text' as const, enabled: true, config: { content: 'Original' } }
+      store.addBlock('intro', block)
+      store.updateBlock('intro', 'block-1', { content: 'Updated' })
+
+      const { steps } = useVisualBuilderStore.getState()
+      const introStep = steps.find(s => s.id === 'intro')
+      const updatedBlock = introStep?.blocks.find(b => b.id === 'block-1')
+      expect(updatedBlock?.config).toEqual({ content: 'Updated' })
+    })
+
+    it('deleteBlock removes a block', () => {
+      const store = useVisualBuilderStore.getState()
+      const block = { id: 'block-1', type: 'text' as const, enabled: true, config: { content: 'Delete me' } }
+      store.addBlock('intro', block)
+      store.deleteBlock('intro', 'block-1')
+
+      const { steps, selectedBlockId } = useVisualBuilderStore.getState()
+      const introStep = steps.find(s => s.id === 'intro')
+      expect(introStep?.blocks.find(b => b.id === 'block-1')).toBeUndefined()
+      expect(selectedBlockId).toBeUndefined()
+    })
+
+    it('toggleBlock toggles enabled state', () => {
+      const store = useVisualBuilderStore.getState()
+      const block = { id: 'block-1', type: 'text' as const, enabled: true, config: { content: 'Toggle me' } }
+      store.addBlock('intro', block)
+      store.toggleBlock('intro', 'block-1')
+
+      let { steps } = useVisualBuilderStore.getState()
+      let introStep = steps.find(s => s.id === 'intro')
+      expect(introStep?.blocks.find(b => b.id === 'block-1')?.enabled).toBe(false)
+
+      store.toggleBlock('intro', 'block-1')
+      steps = useVisualBuilderStore.getState().steps
+      introStep = steps.find(s => s.id === 'intro')
+      expect(introStep?.blocks.find(b => b.id === 'block-1')?.enabled).toBe(true)
+    })
+
+    it('reorderBlocks moves a block to a new position', () => {
+      const store = useVisualBuilderStore.getState()
+      store.addStep({ id: 'test', type: 'question', label: 'Test', blocks: [
+        { id: 'b1', type: 'text', enabled: true, config: { content: '1' } },
+        { id: 'b2', type: 'text', enabled: true, config: { content: '2' } },
+        { id: 'b3', type: 'text', enabled: true, config: { content: '3' } },
+      ] })
+
+      store.reorderBlocks('test', 2, 0) // Move b3 to first position
+
+      const { steps } = useVisualBuilderStore.getState()
+      const testStep = steps.find(s => s.id === 'test')
+      expect(testStep?.blocks[0].id).toBe('b3')
+      expect(testStep?.blocks[1].id).toBe('b1')
+      expect(testStep?.blocks[2].id).toBe('b2')
+    })
+  })
+
+  describe('Block Management (Outcomes)', () => {
+    it('addOutcomeBlock adds a block to an outcome', () => {
+      const store = useVisualBuilderStore.getState()
+      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome', blocks: [] })
+      const block = { id: 'block-1', type: 'text' as const, enabled: true, config: { content: 'Hello' } }
+      store.addOutcomeBlock('outcome-1', block)
+
+      const { outcomes, selectedBlockId } = useVisualBuilderStore.getState()
+      const outcome = outcomes.find(o => o.id === 'outcome-1')
+      expect(outcome?.blocks).toContainEqual(block)
+      expect(selectedBlockId).toBe('block-1')
+    })
+
+    it('updateOutcomeBlock updates block config', () => {
+      const store = useVisualBuilderStore.getState()
+      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome', blocks: [
+        { id: 'block-1', type: 'text', enabled: true, config: { content: 'Original' } }
+      ] })
+      store.updateOutcomeBlock('outcome-1', 'block-1', { content: 'Updated' })
+
+      const { outcomes } = useVisualBuilderStore.getState()
+      const outcome = outcomes.find(o => o.id === 'outcome-1')
+      const updatedBlock = outcome?.blocks.find(b => b.id === 'block-1')
+      expect(updatedBlock?.config).toEqual({ content: 'Updated' })
+    })
+
+    it('deleteOutcomeBlock removes a block', () => {
+      const store = useVisualBuilderStore.getState()
+      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome', blocks: [
+        { id: 'block-1', type: 'text', enabled: true, config: { content: 'Delete me' } }
+      ] })
+      store.setSelectedBlockId('block-1')
+      store.deleteOutcomeBlock('outcome-1', 'block-1')
+
+      const { outcomes, selectedBlockId } = useVisualBuilderStore.getState()
+      const outcome = outcomes.find(o => o.id === 'outcome-1')
+      expect(outcome?.blocks.find(b => b.id === 'block-1')).toBeUndefined()
+      expect(selectedBlockId).toBeUndefined()
+    })
+
+    it('toggleOutcomeBlock toggles enabled state', () => {
+      const store = useVisualBuilderStore.getState()
+      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome', blocks: [
+        { id: 'block-1', type: 'text', enabled: true, config: { content: 'Toggle me' } }
+      ] })
+      store.toggleOutcomeBlock('outcome-1', 'block-1')
+
+      const { outcomes } = useVisualBuilderStore.getState()
+      const outcome = outcomes.find(o => o.id === 'outcome-1')
+      expect(outcome?.blocks.find(b => b.id === 'block-1')?.enabled).toBe(false)
+    })
+
+    it('reorderOutcomeBlocks moves a block to a new position', () => {
+      const store = useVisualBuilderStore.getState()
+      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome', blocks: [
+        { id: 'b1', type: 'text', enabled: true, config: { content: '1' } },
+        { id: 'b2', type: 'text', enabled: true, config: { content: '2' } },
+        { id: 'b3', type: 'text', enabled: true, config: { content: '3' } },
+      ] })
+
+      store.reorderOutcomeBlocks('outcome-1', 0, 2) // Move b1 to last position
+
+      const { outcomes } = useVisualBuilderStore.getState()
+      const outcome = outcomes.find(o => o.id === 'outcome-1')
+      expect(outcome?.blocks[0].id).toBe('b2')
+      expect(outcome?.blocks[1].id).toBe('b3')
+      expect(outcome?.blocks[2].id).toBe('b1')
+    })
+  })
+
+  describe('Block Selection', () => {
+    it('setSelectedBlockId updates the selected block', () => {
+      const store = useVisualBuilderStore.getState()
+      store.setSelectedBlockId('block-1')
+      expect(useVisualBuilderStore.getState().selectedBlockId).toBe('block-1')
+    })
+
+    it('clearing block selection works', () => {
+      const store = useVisualBuilderStore.getState()
+      store.setSelectedBlockId('block-1')
+      store.setSelectedBlockId(undefined)
+      expect(useVisualBuilderStore.getState().selectedBlockId).toBeUndefined()
+    })
+
+    it('changing active step clears block selection', () => {
+      const store = useVisualBuilderStore.getState()
+      store.setSelectedBlockId('block-1')
+      store.setActiveStepId('result')
+      expect(useVisualBuilderStore.getState().selectedBlockId).toBeUndefined()
+    })
+  })
+
+  describe('Step Settings', () => {
+    it('updateStepSettings updates settings', () => {
+      const store = useVisualBuilderStore.getState()
+      store.updateStepSettings('intro', { showProgress: true, allowBack: true })
+
+      const { steps } = useVisualBuilderStore.getState()
+      const introStep = steps.find(s => s.id === 'intro')
+      expect(introStep?.settings?.showProgress).toBe(true)
+      expect(introStep?.settings?.allowBack).toBe(true)
+    })
+
+    it('updateStepSettings partial update preserves other settings', () => {
+      const store = useVisualBuilderStore.getState()
+      store.updateStepSettings('intro', { showProgress: true })
+      store.updateStepSettings('intro', { allowBack: true })
+
+      const { steps } = useVisualBuilderStore.getState()
+      const introStep = steps.find(s => s.id === 'intro')
+      expect(introStep?.settings?.showProgress).toBe(true)
+      expect(introStep?.settings?.allowBack).toBe(true)
+    })
+  })
+
   describe('Helper Functions', () => {
     describe('createStep', () => {
       it('creates a step with default label', () => {

@@ -6,7 +6,9 @@ import { BuilderHeaderNav, HeaderTab } from './builder-header-nav'
 import { BuilderPreview } from './builder-preview'
 import { BuilderProperties } from './builder-properties'
 import { AddStepSheet } from './add-step-sheet'
+import { AddBlockSheet } from './add-block-sheet'
 import { SortableStepsList } from './sortable-steps-list'
+import { StepPreview } from './step-preview'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Plus, BarChart3, Trash2 } from 'lucide-react'
@@ -43,6 +45,7 @@ export function ConnectedVisualBuilder({
   // Get actions from store
   const setActiveStepId = useVisualBuilderStore((state) => state.setActiveStepId)
   const setSelectedOutcomeId = useVisualBuilderStore((state) => state.setSelectedOutcomeId)
+  const setSelectedBlockId = useVisualBuilderStore((state) => state.setSelectedBlockId)
   const setAddStepSheetOpen = useVisualBuilderStore((state) => state.setAddStepSheetOpen)
   const addOutcome = useVisualBuilderStore((state) => state.addOutcome)
   const deleteOutcome = useVisualBuilderStore((state) => state.deleteOutcome)
@@ -236,8 +239,12 @@ export function ConnectedVisualBuilder({
         </aside>
 
         {/* CENTER - Preview area */}
-        <BuilderPreview device={device} onDeviceChange={setDevice}>
-          {/* Preview content will be added in next milestone */}
+        <BuilderPreview
+          device={device}
+          onDeviceChange={setDevice}
+          onClick={() => setSelectedBlockId(undefined)}
+        >
+          <StepPreview />
         </BuilderPreview>
 
         {/* RIGHT PANEL - Properties */}
@@ -248,6 +255,9 @@ export function ConnectedVisualBuilder({
 
       {/* Add Step Sheet */}
       <AddStepSheet />
+
+      {/* Add Block Sheet */}
+      <AddBlockSheet />
     </div>
   )
 }
