@@ -62,27 +62,33 @@ Users can see and manage these steps visually, similar to slides in a presentati
 | **Promocional** | Deletable - add/remove as needed |
 | **Resultado** | Fixed - always last, can't be deleted |
 
-### New Layout (Three-Column)
+### New Layout (Three-Column - Typeform-Inspired)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  ← Voltar  │  Quiz Name  │    🎨 Brand Kit │ Preview │ Publicar │
-├─────────────────────────────────────────────────────────────┤
-│  [Intro●] [P1] [P2] [P3] [Captura] [Promo] [Resultado●]  [+] │
-├─────────┬───────────────────────────────┬───────────────────┤
-│         │                               │                   │
-│  Chat   │      Live Preview             │  Properties       │
-│  (AI)   │                               │  Panel            │
-│         │   What the user will see      │                   │
-│  Can    │   for the selected step       │  Edit content     │
-│  expand │                               │  and settings     │
-│  or     │   Click any element/block     │  for the selected │
-│  collapse│  to select and edit it       │  step             │
-│         │                               │                   │
-│         │                               │  [Conteúdo|Config]│
-└─────────┴───────────────────────────────┴───────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  [Logo]  │  [Editar] [Assistente IA] [Tema] [Config]  │ Publicar │
+├──────────┼───────────────────────────────────────────┼──────────┤
+│          │                                           │          │
+│  STEPS   │           Live Preview                    │ PROPS    │
+│          │                                           │          │
+│ ▼ Etapas │    ┌────────────────────────────┐         │ Step     │
+│ ├ Intro  │    │                            │         │ Title    │
+│ ├ P1     │    │   What the user will see   │         │ ───────  │
+│ ├ P2     │    │   for the selected step    │         │          │
+│ └ P3     │    │                            │         │ Blocos:  │
+│          │    │   Click any element to     │         │ □ Header │
+│ ▼ Results│    │   select and edit it       │         │ □ Media  │
+│ ├ R1     │    │                            │         │ □ Options│
+│ └ + Add  │    └────────────────────────────┘         │ □ Button │
+│          │                                           │          │
+├──────────┴───────────────────────────────────────────┴──────────┤
+│  🤖 [Ask AI anything...]                              [↑ Expand] │
+└──────────────────────────────────────────────────────────────────┘
 
-Note: ● indicates fixed steps that can't be deleted
+- Left sidebar: Step list with Etapas and Results sections
+- Center: Live preview with floating device toggle
+- Right: Properties panel with block configuration
+- Bottom: Floating AI chat input (expands to show history)
 ```
 
 ---
@@ -448,17 +454,19 @@ The three-column layout adapts to mobile with a tab-based approach:
 
 The prototype demonstrates:
 
-- ✅ Three-column layout
-- ✅ Step tabs with click navigation (centered on page)
+- ✅ **Typeform-inspired layout** with left sidebar step list
+- ✅ **Global header** with centered pill-style navigation tabs
+- ✅ **Floating AI chat** at bottom (expands on click)
+- ✅ Left sidebar with step list and results section
 - ✅ Fixed step indicators (Intro, Resultado)
-- ✅ Blue "+ Etapa" button positioned before Resultado
-- ✅ Collapsible chat panel
-- ✅ Live preview with device toggle
+- ✅ "+ Add resultado" button in results section
+- ✅ Live preview with device toggle (floating controls)
 - ✅ Click-to-select blocks in preview
 - ✅ Add step bottom sheet (Pergunta, Captura, Promocional only)
-- ✅ Right-click to delete non-fixed steps
+- ✅ Delete button in sidebar header for non-fixed steps
 - ✅ Brand Kit modal for global styling
-- ✅ Mobile bottom tab bar (resize browser to see)
+- ✅ **Dashboard page** at `/prototype/dashboard`
+- ✅ **Options-to-outcome linking** with dropdown selectors
 - ✅ **Universal block-based architecture:**
   - All step types use blocks (not just Resultado)
   - Blocks: header, text, media, options, fields, price, button, banner, list
@@ -513,6 +521,80 @@ The prototype demonstrates:
 ## Changelog
 
 This section tracks the iterations and changes made during the prototyping process.
+
+### Iteration 10 - Typeform-Inspired Layout & Options-to-Outcome Linking
+**Date:** January 2025
+
+**Changes:**
+
+**1. Major Layout Restructure (Typeform-Inspired):**
+- **Steps moved to left sidebar** instead of horizontal tabs:
+  - Left sidebar shows all steps in a vertical list
+  - Each step shows its number and custom label
+  - Results section separated at the bottom with "+ Add resultado" button
+- **Global header redesigned** with centered pill-style navigation:
+  - Tabs: "Editar", "Assistente IA", "Tema", "Configurações"
+  - Logo on left, Publish button on right
+  - Clean, minimal aesthetic
+- **Floating AI chat** at the bottom of the screen:
+  - Collapsed by default (just input field)
+  - Expands to show conversation history
+  - Always accessible but doesn't consume layout space
+- **Removed peek cards and horizontal step tabs**
+- **Center preview area** now cleaner without navigation arrows
+
+**2. Options Block - Outcome Linking:**
+- Each option can now be **assigned to a Resultado**:
+  - Dropdown selector next to each option text
+  - Shows all available outcomes
+  - "Não vinculado" for unassigned options
+- **Empty state handling** when no outcomes exist:
+  - Shows "Criar resultado" button instead of dropdown
+  - Clicking navigates to Results section and creates an outcome
+  - Better UX for new quiz creation flow
+- **Preview shows linked outcome** as small badge below option text
+
+**Architecture update:**
+```typescript
+interface OptionItem {
+  id: string;
+  text: string;
+  outcomeId?: string;  // Links to outcome
+}
+
+interface OptionsConfig {
+  items: OptionItem[];  // Changed from string[]
+  selectionType: 'single' | 'multiple';
+}
+```
+
+**3. Sidebar Header Consistency:**
+- **Outcome headers now match step headers**:
+  - Delete button added for outcomes (when >1 exists)
+  - Same icon and interaction pattern
+- **Step label editing now reflects in left sidebar**:
+  - Left sidebar displays `step.label` directly
+  - Right sidebar edits the same property
+  - Immediate visual feedback
+
+**4. Dashboard Page Added:**
+- New `/prototype/dashboard` route for quiz management
+- Empty state for no quizzes
+- "Criar quiz" modal with creation options:
+  - AI Assistant (coming soon)
+  - Blank quiz (active)
+  - Templates (coming soon)
+- Quiz name and slug configuration form
+
+**5. Block Insertion Points Refined:**
+- Cleaner insertion point UI between blocks
+- Better hover states and styling
+- Consistent across all step types
+
+**Rationale:**
+The Typeform-inspired layout provides a more familiar editing experience. The vertical step list on the left gives better overview of quiz structure. The floating AI chat keeps the assistant accessible without dominating screen space. Option-to-outcome linking is essential for quiz logic - knowing which answer leads to which result.
+
+---
 
 ### Iteration 9 - Navigation UX Improvements
 **Date:** January 2025
