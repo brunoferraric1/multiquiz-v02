@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import {
   Block,
+  BlockConfig,
   BlockType,
   StepSettings,
   createBlock,
@@ -85,10 +86,10 @@ export interface VisualBuilderState {
   reset: () => void
 }
 
-// Helper to generate unique IDs
+// Helper to generate unique IDs (only use for runtime-created items, not initial state)
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
-// Default blocks for each step type
+// Default blocks for each step type (generates new IDs each time - use for new steps)
 export const getDefaultBlocksForStepType = (type: StepType): Block[] => {
   switch (type) {
     case 'intro':
@@ -127,7 +128,7 @@ export const getDefaultBlocksForStepType = (type: StepType): Block[] => {
   }
 }
 
-// Default blocks for a new outcome
+// Default blocks for a new outcome (generates new IDs each time)
 export const getDefaultOutcomeBlocks = (): Block[] => {
   return [
     { ...createBlock('header'), config: { title: 'Seu resultado', description: '' } },
@@ -137,14 +138,36 @@ export const getDefaultOutcomeBlocks = (): Block[] => {
   ]
 }
 
-// Default initial steps for a new quiz
+// Static initial blocks with deterministic IDs (for SSR hydration safety)
+const INITIAL_INTRO_BLOCKS: Block[] = [
+  {
+    id: 'intro-block-header',
+    type: 'header',
+    enabled: true,
+    config: { title: 'Bem-vindo!', description: 'Descubra o resultado ideal para você.' },
+  },
+  {
+    id: 'intro-block-media',
+    type: 'media',
+    enabled: false,
+    config: { type: 'image', url: '' },
+  },
+  {
+    id: 'intro-block-button',
+    type: 'button',
+    enabled: true,
+    config: { text: 'Começar', action: 'next_step' },
+  },
+]
+
+// Default initial steps for a new quiz (uses deterministic IDs for SSR)
 export const DEFAULT_STEPS: Step[] = [
   {
     id: 'intro',
     type: 'intro',
     label: 'Intro',
     isFixed: true,
-    blocks: getDefaultBlocksForStepType('intro'),
+    blocks: INITIAL_INTRO_BLOCKS,
     settings: { showProgress: false, allowBack: false },
   },
   {
@@ -377,7 +400,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
               ...step,
               blocks: (step.blocks || []).map((block) =>
                 block.id === blockId
-                  ? { ...block, config: { ...block.config, ...config } }
+                  ? { ...block, config: { ...block.config, ...config } as BlockConfig }
                   : block
               ),
             }
@@ -468,7 +491,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
               ...outcome,
               blocks: (outcome.blocks || []).map((block) =>
                 block.id === blockId
-                  ? { ...block, config: { ...block.config, ...config } }
+                  ? { ...block, config: { ...block.config, ...config } as BlockConfig }
                   : block
               ),
             }

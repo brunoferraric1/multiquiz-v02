@@ -1,6 +1,18 @@
 'use client'
 
-import { Block, BlockType } from '@/types/blocks'
+import {
+  Block,
+  BlockType,
+  HeaderConfig,
+  TextConfig,
+  MediaConfig,
+  OptionsConfig,
+  FieldsConfig,
+  PriceConfig,
+  ButtonConfig,
+  BannerConfig,
+  ListConfig,
+} from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { HeaderBlockPreview } from './header-block'
 import { TextBlockPreview } from './text-block'
@@ -29,23 +41,23 @@ export function BlockRenderer({ block, isSelected, onClick }: BlockRendererProps
   const renderBlockContent = () => {
     switch (block.type) {
       case 'header':
-        return <HeaderBlockPreview config={block.config} enabled={block.enabled} />
+        return <HeaderBlockPreview config={block.config as HeaderConfig} enabled={block.enabled} />
       case 'text':
-        return <TextBlockPreview config={block.config} enabled={block.enabled} />
+        return <TextBlockPreview config={block.config as TextConfig} enabled={block.enabled} />
       case 'media':
-        return <MediaBlockPreview config={block.config} enabled={block.enabled} />
+        return <MediaBlockPreview config={block.config as MediaConfig} enabled={block.enabled} />
       case 'options':
-        return <OptionsBlockPreview config={block.config} enabled={block.enabled} />
+        return <OptionsBlockPreview config={block.config as OptionsConfig} enabled={block.enabled} />
       case 'fields':
-        return <FieldsBlockPreview config={block.config} enabled={block.enabled} />
+        return <FieldsBlockPreview config={block.config as FieldsConfig} enabled={block.enabled} />
       case 'price':
-        return <PriceBlockPreview config={block.config} enabled={block.enabled} />
+        return <PriceBlockPreview config={block.config as PriceConfig} enabled={block.enabled} />
       case 'button':
-        return <ButtonBlockPreview config={block.config} enabled={block.enabled} />
+        return <ButtonBlockPreview config={block.config as ButtonConfig} enabled={block.enabled} />
       case 'banner':
-        return <BannerBlockPreview config={block.config} enabled={block.enabled} />
+        return <BannerBlockPreview config={block.config as BannerConfig} enabled={block.enabled} />
       case 'list':
-        return <ListBlockPreview config={block.config} enabled={block.enabled} />
+        return <ListBlockPreview config={block.config as ListConfig} enabled={block.enabled} />
       default:
         return <div className="p-4 text-muted-foreground">Unknown block type</div>
     }
