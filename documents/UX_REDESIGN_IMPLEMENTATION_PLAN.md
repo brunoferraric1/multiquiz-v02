@@ -87,21 +87,33 @@ Every button, label, and message will work in three languages:
 
 ---
 
-### Milestone 1: The Shell (Week 2)
+### Milestone 1: The Shell (Week 2) ✅ COMPLETED
 *"Building the walls and windows"*
 
 **Goal:** Three-column layout working with static content
 
 **Tasks:**
-- [ ] Build main orchestrator component
-- [ ] Create header with tab navigation
+- [x] Build main orchestrator component (`VisualBuilder`)
+- [x] Create header with tab navigation (`BuilderHeaderNav`)
 - [ ] Move Theme control from the builder sidebar to the top navigation
-- [ ] Build left sidebar skeleton (steps list)
-- [ ] Build center preview skeleton (device frame)
-- [ ] Build right panel skeleton (properties)
-- [ ] Responsive breakpoints (hide right panel on tablet)
+- [x] Build left sidebar skeleton (`BuilderSidebar` - steps list with outcomes)
+- [x] Build center preview skeleton (`BuilderPreview` - device frame with toggle)
+- [x] Build right panel skeleton (`BuilderProperties`)
+- [x] Responsive breakpoints (right panel hidden on mobile, visible on md+)
 
-**Success:** Can see the three columns, tabs switch, but no real data yet
+**Development Approach:** Test-Driven Development (TDD) with Vitest + React Testing Library
+- 54 tests written and passing
+- Tests focus on structure, behavior, and integration (not copywriting)
+- Components tested in isolation and together
+
+**Components Created:**
+- `components/visual-builder/visual-builder.tsx` - Main orchestrator
+- `components/visual-builder/builder-header-nav.tsx` - Header with 5 tabs
+- `components/visual-builder/builder-sidebar.tsx` - Steps list + outcomes
+- `components/visual-builder/builder-preview.tsx` - Preview with device toggle
+- `components/visual-builder/builder-properties.tsx` - Properties panel
+
+**Success:** Three columns visible, tabs switch, responsive behavior works. Route available at `/visual-builder`
 
 ---
 

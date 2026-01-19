@@ -13,6 +13,46 @@ Prototype reference: `http://localhost:3500/prototype`
 
 This section tracks the iterations and changes made during the prototyping process.
 
+### Implementation: Milestone 1 - The Shell
+**Date:** January 2025
+
+**What was done:**
+Implemented the three-column visual builder shell following TDD (Test-Driven Development) approach.
+
+**Development Approach:**
+- **Test-Driven Development (TDD)** adopted for all new components
+- Using **Vitest + React Testing Library** for testing
+- Tests focus on **structure and behavior**, not copywriting (content will iterate)
+- 54 tests written and passing before implementation considered complete
+
+**Components Implemented:**
+1. **VisualBuilder** - Main orchestrator that composes all sub-components
+2. **BuilderHeaderNav** - Header with 5 navigation tabs (Editar, Assistente IA, Tema, Relatório, Configurações)
+3. **BuilderSidebar** - Left sidebar with steps list, outcomes section, and add buttons
+4. **BuilderPreview** - Center preview area with mobile/desktop device toggle
+5. **BuilderProperties** - Right properties panel with title and back navigation support
+
+**Key Features:**
+- Three-column layout matching prototype design
+- Tab navigation with proper accessibility (ARIA roles)
+- Device toggle (375px mobile / 600px desktop preview)
+- Step list with type icons, labels, and active states
+- Outcomes section for result steps
+- Responsive behavior: right panel hidden on mobile (`hidden md:flex`)
+- All components use design system tokens from `globals.css`
+
+**Files Created:**
+- `components/visual-builder/` directory with 5 component files
+- `components/visual-builder/__tests__/` with 5 test files
+- `app/visual-builder/page.tsx` demo route
+- `test/setup.ts` and `test/test-utils.tsx` for testing infrastructure
+- `vitest.config.ts` for test configuration
+
+**What's Next:**
+Milestone 2 will wire the step list to Zustand store and implement step CRUD operations.
+
+---
+
 ### Iteration 10 - Typeform-Inspired Layout & Options-to-Outcome Linking
 **Date:** January 2025
 
