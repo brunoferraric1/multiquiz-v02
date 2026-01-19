@@ -288,6 +288,7 @@ export default function PrototypePage() {
   const [isBlockDrawerOpen, setIsBlockDrawerOpen] = useState(false);
   const [draggingStepId, setDraggingStepId] = useState<string | null>(null);
   const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
   // Mobile detection
   useEffect(() => {
@@ -1514,100 +1515,217 @@ export default function PrototypePage() {
         </header>
 
         {/* MOBILE MAIN CONTENT */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* LEFT STEP RAIL */}
-          <div className="w-14 bg-white border-r flex flex-col py-2 shrink-0">
-            {/* Regular steps */}
-            <div className="flex-1 overflow-y-auto space-y-1 px-1.5">
-              {regularSteps.map((step) => {
-                stepCounter++;
-                const isActive = activeStepId === step.id;
-                const isDragging = draggingStepId === step.id;
-                const isDragOver = dragOverStepId === step.id;
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Overlay backdrop when sidebar expanded */}
+          {isSidebarExpanded && (
+            <div
+              className="absolute inset-0 bg-black/20 z-10"
+              onClick={() => setIsSidebarExpanded(false)}
+            />
+          )}
 
-                return (
-                  <button
-                    key={step.id}
-                    onClick={() => handleStepChange(step.id)}
-                    onTouchStart={() => !step.isFixed && handleMobileStepDragStart(step.id)}
-                    onTouchMove={(e) => {
-                      if (draggingStepId) {
-                        const touch = e.touches[0];
-                        const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                        const stepButton = element?.closest('[data-step-id]');
-                        if (stepButton) {
-                          handleMobileStepDragOver(stepButton.getAttribute('data-step-id') || '');
+          {/* LEFT STEP RAIL - Expandable (overlays when expanded) */}
+          <div
+            className={`bg-white border-r flex flex-col py-2 shrink-0 transition-all duration-300 ${
+              isSidebarExpanded ? 'absolute left-0 top-0 bottom-0 w-[70%] z-20 shadow-xl' : 'w-14'
+            }`}
+          >
+            {/* Steps list */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Regular steps */}
+              <div className={`space-y-1 ${isSidebarExpanded ? 'px-3' : 'px-1.5'}`}>
+                {regularSteps.map((step) => {
+                  stepCounter++;
+                  const isActive = activeStepId === step.id;
+                  const isDragging = draggingStepId === step.id;
+                  const isDragOver = dragOverStepId === step.id;
+                  const stepTitle = getStepTitle(step);
+
+                  return isSidebarExpanded ? (
+                    /* Expanded view - bigger cards */
+                    <button
+                      key={step.id}
+                      onClick={() => handleStepChange(step.id)}
+                      onTouchStart={() => !step.isFixed && handleMobileStepDragStart(step.id)}
+                      onTouchMove={(e) => {
+                        if (draggingStepId) {
+                          const touch = e.touches[0];
+                          const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                          const stepButton = element?.closest('[data-step-id]');
+                          if (stepButton) {
+                            handleMobileStepDragOver(stepButton.getAttribute('data-step-id') || '');
+                          }
                         }
-                      }
-                    }}
-                    onTouchEnd={handleMobileStepDragEnd}
-                    data-step-id={step.id}
-                    className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center transition-all ${
-                      isActive
-                        ? 'bg-blue-600 text-white'
-                        : isDragOver
-                        ? 'bg-blue-100 border-2 border-blue-400 border-dashed'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    } ${isDragging ? 'opacity-50 scale-95' : ''}`}
-                  >
-                    <div className="scale-75">{stepTypeIcons[step.type]}</div>
-                    <span className="text-[10px] font-medium -mt-0.5">{stepCounter}</span>
-                  </button>
-                );
-              })}
-            </div>
+                      }}
+                      onTouchEnd={handleMobileStepDragEnd}
+                      data-step-id={step.id}
+                      className={`w-full flex items-start gap-3 p-3 rounded-xl transition-all text-left ${
+                        isActive
+                          ? 'bg-blue-50 border-2 border-blue-200'
+                          : isDragOver
+                          ? 'bg-blue-50 border-2 border-blue-400 border-dashed'
+                          : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
+                      } ${isDragging ? 'opacity-50 scale-95' : ''}`}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                        isActive ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border'
+                      }`}>
+                        {stepTypeIcons[step.type]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-medium truncate ${isActive ? 'text-blue-700' : 'text-gray-900'}`}>
+                          {stepCounter}. {step.label}
+                        </div>
+                        {stepTitle && (
+                          <div className="text-xs text-gray-500 truncate mt-0.5">{stepTitle}</div>
+                        )}
+                      </div>
+                    </button>
+                  ) : (
+                    /* Collapsed view - icons only */
+                    <button
+                      key={step.id}
+                      onClick={() => handleStepChange(step.id)}
+                      onTouchStart={() => !step.isFixed && handleMobileStepDragStart(step.id)}
+                      onTouchMove={(e) => {
+                        if (draggingStepId) {
+                          const touch = e.touches[0];
+                          const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                          const stepButton = element?.closest('[data-step-id]');
+                          if (stepButton) {
+                            handleMobileStepDragOver(stepButton.getAttribute('data-step-id') || '');
+                          }
+                        }
+                      }}
+                      onTouchEnd={handleMobileStepDragEnd}
+                      data-step-id={step.id}
+                      className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center transition-all ${
+                        isActive
+                          ? 'bg-blue-600 text-white'
+                          : isDragOver
+                          ? 'bg-blue-100 border-2 border-blue-400 border-dashed'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      } ${isDragging ? 'opacity-50 scale-95' : ''}`}
+                    >
+                      <div className="scale-75">{stepTypeIcons[step.type]}</div>
+                      <span className="text-[10px] font-medium -mt-0.5">{stepCounter}</span>
+                    </button>
+                  );
+                })}
 
-            {/* Divider */}
-            <div className="mx-2 my-2 border-t border-gray-200" />
-
-            {/* Results section */}
-            <div className="space-y-1 px-1.5">
-              {outcomes.map((outcome, idx) => {
-                const isActive = activeStepId === 'result' && selectedOutcomeId === outcome.id;
-                return (
+                {/* Add step button - after steps */}
+                {isSidebarExpanded ? (
                   <button
-                    key={outcome.id}
-                    onClick={() => {
-                      handleStepChange('result');
-                      setSelectedOutcomeId(outcome.id);
-                    }}
-                    className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center transition-all ${
-                      isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    onClick={() => setIsAddStepSheetOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-400 hover:text-blue-600"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 3v18h18"/>
-                      <path d="M18 17V9"/>
-                      <path d="M13 17V5"/>
-                      <path d="M8 17v-3"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
-                    <span className="text-[10px] font-medium -mt-0.5">R{idx + 1}</span>
+                    <span className="text-sm font-medium">Adicionar etapa</span>
                   </button>
-                );
-              })}
-              {/* Add result button */}
-              <button
-                onClick={addOutcome}
-                className="w-11 h-11 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-              </button>
-            </div>
+                ) : (
+                  <button
+                    onClick={() => setIsAddStepSheetOpen(true)}
+                    className="w-11 h-11 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </button>
+                )}
+              </div>
 
-            {/* Add step button at bottom */}
-            <div className="mt-2 px-1.5">
-              <button
-                onClick={() => setIsAddStepSheetOpen(true)}
-                className="w-11 h-11 rounded-xl flex items-center justify-center bg-gray-900 text-white hover:bg-gray-800"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-              </button>
+              {/* Divider */}
+              <div className={`my-3 border-t border-gray-200 ${isSidebarExpanded ? 'mx-3' : 'mx-2'}`} />
+
+              {/* Results section */}
+              <div className={`space-y-1 ${isSidebarExpanded ? 'px-3' : 'px-1.5'}`}>
+                {isSidebarExpanded && (
+                  <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2 px-1">Resultados</div>
+                )}
+                {outcomes.map((outcome, idx) => {
+                  const isActive = activeStepId === 'result' && selectedOutcomeId === outcome.id;
+                  const outcomeTitle = getOutcomeTitle(outcome);
+
+                  return isSidebarExpanded ? (
+                    <button
+                      key={outcome.id}
+                      onClick={() => {
+                        handleStepChange('result');
+                        setSelectedOutcomeId(outcome.id);
+                      }}
+                      className={`w-full flex items-start gap-3 p-3 rounded-xl transition-all text-left ${
+                        isActive ? 'bg-blue-50 border-2 border-blue-200' : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                        isActive ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border'
+                      }`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 3v18h18"/>
+                          <path d="M18 17V9"/>
+                          <path d="M13 17V5"/>
+                          <path d="M8 17v-3"/>
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-medium truncate ${isActive ? 'text-blue-700' : 'text-gray-900'}`}>
+                          {outcome.name || `Resultado ${idx + 1}`}
+                        </div>
+                        {outcomeTitle && (
+                          <div className="text-xs text-gray-500 truncate mt-0.5">{outcomeTitle}</div>
+                        )}
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      key={outcome.id}
+                      onClick={() => {
+                        handleStepChange('result');
+                        setSelectedOutcomeId(outcome.id);
+                      }}
+                      className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center transition-all ${
+                        isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 3v18h18"/>
+                        <path d="M18 17V9"/>
+                        <path d="M13 17V5"/>
+                        <path d="M8 17v-3"/>
+                      </svg>
+                      <span className="text-[10px] font-medium -mt-0.5">R{idx + 1}</span>
+                    </button>
+                  );
+                })}
+
+                {/* Add result button - after results */}
+                {isSidebarExpanded ? (
+                  <button
+                    onClick={addOutcome}
+                    className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-400 hover:text-blue-600"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    <span className="text-sm font-medium">Adicionar resultado</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={addOutcome}
+                    className="w-11 h-11 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1621,13 +1739,36 @@ export default function PrototypePage() {
               }
             }}
           >
-            {/* Header row: Step name + Preview button */}
+            {/* Header row: Expand button + Step name + Preview button */}
             <div className="max-w-sm mx-auto flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold text-gray-700">
-                {activeStep.type === 'result'
-                  ? (selectedOutcome ? getOutcomeDisplayName(selectedOutcome, outcomes.indexOf(selectedOutcome)) : 'Resultado')
-                  : activeStep.label}
-              </span>
+              <div className="flex items-center gap-2">
+                {/* Expand sidebar button */}
+                <button
+                  onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+                  className="flex items-center justify-center w-8 h-8 bg-white rounded-lg shadow-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`transition-transform ${isSidebarExpanded ? 'rotate-180' : ''}`}
+                  >
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </button>
+                {/* Step name */}
+                <span className="text-sm font-semibold text-gray-700">
+                  {activeStep.type === 'result'
+                    ? (selectedOutcome ? getOutcomeDisplayName(selectedOutcome, outcomes.indexOf(selectedOutcome)) : 'Resultado')
+                    : activeStep.label}
+                </span>
+              </div>
               <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-gray-500">
                   <polygon points="5 3 19 12 5 21 5 3"/>
