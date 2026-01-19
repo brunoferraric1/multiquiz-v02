@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { VisualBuilder, Step, Outcome } from '@/components/visual-builder'
+import { useEffect } from 'react'
+import { ConnectedVisualBuilder } from '@/components/visual-builder'
+import { useVisualBuilderStore, Step, Outcome } from '@/store/visual-builder-store'
 
-// Sample data for testing the visual builder shell
+// Sample data for testing the visual builder
 const initialSteps: Step[] = [
   { id: 'intro', type: 'intro', label: 'Intro', isFixed: true, subtitle: 'Bem-vindo ao Quiz!' },
   { id: 'q1', type: 'question', label: 'P1', subtitle: 'Qual seu tipo de pele?' },
@@ -18,34 +19,19 @@ const initialOutcomes: Outcome[] = [
 ]
 
 export default function VisualBuilderPage() {
-  const [steps] = useState<Step[]>(initialSteps)
-  const [outcomes] = useState<Outcome[]>(initialOutcomes)
-  const [activeStepId, setActiveStepId] = useState('intro')
-  const [selectedOutcomeId, setSelectedOutcomeId] = useState<string | undefined>(undefined)
+  const initialize = useVisualBuilderStore((state) => state.initialize)
+
+  // Initialize store with demo data on mount
+  useEffect(() => {
+    initialize({ steps: initialSteps, outcomes: initialOutcomes })
+  }, [initialize])
 
   return (
-    <VisualBuilder
+    <ConnectedVisualBuilder
       quizName="Quiz Skincare - Demo"
-      steps={steps}
-      outcomes={outcomes}
-      activeStepId={activeStepId}
-      selectedOutcomeId={selectedOutcomeId}
-      onStepSelect={(stepId) => {
-        setActiveStepId(stepId)
-        // Clear outcome selection when selecting a non-result step
-        const step = steps.find(s => s.id === stepId)
-        if (step?.type !== 'result') {
-          setSelectedOutcomeId(undefined)
-        } else if (!selectedOutcomeId && outcomes.length > 0) {
-          setSelectedOutcomeId(outcomes[0].id)
-        }
-      }}
-      onOutcomeSelect={setSelectedOutcomeId}
       onBack={() => window.history.back()}
       onPreview={() => console.log('Preview clicked')}
       onPublish={() => console.log('Publish clicked')}
-      onAddStep={() => console.log('Add step clicked')}
-      onAddOutcome={() => console.log('Add outcome clicked')}
     />
   )
 }

@@ -203,14 +203,24 @@ export function BuilderSidebar({
                 const letter = String.fromCharCode(65 + index)
 
                 return (
-                  <button
+                  <div
                     key={outcome.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isOutcomeActive}
                     onClick={() => {
                       if (resultStep) onStepSelect?.(resultStep.id)
                       onOutcomeSelect?.(outcome.id)
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        if (resultStep) onStepSelect?.(resultStep.id)
+                        onOutcomeSelect?.(outcome.id)
+                      }
+                    }}
                     className={cn(
-                      'group w-full flex items-start gap-3 p-2.5 rounded-lg transition-all text-left',
+                      'group w-full flex items-start gap-3 p-2.5 rounded-lg transition-all text-left cursor-pointer',
                       isOutcomeActive
                         ? 'bg-primary/10 border border-primary/30'
                         : 'hover:bg-muted/60 border border-transparent'
@@ -248,7 +258,7 @@ export function BuilderSidebar({
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
-                  </button>
+                  </div>
                 )
               })}
             </div>
