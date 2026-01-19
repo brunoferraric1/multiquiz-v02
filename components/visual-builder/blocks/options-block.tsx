@@ -2,7 +2,7 @@
 
 import { OptionsConfig } from '@/types/blocks'
 import { cn } from '@/lib/utils'
-import { Circle, Square } from 'lucide-react'
+import { Square } from 'lucide-react'
 
 interface OptionsBlockPreviewProps {
   config: OptionsConfig
@@ -11,6 +11,8 @@ interface OptionsBlockPreviewProps {
 
 /**
  * OptionsBlockPreview - Renders options block with selectable items
+ * Uses card style with shadow and scale effect to differentiate from input fields
+ * Only shows checkbox icon for multiple selection type
  */
 export function OptionsBlockPreview({ config, enabled }: OptionsBlockPreviewProps) {
   const { items, selectionType } = config as OptionsConfig
@@ -19,16 +21,14 @@ export function OptionsBlockPreview({ config, enabled }: OptionsBlockPreviewProp
     // Placeholder state
     return (
       <div className={cn('p-4', !enabled && 'opacity-50')}>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30"
+              className="flex items-center gap-3 p-4 rounded-xl border border-dashed border-muted-foreground/30 bg-card/50"
             >
-              {selectionType === 'multiple' ? (
+              {selectionType === 'multiple' && (
                 <Square className="w-4 h-4 text-muted-foreground/50" />
-              ) : (
-                <Circle className="w-4 h-4 text-muted-foreground/50" />
               )}
               <span className="text-sm text-muted-foreground/50">Opção {i}</span>
             </div>
@@ -40,19 +40,24 @@ export function OptionsBlockPreview({ config, enabled }: OptionsBlockPreviewProp
 
   return (
     <div className={cn('p-4', !enabled && 'opacity-50')}>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {items.map((item) => (
           <div
             key={item.id}
-            className="flex items-center gap-3 p-3 rounded-lg border border-muted-foreground/20 bg-background hover:bg-muted/50 transition-colors"
+            className={cn(
+              'flex items-center gap-3 p-4 rounded-xl',
+              'bg-card border border-border/50',
+              'shadow-sm hover:shadow-md',
+              'hover:scale-[1.02] hover:border-primary/30',
+              'transition-all duration-200 ease-out',
+              'cursor-pointer'
+            )}
           >
-            {selectionType === 'multiple' ? (
+            {selectionType === 'multiple' && (
               <Square className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <Circle className="w-4 h-4 text-muted-foreground" />
             )}
             {item.emoji && <span className="text-lg">{item.emoji}</span>}
-            <span className="text-sm text-foreground">{item.text || 'Opção sem texto'}</span>
+            <span className="text-sm font-medium text-foreground">{item.text || 'Opção sem texto'}</span>
           </div>
         ))}
       </div>

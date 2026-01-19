@@ -137,11 +137,13 @@ describe('MediaBlockEditor', () => {
 describe('OptionsBlockEditor', () => {
   const defaultConfig = { items: [], selectionType: 'single' as const }
 
-  it('renders selection type buttons', () => {
+  it('renders selection type buttons without icons', () => {
     render(<OptionsBlockEditor config={defaultConfig} onChange={() => {}} />)
 
     expect(screen.getByTestId('toggle-single')).toBeInTheDocument()
     expect(screen.getByTestId('toggle-multiple')).toBeInTheDocument()
+    expect(screen.getByText('Única')).toBeInTheDocument()
+    expect(screen.getByText('Múltipla')).toBeInTheDocument()
   })
 
   it('shows single selection as selected by default', () => {
@@ -193,6 +195,102 @@ describe('OptionsBlockEditor', () => {
 
     expect(screen.getByDisplayValue('Option 1')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Option 2')).toBeInTheDocument()
+  })
+
+  describe('Outcome linking', () => {
+    it('shows "Criar resultado" button when no outcomes exist', () => {
+      const config = {
+        items: [{ id: '1', text: 'Option 1' }],
+        selectionType: 'single' as const,
+      }
+
+      render(<OptionsBlockEditor config={config} onChange={() => {}} outcomes={[]} />)
+
+      expect(screen.getByTestId('create-outcome-0')).toBeInTheDocument()
+      expect(screen.getByText('Criar resultado')).toBeInTheDocument()
+    })
+
+    it('calls onCreateOutcome when clicking "Criar resultado"', async () => {
+      const onCreateOutcome = vi.fn()
+      const user = userEvent.setup()
+      const config = {
+        items: [{ id: '1', text: 'Option 1' }],
+        selectionType: 'single' as const,
+      }
+
+      render(
+        <OptionsBlockEditor
+          config={config}
+          onChange={() => {}}
+          outcomes={[]}
+          onCreateOutcome={onCreateOutcome}
+        />
+      )
+
+      await user.click(screen.getByTestId('create-outcome-0'))
+
+      expect(onCreateOutcome).toHaveBeenCalled()
+    })
+
+    it('shows outcome dropdown when outcomes exist', () => {
+      const config = {
+        items: [{ id: '1', text: 'Option 1' }],
+        selectionType: 'single' as const,
+      }
+      const outcomes = [
+        { id: 'outcome-1', name: 'Success', blocks: [] },
+        { id: 'outcome-2', name: 'Failure', blocks: [] },
+      ]
+
+      render(<OptionsBlockEditor config={config} onChange={() => {}} outcomes={outcomes} />)
+
+      expect(screen.getByTestId('outcome-select-0')).toBeInTheDocument()
+    })
+
+    it('shows linked outcome in select trigger', () => {
+      const config = {
+        items: [{ id: '1', text: 'Option 1', outcomeId: 'outcome-1' }],
+        selectionType: 'single' as const,
+      }
+      const outcomes = [
+        { id: 'outcome-1', name: 'Success Result', blocks: [] },
+      ]
+
+      render(<OptionsBlockEditor config={config} onChange={() => {}} outcomes={outcomes} />)
+
+      // The select trigger should show the selected outcome name
+      expect(screen.getByText('Success Result')).toBeInTheDocument()
+    })
+
+    it('shows default name for unnamed outcomes in select trigger', () => {
+      const config = {
+        items: [{ id: '1', text: 'Option 1', outcomeId: 'outcome-1' }],
+        selectionType: 'single' as const,
+      }
+      const outcomes = [
+        { id: 'outcome-1', name: '', blocks: [] },
+      ]
+
+      render(<OptionsBlockEditor config={config} onChange={() => {}} outcomes={outcomes} />)
+
+      // Should show "Resultado 1" for unnamed outcome
+      expect(screen.getByText('Resultado 1')).toBeInTheDocument()
+    })
+
+    it('shows placeholder for unlinked option', () => {
+      const config = {
+        items: [{ id: '1', text: 'Option 1' }],
+        selectionType: 'single' as const,
+      }
+      const outcomes = [
+        { id: 'outcome-1', name: 'Success', blocks: [] },
+      ]
+
+      render(<OptionsBlockEditor config={config} onChange={() => {}} outcomes={outcomes} />)
+
+      // Should show placeholder text for unlinked option
+      expect(screen.getByText('Não vinculado')).toBeInTheDocument()
+    })
   })
 })
 

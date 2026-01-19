@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useVisualBuilderStore } from '@/store/visual-builder-store'
+import { useVisualBuilderStore, createOutcome } from '@/store/visual-builder-store'
 import { BuilderProperties } from './builder-properties'
 import {
   HeaderBlockEditor,
@@ -82,6 +82,8 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
   const reorderOutcomeBlocks = useVisualBuilderStore((state) => state.reorderOutcomeBlocks)
   const updateStepSettings = useVisualBuilderStore((state) => state.updateStepSettings)
   const setAddBlockSheetOpen = useVisualBuilderStore((state) => state.setAddBlockSheetOpen)
+  const setActiveStepId = useVisualBuilderStore((state) => state.setActiveStepId)
+  const addOutcome = useVisualBuilderStore((state) => state.addOutcome)
 
   // Find the active step and selected block
   const activeStep = steps.find((s) => s.id === activeStepId)
@@ -141,6 +143,18 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
     setSelectedBlockId(undefined)
   }
 
+  const handleCreateOutcome = () => {
+    // Find result step and navigate to it
+    const resultStep = steps.find((s) => s.type === 'result')
+    if (resultStep) {
+      // Create a new outcome
+      const newOutcome = createOutcome()
+      addOutcome(newOutcome)
+      // Navigate to result step (this will also select the new outcome)
+      setActiveStepId(resultStep.id)
+    }
+  }
+
   // Render block editor based on type
   const renderBlockEditor = (block: Block) => {
     switch (block.type) {
@@ -170,6 +184,8 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
           <OptionsBlockEditor
             config={block.config as OptionsConfig}
             onChange={handleUpdateBlock}
+            outcomes={outcomes}
+            onCreateOutcome={handleCreateOutcome}
           />
         )
       case 'fields':

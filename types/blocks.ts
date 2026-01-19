@@ -40,6 +40,7 @@ export interface OptionItem {
   id: string
   text: string
   emoji?: string
+  outcomeId?: string
 }
 
 // Options block configuration
@@ -144,7 +145,17 @@ export function getDefaultBlockConfig(type: BlockType): BlockConfig {
     case 'options':
       return { items: [], selectionType: 'single' } as OptionsConfig
     case 'fields':
-      return { items: [] } as FieldsConfig
+      return {
+        items: [
+          {
+            id: `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            label: 'Nome',
+            type: 'text',
+            placeholder: 'Digite seu nome...',
+            required: true,
+          },
+        ],
+      } as FieldsConfig
     case 'price':
       return { productTitle: '', value: '', prefix: 'R$' } as PriceConfig
     case 'button':
