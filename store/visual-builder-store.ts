@@ -355,7 +355,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           const steps = state.steps.map((step) => {
             if (step.id !== stepId) return step
 
-            const blocks = [...step.blocks]
+            const blocks = [...(step.blocks || [])]
             if (insertAtIndex !== undefined && insertAtIndex >= 0 && insertAtIndex <= blocks.length) {
               blocks.splice(insertAtIndex, 0, block)
             } else {
@@ -375,7 +375,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 
             return {
               ...step,
-              blocks: step.blocks.map((block) =>
+              blocks: (step.blocks || []).map((block) =>
                 block.id === blockId
                   ? { ...block, config: { ...block.config, ...config } }
                   : block
@@ -391,7 +391,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 
             return {
               ...step,
-              blocks: step.blocks.filter((block) => block.id !== blockId),
+              blocks: (step.blocks || []).filter((block) => block.id !== blockId),
             }
           })
 
@@ -408,7 +408,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 
             return {
               ...step,
-              blocks: step.blocks.map((block) =>
+              blocks: (step.blocks || []).map((block) =>
                 block.id === blockId ? { ...block, enabled: !block.enabled } : block
               ),
             }
@@ -420,7 +420,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           const steps = state.steps.map((step) => {
             if (step.id !== stepId) return step
 
-            const blocks = [...step.blocks]
+            const blocks = [...(step.blocks || [])]
             if (
               fromIndex < 0 ||
               toIndex < 0 ||
@@ -446,7 +446,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           const outcomes = state.outcomes.map((outcome) => {
             if (outcome.id !== outcomeId) return outcome
 
-            const blocks = [...outcome.blocks]
+            const blocks = [...(outcome.blocks || [])]
             if (insertAtIndex !== undefined && insertAtIndex >= 0 && insertAtIndex <= blocks.length) {
               blocks.splice(insertAtIndex, 0, block)
             } else {
@@ -466,7 +466,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 
             return {
               ...outcome,
-              blocks: outcome.blocks.map((block) =>
+              blocks: (outcome.blocks || []).map((block) =>
                 block.id === blockId
                   ? { ...block, config: { ...block.config, ...config } }
                   : block
@@ -482,7 +482,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 
             return {
               ...outcome,
-              blocks: outcome.blocks.filter((block) => block.id !== blockId),
+              blocks: (outcome.blocks || []).filter((block) => block.id !== blockId),
             }
           })
 
@@ -499,7 +499,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 
             return {
               ...outcome,
-              blocks: outcome.blocks.map((block) =>
+              blocks: (outcome.blocks || []).map((block) =>
                 block.id === blockId ? { ...block, enabled: !block.enabled } : block
               ),
             }
@@ -511,7 +511,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           const outcomes = state.outcomes.map((outcome) => {
             if (outcome.id !== outcomeId) return outcome
 
-            const blocks = [...outcome.blocks]
+            const blocks = [...(outcome.blocks || [])]
             if (
               fromIndex < 0 ||
               toIndex < 0 ||
