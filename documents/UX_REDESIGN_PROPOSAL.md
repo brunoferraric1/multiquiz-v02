@@ -514,6 +514,47 @@ The prototype demonstrates:
 
 This section tracks the iterations and changes made during the prototyping process.
 
+### Iteration 9 - Navigation UX Improvements
+**Date:** January 2025
+
+**Changes:**
+
+**1. Step Navigation Tabs - Simplified Naming:**
+- All intermediate steps now display as **"Etapa 1", "Etapa 2", "Etapa 3"**, etc.
+- Step type (question, lead-gen, promo) no longer affects the tab label
+- Custom step titles edited in sidebar do NOT change the top navigation
+- Fixed steps remain: "Intro" and "Resultado"
+
+**2. Button Block - Context-Aware Actions:**
+- **Intro step**: Button only advances to next step (no URL option)
+  - Shows static message "→ Próxima etapa"
+- **Result step**: Button only supports URL action
+  - Shows URL input field directly
+- **Other steps**: Both options available (→ Próxima / 🔗 URL)
+
+**3. Block Preview - "Editar" Hover Labels:**
+- Each block in preview shows **"editar"** label on hover (gray)
+- When selected, shows **"editando"** label (blue)
+- Helps users understand blocks are editable, not interactive quiz elements
+
+**4. Peek Cards - Visual Flow Indicator:**
+- **Previous step peek**: Small sliver visible at LEFT EDGE of preview area
+- **Next step peek**: Small sliver visible at RIGHT EDGE of preview area
+- Clicking on peek cards navigates to that step
+- Creates visual understanding of the quiz flow
+
+**5. Add Step Button in Preview:**
+- **+ button** appears between current card and next step peek
+- Opens the same "Add Step" sheet as the top navigation
+- Only visible when not on the Result step
+- Provides contextual way to add steps while editing
+
+**Removed:**
+- Navigation arrows (users navigate by clicking peek cards)
+- Dotted placeholder for "no next step" (nothing shows if no next step)
+
+---
+
 ### Iteration 8 - Results Page Refinement & Block System Update
 **Date:** January 2025
 
