@@ -25,8 +25,14 @@ interface MediaConfig {
   url?: string;
 }
 
+interface OptionItem {
+  id: string;
+  text: string;
+  outcomeId?: string;
+}
+
 interface OptionsConfig {
-  items: string[];
+  items: OptionItem[];
   selectionType: 'single' | 'multiple';
 }
 
@@ -137,12 +143,45 @@ const blockLabels: Record<BlockType, string> = {
   list: 'Lista',
 };
 
-const availableBlocksPerType: Record<StepType, BlockType[]> = {
-  intro: ['header', 'text', 'media', 'fields', 'button'],
-  question: ['header', 'text', 'media', 'options'],
-  'lead-gen': ['header', 'text', 'media', 'fields', 'button'],
-  promo: ['banner', 'header', 'text', 'media', 'list', 'button'],
-  result: ['header', 'text', 'media', 'price', 'list', 'button'],
+// Step type icons for sidebar
+const stepTypeIcons: Record<StepType, React.ReactNode> = {
+  intro: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polygon points="10 8 16 12 10 16 10 8"/>
+    </svg>
+  ),
+  question: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  ),
+  'lead-gen': (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <line x1="19" y1="8" x2="19" y2="14"/>
+      <line x1="22" y1="11" x2="16" y2="11"/>
+    </svg>
+  ),
+  promo: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 12 20 22 4 22 4 12"/>
+      <rect x="2" y="7" width="20" height="5"/>
+      <line x1="12" y1="22" x2="12" y2="7"/>
+      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+    </svg>
+  ),
+  result: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20V10"/>
+      <path d="M18 20V4"/>
+      <path d="M6 20v-4"/>
+    </svg>
+  ),
 };
 
 // ============================================
@@ -167,7 +206,7 @@ const initialSteps: Step[] = [
       createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
       createBlock('button', { text: 'Começar', action: 'next_step' } as ButtonConfig),
     ],
-    settings: { showProgress: true, allowBack: false }, // Intro doesn't allow back
+    settings: { showProgress: true, allowBack: false },
   },
   {
     id: 'q1',
@@ -176,7 +215,12 @@ const initialSteps: Step[] = [
     blocks: [
       createBlock('header', { title: 'Qual seu tipo de pele?' } as HeaderConfig),
       createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
-      createBlock('options', { items: ['Seca', 'Oleosa', 'Mista', 'Normal'], selectionType: 'single' } as OptionsConfig),
+      createBlock('options', { items: [
+        { id: 'opt-1', text: 'Seca' },
+        { id: 'opt-2', text: 'Oleosa' },
+        { id: 'opt-3', text: 'Mista' },
+        { id: 'opt-4', text: 'Normal' },
+      ], selectionType: 'single' } as OptionsConfig),
     ],
     settings: { ...defaultStepSettings },
   },
@@ -187,7 +231,11 @@ const initialSteps: Step[] = [
     blocks: [
       createBlock('header', { title: 'Com que frequência você hidrata?' } as HeaderConfig),
       createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
-      createBlock('options', { items: ['Diariamente', 'Às vezes', 'Raramente'], selectionType: 'single' } as OptionsConfig),
+      createBlock('options', { items: [
+        { id: 'opt-5', text: 'Diariamente' },
+        { id: 'opt-6', text: 'Às vezes' },
+        { id: 'opt-7', text: 'Raramente' },
+      ], selectionType: 'single' } as OptionsConfig),
     ],
     settings: { ...defaultStepSettings },
   },
@@ -211,7 +259,7 @@ const initialSteps: Step[] = [
     label: 'Resultado',
     isFixed: true,
     blocks: [],
-    settings: { showProgress: false, allowBack: false }, // Result doesn't show progress or back
+    settings: { showProgress: false, allowBack: false },
   },
 ];
 
@@ -225,14 +273,14 @@ export default function PrototypePage() {
   const [activeStepId, setActiveStepId] = useState('intro');
   const [selectedOutcomeId, setSelectedOutcomeId] = useState<string | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [isAddStepSheetOpen, setIsAddStepSheetOpen] = useState(false);
   const [isAddBlockSheetOpen, setIsAddBlockSheetOpen] = useState(false);
-  const [isBrandKitOpen, setIsBrandKitOpen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'preview' | 'edit' | 'chat'>('preview');
   const [previewDevice, setPreviewDevice] = useState<'mobile' | 'desktop'>('mobile');
   const [isEditingStepLabel, setIsEditingStepLabel] = useState(false);
   const [editingOutcomeName, setEditingOutcomeName] = useState(false);
+  const [activeHeaderTab, setActiveHeaderTab] = useState<'editar' | 'assistente' | 'tema' | 'config'>('editar');
+  const [isChatExpanded, setIsChatExpanded] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
 
   const activeStep = steps.find(s => s.id === activeStepId) || steps[0];
   const selectedOutcome = selectedOutcomeId ? outcomes.find(o => o.id === selectedOutcomeId) : outcomes[0];
@@ -251,7 +299,6 @@ export default function PrototypePage() {
   };
 
   const handleOutcomeChange = (outcomeId: string) => {
-    // If a block is selected, find the equivalent block in the new outcome
     if (selectedBlockId && activeStep.type === 'result') {
       const currentOutcome = outcomes.find(o => o.id === selectedOutcomeId);
       const newOutcome = outcomes.find(o => o.id === outcomeId);
@@ -260,7 +307,6 @@ export default function PrototypePage() {
         const currentBlockIndex = currentOutcome.blocks.findIndex(b => b.id === selectedBlockId);
         const currentBlock = currentOutcome.blocks[currentBlockIndex];
 
-        // Find equivalent block in new outcome (same index and type)
         if (currentBlockIndex !== -1 && newOutcome.blocks[currentBlockIndex]?.type === currentBlock?.type) {
           setSelectedOutcomeId(outcomeId);
           setSelectedBlockId(newOutcome.blocks[currentBlockIndex].id);
@@ -270,7 +316,6 @@ export default function PrototypePage() {
       }
     }
 
-    // Default behavior: deselect block
     setSelectedOutcomeId(outcomeId);
     setSelectedBlockId(null);
     setEditingOutcomeName(false);
@@ -278,12 +323,11 @@ export default function PrototypePage() {
 
   const updateBlockConfig = (blockId: string, configUpdates: Partial<BlockConfig>) => {
     if (activeStep.type === 'result') {
-      // Apply only to selected outcome (content is per-outcome)
       setOutcomes(outcomes.map(o => {
         if (o.id !== selectedOutcomeId) return o;
         return {
           ...o,
-          blocks: o.blocks.map(b => b.id === blockId ? { ...b, config: { ...b.config, ...configUpdates } } : b)
+          blocks: o.blocks.map(b => b.id === blockId ? { ...b, config: { ...b.config, ...configUpdates } as BlockConfig } : b)
         };
       }));
     } else {
@@ -291,7 +335,7 @@ export default function PrototypePage() {
         if (s.id !== activeStepId) return s;
         return {
           ...s,
-          blocks: s.blocks.map(b => b.id === blockId ? { ...b, config: { ...b.config, ...configUpdates } } : b)
+          blocks: s.blocks.map(b => b.id === blockId ? { ...b, config: { ...b.config, ...configUpdates } as BlockConfig } : b)
         };
       }));
     }
@@ -302,7 +346,6 @@ export default function PrototypePage() {
     if (!block) return;
 
     if (activeStep.type === 'result') {
-      // Toggle affects ALL outcomes (structure is shared)
       const blockIndex = selectedOutcome?.blocks.findIndex(b => b.id === blockId) ?? -1;
       if (blockIndex === -1) return;
 
@@ -321,11 +364,9 @@ export default function PrototypePage() {
     }
   };
 
-  // State to track where to insert a new block
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
 
   const addBlock = (type: BlockType, atIndex?: number) => {
-    // Button defaults vary by step type
     const getButtonDefault = (): ButtonConfig => {
       if (activeStep.type === 'result') {
         return { text: 'Ver mais', action: 'url', url: '' };
@@ -337,7 +378,10 @@ export default function PrototypePage() {
       header: { title: 'Título', description: '' } as HeaderConfig,
       text: { content: '' } as TextConfig,
       media: { type: 'image', url: '' } as MediaConfig,
-      options: { items: ['Opção 1', 'Opção 2'], selectionType: 'single' } as OptionsConfig,
+      options: { items: [
+        { id: `opt-${Date.now()}-1`, text: 'Opção 1' },
+        { id: `opt-${Date.now()}-2`, text: 'Opção 2' },
+      ], selectionType: 'single' } as OptionsConfig,
       fields: { items: [{ id: `f-${Date.now()}`, label: 'Novo campo', type: 'text', placeholder: '', required: false }] } as FieldsConfig,
       price: { productTitle: 'Produto', value: 'R$ 0,00', highlight: false } as PriceConfig,
       button: getButtonDefault(),
@@ -345,7 +389,6 @@ export default function PrototypePage() {
       list: { items: [{ id: `l-${Date.now()}`, emoji: '✓', text: 'Item da lista' }] } as ListConfig,
     };
 
-    // Helper to insert at index or append
     const insertBlock = (blocks: Block[], newBlock: Block, index?: number) => {
       if (index !== undefined && index >= 0 && index <= blocks.length) {
         const newBlocks = [...blocks];
@@ -356,14 +399,12 @@ export default function PrototypePage() {
     };
 
     if (activeStep.type === 'result') {
-      // Add block to ALL outcomes (structure is shared, each gets its own block instance with same content)
       const newBlockIds: Record<string, string> = {};
       setOutcomes(outcomes.map(o => {
         const newBlock = createBlock(type, { ...defaultConfigs[type] });
         newBlockIds[o.id] = newBlock.id;
         return { ...o, blocks: insertBlock(o.blocks, newBlock, atIndex) };
       }));
-      // Select the block in the current outcome (use timeout to ensure state is updated)
       if (selectedOutcomeId && outcomes.length > 0) {
         setTimeout(() => {
           const updatedOutcome = outcomes.find(o => o.id === selectedOutcomeId);
@@ -389,7 +430,6 @@ export default function PrototypePage() {
 
   const removeBlock = (blockId: string) => {
     if (activeStep.type === 'result') {
-      // Remove from ALL outcomes (structure is shared) - remove by index position
       const blockIndex = selectedOutcome?.blocks.findIndex(b => b.id === blockId) ?? -1;
       if (blockIndex === -1) return;
 
@@ -416,7 +456,6 @@ export default function PrototypePage() {
     const newIndex = direction === 'up' ? index - 1 : index + 1;
 
     if (activeStep.type === 'result') {
-      // Move in ALL outcomes (structure is shared)
       setOutcomes(outcomes.map(o => {
         const outcomeBlocks = [...o.blocks];
         if (outcomeBlocks.length > Math.max(index, newIndex)) {
@@ -450,7 +489,10 @@ export default function PrototypePage() {
       ],
       question: [
         createBlock('header', { title: 'Nova pergunta?' } as HeaderConfig),
-        createBlock('options', { items: ['Opção 1', 'Opção 2'], selectionType: 'single' } as OptionsConfig),
+        createBlock('options', { items: [
+          { id: `opt-${Date.now()}-1`, text: 'Opção 1' },
+          { id: `opt-${Date.now()}-2`, text: 'Opção 2' },
+        ], selectionType: 'single' } as OptionsConfig),
       ],
       'lead-gen': [
         createBlock('header', { title: 'Seus dados', description: 'Preencha para continuar' } as HeaderConfig),
@@ -496,15 +538,12 @@ export default function PrototypePage() {
   };
 
   const addOutcome = () => {
-    // If there are existing outcomes, inherit block structure from the first one
     const existingOutcome = outcomes[0];
     let newBlocks: Block[];
 
     if (existingOutcome) {
-      // Copy block structure but with new IDs and empty/default content
       newBlocks = existingOutcome.blocks.map(block => {
         const newBlock = createBlock(block.type, { ...block.config }, block.enabled);
-        // Reset content to defaults for the new outcome
         if (block.type === 'header') {
           (newBlock.config as HeaderConfig).title = '';
           (newBlock.config as HeaderConfig).description = '';
@@ -518,7 +557,6 @@ export default function PrototypePage() {
         return newBlock;
       });
     } else {
-      // Default blocks for first outcome
       newBlocks = [
         createBlock('header', { title: 'Título do Resultado', description: 'Descrição do resultado' } as HeaderConfig),
         createBlock('media', { type: 'image', url: '' } as MediaConfig, false),
@@ -559,14 +597,12 @@ export default function PrototypePage() {
   };
 
   const getStepDisplayName = (step: Step): string => {
-    // For questions, find the index among all questions
     if (step.type === 'question') {
       const questionSteps = steps.filter(s => s.type === 'question');
       const index = questionSteps.findIndex(s => s.id === step.id);
       return `Pergunta ${index + 1}`;
     }
 
-    // For other types, use proper Portuguese names
     const typeLabels: Record<StepType, string> = {
       intro: 'Introdução',
       question: 'Pergunta',
@@ -577,6 +613,26 @@ export default function PrototypePage() {
     return typeLabels[step.type];
   };
 
+  // Get step title from first header block
+  const getStepTitle = (step: Step): string => {
+    const headerBlock = step.blocks.find(b => b.type === 'header' && b.enabled);
+    if (headerBlock) {
+      const config = headerBlock.config as HeaderConfig;
+      if (config.title) return config.title;
+    }
+    return '';
+  };
+
+  // Get outcome title from first header block
+  const getOutcomeTitle = (outcome: Outcome): string => {
+    const headerBlock = outcome.blocks.find(b => b.type === 'header' && b.enabled);
+    if (headerBlock) {
+      const config = headerBlock.config as HeaderConfig;
+      if (config.title) return config.title;
+    }
+    return '';
+  };
+
   const updateStepSettings = (settingKey: keyof StepSettings, value: boolean) => {
     setSteps(steps.map(s =>
       s.id === activeStepId
@@ -585,7 +641,6 @@ export default function PrototypePage() {
     ));
   };
 
-  // Helper to get outcome display name (handles empty names)
   const getOutcomeDisplayName = (outcome: Outcome, index: number): string => {
     return outcome.name.trim() || `Resultado ${index + 1}`;
   };
@@ -599,13 +654,11 @@ export default function PrototypePage() {
 
     const isSelected = selectedBlockId === block.id;
 
-    // Base wrapper classes and hover toolbar for all blocks
     const wrapperClass = (extra: string = '') =>
       `group relative cursor-pointer transition-all rounded-lg ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50 hover:ring-2 hover:ring-gray-300'} ${extra}`;
 
     const hoverLabel = (
       <div className={`absolute -top-3 right-2 flex items-center gap-0.5 rounded-lg overflow-hidden transition-opacity z-10 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-        {/* Edit button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -619,7 +672,6 @@ export default function PrototypePage() {
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
-        {/* Delete button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -702,14 +754,22 @@ export default function PrototypePage() {
         return (
           <div key={block.id} onClick={() => setSelectedBlockId(block.id)} className={wrapperClass('p-2 space-y-2')}>
             {hoverLabel}
-            {config.items.map((item, i) => (
-              <div key={i} className="p-3 border-2 border-gray-200 rounded-lg flex items-center gap-3 text-gray-800">
-                {config.selectionType === 'multiple' && (
-                  <div className="w-5 h-5 border-2 border-gray-300 rounded" />
-                )}
-                {item}
-              </div>
-            ))}
+            {config.items.map((item) => {
+              const linkedOutcome = item.outcomeId ? outcomes.find(o => o.id === item.outcomeId) : null;
+              return (
+                <div key={item.id} className="p-3 border-2 border-gray-200 rounded-lg flex items-center gap-3 text-gray-800">
+                  {config.selectionType === 'multiple' && (
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded" />
+                  )}
+                  <span className="flex-1">{item.text}</span>
+                  {linkedOutcome && (
+                    <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                      → {linkedOutcome.name || `Resultado ${outcomes.findIndex(o => o.id === item.outcomeId) + 1}`}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         );
       }
@@ -937,32 +997,86 @@ export default function PrototypePage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Opções</label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {config.items.map((item, i) => (
-                  <div key={i} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={item}
-                      onChange={(e) => {
-                        const newItems = [...config.items];
-                        newItems[i] = e.target.value;
-                        updateBlockConfig(block.id, { items: newItems });
-                      }}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
-                    />
-                    <button
-                      onClick={() => {
-                        const newItems = config.items.filter((_, idx) => idx !== i);
-                        updateBlockConfig(block.id, { items: newItems });
-                      }}
-                      className="px-2 text-red-500 hover:bg-red-50 rounded"
-                    >
-                      ×
-                    </button>
+                  <div key={item.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+                    {/* Option text input */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={item.text}
+                        onChange={(e) => {
+                          const newItems = [...config.items];
+                          newItems[i] = { ...newItems[i], text: e.target.value };
+                          updateBlockConfig(block.id, { items: newItems });
+                        }}
+                        placeholder="Texto da opção"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
+                      />
+                      <button
+                        onClick={() => {
+                          const newItems = config.items.filter((_, idx) => idx !== i);
+                          updateBlockConfig(block.id, { items: newItems });
+                        }}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded"
+                        title="Remover opção"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                    {/* Outcome assignment */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 shrink-0">→ Resultado:</span>
+                      {outcomes.length === 0 ? (
+                        <button
+                          onClick={() => {
+                            // Navigate to result step and create an outcome
+                            const resultStep = steps.find(s => s.type === 'result');
+                            if (resultStep) {
+                              handleStepChange(resultStep.id);
+                              addOutcome();
+                            }
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 border border-dashed border-blue-300 rounded text-xs text-blue-600 hover:bg-blue-50 transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                          Criar resultado
+                        </button>
+                      ) : (
+                        <select
+                          value={item.outcomeId || ''}
+                          onChange={(e) => {
+                            const newItems = [...config.items];
+                            newItems[i] = { ...newItems[i], outcomeId: e.target.value || undefined };
+                            updateBlockConfig(block.id, { items: newItems });
+                          }}
+                          className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-xs text-gray-900 bg-white"
+                        >
+                          <option value="">Não vinculado</option>
+                          {outcomes.map((o, idx) => (
+                            <option key={o.id} value={o.id}>
+                              {o.name || `Resultado ${idx + 1}`}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
                   </div>
                 ))}
                 <button
-                  onClick={() => updateBlockConfig(block.id, { items: [...config.items, `Opção ${config.items.length + 1}`] })}
+                  onClick={() => {
+                    const newItem: OptionItem = {
+                      id: `opt-${Date.now()}`,
+                      text: `Opção ${config.items.length + 1}`,
+                    };
+                    updateBlockConfig(block.id, { items: [...config.items, newItem] });
+                  }}
                   className="w-full py-2 border-2 border-dashed rounded text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500"
                 >
                   + Adicionar opção
@@ -1001,7 +1115,7 @@ export default function PrototypePage() {
                     ×
                   </button>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-2">
                   <select
                     value={field.type}
                     onChange={(e) => {
@@ -1009,18 +1123,18 @@ export default function PrototypePage() {
                       newItems[index] = { ...newItems[index], type: e.target.value as FieldItem['type'] };
                       updateBlockConfig(block.id, { items: newItems });
                     }}
-                    className="px-2 py-1 border border-gray-300 rounded text-xs text-gray-700 bg-white"
+                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900"
                   >
                     <option value="text">Texto</option>
                     <option value="email">Email</option>
                     <option value="phone">Telefone</option>
                     <option value="number">Número</option>
-                    <option value="textarea">Texto longo</option>
+                    <option value="textarea">Área de texto</option>
                   </select>
-                  <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+                  <label className="flex items-center gap-1.5 text-sm text-gray-600">
                     <input
                       type="checkbox"
-                      checked={field.required || false}
+                      checked={field.required}
                       onChange={(e) => {
                         const newItems = [...config.items];
                         newItems[index] = { ...newItems[index], required: e.target.checked };
@@ -1039,14 +1153,14 @@ export default function PrototypePage() {
                     newItems[index] = { ...newItems[index], placeholder: e.target.value };
                     updateBlockConfig(block.id, { items: newItems });
                   }}
-                  placeholder="Placeholder"
-                  className="w-full mt-2 px-2 py-1 border border-gray-200 rounded text-xs text-gray-600"
+                  placeholder="Placeholder..."
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-500"
                 />
               </div>
             ))}
             <button
               onClick={() => {
-                const newField: FieldItem = { id: `f-${Date.now()}`, label: 'Novo campo', type: 'text', placeholder: '', required: false };
+                const newField: FieldItem = { id: `f-${Date.now()}`, label: '', type: 'text', placeholder: '', required: false };
                 updateBlockConfig(block.id, { items: [...config.items, newField] });
               }}
               className="w-full py-2 border-2 border-dashed rounded text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500"
@@ -1060,7 +1174,7 @@ export default function PrototypePage() {
       case 'price': {
         const config = block.config as PriceConfig;
         return (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Título do produto</label>
               <input
@@ -1071,57 +1185,56 @@ export default function PrototypePage() {
               />
             </div>
             <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Texto antes do preço</label>
+              <input
+                type="text"
+                value={config.prefix || ''}
+                onChange={(e) => updateBlockConfig(block.id, { prefix: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
+                placeholder="Ex: De R$ 299 por apenas"
+              />
+            </div>
+            <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Valor</label>
               <input
                 type="text"
                 value={config.value}
                 onChange={(e) => updateBlockConfig(block.id, { value: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
-                placeholder="R$ 0,00"
+                placeholder="R$ 99,90"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Prefixo</label>
-                <input
-                  type="text"
-                  value={config.prefix || ''}
-                  onChange={(e) => updateBlockConfig(block.id, { prefix: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
-                  placeholder="20% off"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Sufixo</label>
-                <input
-                  type="text"
-                  value={config.suffix || ''}
-                  onChange={(e) => updateBlockConfig(block.id, { suffix: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
-                  placeholder="à vista"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Texto após o preço</label>
+              <input
+                type="text"
+                value={config.suffix || ''}
+                onChange={(e) => updateBlockConfig(block.id, { suffix: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
+                placeholder="Ex: ou 12x de R$ 9,99"
+              />
             </div>
-            <div className="border-t pt-3">
-              <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.highlight || false}
-                  onChange={(e) => updateBlockConfig(block.id, { highlight: e.target.checked })}
-                  className="rounded border-gray-300"
-                />
-                Destacar este preço
-              </label>
-              {config.highlight && (
+            <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
+              <input
+                type="checkbox"
+                checked={config.highlight || false}
+                onChange={(e) => updateBlockConfig(block.id, { highlight: e.target.checked })}
+                className="w-5 h-5 rounded border-gray-300 text-blue-600"
+              />
+              <span className="text-sm font-medium text-gray-900">Destacar preço</span>
+            </label>
+            {config.highlight && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Texto do destaque</label>
                 <input
                   type="text"
                   value={config.highlightText || ''}
                   onChange={(e) => updateBlockConfig(block.id, { highlightText: e.target.value })}
-                  className="w-full mt-2 px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
-                  placeholder="RECOMENDADO"
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
+                  placeholder="Ex: MELHOR OFERTA"
                 />
-              )}
-            </div>
+              </div>
+            )}
           </div>
         );
       }
@@ -1140,21 +1253,19 @@ export default function PrototypePage() {
                 value={config.text}
                 onChange={(e) => updateBlockConfig(block.id, { text: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
+                placeholder="Ex: Continuar"
               />
             </div>
 
-            {/* Intro: only next_step (no URL option) */}
             {isIntro && (
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">→ Próxima etapa</span>
-                  <br />
+                  <span className="font-medium">→ Próxima etapa</span><br />
                   <span className="text-xs text-gray-500">O botão avança para a primeira pergunta</span>
                 </p>
               </div>
             )}
 
-            {/* Result: only URL option */}
             {isResult && (
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">URL de destino</label>
@@ -1165,27 +1276,25 @@ export default function PrototypePage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-900"
                   placeholder="https://..."
                 />
-                <p className="text-xs text-gray-500 mt-1">O botão direciona para esta URL</p>
               </div>
             )}
 
-            {/* Other steps: show both options */}
             {!isIntro && !isResult && (
               <>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Ação</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Ação do botão</label>
                   <div className="flex gap-2">
                     <button
                       onClick={() => updateBlockConfig(block.id, { action: 'next_step' })}
                       className={`flex-1 py-2 px-3 rounded text-sm font-medium ${config.action === 'next_step' ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' : 'bg-gray-100 text-gray-600 border-2 border-transparent'}`}
                     >
-                      → Próxima
+                      → Próxima etapa
                     </button>
                     <button
                       onClick={() => updateBlockConfig(block.id, { action: 'url' })}
                       className={`flex-1 py-2 px-3 rounded text-sm font-medium ${config.action === 'url' ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' : 'bg-gray-100 text-gray-600 border-2 border-transparent'}`}
                     >
-                      🔗 URL
+                      🔗 Abrir URL
                     </button>
                   </div>
                 </div>
@@ -1319,113 +1428,249 @@ export default function PrototypePage() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
-      {/* HEADER */}
-      <header className="h-14 bg-white border-b flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <button className="text-gray-700 hover:text-gray-900 font-medium">← Voltar</button>
-          <span className="text-gray-300">|</span>
-          <span className="font-semibold text-gray-900">Quiz Skincare</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setIsBrandKitOpen(true)} className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 text-gray-700 font-medium">
-            🎨 Brand Kit
+      {/* HEADER - Typeform inspired */}
+      <header className="h-14 bg-white border-b flex items-center px-4 shrink-0">
+        {/* Left: Back + Quiz name */}
+        <div className="flex items-center gap-3 w-48">
+          <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
           </button>
-          <button className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">Publicar</button>
+          <span className="font-semibold text-gray-900 truncate">Quiz Skincare</span>
+        </div>
+
+        {/* Center: Navigation tabs */}
+        <div className="flex-1 flex items-center justify-center">
+          <nav className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setActiveHeaderTab('editar')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeHeaderTab === 'editar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Editar
+            </button>
+            <button
+              onClick={() => setActiveHeaderTab('assistente')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeHeaderTab === 'assistente' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              Assistente IA
+            </button>
+            <button
+              onClick={() => setActiveHeaderTab('tema')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeHeaderTab === 'tema' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+              </svg>
+              Tema
+            </button>
+            <button
+              onClick={() => setActiveHeaderTab('config')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeHeaderTab === 'config' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              Configurações
+            </button>
+          </nav>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2 w-48 justify-end">
+          <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Preview
+          </button>
+          <button className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+            Publicar
+          </button>
         </div>
       </header>
 
-      {/* STEP TABS */}
-      <div className="h-12 bg-white border-b flex items-center justify-center px-4 overflow-x-auto shrink-0">
-        <div className="flex items-center gap-1">
-          {(() => {
-            // Get intermediate steps (not intro, not result)
-            const intermediateSteps = steps.filter(s => s.type !== 'result' && s.type !== 'intro');
-            let etapaIndex = 0;
-
-            return steps.filter(s => s.type !== 'result').map((step) => {
-              // Calculate display label: "Intro" for intro, "Etapa X" for others
-              let displayLabel: string;
-              if (step.type === 'intro') {
-                displayLabel = 'Intro';
-              } else {
-                etapaIndex++;
-                displayLabel = `Etapa ${etapaIndex}`;
-              }
-
-              return (
-                <div
-                  key={step.id}
-                  onClick={() => handleStepChange(step.id)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    if (step.isFixed) return;
-                    if (confirm(`Deletar "${displayLabel}"?`)) deleteStep(step.id);
-                  }}
-                  className={`
-                    flex items-center gap-2 px-3 py-1.5 rounded cursor-pointer text-sm transition-all
-                    ${activeStepId === step.id ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100 text-gray-700'}
-                    ${step.isFixed ? 'border border-gray-200' : ''}
-                  `}
-                >
-                  {!step.isFixed && <span className="text-gray-400 cursor-grab">⋮⋮</span>}
-                  <span>{displayLabel}</span>
-                  {step.isFixed && <span className="text-[10px] text-gray-400">●</span>}
-                </div>
-              );
-            });
-          })()}
-
-          <button
-            onClick={() => setIsAddStepSheetOpen(true)}
-            className="mx-1 px-3 py-1.5 flex items-center gap-1.5 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
-          >
-            <span>+</span>
-            <span>Etapa</span>
-          </button>
-
-          {steps.filter(s => s.type === 'result').map((step) => (
-            <div
-              key={step.id}
-              onClick={() => handleStepChange(step.id)}
-              className={`
-                flex items-center gap-2 px-3 py-1.5 rounded cursor-pointer text-sm border border-gray-200 transition-all
-                ${activeStepId === step.id ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100 text-gray-700'}
-              `}
-            >
-              <span>Resultado</span>
-              <span className="text-[10px] text-gray-400">●</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* MAIN CONTENT */}
       <div className="flex-1 flex overflow-hidden">
-        {/* CHAT PANEL */}
-        <aside className={`hidden md:flex flex-col bg-white border-r transition-all duration-300 shrink-0 ${isChatExpanded ? 'w-72' : 'w-16'}`}>
-          <div className="p-3 border-b flex items-center justify-between">
-            {isChatExpanded ? (
-              <>
-                <span className="font-semibold text-gray-900 text-sm">AI Assistente</span>
-                <button onClick={() => setIsChatExpanded(false)} className="text-gray-500 hover:text-gray-700">✕</button>
-              </>
-            ) : (
-              <button onClick={() => setIsChatExpanded(true)} className="w-full flex flex-col items-center gap-1 text-gray-500 hover:text-blue-600">
-                <span className="text-xl">🤖</span>
-                <span className="text-[10px]">Chat</span>
-              </button>
-            )}
+        {/* LEFT SIDEBAR - Steps list (Typeform style) */}
+        <aside className="w-64 bg-white border-r flex flex-col overflow-hidden shrink-0">
+          {/* Steps header */}
+          <div className="p-3 border-b">
+            <button
+              onClick={() => setIsAddStepSheetOpen(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
+            >
+              <span className="text-lg">+</span>
+              Adicionar etapa
+            </button>
           </div>
-          {isChatExpanded && (
-            <>
-              <div className="flex-1 p-3 overflow-y-auto">
-                <div className="text-xs text-gray-500 text-center">Inicie uma conversa com o assistente</div>
+
+          {/* Steps list */}
+          <div className="flex-1 overflow-y-auto">
+            {/* Regular steps (not result) */}
+            <div className="p-2 space-y-1">
+              {(() => {
+                let stepNumber = 0;
+                return steps.filter(s => s.type !== 'result').map((step) => {
+                  stepNumber++;
+                  const stepTitle = getStepTitle(step);
+                  const isActive = activeStepId === step.id;
+
+                  return (
+                    <div
+                      key={step.id}
+                      onClick={() => handleStepChange(step.id)}
+                      className={`group flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
+                        isActive ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50 border border-transparent'
+                      }`}
+                    >
+                      {/* Step number badge with icon */}
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-lg text-sm font-medium shrink-0 ${
+                        isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {stepTypeIcons[step.type]}
+                      </div>
+                      {/* Step info */}
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-medium truncate ${isActive ? 'text-blue-700' : 'text-gray-900'}`}>
+                          {stepNumber}. {step.type === 'intro' ? 'Introdução' : step.type === 'lead-gen' ? 'Captura' : step.type === 'promo' ? 'Promocional' : 'Pergunta'}
+                        </div>
+                        {stepTitle && (
+                          <div className="text-xs text-gray-500 truncate mt-0.5">{stepTitle}</div>
+                        )}
+                      </div>
+                      {/* Delete button (not for fixed steps) */}
+                      {!step.isFixed && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('Deletar esta etapa?')) deleteStep(step.id);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Separator */}
+            <div className="mx-4 my-2 border-t" />
+
+            {/* Results section */}
+            <div className="p-2">
+              <div className="flex items-center justify-between px-2.5 mb-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Resultados</span>
+                <button
+                  onClick={addOutcome}
+                  className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </button>
               </div>
-              <div className="p-3 border-t">
-                <input type="text" placeholder="Digite sua mensagem..." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-              </div>
-            </>
-          )}
+
+              {/* Result step */}
+              {steps.filter(s => s.type === 'result').map((step) => {
+                const isActive = activeStepId === step.id;
+                return (
+                  <div key={step.id} className="space-y-1">
+                    {outcomes.length === 0 ? (
+                      <div
+                        onClick={() => {
+                          handleStepChange(step.id);
+                        }}
+                        className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
+                          isActive ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50 border border-transparent'
+                        }`}
+                      >
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${
+                          isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {stepTypeIcons.result}
+                        </div>
+                        <span className={`text-sm ${isActive ? 'text-blue-700 font-medium' : 'text-gray-500'}`}>
+                          Nenhum resultado criado
+                        </span>
+                      </div>
+                    ) : (
+                      outcomes.map((outcome, index) => {
+                        const isOutcomeActive = isActive && selectedOutcomeId === outcome.id;
+                        const outcomeTitle = getOutcomeTitle(outcome);
+                        return (
+                          <div
+                            key={outcome.id}
+                            onClick={() => {
+                              handleStepChange(step.id);
+                              handleOutcomeChange(outcome.id);
+                            }}
+                            className={`group flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
+                              isOutcomeActive ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50 border border-transparent'
+                            }`}
+                          >
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-lg text-xs font-medium shrink-0 ${
+                              isOutcomeActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {String.fromCharCode(65 + index)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className={`text-sm truncate ${isOutcomeActive ? 'text-blue-700 font-medium' : 'text-gray-900'}`}>
+                                {getOutcomeDisplayName(outcome, index)}
+                              </div>
+                              {outcomeTitle && (
+                                <div className="text-xs text-gray-500 truncate mt-0.5">{outcomeTitle}</div>
+                              )}
+                            </div>
+                            {outcomes.length > 1 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm(`Deletar "${getOutcomeDisplayName(outcome, index)}"?`)) {
+                                    deleteOutcome(outcome.id);
+                                  }
+                                }}
+                                className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6"/>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </aside>
 
         {/* PREVIEW */}
@@ -1453,204 +1698,160 @@ export default function PrototypePage() {
             </button>
           </div>
 
-          <div className="absolute top-4 right-4 z-10">
-            <button
-              onClick={() => alert('Preview quiz - funcionalidade em breve')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 hover:bg-gray-50 rounded-lg shadow-md font-medium text-sm"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              </svg>
-              <span>Preview</span>
-            </button>
-          </div>
-
-          {/* Preview content with peek cards at edges */}
+          {/* Preview content */}
           <div
-            className="flex-1 flex flex-col items-center justify-center p-4 pt-20 overflow-hidden relative"
+            className="flex-1 flex flex-col items-center justify-center p-4 overflow-hidden"
             onClick={(e) => {
-              // Deselect block when clicking on gray background (not the preview card)
               if (e.target === e.currentTarget) {
                 setSelectedBlockId(null);
               }
             }}
           >
-            {/* Result selector - only shown on result step when there are outcomes */}
-            {activeStep.type === 'result' && outcomes.length > 0 && (
-              <div className="flex items-center gap-2 mb-4 bg-white rounded-lg shadow-sm px-4 py-2 z-10">
-                <span className="text-sm text-gray-600 font-medium">Resultado:</span>
-                <select
-                  value={selectedOutcomeId || ''}
-                  onChange={(e) => handleOutcomeChange(e.target.value)}
-                  className="text-sm font-medium text-gray-900 border border-gray-200 rounded-md px-3 py-1.5 bg-white hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {outcomes.map((o, index) => (
-                    <option key={o.id} value={o.id}>{getOutcomeDisplayName(o, index)}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Preview with peek cards at edges */}
-            {(() => {
-              const currentIndex = steps.findIndex(s => s.id === activeStepId);
-              const prevStep = currentIndex > 0 ? steps[currentIndex - 1] : null;
-              const nextStep = currentIndex < steps.length - 1 ? steps[currentIndex + 1] : null;
-              const cardWidth = previewDevice === 'mobile' ? 375 : 600;
-              const peekWidth = 25; // How much of the side cards to show
-
-              return (
-                <>
-                  {/* Previous step peek card - at LEFT EDGE */}
-                  {prevStep && (
-                    <div
-                      onClick={() => handleStepChange(prevStep.id)}
-                      className="absolute left-0 top-1/2 -translate-y-1/2 overflow-hidden cursor-pointer hover:opacity-70 transition-opacity"
-                      style={{ width: peekWidth }}
-                    >
-                      <div
-                        className="bg-white rounded-r-2xl shadow-lg"
-                        style={{
-                          width: cardWidth * 0.85,
-                          marginLeft: -(cardWidth * 0.85 - peekWidth),
-                        }}
-                      >
-                        <div className="p-6 space-y-2 opacity-60">
-                          {prevStep.blocks.filter(b => b.enabled).slice(0, 3).map(block => (
-                            <div key={block.id} className="pointer-events-none">
-                              {renderBlockPreview(block)}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-
-                  {/* Current card - centered */}
-                  <div
-                    className="bg-white rounded-2xl shadow-lg max-h-[70vh] overflow-y-auto z-10"
-                    style={{ width: cardWidth }}
-                  >
-                    {/* Header with back button and progress bar */}
-                    {(activeStep.settings.showProgress || activeStep.settings.allowBack) && (
-                      <div className="px-6 pt-4 space-y-3">
-                        {activeStep.settings.allowBack && (
-                          <button className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M19 12H5M12 19l-7-7 7-7"/>
-                            </svg>
-                            <span>Voltar</span>
-                          </button>
-                        )}
-                        {activeStep.settings.showProgress && (
-                          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                              style={{
-                                width: `${((currentIndex + 1) / steps.length) * 100}%`
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <div className="p-6 space-y-2">
-                      {activeStep.type === 'result' && outcomes.length === 0 ? (
-                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50/50">
-                          <div className="text-4xl mb-3 opacity-50">🎯</div>
-                          <h3 className="text-base font-medium text-gray-600 mb-1">Nenhum resultado criado</h3>
-                          <p className="text-sm text-gray-400 mb-4">Crie telas de resultado para mostrar ao final do quiz</p>
-                          <button
-                            onClick={addOutcome}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                          >
-                            + Criar tela resultado
-                          </button>
-                        </div>
-                      ) : currentBlocks.length === 0 ? (
-                        <div className="text-center text-gray-400 py-8">
-                          Nenhum bloco adicionado
-                        </div>
-                      ) : (
-                        <>
-                          {currentBlocks.map((block, index) => (
-                            <div key={block.id}>
-                              {renderBlockPreview(block)}
-                              {/* Insertion point AFTER this block (only one between each pair) */}
-                              <div
-                                className="group/insert relative h-0.5 flex items-center justify-center cursor-pointer transition-all duration-200 hover:h-6 hover:my-1"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setInsertAtIndex(index + 1);
-                                  setIsAddBlockSheetOpen(true);
-                                }}
-                              >
-                                {/* Dotted rectangle that appears on hover */}
-                                <div className="absolute inset-x-2 inset-y-0.5 border border-dashed border-gray-200 rounded bg-gray-50/30 opacity-0 group-hover/insert:opacity-100 transition-opacity" />
-                                {/* Plus button */}
-                                <button className="relative z-10 w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold opacity-0 group-hover/insert:opacity-100 transition-all hover:scale-110 shadow-sm flex items-center justify-center">
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Add step button (+ icon) - between current card and next peek */}
-                  {activeStep.type !== 'result' && (
-                    <button
-                      onClick={() => setIsAddStepSheetOpen(true)}
-                      className="absolute right-8 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-xl text-gray-500 hover:text-blue-600 hover:bg-blue-50 hover:scale-110 transition-all cursor-pointer z-10"
-                      title="Adicionar etapa"
-                    >
-                      +
+            {/* Current card - centered */}
+            <div
+              className="bg-white rounded-2xl shadow-lg max-h-[80vh] overflow-y-auto"
+              style={{ width: previewDevice === 'mobile' ? 375 : 600 }}
+            >
+              {/* Header with back button and progress bar */}
+              {(activeStep.settings.showProgress || activeStep.settings.allowBack) && (
+                <div className="px-6 pt-4 space-y-3">
+                  {activeStep.settings.allowBack && (
+                    <button className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                      </svg>
+                      <span>Voltar</span>
                     </button>
                   )}
-
-
-                  {/* Next step peek card - at RIGHT EDGE */}
-                  {nextStep && (
-                    <div
-                      onClick={() => handleStepChange(nextStep.id)}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 overflow-hidden cursor-pointer hover:opacity-70 transition-opacity"
-                      style={{ width: peekWidth }}
-                    >
+                  {activeStep.settings.showProgress && (
+                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                       <div
-                        className="bg-white rounded-l-2xl shadow-lg"
-                        style={{ width: cardWidth * 0.85 }}
-                      >
-                        <div className="p-6 space-y-2 opacity-60">
-                          {nextStep.type === 'result' ? (
-                            outcomes.length > 0 && selectedOutcome ? (
-                              selectedOutcome.blocks.filter(b => b.enabled).slice(0, 3).map(block => (
-                                <div key={block.id} className="pointer-events-none">
-                                  {renderBlockPreview(block)}
-                                </div>
-                              ))
-                            ) : (
-                              <div className="text-center py-4">
-                                <div className="text-2xl mb-2 opacity-50">🎯</div>
-                                <p className="text-sm text-gray-400">Resultado</p>
-                              </div>
-                            )
-                          ) : (
-                            nextStep.blocks.filter(b => b.enabled).slice(0, 3).map(block => (
-                              <div key={block.id} className="pointer-events-none">
-                                {renderBlockPreview(block)}
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
+                        className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${((steps.findIndex(s => s.id === activeStepId) + 1) / steps.length) * 100}%`
+                        }}
+                      />
                     </div>
                   )}
-                </>
-              );
-            })()}
+                </div>
+              )}
+              <div className="p-6 space-y-2">
+                {activeStep.type === 'result' && outcomes.length === 0 ? (
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50/50">
+                    <div className="text-4xl mb-3 opacity-50">🎯</div>
+                    <h3 className="text-base font-medium text-gray-600 mb-1">Nenhum resultado criado</h3>
+                    <p className="text-sm text-gray-400 mb-4">Crie telas de resultado para mostrar ao final do quiz</p>
+                    <button
+                      onClick={addOutcome}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                    >
+                      + Criar tela resultado
+                    </button>
+                  </div>
+                ) : currentBlocks.length === 0 ? (
+                  <div className="text-center text-gray-400 py-8">
+                    Nenhum bloco adicionado
+                  </div>
+                ) : (
+                  <>
+                    {currentBlocks.map((block, index) => (
+                      <div key={block.id}>
+                        {renderBlockPreview(block)}
+                        {/* Insertion point AFTER this block */}
+                        <div
+                          className="group/insert relative h-0.5 flex items-center justify-center cursor-pointer transition-all duration-200 hover:h-6 hover:my-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setInsertAtIndex(index + 1);
+                            setIsAddBlockSheetOpen(true);
+                          }}
+                        >
+                          <div className="absolute inset-x-2 inset-y-0.5 border border-dashed border-gray-200 rounded bg-gray-50/30 opacity-0 group-hover/insert:opacity-100 transition-opacity" />
+                          <button className="relative z-10 w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold opacity-0 group-hover/insert:opacity-100 transition-all hover:scale-110 shadow-sm flex items-center justify-center">
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Floating AI Chat - Typeform style */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+            {isChatExpanded ? (
+              /* Expanded chat */
+              <div className="w-[500px] bg-white rounded-2xl shadow-xl border overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                    </div>
+                    <span className="font-medium text-gray-900 text-sm">Assistente IA</span>
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">Beta</span>
+                  </div>
+                  <button
+                    onClick={() => setIsChatExpanded(false)}
+                    className="p-1 hover:bg-gray-200 rounded"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div className="h-64 overflow-y-auto p-4 space-y-3">
+                  <div className="flex justify-end">
+                    <div className="bg-gray-100 rounded-2xl rounded-tr-sm px-4 py-2 max-w-[80%]">
+                      <p className="text-sm text-gray-800">Adicione mais perguntas para mim</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-start">
+                    <div className="bg-purple-50 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[80%]">
+                      <p className="text-sm text-gray-800">Que tipo de perguntas você gostaria? Por exemplo, perguntas sobre preferências, comportamentos ou dados demográficos?</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 border-t">
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-500">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                    <input
+                      type="text"
+                      value={chatMessage}
+                      onChange={(e) => setChatMessage(e.target.value)}
+                      placeholder="Converse com o assistente IA..."
+                      className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-500 outline-none"
+                    />
+                    <button className="p-1.5 text-gray-400 hover:text-purple-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Collapsed chat input */
+              <div
+                onClick={() => setIsChatExpanded(true)}
+                className="flex items-center gap-3 bg-white rounded-full shadow-lg border px-5 py-3 cursor-pointer hover:shadow-xl transition-shadow"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-500">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+                <span className="text-gray-500 text-sm">Converse com o assistente IA...</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </div>
+            )}
           </div>
         </main>
 
@@ -1658,13 +1859,45 @@ export default function PrototypePage() {
         <aside className="hidden md:flex flex-col w-80 bg-white border-l overflow-hidden">
           <div className="p-4 border-b">
             {activeStep.type === 'result' ? (
-              /* For result step, show fixed title "Tela de resultados" */
-              <h3 className="font-semibold text-gray-900">Tela de resultados</h3>
+              selectedOutcome ? (
+                <div className="flex items-center justify-between">
+                  {editingOutcomeName ? (
+                    <input
+                      type="text"
+                      defaultValue={selectedOutcome.name}
+                      placeholder={`Resultado ${outcomes.findIndex(o => o.id === selectedOutcomeId) + 1}`}
+                      autoFocus
+                      onBlur={(e) => updateOutcomeName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') updateOutcomeName(e.currentTarget.value);
+                        if (e.key === 'Escape') setEditingOutcomeName(false);
+                      }}
+                      className="flex-1 font-semibold text-gray-900 px-1 py-0.5 border border-blue-300 rounded outline-none"
+                    />
+                  ) : (
+                    <>
+                      <h3 className="font-semibold text-gray-900">
+                        {getOutcomeDisplayName(selectedOutcome, outcomes.findIndex(o => o.id === selectedOutcomeId))}
+                      </h3>
+                      <button
+                        onClick={() => setEditingOutcomeName(true)}
+                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                        title="Editar nome"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <h3 className="font-semibold text-gray-900">Tela de resultados</h3>
+              )
             ) : activeStep.type === 'intro' ? (
-              /* For intro step, show fixed title "Introdução" */
               <h3 className="font-semibold text-gray-900">Introdução</h3>
             ) : (
-              /* For other steps, show step label with edit/delete */
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {isEditingStepLabel ? (
@@ -1687,7 +1920,10 @@ export default function PrototypePage() {
                         className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
                         title="Editar nome"
                       >
-                        ✏️
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
                       </button>
                     </>
                   )}
@@ -1701,7 +1937,10 @@ export default function PrototypePage() {
                   className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
                   title="Deletar etapa"
                 >
-                  🗑
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
                 </button>
               </div>
             )}
@@ -1717,25 +1956,14 @@ export default function PrototypePage() {
                   <div className="flex items-center gap-1">
                     <button onClick={() => moveBlock(selectedBlock.id, 'up')} className="p-1 text-gray-500 hover:bg-gray-100 rounded" title="Mover para cima">↑</button>
                     <button onClick={() => moveBlock(selectedBlock.id, 'down')} className="p-1 text-gray-500 hover:bg-gray-100 rounded" title="Mover para baixo">↓</button>
-                    <button onClick={() => removeBlock(selectedBlock.id)} className="p-1 text-red-500 hover:bg-red-50 rounded" title="Remover">🗑</button>
+                    <button onClick={() => removeBlock(selectedBlock.id)} className="p-1 text-red-500 hover:bg-red-50 rounded" title="Remover">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                    </button>
                   </div>
                 </div>
-
-                {/* Result selector dropdown - only for result step */}
-                {activeStep.type === 'result' && (
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <label className="block text-xs text-gray-500 font-medium mb-1.5">Editando conteúdo de:</label>
-                    <select
-                      value={selectedOutcomeId || ''}
-                      onChange={(e) => handleOutcomeChange(e.target.value)}
-                      className="w-full text-sm font-medium text-gray-900 border border-gray-300 rounded-md px-3 py-2 bg-white hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      {outcomes.map((o, index) => (
-                        <option key={o.id} value={o.id}>{getOutcomeDisplayName(o, index)}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
 
                 <div className="px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
                   <span className="text-sm text-blue-700 font-semibold">
@@ -1778,87 +2006,6 @@ export default function PrototypePage() {
                           <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform"></div>
                         </div>
                       </label>
-                    </div>
-                  </div>
-                )}
-
-                {activeStep.type === 'result' && (
-                  <div className="pb-4 border-b">
-                    <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-2">Resultados</div>
-                    <div className="space-y-2">
-                      {outcomes.length === 0 ? (
-                        <div className="text-center py-4">
-                          <p className="text-sm text-gray-500 mb-3">Crie telas de resultado para vincular às respostas</p>
-                          <button
-                            onClick={addOutcome}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                          >
-                            + Criar tela resultado
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          {outcomes.map((o, index) => (
-                            <div
-                              key={o.id}
-                              onClick={() => handleOutcomeChange(o.id)}
-                              className={`group p-2.5 rounded-lg cursor-pointer flex items-center justify-between transition-all ${selectedOutcomeId === o.id ? 'bg-blue-50 border-2 border-blue-300' : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'}`}
-                            >
-                              {editingOutcomeName && selectedOutcomeId === o.id ? (
-                                <input
-                                  type="text"
-                                  defaultValue={o.name}
-                                  placeholder={`Resultado ${index + 1}`}
-                                  autoFocus
-                                  onClick={(e) => e.stopPropagation()}
-                                  onBlur={(e) => updateOutcomeName(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') updateOutcomeName(e.currentTarget.value);
-                                    if (e.key === 'Escape') setEditingOutcomeName(false);
-                                  }}
-                                  className="flex-1 text-sm font-medium text-gray-900 px-2 py-1 border border-blue-300 rounded outline-none bg-white"
-                                />
-                              ) : (
-                                <>
-                                  <span className={`text-sm ${selectedOutcomeId === o.id ? 'text-blue-700 font-medium' : 'text-gray-800'}`}>
-                                    {getOutcomeDisplayName(o, index)}
-                                  </span>
-                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleOutcomeChange(o.id);
-                                        setEditingOutcomeName(true);
-                                      }}
-                                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
-                                      title="Editar nome"
-                                    >
-                                      ✏️
-                                    </button>
-                                    {outcomes.length > 1 && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (confirm(`Deletar "${getOutcomeDisplayName(o, index)}"?`)) {
-                                            deleteOutcome(o.id);
-                                          }
-                                        }}
-                                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-white rounded"
-                                        title="Deletar"
-                                      >
-                                        🗑
-                                      </button>
-                                    )}
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          ))}
-                          <button onClick={addOutcome} className="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500">
-                            + Adicionar resultado
-                          </button>
-                        </>
-                      )}
                     </div>
                   </div>
                 )}
@@ -1929,12 +2076,10 @@ export default function PrototypePage() {
 
       {/* ADD BLOCK SHEET */}
       {isAddBlockSheetOpen && (() => {
-        // Check which blocks should be disabled
         const hasOptionsBlock = currentBlocks.some(b => b.type === 'options');
         const allBlockTypes: BlockType[] = ['text', 'media', 'options', 'fields', 'price', 'button', 'banner', 'list'];
 
         const isBlockDisabled = (type: BlockType): boolean => {
-          // Options: only one allowed per step (quiz logic conflict)
           if (type === 'options' && hasOptionsBlock) return true;
           return false;
         };
@@ -1975,35 +2120,6 @@ export default function PrototypePage() {
           </div>
         );
       })()}
-
-      {/* BRAND KIT MODAL */}
-      {isBrandKitOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsBrandKitOpen(false)} />
-          <div className="relative bg-white rounded-xl p-6 w-96 max-w-[90vw]">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">🎨 Brand Kit</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cor primária</label>
-                <input type="color" defaultValue="#2563eb" className="w-full h-10 rounded cursor-pointer" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cor secundária</label>
-                <input type="color" defaultValue="#64748b" className="w-full h-10 rounded cursor-pointer" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 text-sm cursor-pointer hover:border-blue-400">
-                  Clique para fazer upload
-                </div>
-              </div>
-            </div>
-            <button onClick={() => setIsBrandKitOpen(false)} className="mt-6 w-full py-2 bg-blue-600 text-white rounded-lg font-medium">
-              Salvar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
