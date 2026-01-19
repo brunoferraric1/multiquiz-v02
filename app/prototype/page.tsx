@@ -321,7 +321,10 @@ export default function PrototypePage() {
     }
   };
 
-  const addBlock = (type: BlockType) => {
+  // State to track where to insert a new block
+  const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
+
+  const addBlock = (type: BlockType, atIndex?: number) => {
     // Button defaults vary by step type
     const getButtonDefault = (): ButtonConfig => {
       if (activeStep.type === 'result') {
@@ -342,22 +345,33 @@ export default function PrototypePage() {
       list: { items: [{ id: `l-${Date.now()}`, emoji: '✓', text: 'Item da lista' }] } as ListConfig,
     };
 
+    // Helper to insert at index or append
+    const insertBlock = (blocks: Block[], newBlock: Block, index?: number) => {
+      if (index !== undefined && index >= 0 && index <= blocks.length) {
+        const newBlocks = [...blocks];
+        newBlocks.splice(index, 0, newBlock);
+        return newBlocks;
+      }
+      return [...blocks, newBlock];
+    };
+
     if (activeStep.type === 'result') {
       // Add block to ALL outcomes (structure is shared, each gets its own block instance with same content)
       const newBlockIds: Record<string, string> = {};
       setOutcomes(outcomes.map(o => {
         const newBlock = createBlock(type, { ...defaultConfigs[type] });
         newBlockIds[o.id] = newBlock.id;
-        return { ...o, blocks: [...o.blocks, newBlock] };
+        return { ...o, blocks: insertBlock(o.blocks, newBlock, atIndex) };
       }));
       // Select the block in the current outcome (use timeout to ensure state is updated)
       if (selectedOutcomeId && outcomes.length > 0) {
-        const currentOutcomeBlocks = outcomes.find(o => o.id === selectedOutcomeId)?.blocks || [];
-        // Will select the last block (newly added) after re-render
         setTimeout(() => {
           const updatedOutcome = outcomes.find(o => o.id === selectedOutcomeId);
-          if (updatedOutcome && updatedOutcome.blocks.length > 0) {
-            setSelectedBlockId(updatedOutcome.blocks[updatedOutcome.blocks.length - 1]?.id || null);
+          if (updatedOutcome) {
+            const targetIndex = atIndex !== undefined ? atIndex : updatedOutcome.blocks.length - 1;
+            if (updatedOutcome.blocks[targetIndex]) {
+              setSelectedBlockId(updatedOutcome.blocks[targetIndex].id);
+            }
           }
         }, 0);
       }
@@ -365,11 +379,12 @@ export default function PrototypePage() {
       const newBlock = createBlock(type, defaultConfigs[type]);
       setSteps(steps.map(s => {
         if (s.id !== activeStepId) return s;
-        return { ...s, blocks: [...s.blocks, newBlock] };
+        return { ...s, blocks: insertBlock(s.blocks, newBlock, atIndex) };
       }));
       setSelectedBlockId(newBlock.id);
     }
     setIsAddBlockSheetOpen(false);
+    setInsertAtIndex(null);
   };
 
   const removeBlock = (blockId: string) => {
@@ -584,13 +599,42 @@ export default function PrototypePage() {
 
     const isSelected = selectedBlockId === block.id;
 
-    // Base wrapper classes and hover label for all blocks
+    // Base wrapper classes and hover toolbar for all blocks
     const wrapperClass = (extra: string = '') =>
       `group relative cursor-pointer transition-all rounded-lg ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50 hover:ring-2 hover:ring-gray-300'} ${extra}`;
 
     const hoverLabel = (
-      <div className={`absolute -top-2 right-2 px-2 py-0.5 text-xs font-medium rounded transition-opacity z-10 ${isSelected ? 'bg-blue-500 text-white opacity-100' : 'bg-gray-700 text-white opacity-0 group-hover:opacity-100'}`}>
-        {isSelected ? 'editando' : 'editar'}
+      <div className={`absolute -top-3 right-2 flex items-center gap-0.5 rounded-lg overflow-hidden transition-opacity z-10 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+        {/* Edit button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedBlockId(block.id);
+          }}
+          className={`p-1.5 transition-colors ${isSelected ? 'bg-blue-500 text-white' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
+          title="Editar"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+        {/* Delete button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            removeBlock(block.id);
+          }}
+          className={`p-1.5 transition-colors ${isSelected ? 'bg-blue-500 text-white hover:bg-red-500' : 'bg-gray-700 text-white hover:bg-red-500'}`}
+          title="Excluir"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+        </button>
       </div>
     );
 
@@ -1529,7 +1573,41 @@ export default function PrototypePage() {
                           Nenhum bloco adicionado
                         </div>
                       ) : (
-                        currentBlocks.map(block => renderBlockPreview(block))
+                        <>
+                          {currentBlocks.map((block, index) => (
+                            <div key={block.id}>
+                              {/* Insertion point before this block */}
+                              <div
+                                className="group/insert relative h-0 -my-1 flex items-center justify-center transition-all hover:h-4 hover:my-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setInsertAtIndex(index);
+                                  setIsAddBlockSheetOpen(true);
+                                }}
+                              >
+                                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 border-t-2 border-dashed border-blue-300 opacity-0 group-hover/insert:opacity-100 transition-opacity" />
+                                <button className="relative z-10 w-6 h-6 rounded-full bg-blue-500 text-white text-sm font-bold opacity-0 group-hover/insert:opacity-100 transition-all hover:scale-110 shadow-md">
+                                  +
+                                </button>
+                              </div>
+                              {renderBlockPreview(block)}
+                            </div>
+                          ))}
+                          {/* Insertion point at the end */}
+                          <div
+                            className="group/insert relative h-0 -my-1 flex items-center justify-center transition-all hover:h-4 hover:my-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setInsertAtIndex(currentBlocks.length);
+                              setIsAddBlockSheetOpen(true);
+                            }}
+                          >
+                            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 border-t-2 border-dashed border-blue-300 opacity-0 group-hover/insert:opacity-100 transition-opacity" />
+                            <button className="relative z-10 w-6 h-6 rounded-full bg-blue-500 text-white text-sm font-bold opacity-0 group-hover/insert:opacity-100 transition-all hover:scale-110 shadow-md">
+                              +
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
@@ -1880,7 +1958,7 @@ export default function PrototypePage() {
 
         return (
           <div className="fixed inset-0 z-50">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setIsAddBlockSheetOpen(false)} />
+            <div className="absolute inset-0 bg-black/50" onClick={() => { setIsAddBlockSheetOpen(false); setInsertAtIndex(null); }} />
             <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Adicionar bloco</h3>
               <div className="grid grid-cols-4 gap-3">
@@ -1890,7 +1968,7 @@ export default function PrototypePage() {
                   return (
                     <button
                       key={type}
-                      onClick={() => !disabled && addBlock(type)}
+                      onClick={() => !disabled && addBlock(type, insertAtIndex ?? undefined)}
                       disabled={disabled}
                       title={reason || blockLabels[type]}
                       className={`p-3 border-2 rounded-xl text-center transition-all ${
