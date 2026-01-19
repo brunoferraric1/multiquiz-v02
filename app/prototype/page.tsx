@@ -1293,26 +1293,43 @@ export default function PrototypePage() {
       {/* STEP TABS */}
       <div className="h-12 bg-white border-b flex items-center justify-center px-4 overflow-x-auto shrink-0">
         <div className="flex items-center gap-1">
-          {steps.filter(s => s.type !== 'result').map((step) => (
-            <div
-              key={step.id}
-              onClick={() => handleStepChange(step.id)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                if (step.isFixed) return;
-                if (confirm(`Deletar "${step.label}"?`)) deleteStep(step.id);
-              }}
-              className={`
-                flex items-center gap-2 px-3 py-1.5 rounded cursor-pointer text-sm transition-all
-                ${activeStepId === step.id ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100 text-gray-700'}
-                ${step.isFixed ? 'border border-gray-200' : ''}
-              `}
-            >
-              {!step.isFixed && <span className="text-gray-400 cursor-grab">⋮⋮</span>}
-              <span>{step.label}</span>
-              {step.isFixed && <span className="text-[10px] text-gray-400">●</span>}
-            </div>
-          ))}
+          {(() => {
+            // Get intermediate steps (not intro, not result)
+            const intermediateSteps = steps.filter(s => s.type !== 'result' && s.type !== 'intro');
+            let etapaIndex = 0;
+
+            return steps.filter(s => s.type !== 'result').map((step) => {
+              // Calculate display label: "Intro" for intro, "Etapa X" for others
+              let displayLabel: string;
+              if (step.type === 'intro') {
+                displayLabel = 'Intro';
+              } else {
+                etapaIndex++;
+                displayLabel = `Etapa ${etapaIndex}`;
+              }
+
+              return (
+                <div
+                  key={step.id}
+                  onClick={() => handleStepChange(step.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (step.isFixed) return;
+                    if (confirm(`Deletar "${displayLabel}"?`)) deleteStep(step.id);
+                  }}
+                  className={`
+                    flex items-center gap-2 px-3 py-1.5 rounded cursor-pointer text-sm transition-all
+                    ${activeStepId === step.id ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100 text-gray-700'}
+                    ${step.isFixed ? 'border border-gray-200' : ''}
+                  `}
+                >
+                  {!step.isFixed && <span className="text-gray-400 cursor-grab">⋮⋮</span>}
+                  <span>{displayLabel}</span>
+                  {step.isFixed && <span className="text-[10px] text-gray-400">●</span>}
+                </div>
+              );
+            });
+          })()}
 
           <button
             onClick={() => setIsAddStepSheetOpen(true)}
@@ -1331,7 +1348,7 @@ export default function PrototypePage() {
                 ${activeStepId === step.id ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100 text-gray-700'}
               `}
             >
-              <span>{step.label}</span>
+              <span>Resultado</span>
               <span className="text-[10px] text-gray-400">●</span>
             </div>
           ))}
@@ -1404,9 +1421,9 @@ export default function PrototypePage() {
             </button>
           </div>
 
-          {/* Preview content */}
+          {/* Preview content with peek cards at edges */}
           <div
-            className="flex-1 flex flex-col items-center justify-center p-4 pt-20 overflow-auto"
+            className="flex-1 flex flex-col items-center justify-center p-4 pt-20 overflow-hidden relative"
             onClick={(e) => {
               // Deselect block when clicking on gray background (not the preview card)
               if (e.target === e.currentTarget) {
@@ -1416,7 +1433,7 @@ export default function PrototypePage() {
           >
             {/* Result selector - only shown on result step when there are outcomes */}
             {activeStep.type === 'result' && outcomes.length > 0 && (
-              <div className="flex items-center gap-2 mb-4 bg-white rounded-lg shadow-sm px-4 py-2">
+              <div className="flex items-center gap-2 mb-4 bg-white rounded-lg shadow-sm px-4 py-2 z-10">
                 <span className="text-sm text-gray-600 font-medium">Resultado:</span>
                 <select
                   value={selectedOutcomeId || ''}
@@ -1430,52 +1447,144 @@ export default function PrototypePage() {
               </div>
             )}
 
-            <div className={`bg-white rounded-2xl shadow-lg ${previewDevice === 'mobile' ? 'w-[375px]' : 'w-[600px]'} max-h-full overflow-y-auto`}>
-              {/* Header with back button and progress bar */}
-              {(activeStep.settings.showProgress || activeStep.settings.allowBack) && (
-                <div className="px-6 pt-4 space-y-3">
-                  {activeStep.settings.allowBack && (
-                    <button className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 12H5M12 19l-7-7 7-7"/>
-                      </svg>
-                      <span>Voltar</span>
-                    </button>
-                  )}
-                  {activeStep.settings.showProgress && (
-                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            {/* Preview with peek cards at edges */}
+            {(() => {
+              const currentIndex = steps.findIndex(s => s.id === activeStepId);
+              const prevStep = currentIndex > 0 ? steps[currentIndex - 1] : null;
+              const nextStep = currentIndex < steps.length - 1 ? steps[currentIndex + 1] : null;
+              const cardWidth = previewDevice === 'mobile' ? 375 : 600;
+              const peekWidth = 25; // How much of the side cards to show
+
+              return (
+                <>
+                  {/* Previous step peek card - at LEFT EDGE */}
+                  {prevStep && (
+                    <div
+                      onClick={() => handleStepChange(prevStep.id)}
+                      className="absolute left-0 top-1/2 -translate-y-1/2 overflow-hidden cursor-pointer hover:opacity-70 transition-opacity"
+                      style={{ width: peekWidth }}
+                    >
                       <div
-                        className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                        className="bg-white rounded-r-2xl shadow-lg"
                         style={{
-                          width: `${((steps.findIndex(s => s.id === activeStepId) + 1) / steps.length) * 100}%`
+                          width: cardWidth * 0.85,
+                          marginLeft: -(cardWidth * 0.85 - peekWidth),
                         }}
-                      />
+                      >
+                        <div className="p-6 space-y-2 opacity-60">
+                          {prevStep.blocks.filter(b => b.enabled).slice(0, 3).map(block => (
+                            <div key={block.id} className="pointer-events-none">
+                              {renderBlockPreview(block)}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   )}
-                </div>
-              )}
-              <div className="p-6 space-y-2">
-                {activeStep.type === 'result' && outcomes.length === 0 ? (
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50/50">
-                    <div className="text-4xl mb-3 opacity-50">🎯</div>
-                    <h3 className="text-base font-medium text-gray-600 mb-1">Nenhum resultado criado</h3>
-                    <p className="text-sm text-gray-400 mb-4">Crie telas de resultado para mostrar ao final do quiz</p>
+
+
+                  {/* Current card - centered */}
+                  <div
+                    className="bg-white rounded-2xl shadow-lg max-h-[70vh] overflow-y-auto z-10"
+                    style={{ width: cardWidth }}
+                  >
+                    {/* Header with back button and progress bar */}
+                    {(activeStep.settings.showProgress || activeStep.settings.allowBack) && (
+                      <div className="px-6 pt-4 space-y-3">
+                        {activeStep.settings.allowBack && (
+                          <button className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M19 12H5M12 19l-7-7 7-7"/>
+                            </svg>
+                            <span>Voltar</span>
+                          </button>
+                        )}
+                        {activeStep.settings.showProgress && (
+                          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                              style={{
+                                width: `${((currentIndex + 1) / steps.length) * 100}%`
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="p-6 space-y-2">
+                      {activeStep.type === 'result' && outcomes.length === 0 ? (
+                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50/50">
+                          <div className="text-4xl mb-3 opacity-50">🎯</div>
+                          <h3 className="text-base font-medium text-gray-600 mb-1">Nenhum resultado criado</h3>
+                          <p className="text-sm text-gray-400 mb-4">Crie telas de resultado para mostrar ao final do quiz</p>
+                          <button
+                            onClick={addOutcome}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                          >
+                            + Criar tela resultado
+                          </button>
+                        </div>
+                      ) : currentBlocks.length === 0 ? (
+                        <div className="text-center text-gray-400 py-8">
+                          Nenhum bloco adicionado
+                        </div>
+                      ) : (
+                        currentBlocks.map(block => renderBlockPreview(block))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Add step button (+ icon) - between current card and next peek */}
+                  {activeStep.type !== 'result' && (
                     <button
-                      onClick={addOutcome}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                      onClick={() => setIsAddStepSheetOpen(true)}
+                      className="absolute right-8 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-xl text-gray-500 hover:text-blue-600 hover:bg-blue-50 hover:scale-110 transition-all cursor-pointer z-10"
+                      title="Adicionar etapa"
                     >
-                      + Criar tela resultado
+                      +
                     </button>
-                  </div>
-                ) : currentBlocks.length === 0 ? (
-                  <div className="text-center text-gray-400 py-8">
-                    Nenhum bloco adicionado
-                  </div>
-                ) : (
-                  currentBlocks.map(block => renderBlockPreview(block))
-                )}
-              </div>
-            </div>
+                  )}
+
+
+                  {/* Next step peek card - at RIGHT EDGE */}
+                  {nextStep && (
+                    <div
+                      onClick={() => handleStepChange(nextStep.id)}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 overflow-hidden cursor-pointer hover:opacity-70 transition-opacity"
+                      style={{ width: peekWidth }}
+                    >
+                      <div
+                        className="bg-white rounded-l-2xl shadow-lg"
+                        style={{ width: cardWidth * 0.85 }}
+                      >
+                        <div className="p-6 space-y-2 opacity-60">
+                          {nextStep.type === 'result' ? (
+                            outcomes.length > 0 && selectedOutcome ? (
+                              selectedOutcome.blocks.filter(b => b.enabled).slice(0, 3).map(block => (
+                                <div key={block.id} className="pointer-events-none">
+                                  {renderBlockPreview(block)}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-center py-4">
+                                <div className="text-2xl mb-2 opacity-50">🎯</div>
+                                <p className="text-sm text-gray-400">Resultado</p>
+                              </div>
+                            )
+                          ) : (
+                            nextStep.blocks.filter(b => b.enabled).slice(0, 3).map(block => (
+                              <div key={block.id} className="pointer-events-none">
+                                {renderBlockPreview(block)}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </main>
 
