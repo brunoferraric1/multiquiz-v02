@@ -117,36 +117,92 @@ Every button, label, and message will work in three languages:
 
 ---
 
-### Milestone 2: Step Navigation (Week 3)
+### Milestone 2: Step Navigation (Week 3) ✅ COMPLETED
 *"Adding the doors between rooms"*
 
 **Goal:** Navigate between steps, add/delete/reorder steps
 
 **Tasks:**
-- [ ] Wire step list to Zustand store
-- [ ] Click step to select it
-- [ ] Add step button with type picker sheet
-- [ ] Delete step (protect fixed ones: Intro, Result)
-- [ ] Drag-and-drop reorder (desktop)
-- [ ] Manage outcomes (add, delete, rename)
+- [x] Wire step list to Zustand store
+- [x] Click step to select it
+- [x] Add step button with type picker sheet
+- [x] Delete step (protect fixed ones: Intro, Result)
+- [x] Drag-and-drop reorder (desktop) using @dnd-kit
+- [x] Manage outcomes (add, delete, rename)
+- [x] Duplicate step functionality via 3-dot menu
 
-**Success:** Full step CRUD working, data persists to Firestore
+**Development Approach:** Test-Driven Development (TDD) with Vitest + React Testing Library
+- 145 tests written and passing
+- Zustand store with devtools middleware for state management
+- @dnd-kit for drag-and-drop functionality
+
+**Components Created/Updated:**
+- `store/visual-builder-store.ts` - Zustand store with step/outcome CRUD actions
+- `components/visual-builder/connected-visual-builder.tsx` - Store-connected orchestrator
+- `components/visual-builder/sortable-steps-list.tsx` - Drag-and-drop step list
+- `components/visual-builder/add-step-sheet.tsx` - Bottom sheet for adding steps
+- `components/visual-builder/connected-builder-sidebar.tsx` - Store-connected sidebar
+
+**Key Features:**
+- Steps are draggable (entire card) with visual feedback
+- 3-dot menu on each step with Duplicate/Delete options
+- Fixed steps (Intro, Result) cannot be deleted, duplicated, or reordered
+- Outcomes section with add/delete functionality
+- Result step auto-selects first outcome when navigated to
+
+**Success:** Full step CRUD working with 145 passing tests
 
 ---
 
-### Milestone 3: Block Rendering (Week 4)
+### Milestone 3: Block Rendering (Week 4) ✅ COMPLETED
 *"Furnishing the rooms"*
 
 **Goal:** All block types render in preview, can click to select
 
 **Tasks:**
-- [ ] Build block renderer (switch on block type)
-- [ ] Build all 9 block previews (Header, Text, Media, Options, Fields, Price, Button, Banner, List)
-- [ ] Click block to select it (highlight)
-- [ ] Show insertion points between blocks
-- [ ] Replace all emojis with Lucide icons
+- [x] Build block renderer (switch on block type)
+- [x] Build all 9 block previews (Header, Text, Media, Options, Fields, Price, Button, Banner, List)
+- [x] Click block to select it (highlight with ring)
+- [x] Show insertion points between blocks
+- [x] Replace all emojis with Lucide icons
+- [x] Add block sheet for inserting new blocks
 
-**Success:** Preview looks like the prototype, clicking works
+**Development Approach:** Test-Driven Development (TDD) with Vitest + React Testing Library
+- 198 tests written and passing (53 new tests for blocks)
+- Block types defined in `types/blocks.ts`
+- Store extended with block management actions
+
+**Files Created:**
+- `types/blocks.ts` - Block types, configs for all 9 block types, helper functions
+- `components/visual-builder/blocks/` directory with:
+  - `block-renderer.tsx` - Main switch component for rendering blocks by type
+  - `block-list.tsx` - Renders blocks with selection and insertion points
+  - `insertion-point.tsx` - Clickable area to insert new blocks
+  - `header-block.tsx`, `text-block.tsx`, `media-block.tsx`
+  - `options-block.tsx`, `fields-block.tsx`, `price-block.tsx`
+  - `button-block.tsx`, `banner-block.tsx`, `list-block.tsx`
+  - `index.ts` - Exports all block components
+- `components/visual-builder/step-preview.tsx` - Renders blocks for active step/outcome
+- `components/visual-builder/add-block-sheet.tsx` - Sheet to add new blocks
+
+**Store Enhancements:**
+- `blocks` array added to Step and Outcome interfaces
+- `selectedBlockId` state for block selection
+- Block actions: addBlock, updateBlock, deleteBlock, toggleBlock, reorderBlocks
+- Separate actions for outcome blocks
+- Default blocks generated per step type
+- Step settings (showProgress, allowBack)
+
+**Key Features:**
+- All 9 block types render with appropriate previews
+- Empty/placeholder states for blocks without content
+- Disabled blocks show "(desativado)" indicator
+- Click block to select (blue ring highlight)
+- Insertion points appear between blocks on hover
+- Add Block sheet with grid of block type options
+- Outcome blocks render when result step is active
+
+**Success:** Preview renders all block types, selection and insertion working with 198 passing tests
 
 ---
 

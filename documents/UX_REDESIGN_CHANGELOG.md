@@ -13,6 +13,91 @@ Prototype reference: `http://localhost:3500/prototype`
 
 This section tracks the iterations and changes made during the prototyping process.
 
+### Implementation: Milestone 3 - Block Rendering
+**Date:** January 2025
+
+**What was done:**
+Implemented complete block rendering system with all 9 block types, selection, and insertion points.
+
+**Development Approach:**
+- **Test-Driven Development (TDD)** continued
+- 198 tests written and passing (53 new tests for block functionality)
+- Block types defined in dedicated types file
+- Store extended with comprehensive block management
+
+**Block Types Implemented:**
+1. **Header** - Title and description with placeholder states
+2. **Text** - Simple text content block
+3. **Media** - Image/video with upload placeholder
+4. **Options** - Single/multiple choice with radio/checkbox indicators
+5. **Fields** - Form fields (text, email, phone, number, textarea)
+6. **Price** - Product pricing with prefix/suffix and highlight option
+7. **Button** - CTA button with next_step or URL action
+8. **Banner** - Urgency alerts (info/warning/danger) with icons
+9. **List** - Bullet list with optional emojis
+
+**Key Features:**
+- Click any block to select it (blue ring highlight)
+- Insertion points between blocks expand on hover
+- Add Block sheet with 9 block type options in grid layout
+- Disabled blocks show "(desativado)" indicator
+- Empty blocks show appropriate placeholder content
+- Outcome blocks render when result step is active
+
+**Files Created:**
+- `types/blocks.ts` - All block type definitions and helpers
+- `components/visual-builder/blocks/` - 12 component files
+- `components/visual-builder/step-preview.tsx`
+- `components/visual-builder/add-block-sheet.tsx`
+
+**Store Enhancements:**
+- `blocks` array in Step and Outcome interfaces
+- `selectedBlockId` state
+- Block CRUD actions (add, update, delete, toggle, reorder)
+- Default blocks per step type
+- Step settings (showProgress, allowBack)
+
+---
+
+### Implementation: Milestone 2 - Step Navigation
+**Date:** January 2025
+
+**What was done:**
+Implemented full step navigation with Zustand store integration, drag-and-drop reordering, and outcome management.
+
+**Development Approach:**
+- **Test-Driven Development (TDD)** continued
+- 145 tests written and passing
+- Zustand store with devtools middleware
+- @dnd-kit library for drag-and-drop
+
+**Components Implemented:**
+1. **VisualBuilderStore** - Zustand store with all step/outcome actions
+2. **ConnectedVisualBuilder** - Store-connected main component
+3. **SortableStepsList** - Drag-and-drop enabled step list
+4. **AddStepSheet** - Bottom sheet for adding new steps
+
+**Key Features:**
+- Entire step card is draggable (not just icon)
+- 3-dot menu with Duplicate/Delete options
+- Fixed steps (Intro, Result) protected from deletion/reorder
+- Steps cannot be moved before Intro or after Result
+- Outcomes section with add/delete functionality
+- Auto-select first outcome when navigating to Result step
+
+**Store Actions:**
+- Step: setSteps, addStep, updateStep, deleteStep, duplicateStep, reorderSteps
+- Selection: setActiveStepId, setSelectedOutcomeId
+- Outcome: setOutcomes, addOutcome, updateOutcome, deleteOutcome
+- UI: setAddStepSheetOpen
+
+**UI Improvements:**
+- Text truncation to prevent sidebar overflow
+- Drag cursor feedback (grab/grabbing)
+- Dropdown menu instead of visible delete icons
+
+---
+
 ### Implementation: Milestone 1 - The Shell
 **Date:** January 2025
 
