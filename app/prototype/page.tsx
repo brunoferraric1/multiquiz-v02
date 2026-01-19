@@ -278,7 +278,7 @@ export default function PrototypePage() {
   const [previewDevice, setPreviewDevice] = useState<'mobile' | 'desktop'>('mobile');
   const [isEditingStepLabel, setIsEditingStepLabel] = useState(false);
   const [editingOutcomeName, setEditingOutcomeName] = useState(false);
-  const [activeHeaderTab, setActiveHeaderTab] = useState<'editar' | 'assistente' | 'tema' | 'config'>('editar');
+  const [activeHeaderTab, setActiveHeaderTab] = useState<'editar' | 'assistente' | 'tema' | 'relatorio' | 'config'>('editar');
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
 
@@ -1477,6 +1477,20 @@ export default function PrototypePage() {
                 <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
               </svg>
               Tema
+            </button>
+            <button
+              onClick={() => setActiveHeaderTab('relatorio')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeHeaderTab === 'relatorio' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3v18h18"/>
+                <path d="M18 17V9"/>
+                <path d="M13 17V5"/>
+                <path d="M8 17v-3"/>
+              </svg>
+              Relatório
             </button>
             <button
               onClick={() => setActiveHeaderTab('config')}
