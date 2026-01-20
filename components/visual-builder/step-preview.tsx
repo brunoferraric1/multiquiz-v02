@@ -129,7 +129,7 @@ export function StepPreview() {
     <div data-testid="step-preview">
       {/* Navigation header - back button and progress bar */}
       {(showProgress || (allowBack && !isIntroStep)) && (
-        <div className="px-4 pt-4 pb-2 space-y-3">
+        <div className="px-4 pt-4 pb-0 space-y-2">
           {/* Back button */}
           {allowBack && !isIntroStep && (
             <button

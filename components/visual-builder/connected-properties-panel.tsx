@@ -30,7 +30,6 @@ import {
   BannerBlockEditor,
   ListBlockEditor,
   BlockControls,
-  StepConfigSheet,
 } from './editors'
 import {
   Block,
@@ -58,9 +57,12 @@ import {
   MousePointer,
   AlertTriangle,
   ListChecks,
-  Settings,
+  Trash2,
   GripVertical,
+  BarChart3,
+  ArrowLeft,
 } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 
 const blockTypeIcons: Record<BlockType, React.ReactNode> = {
@@ -136,9 +138,6 @@ interface ConnectedPropertiesPanelProps {
 }
 
 export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanelProps) {
-  // Local state for config sheet
-  const [isConfigOpen, setIsConfigOpen] = useState(false)
-
   // DnD state to avoid hydration mismatch
   const dndId = useId()
   const [isMounted, setIsMounted] = useState(false)
@@ -178,6 +177,8 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
   const setAddBlockSheetOpen = useVisualBuilderStore((state) => state.setAddBlockSheetOpen)
   const setActiveStepId = useVisualBuilderStore((state) => state.setActiveStepId)
   const addOutcome = useVisualBuilderStore((state) => state.addOutcome)
+  const deleteStep = useVisualBuilderStore((state) => state.deleteStep)
+  const deleteOutcome = useVisualBuilderStore((state) => state.deleteOutcome)
 
   // Find the active step and selected block
   const activeStep = steps.find((s) => s.id === activeStepId)
@@ -375,19 +376,30 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
   // If result step with outcome selected, show outcome info
   if (isResultStep && selectedOutcome) {
+    // Check if we can delete (need at least one outcome)
+    const canDeleteOutcome = outcomes.length > 1
+
     return (
       <BuilderProperties
         title={selectedOutcome.name || 'Resultado'}
+        actions={
+          canDeleteOutcome ? (
+            <button
+              onClick={() => deleteOutcome(selectedOutcome.id)}
+              className="flex items-center gap-1 text-muted-foreground hover:text-destructive transition-colors"
+              aria-label="Excluir resultado"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          ) : null
+        }
         className={className}
       >
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Clique em um bloco na prévia para editar seu conteúdo.
-          </p>
-
-          <Separator />
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Blocos neste resultado</h4>
+          <div className="space-y-3">
+            <span className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Blocos neste resultado
+            </span>
             {isMounted ? (
               <DndContext
                 id={`${dndId}-outcome`}
@@ -443,30 +455,94 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
   // If step is selected, show step settings
   if (activeStep) {
+    const canDeleteStep = !activeStep.isFixed
+
     return (
       <>
         <BuilderProperties
           title={activeStep.label}
           actions={
-            <button
-              onClick={() => setIsConfigOpen(true)}
-              className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Abrir configurações"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
+            canDeleteStep ? (
+              <button
+                onClick={() => deleteStep(activeStep.id)}
+                className="flex items-center gap-1 text-muted-foreground hover:text-destructive transition-colors"
+                aria-label="Excluir etapa"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            ) : null
           }
           className={className}
         >
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Clique em um bloco na prévia para editar seu conteúdo.
-            </p>
+            {/* Step navigation toggles - hidden on intro step */}
+            {!isIntroStep && (
+              <div className="space-y-1">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() =>
+                    updateStepSettings(activeStep.id, {
+                      showProgress: !(activeStep.settings?.showProgress ?? false),
+                    })
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      updateStepSettings(activeStep.id, {
+                        showProgress: !(activeStep.settings?.showProgress ?? false),
+                      })
+                    }
+                  }}
+                  className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <BarChart3 className="w-4 h-4 text-muted-foreground" />
+                  <span className="flex-1 text-sm text-left">Exibir progresso</span>
+                  <Switch
+                    checked={activeStep.settings?.showProgress ?? false}
+                    onCheckedChange={(checked) =>
+                      updateStepSettings(activeStep.id, { showProgress: checked })
+                    }
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() =>
+                    updateStepSettings(activeStep.id, {
+                      allowBack: !(activeStep.settings?.allowBack ?? false),
+                    })
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      updateStepSettings(activeStep.id, {
+                        allowBack: !(activeStep.settings?.allowBack ?? false),
+                      })
+                    }
+                  }}
+                  className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+                  <span className="flex-1 text-sm text-left">Exibir botão voltar</span>
+                  <Switch
+                    checked={activeStep.settings?.allowBack ?? false}
+                    onCheckedChange={(checked) =>
+                      updateStepSettings(activeStep.id, { allowBack: checked })
+                    }
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Block list */}
-            <Separator />
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Blocos nesta etapa</h4>
+            {!isIntroStep && <Separator />}
+            <div className="space-y-3">
+              <span className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Blocos nesta etapa
+              </span>
               {isMounted ? (
                 <DndContext
                   id={`${dndId}-step`}
@@ -517,17 +593,6 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
             </div>
           </div>
         </BuilderProperties>
-
-        {/* Step config sheet */}
-        <StepConfigSheet
-          open={isConfigOpen}
-          onOpenChange={setIsConfigOpen}
-          settings={activeStep.settings || {}}
-          onChange={(settings) => updateStepSettings(activeStep.id, settings)}
-          stepLabel={activeStep.label}
-          isIntroStep={isIntroStep}
-          isResultStep={isResultStep}
-        />
       </>
     )
   }

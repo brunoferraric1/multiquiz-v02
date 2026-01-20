@@ -27,13 +27,13 @@ const GhostAddButton = React.forwardRef<HTMLButtonElement, GhostAddButtonProps>(
         className={cn(
           'w-full flex items-center justify-center gap-2 rounded-lg',
           'border-2 border-dashed border-muted-foreground/30',
-          'text-muted-foreground',
-          'hover:border-muted-foreground/50 hover:text-foreground hover:bg-muted/50',
+          'text-primary',
+          'hover:border-primary/50 hover:bg-primary/5',
           'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
           'transition-colors',
-          'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-muted-foreground/30 disabled:hover:text-muted-foreground disabled:hover:bg-transparent',
-          size === 'default' && 'p-3 text-sm',
-          size === 'compact' && 'p-2 text-xs',
+          'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-muted-foreground/30 disabled:hover:bg-transparent',
+          size === 'default' && 'p-3 text-sm font-medium',
+          size === 'compact' && 'p-2 text-xs font-medium',
           className
         )}
         {...props}

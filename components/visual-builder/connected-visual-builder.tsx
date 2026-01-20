@@ -10,8 +10,9 @@ import { AddBlockSheet } from './add-block-sheet'
 import { SortableStepsList } from './sortable-steps-list'
 import { StepPreview } from './step-preview'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Plus, BarChart3, Trash2 } from 'lucide-react'
+import { GhostAddButton } from '@/components/ui/ghost-add-button'
+import { Trash2, Play } from 'lucide-react'
+import { HeaderConfig } from '@/types/blocks'
 
 interface ConnectedVisualBuilderProps {
   quizName?: string
@@ -50,8 +51,10 @@ export function ConnectedVisualBuilder({
   const addOutcome = useVisualBuilderStore((state) => state.addOutcome)
   const deleteOutcome = useVisualBuilderStore((state) => state.deleteOutcome)
 
-  // Find result step for outcome navigation
+  // Find intro and result steps
+  const introStep = steps.find((s) => s.type === 'intro')
   const resultStep = steps.find((s) => s.type === 'result')
+  const isIntroActive = activeStepId === introStep?.id
   const isResultActive = activeStepId === resultStep?.id
 
   // Handlers
@@ -97,75 +100,96 @@ export function ConnectedVisualBuilder({
           data-testid="left-sidebar"
           className="w-64 bg-card border-r flex flex-col overflow-hidden shrink-0"
         >
-          {/* Add step button */}
-          <div className="p-3 border-b">
-            <Button
-              onClick={handleAddStep}
-              className="w-full"
-              aria-label="Adicionar etapa"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar etapa
-            </Button>
-          </div>
+          {/* Single scrollable area for all sections */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            {/* Introdução section */}
+            {introStep && (
+              <div className="p-2 pr-3">
+                <div className="px-2.5 mb-2">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Introdução
+                  </span>
+                </div>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isIntroActive}
+                  onClick={() => setActiveStepId(introStep.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setActiveStepId(introStep.id)
+                    }
+                  }}
+                  className={cn(
+                    'flex items-center gap-3 p-2.5 rounded-lg transition-all text-left cursor-pointer',
+                    isIntroActive
+                      ? 'bg-primary/10 border border-primary/30'
+                      : 'hover:bg-muted/60 border border-transparent'
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'flex items-center justify-center w-8 h-8 rounded-lg shrink-0',
+                      isIntroActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    <Play className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div
+                      className={cn(
+                        'text-sm font-medium truncate',
+                        isIntroActive ? 'text-primary' : 'text-foreground'
+                      )}
+                    >
+                      {introStep.label}
+                    </div>
+                    {(() => {
+                      const headerBlock = introStep.blocks?.find(b => b.type === 'header')
+                      const headerTitle = headerBlock ? (headerBlock.config as HeaderConfig).title : undefined
+                      const subtitle = headerTitle || introStep.subtitle
+                      return subtitle ? (
+                        <div className="text-xs text-muted-foreground truncate mt-0.5">
+                          {subtitle}
+                        </div>
+                      ) : null
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
 
-          {/* Steps list with drag and drop */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 pr-3">
-            <SortableStepsList />
-          </div>
-
-          {/* Separator */}
-          <div className="mx-4 my-2 border-t" />
-
-          {/* Results section */}
-          <div data-testid="results-section" className="p-2 pb-4">
-            <div className="flex items-center justify-between px-2.5 mb-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Resultados
-              </span>
-              <button
-                onClick={handleAddOutcome}
-                className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded"
-                aria-label="Add outcome"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
+            {/* Etapas section */}
+            <div className="p-2 pr-3 pt-0">
+              <div className="px-2.5 mb-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Etapas
+                </span>
+              </div>
+              <SortableStepsList />
+              {/* Add step button - below the list */}
+              <div className="mt-2">
+                <GhostAddButton
+                  onClick={handleAddStep}
+                  aria-label="Adicionar etapa"
+                >
+                  Adicionar etapa
+                </GhostAddButton>
+              </div>
             </div>
 
-            {outcomes.length === 0 ? (
-              <button
-                onClick={() => {
-                  if (resultStep) setActiveStepId(resultStep.id)
-                }}
-                className={cn(
-                  'w-full flex items-center gap-3 p-2.5 rounded-lg transition-all',
-                  isResultActive
-                    ? 'bg-primary/10 border border-primary/30'
-                    : 'hover:bg-muted/60 border border-transparent'
-                )}
-              >
-                <div
-                  className={cn(
-                    'flex items-center justify-center w-8 h-8 rounded-lg',
-                    isResultActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  <BarChart3 className="w-4 h-4" />
-                </div>
-                <span
-                  className={cn(
-                    'text-sm',
-                    isResultActive
-                      ? 'text-primary font-medium'
-                      : 'text-muted-foreground'
-                  )}
-                >
-                  Nenhum resultado criado
+            {/* Results section */}
+            <div data-testid="results-section" className="p-2 pr-3 pt-4">
+              <div className="px-2.5 mb-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Resultados
                 </span>
-              </button>
-            ) : (
+              </div>
+
+            {outcomes.length > 0 && (
               <div className="space-y-1">
                 {outcomes.map((outcome, index) => {
                   const isOutcomeActive =
@@ -186,7 +210,7 @@ export function ConnectedVisualBuilder({
                         }
                       }}
                       className={cn(
-                        'group w-full flex items-start gap-3 p-2.5 rounded-lg transition-all text-left cursor-pointer',
+                        'group w-full flex items-center gap-3 p-2.5 rounded-lg transition-all text-left cursor-pointer',
                         isOutcomeActive
                           ? 'bg-primary/10 border border-primary/30'
                           : 'hover:bg-muted/60 border border-transparent'
@@ -231,6 +255,16 @@ export function ConnectedVisualBuilder({
                 })}
               </div>
             )}
+              {/* Add resultado button - below the list */}
+              <div className="mt-2">
+                <GhostAddButton
+                  onClick={handleAddOutcome}
+                  aria-label="Adicionar resultado"
+                >
+                  Adicionar resultado
+                </GhostAddButton>
+              </div>
+            </div>
           </div>
         </aside>
 

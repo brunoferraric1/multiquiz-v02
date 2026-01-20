@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { Plus, Play, HelpCircle, Users, Gift, BarChart3, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { GhostAddButton } from '@/components/ui/ghost-add-button'
 
 export type StepType = 'intro' | 'question' | 'lead-gen' | 'promo' | 'result'
 
@@ -63,14 +63,12 @@ export function BuilderSidebar({
     >
       {/* Add step button */}
       <div className="p-3 border-b">
-        <Button
+        <GhostAddButton
           onClick={onAddStep}
-          className="w-full"
           aria-label="Adicionar etapa"
         >
-          <Plus className="w-4 h-4 mr-2" />
           Adicionar etapa
-        </Button>
+        </GhostAddButton>
       </div>
 
       {/* Steps list */}

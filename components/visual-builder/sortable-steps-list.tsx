@@ -19,6 +19,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
 import { useVisualBuilderStore, Step, StepType } from '@/store/visual-builder-store'
+import { HeaderConfig } from '@/types/blocks'
 import { Play, HelpCircle, Users, Gift, MoreVertical, Copy, Trash2 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -87,7 +88,7 @@ function SortableStepItem({ step, index, isActive, onSelect, onDelete, onDuplica
           }
         }}
         className={cn(
-          'flex items-start gap-3 p-2.5 rounded-lg transition-all text-left overflow-hidden',
+          'flex items-center gap-3 p-2.5 rounded-lg transition-all text-left overflow-hidden',
           isActive
             ? 'bg-primary/10 border border-primary/30'
             : 'hover:bg-muted/60 border border-transparent',
@@ -116,11 +117,17 @@ function SortableStepItem({ step, index, isActive, onSelect, onDelete, onDuplica
           >
             {stepNumber}. {step.label}
           </div>
-          {step.subtitle && (
-            <div className="text-xs text-muted-foreground truncate mt-0.5">
-              {step.subtitle}
-            </div>
-          )}
+          {(() => {
+            // Get header block title as subtitle
+            const headerBlock = step.blocks?.find(b => b.type === 'header')
+            const headerTitle = headerBlock ? (headerBlock.config as HeaderConfig).title : undefined
+            const subtitle = headerTitle || step.subtitle
+            return subtitle ? (
+              <div className="text-xs text-muted-foreground truncate mt-0.5">
+                {subtitle}
+              </div>
+            ) : null
+          })()}
         </div>
 
         {/* Actions menu (not for fixed steps) */}
@@ -183,9 +190,9 @@ export function SortableStepsList() {
   const deleteStep = useVisualBuilderStore((state) => state.deleteStep)
   const duplicateStep = useVisualBuilderStore((state) => state.duplicateStep)
 
-  // Filter out result step (it's shown separately in the sidebar)
+  // Filter out intro and result steps (they're shown separately in the sidebar)
   const regularSteps = useMemo(
-    () => steps.filter(s => s.type !== 'result'),
+    () => steps.filter(s => s.type !== 'result' && s.type !== 'intro'),
     [steps]
   )
 
