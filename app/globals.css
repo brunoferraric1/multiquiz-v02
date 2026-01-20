@@ -228,3 +228,45 @@ button:disabled,
   animation-duration: 200ms;
   animation-timing-function: ease-in;
 }
+
+/* Tiptap editor styles */
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--color-muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.5rem;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+}
+
+.ProseMirror li {
+  margin: 0.25rem 0;
+}
+
+.ProseMirror p {
+  margin: 0.5rem 0;
+}
+
+.ProseMirror p:first-child {
+  margin-top: 0;
+}
+
+.ProseMirror p:last-child {
+  margin-bottom: 0;
+}
