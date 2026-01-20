@@ -2,10 +2,62 @@
 
 import { useEffect, useRef, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useVisualBuilderStore } from '@/store/visual-builder-store'
+import { useVisualBuilderStore, Step, Outcome } from '@/store/visual-builder-store'
 import { QuizService } from '@/lib/services/quiz-service'
 import { visualBuilderToQuiz } from '@/lib/utils/visual-builder-converters'
 import type { QuizDraft } from '@/types'
+import type { Block, MediaConfig } from '@/types/blocks'
+
+/**
+ * Check if a URL is a base64 data URL (which can be very large)
+ */
+function isBase64DataUrl(url: string | undefined): boolean {
+  if (!url) return false
+  return url.startsWith('data:')
+}
+
+/**
+ * Strip base64 data URLs from blocks to reduce size
+ * Images should be uploaded to Firebase Storage before saving
+ */
+function stripBase64FromBlocks(blocks: Block[]): Block[] {
+  return blocks.map((block) => {
+    if (block.type === 'media') {
+      const config = block.config as MediaConfig
+      if (isBase64DataUrl(config.url)) {
+        // Remove base64 URL - image should be uploaded to Storage first
+        return {
+          ...block,
+          config: {
+            ...config,
+            url: '', // Clear the base64 URL
+          },
+        }
+      }
+    }
+    return block
+  })
+}
+
+/**
+ * Strip base64 data URLs from steps
+ */
+function stripBase64FromSteps(steps: Step[]): Step[] {
+  return steps.map((step) => ({
+    ...step,
+    blocks: stripBase64FromBlocks(step.blocks),
+  }))
+}
+
+/**
+ * Strip base64 data URLs from outcomes
+ */
+function stripBase64FromOutcomes(outcomes: Outcome[]): Outcome[] {
+  return outcomes.map((outcome) => ({
+    ...outcome,
+    blocks: stripBase64FromBlocks(outcome.blocks),
+  }))
+}
 
 interface UseVisualBuilderAutoSaveOptions {
   quizId: string | undefined
@@ -81,7 +133,13 @@ export function useVisualBuilderAutoSave({
   }, [existingQuiz])
 
   const saveToFirestore = useCallback(async () => {
-    console.log('[VBAutoSave] saveToFirestore called', { userId, quizId, stepsCount: steps.length, outcomesCount: outcomes.length })
+    console.log('[VBAutoSave] saveToFirestore called', {
+      userId,
+      quizId,
+      stepsCount: steps.length,
+      outcomesCount: outcomes.length,
+      stepTypes: steps.map(s => s.type),
+    })
 
     if (!userId || !quizId) {
       console.log('[VBAutoSave] Skipped: missing userId or quizId', { userId, quizId })
@@ -155,10 +213,11 @@ export function useVisualBuilderAutoSave({
         publishedVersion: baseQuiz.publishedVersion ?? null,
         publishedAt: baseQuiz.publishedAt ?? null,
         // Store visual builder data for production rendering
+        // Strip base64 data URLs to avoid Firestore's 1MB field limit
         visualBuilderData: {
           schemaVersion: 1,
-          steps,
-          outcomes,
+          steps: stripBase64FromSteps(JSON.parse(JSON.stringify(steps))),
+          outcomes: stripBase64FromOutcomes(JSON.parse(JSON.stringify(outcomes))),
         },
       }
 

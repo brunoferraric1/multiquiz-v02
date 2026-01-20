@@ -262,6 +262,18 @@ export class QuizService {
       }
     }
 
+    // Handle publishedVersion - stringify visualBuilderData if it exists as an object
+    let publishedVersion: any = quiz.publishedVersion ?? null;
+    if (publishedVersion && publishedVersion.visualBuilderData) {
+      if (typeof publishedVersion.visualBuilderData !== 'string') {
+        console.log('[QuizService] Stringifying publishedVersion.visualBuilderData');
+        publishedVersion = {
+          ...publishedVersion,
+          visualBuilderData: JSON.stringify(publishedVersion.visualBuilderData),
+        };
+      }
+    }
+
     const quizData: any = {
       id: quizId,
       title: normalizedTitle,
@@ -277,7 +289,7 @@ export class QuizService {
       conversationHistory: quiz.conversationHistory || [],
       ownerId: userId,
       // Preserve live snapshot metadata so auto-save doesn't drop it
-      publishedVersion: quiz.publishedVersion ?? null,
+      publishedVersion: publishedVersion,
       publishedAt: quiz.publishedAt ?? null,
     };
 
@@ -303,14 +315,27 @@ export class QuizService {
       console.log('[QuizService] saveQuiz - NO leadGen in quiz draft');
     }
 
-    // Store visual builder data if provided
+    // Store visual builder data if provided - as JSON string to avoid Firestore nested entity limits
     if (quiz.visualBuilderData) {
-      quizData.visualBuilderData = quiz.visualBuilderData;
+      try {
+        const vbDataString = JSON.stringify(quiz.visualBuilderData);
+        console.log('[QuizService] visualBuilderData stringified successfully, length:', vbDataString.length);
+        console.log('[QuizService] visualBuilderData preview:', vbDataString.substring(0, 200) + '...');
+        quizData.visualBuilderData = vbDataString;
+      } catch (e) {
+        console.error('[QuizService] Failed to serialize visualBuilderData:', e);
+      }
+    } else {
+      console.log('[QuizService] No visualBuilderData to store');
     }
 
     // Recursively remove all undefined values (Firestore doesn't accept them)
     const cleanedData = removeUndefinedDeep(quizData);
     console.log('[QuizService] saveQuiz - cleanedData.leadGen after removeUndefinedDeep:', JSON.stringify(cleanedData.leadGen));
+
+    // Debug: Check visualBuilderData type
+    console.log('[QuizService] visualBuilderData type:', typeof cleanedData.visualBuilderData);
+    console.log('[QuizService] publishedVersion.visualBuilderData type:', typeof cleanedData.publishedVersion?.visualBuilderData);
 
     console.log('[QuizService] About to save to Firestore with isPublished:', cleanedData.isPublished);
 
@@ -325,6 +350,12 @@ export class QuizService {
         cleanedData.publishedAt === null
           ? null
           : Timestamp.fromMillis(cleanedData.publishedAt as number);
+    }
+
+    // Debug: Log all keys being sent to Firestore
+    console.log('[QuizService] Firestore payload keys:', Object.keys(firestorePayload));
+    if (firestorePayload.publishedVersion) {
+      console.log('[QuizService] publishedVersion keys:', Object.keys(firestorePayload.publishedVersion as object));
     }
 
     try {
@@ -374,19 +405,43 @@ export class QuizService {
         throw new Error('Unauthorized access to unpublished quiz');
       }
 
+      // Parse visualBuilderData from JSON string if it exists
+      let parsedVisualBuilderData = undefined;
+      if (typeof data.visualBuilderData === 'string') {
+        try {
+          parsedVisualBuilderData = JSON.parse(data.visualBuilderData);
+        } catch (e) {
+          console.warn('[QuizService] Failed to parse visualBuilderData:', e);
+        }
+      } else if (data.visualBuilderData) {
+        // Handle legacy format where it might already be an object
+        parsedVisualBuilderData = data.visualBuilderData;
+      }
+
       let baseQuiz = {
         ...data,
         id: quizDoc.id,
         createdAt: data.createdAt?.toMillis() || Date.now(),
         updatedAt: data.updatedAt?.toMillis() || Date.now(),
         publishedAt: data.publishedAt?.toMillis?.() || data.publishedAt || null,
+        visualBuilderData: parsedVisualBuilderData,
       } as Quiz;
 
       // If requesting published version and it exists, merge it into the quiz
       if (version === 'published' && data.publishedVersion) {
+        // Also parse visualBuilderData in published version if needed
+        let publishedVBData = data.publishedVersion.visualBuilderData;
+        if (typeof publishedVBData === 'string') {
+          try {
+            publishedVBData = JSON.parse(publishedVBData);
+          } catch (e) {
+            console.warn('[QuizService] Failed to parse published visualBuilderData:', e);
+          }
+        }
         return {
           ...baseQuiz,
           ...data.publishedVersion,
+          visualBuilderData: publishedVBData,
         };
       }
 
@@ -476,7 +531,7 @@ export class QuizService {
       questions: quiz.questions || [],
       outcomes: quiz.outcomes || [],
       leadGen: quiz.leadGen,
-      // Include visual builder data for blocks-based rendering
+      // visualBuilderData is already stored as JSON string in the quiz
       visualBuilderData: quiz.visualBuilderData,
     };
   }

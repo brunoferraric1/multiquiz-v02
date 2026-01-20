@@ -96,7 +96,11 @@ function VisualBuilderEditor() {
           }
 
           console.log('[VisualBuilder] Loading existing quiz:', id)
-          const vbData = quizToVisualBuilder(existingQuiz)
+          // Prefer stored visualBuilderData, fall back to reconstruction for legacy quizzes
+          const vbData = existingQuiz.visualBuilderData
+            ? { steps: existingQuiz.visualBuilderData.steps, outcomes: existingQuiz.visualBuilderData.outcomes }
+            : quizToVisualBuilder(existingQuiz)
+          console.log('[VisualBuilder] Using visualBuilderData:', !!existingQuiz.visualBuilderData)
           initialize(vbData)
           quizRef.current = existingQuiz
           setIsNewQuiz(false)
