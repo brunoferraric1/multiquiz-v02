@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { QuizService } from '@/lib/services/quiz-service';
 import { getBrandKit } from '@/lib/services/brand-kit-service';
 import { QuizPlayer } from '@/components/quiz/quiz-player';
@@ -10,7 +10,9 @@ import type { BrandKitColors, Quiz } from '@/types';
 export default function PublicQuizPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const quizId = params.id as string;
+  const isPreviewMode = searchParams.get('preview') === 'true';
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [brandKitColors, setBrandKitColors] = useState<BrandKitColors | null>(null);
@@ -24,10 +26,12 @@ export default function PublicQuizPage() {
         setLoading(true);
         setError(null);
 
-        console.log('[PublicQuiz] Loading quiz:', quizId);
-        // Request published version - this returns the frozen publishedVersion snapshot if available
-        // Falls back to current draft for backwards compatibility with older quizzes
-        const loadedQuiz = await QuizService.getQuizById(quizId, undefined, 'published');
+        console.log('[PublicQuiz] Loading quiz:', quizId, { isPreviewMode });
+
+        // For preview mode, load the draft version; for live, load published version
+        const version = isPreviewMode ? 'draft' : 'published';
+        const loadedQuiz = await QuizService.getQuizById(quizId, undefined, version);
+
         console.log('[PublicQuiz] Loaded quiz:', {
           id: loadedQuiz?.id,
           title: loadedQuiz?.title,
@@ -42,18 +46,21 @@ export default function PublicQuizPage() {
           return;
         }
 
-        if (!loadedQuiz.isPublished) {
-          console.error('[PublicQuiz] Quiz is not published:', loadedQuiz.isPublished);
+        // Only check isPublished for live mode, not preview mode
+        if (!isPreviewMode && !loadedQuiz.isPublished) {
+          console.log('[PublicQuiz] Quiz not published (isPublished =', loadedQuiz.isPublished, ')');
           setError('Este quiz não está publicado');
           return;
         }
 
-        console.log('[PublicQuiz] Quiz is valid and published, setting quiz state');
+        console.log('[PublicQuiz] Quiz loaded successfully', { isPreviewMode, isPublished: loadedQuiz.isPublished });
 
         setQuiz(loadedQuiz);
 
-        // Increment view count
-        await QuizService.incrementStat(quizId, 'views');
+        // Increment view count (only for live mode, not preview)
+        if (!isPreviewMode) {
+          await QuizService.incrementStat(quizId, 'views');
+        }
       } catch (err) {
         console.error('[PublicQuiz] Error loading quiz:', err);
         const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -67,7 +74,7 @@ export default function PublicQuizPage() {
     if (quizId) {
       void loadQuiz();
     }
-  }, [quizId]);
+  }, [quizId, isPreviewMode]);
 
   useEffect(() => {
     if (!quiz?.ownerId || quiz.brandKitMode !== 'custom') {
@@ -149,14 +156,21 @@ export default function PublicQuizPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <QuizPlayer
-        quiz={quiz}
-        mode="live"
-        onExit={handleExit}
-        brandKitColors={brandKitColors}
-        brandKitLogoUrl={brandKitLogoUrl}
-      />
+    <div className="min-h-screen flex flex-col bg-background">
+      {isPreviewMode && (
+        <div className="bg-amber-500 text-amber-950 text-center py-2 px-4 text-sm font-medium">
+          Modo Preview — Esta é uma pré-visualização do rascunho
+        </div>
+      )}
+      <div className="flex-1 flex items-center justify-center">
+        <QuizPlayer
+          quiz={quiz}
+          mode="live"
+          onExit={handleExit}
+          brandKitColors={brandKitColors}
+          brandKitLogoUrl={brandKitLogoUrl}
+        />
+      </div>
     </div>
   );
 }
