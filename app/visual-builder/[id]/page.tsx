@@ -4,7 +4,6 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/lib/hooks/use-auth'
-import { useQuizQuery } from '@/lib/hooks/use-quiz-queries'
 import {
   useVisualBuilderStore,
   getDefaultBlocksForStepType,
@@ -64,9 +63,6 @@ function VisualBuilderEditor() {
   const queryClient = useQueryClient()
   const { user } = useAuth()
 
-  // Query quiz data
-  const { data: quiz, isLoading, error, dataUpdatedAt } = useQuizQuery(id as string, user?.uid)
-
   // Visual builder store actions
   const initialize = useVisualBuilderStore((state) => state.initialize)
   const reset = useVisualBuilderStore((state) => state.reset)
@@ -75,111 +71,101 @@ function VisualBuilderEditor() {
   const [isPublishing, setIsPublishing] = useState(false)
   const [isNewQuiz, setIsNewQuiz] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
-  const loadedTimestampRef = useRef<number>(0)
+  const [isCheckingQuiz, setIsCheckingQuiz] = useState(true)
   const quizRef = useRef<QuizDraft | null>(null)
-  const initializingNewQuizRef = useRef(false)
+  const checkedRef = useRef(false)
 
-  // On mount: invalidate cache to get fresh data
+  // Check if quiz exists and load it, or create new
   useEffect(() => {
-    if (id) {
-      queryClient.invalidateQueries({ queryKey: ['quiz', id] })
-      loadedTimestampRef.current = 0
-    }
-  }, [id, queryClient])
+    if (!user || !id || checkedRef.current) return
+    checkedRef.current = true
 
-  // Handle new quiz creation when quiz doesn't exist
-  useEffect(() => {
-    // Only run once, when loading is done and no quiz found
-    if (isLoading || isInitialized || initializingNewQuizRef.current) return
-    if (quiz) return // Quiz exists, don't create new
+    const checkAndLoadQuiz = async () => {
+      setIsCheckingQuiz(true)
+      try {
+        // Try to fetch the quiz
+        const existingQuiz = await QuizService.getQuizById(id as string, user.uid)
 
-    // Quiz not found or permission error (Firestore returns permission error for non-existent docs)
-    // This happens when:
-    // 1. Quiz truly doesn't exist (!quiz && no error)
-    // 2. Quiz doesn't exist and Firestore returns permission error
-    const isPermissionError = error && (
-      (error as Error)?.message?.includes('permission') ||
-      (error as Error)?.message?.includes('insufficient')
-    )
+        if (existingQuiz) {
+          // Quiz exists - check ownership and load it
+          if (existingQuiz.ownerId !== user.uid) {
+            toast.error('Você não tem permissão para editar este quiz.')
+            router.push('/dashboard')
+            return
+          }
 
-    if (!quiz && user && (!error || isPermissionError)) {
-      initializingNewQuizRef.current = true
-      console.log('[VisualBuilder] Creating new quiz with ID:', id)
+          console.log('[VisualBuilder] Loading existing quiz:', id)
+          const vbData = quizToVisualBuilder(existingQuiz)
+          initialize(vbData)
+          quizRef.current = existingQuiz
+          setIsNewQuiz(false)
+        } else {
+          // Quiz doesn't exist - create new
+          console.log('[VisualBuilder] Creating new quiz with ID:', id)
+          const defaultData = createDefaultVisualBuilderData()
+          initialize(defaultData)
 
-      // Initialize visual builder with default data
-      const defaultData = createDefaultVisualBuilderData()
-      initialize(defaultData)
+          const newQuizDraft: QuizDraft = {
+            id: id as string,
+            title: '',
+            description: '',
+            questions: [],
+            outcomes: [],
+            primaryColor: '#4F46E5',
+            brandKitMode: 'default',
+            isPublished: false,
+            ownerId: user.uid,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            stats: { views: 0, starts: 0, completions: 0 },
+          }
 
-      // Create a minimal quiz draft for the ref
-      const newQuizDraft: QuizDraft = {
-        id: id as string,
-        title: '',
-        description: '',
-        questions: [],
-        outcomes: [],
-        primaryColor: '#4F46E5',
-        brandKitMode: 'default',
-        isPublished: false,
-        ownerId: user.uid,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        stats: { views: 0, starts: 0, completions: 0 },
-      }
+          quizRef.current = newQuizDraft
+          setIsNewQuiz(true)
+        }
 
-      quizRef.current = newQuizDraft
-      setIsNewQuiz(true)
-      setIsInitialized(true)
-    }
-  }, [isLoading, quiz, error, user, id, initialize, isInitialized])
+        setIsInitialized(true)
+      } catch (err) {
+        const errorMessage = (err as Error)?.message || ''
 
-  // Load existing quiz into visual builder store when data arrives
-  useEffect(() => {
-    if (quiz && user && dataUpdatedAt > loadedTimestampRef.current) {
-      // Check ownership
-      if (quiz.ownerId !== user.uid) {
-        toast.error('Você não tem permissão para editar este quiz.')
+        // Permission error usually means quiz doesn't exist (Firestore rules)
+        if (errorMessage.includes('permission') || errorMessage.includes('insufficient')) {
+          console.log('[VisualBuilder] Quiz not found, creating new:', id)
+          const defaultData = createDefaultVisualBuilderData()
+          initialize(defaultData)
+
+          const newQuizDraft: QuizDraft = {
+            id: id as string,
+            title: '',
+            description: '',
+            questions: [],
+            outcomes: [],
+            primaryColor: '#4F46E5',
+            brandKitMode: 'default',
+            isPublished: false,
+            ownerId: user.uid,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            stats: { views: 0, starts: 0, completions: 0 },
+          }
+
+          quizRef.current = newQuizDraft
+          setIsNewQuiz(true)
+          setIsInitialized(true)
+          return
+        }
+
+        // Actual error
+        console.error('[VisualBuilder] Error loading quiz:', err)
+        toast.error('Erro ao carregar o quiz.')
         router.push('/dashboard')
-        return
+      } finally {
+        setIsCheckingQuiz(false)
       }
-
-      // Convert quiz to visual builder format
-      console.log('[VisualBuilder] Loading existing quiz into store. Timestamp:', dataUpdatedAt)
-      const vbData = quizToVisualBuilder(quiz)
-      initialize(vbData)
-      quizRef.current = quiz
-      loadedTimestampRef.current = dataUpdatedAt
-      setIsNewQuiz(false)
-      setIsInitialized(true)
     }
-  }, [quiz, user, router, initialize, dataUpdatedAt])
 
-  // Handle actual errors (not just "quiz not found" or permission errors for non-existent docs)
-  useEffect(() => {
-    if (error && !isLoading && !isInitialized) {
-      const errorMessage = (error as Error)?.message || ''
-
-      // Permission errors for non-existent docs are handled by creating a new quiz
-      const isPermissionError = errorMessage.includes('permission') || errorMessage.includes('insufficient')
-      if (isPermissionError) {
-        // This is expected for new quizzes - handled in the "new quiz creation" effect
-        console.log('[VisualBuilder] Permission error (expected for new quiz):', errorMessage)
-        return
-      }
-
-      // Check if it's an explicit authorization error (trying to access someone else's quiz)
-      if (errorMessage.includes('Unauthorized')) {
-        console.error('Unauthorized access:', error)
-        toast.error('Você não tem permissão para acessar este quiz.')
-        router.push('/dashboard')
-        return
-      }
-
-      // Other unexpected errors
-      console.error('[VisualBuilder] Unexpected error:', error)
-      toast.error('Erro ao carregar o quiz.')
-      router.push('/dashboard')
-    }
-  }, [error, isLoading, isInitialized, router])
+    checkAndLoadQuiz()
+  }, [user, id, initialize, router])
 
   // Reset store on unmount
   useEffect(() => {
@@ -259,8 +245,8 @@ function VisualBuilderEditor() {
     }
   }, [id, user?.uid, isPublishing, forceSave, queryClient])
 
-  // Loading state - show while fetching OR before initialization
-  if (isLoading || !isInitialized) {
+  // Loading state - show while checking quiz OR before initialization
+  if (isCheckingQuiz || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="text-center">

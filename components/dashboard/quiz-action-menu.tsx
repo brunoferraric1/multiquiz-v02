@@ -87,7 +87,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
 
     const handleEdit = () => {
         setMobileMenuOpen(false);
-        router.push(`/builder/${quiz.id}`);
+        router.push(`/visual-builder/${quiz.id}`);
     };
 
     const handleReports = () => {

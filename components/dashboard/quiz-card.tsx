@@ -27,7 +27,7 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
   const [imageError, setImageError] = useState(false);
 
   const handleEdit = () => {
-    router.push(`/builder/${quiz.id}`);
+    router.push(`/visual-builder/${quiz.id}`);
   };
 
   // Add cache-busting param to prevent showing stale cached images

@@ -90,8 +90,8 @@ export default function VisualBuilderPage() {
   const handlePreview = () => {
     toast.info('Esta é uma página de demonstração. Crie um quiz para usar o Preview.', {
       action: {
-        label: 'Criar Quiz',
-        onClick: () => router.push('/builder'),
+        label: 'Ir para Dashboard',
+        onClick: () => router.push('/dashboard'),
       },
     })
   }
@@ -99,8 +99,8 @@ export default function VisualBuilderPage() {
   const handlePublish = () => {
     toast.info('Esta é uma página de demonstração. Crie um quiz para publicar.', {
       action: {
-        label: 'Criar Quiz',
-        onClick: () => router.push('/builder'),
+        label: 'Ir para Dashboard',
+        onClick: () => router.push('/dashboard'),
       },
     })
   }
