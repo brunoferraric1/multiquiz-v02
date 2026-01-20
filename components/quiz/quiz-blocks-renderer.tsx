@@ -7,7 +7,7 @@
  * It handles both display-only blocks and interactive blocks (options, fields).
  */
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import {
   Block,
@@ -167,43 +167,56 @@ function TextBlock({ config }: { config: TextConfig }) {
 }
 
 /**
- * Extract video thumbnail URL from YouTube or Vimeo URLs
+ * Extract YouTube video ID from various URL formats
  */
-function getVideoThumbnail(url: string): string | null {
-  // YouTube patterns
-  const youtubePatterns = [
+function getYouTubeVideoId(url: string): string | null {
+  const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
     /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
   ];
 
-  for (const pattern of youtubePatterns) {
+  for (const pattern of patterns) {
     const match = url.match(pattern);
-    if (match) {
-      return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
-    }
+    if (match) return match[1];
   }
+  return null;
+}
 
+/**
+ * Extract Vimeo video ID from URL
+ */
+function getVimeoVideoId(url: string): string | null {
+  const match = url.match(/vimeo\.com\/(\d+)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Get video thumbnail URL
+ */
+function getVideoThumbnail(url: string): string | null {
+  const youtubeId = getYouTubeVideoId(url);
+  if (youtubeId) {
+    return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+  }
   return null;
 }
 
 /**
  * Clean video player with minimal UI
- * Shows thumbnail first, then plays with controls when clicked
+ * Shows static thumbnail first, then embeds video iframe when clicked
  */
 function VideoPlayer({ url }: { url: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const thumbnailUrl = getVideoThumbnail(url);
+  const youtubeId = getYouTubeVideoId(url);
+  const vimeoId = getVimeoVideoId(url);
 
-  const handlePlay = () => {
-    setIsPlaying(true);
-  };
-
-  // Show thumbnail with play button before user clicks
+  // Show static thumbnail with play button before user clicks
   if (!isPlaying) {
     return (
       <div
         className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted cursor-pointer group"
-        onClick={handlePlay}
+        onClick={() => setIsPlaying(true)}
       >
         {thumbnailUrl ? (
           <img
@@ -226,7 +239,35 @@ function VideoPlayer({ url }: { url: string }) {
     );
   }
 
-  // Show actual player when playing
+  // Show YouTube iframe embed
+  if (youtubeId) {
+    return (
+      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&modestbranding=1&rel=0`}
+          className="absolute inset-0 w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  // Show Vimeo iframe embed
+  if (vimeoId) {
+    return (
+      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
+        <iframe
+          src={`https://player.vimeo.com/video/${vimeoId}?autoplay=1&byline=0&portrait=0&title=0`}
+          className="absolute inset-0 w-full h-full"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  // Fallback for other video URLs - use react-player
   return (
     <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
       <ReactPlayer
@@ -235,23 +276,6 @@ function VideoPlayer({ url }: { url: string }) {
         height="100%"
         playing={true}
         controls={true}
-        config={{
-          youtube: {
-            playerVars: {
-              modestbranding: 1,
-              rel: 0,
-              autoplay: 1,
-            },
-          },
-          vimeo: {
-            playerOptions: {
-              byline: false,
-              portrait: false,
-              title: false,
-              autoplay: true,
-            },
-          },
-        }}
       />
     </div>
   );
