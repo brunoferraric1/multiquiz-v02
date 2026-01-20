@@ -7,6 +7,8 @@
  * It handles both display-only blocks and interactive blocks (options, fields).
  */
 
+import { useState, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Block,
   HeaderConfig,
@@ -20,9 +22,12 @@ import {
   PriceConfig,
 } from '@/types/blocks';
 import { cn } from '@/lib/utils';
-import { Check, AlertTriangle, AlertCircle, Info, ArrowRight, Square, CheckSquare } from 'lucide-react';
+import { Check, AlertTriangle, AlertCircle, Info, ArrowRight, Square, CheckSquare, Play, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormattedText } from './formatted-text';
+
+// Dynamic import for react-player to avoid SSR issues
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 
 interface QuizBlocksRendererProps {
   blocks: Block[];
@@ -162,26 +167,94 @@ function TextBlock({ config }: { config: TextConfig }) {
 }
 
 /**
- * Extract YouTube video ID from various URL formats
+ * Extract video thumbnail URL from YouTube or Vimeo URLs
  */
-function getYouTubeVideoId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/,
-    /youtube\.com\/shorts\/([^&\s?]+)/,
+function getVideoThumbnail(url: string): string | null {
+  // YouTube patterns
+  const youtubePatterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
   ];
-  for (const pattern of patterns) {
+
+  for (const pattern of youtubePatterns) {
     const match = url.match(pattern);
-    if (match) return match[1];
+    if (match) {
+      return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+    }
   }
+
   return null;
 }
 
 /**
- * Extract Vimeo video ID from URL
+ * Clean video player with minimal UI
+ * Shows thumbnail first, then plays with controls when clicked
  */
-function getVimeoVideoId(url: string): string | null {
-  const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-  return match ? match[1] : null;
+function VideoPlayer({ url }: { url: string }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const thumbnailUrl = getVideoThumbnail(url);
+
+  const handlePlay = () => {
+    setIsPlaying(true);
+  };
+
+  // Show thumbnail with play button before user clicks
+  if (!isPlaying) {
+    return (
+      <div
+        className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted cursor-pointer group"
+        onClick={handlePlay}
+      >
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt="Video thumbnail"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+            <Video className="w-12 h-12 text-gray-500" />
+          </div>
+        )}
+        {/* Play button overlay */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:bg-white group-hover:scale-105 transition-all">
+            <Play className="w-7 h-7 text-gray-900 ml-1" fill="currentColor" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show actual player when playing
+  return (
+    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
+      <ReactPlayer
+        url={url}
+        width="100%"
+        height="100%"
+        playing={true}
+        controls={true}
+        config={{
+          youtube: {
+            playerVars: {
+              modestbranding: 1,
+              rel: 0,
+              autoplay: 1,
+            },
+          },
+          vimeo: {
+            playerOptions: {
+              byline: false,
+              portrait: false,
+              title: false,
+              autoplay: true,
+            },
+          },
+        }}
+      />
+    </div>
+  );
 }
 
 function MediaBlock({ config }: { config: MediaConfig }) {
@@ -190,48 +263,9 @@ function MediaBlock({ config }: { config: MediaConfig }) {
   if (!url) return null;
 
   if (type === 'video') {
-    // Check for YouTube
-    const youtubeId = getYouTubeVideoId(url);
-    if (youtubeId) {
-      return (
-        <div className="w-full rounded-xl overflow-hidden">
-          <div className="aspect-video">
-            <iframe
-              src={`https://www.youtube.com/embed/${youtubeId}`}
-              title="YouTube video"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            />
-          </div>
-        </div>
-      );
-    }
-
-    // Check for Vimeo
-    const vimeoId = getVimeoVideoId(url);
-    if (vimeoId) {
-      return (
-        <div className="w-full rounded-xl overflow-hidden">
-          <div className="aspect-video">
-            <iframe
-              src={`https://player.vimeo.com/video/${vimeoId}`}
-              title="Vimeo video"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            />
-          </div>
-        </div>
-      );
-    }
-
-    // Fallback to native video for direct video URLs (mp4, webm, etc.)
     return (
-      <div className="w-full rounded-xl overflow-hidden">
-        <div className="aspect-video">
-          <video src={url} controls className="w-full h-full object-contain bg-black" />
-        </div>
+      <div className="w-full">
+        <VideoPlayer url={url} />
       </div>
     );
   }

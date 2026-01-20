@@ -3,6 +3,16 @@ import { cleanup } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { useVisualBuilderStore } from '@/store/visual-builder-store'
 
+// Mock next/dynamic to handle dynamic imports in tests
+vi.mock('next/dynamic', () => ({
+  default: (dynamicFn: () => Promise<any>, options?: any) => {
+    // Return a simple component that renders nothing (for react-player, etc.)
+    const MockComponent = () => null
+    MockComponent.displayName = 'DynamicMock'
+    return MockComponent
+  },
+}))
+
 // Reset store and cleanup after each test
 beforeEach(() => {
   useVisualBuilderStore.getState().reset()

@@ -2,7 +2,7 @@
 
 import { MediaConfig } from '@/types/blocks'
 import { cn } from '@/lib/utils'
-import { Image, Video } from 'lucide-react'
+import { Image, Video, Play } from 'lucide-react'
 
 interface MediaBlockPreviewProps {
   config: MediaConfig
@@ -10,26 +10,59 @@ interface MediaBlockPreviewProps {
 }
 
 /**
- * Extract YouTube video ID from various URL formats
+ * Extract video thumbnail URL from YouTube or Vimeo URLs
  */
-function getYouTubeVideoId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/,
-    /youtube\.com\/shorts\/([^&\s?]+)/,
+function getVideoThumbnail(url: string): string | null {
+  // YouTube patterns
+  const youtubePatterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
   ]
-  for (const pattern of patterns) {
+
+  for (const pattern of youtubePatterns) {
     const match = url.match(pattern)
-    if (match) return match[1]
+    if (match) {
+      return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`
+    }
   }
+
+  // Vimeo pattern - we can't easily get thumbnail without API call
+  // Return null and show a placeholder
+  if (url.includes('vimeo.com')) {
+    return null
+  }
+
   return null
 }
 
 /**
- * Extract Vimeo video ID from URL
+ * Static video thumbnail preview for the visual builder
+ * Shows thumbnail + play icon, clicking selects the block (not plays video)
  */
-function getVimeoVideoId(url: string): string | null {
-  const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
-  return match ? match[1] : null
+function VideoThumbnailPreview({ url }: { url: string }) {
+  const thumbnailUrl = getVideoThumbnail(url)
+
+  return (
+    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
+      {thumbnailUrl ? (
+        <img
+          src={thumbnailUrl}
+          alt="Video thumbnail"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+          <Video className="w-12 h-12 text-gray-500" />
+        </div>
+      )}
+      {/* Play icon overlay */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+          <Play className="w-6 h-6 text-gray-900 ml-0.5" fill="currentColor" />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 /**
@@ -57,52 +90,9 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
   }
 
   if (type === 'video') {
-    // Check for YouTube
-    const youtubeId = getYouTubeVideoId(url)
-    if (youtubeId) {
-      return (
-        <div className={cn('p-4', !enabled && 'opacity-50')}>
-          <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-            <iframe
-              src={`https://www.youtube.com/embed/${youtubeId}`}
-              title="YouTube video"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            />
-          </div>
-        </div>
-      )
-    }
-
-    // Check for Vimeo
-    const vimeoId = getVimeoVideoId(url)
-    if (vimeoId) {
-      return (
-        <div className={cn('p-4', !enabled && 'opacity-50')}>
-          <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-            <iframe
-              src={`https://player.vimeo.com/video/${vimeoId}`}
-              title="Vimeo video"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            />
-          </div>
-        </div>
-      )
-    }
-
-    // Fallback to native video for direct video URLs
     return (
       <div className={cn('p-4', !enabled && 'opacity-50')}>
-        <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-          <video
-            src={url}
-            className="w-full h-full object-contain bg-black"
-            controls
-          />
-        </div>
+        <VideoThumbnailPreview url={url} />
       </div>
     )
   }

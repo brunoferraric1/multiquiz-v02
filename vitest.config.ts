@@ -19,6 +19,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
+      // Alias react-player to a mock module for tests
+      'react-player': path.resolve(__dirname, './test/__mocks__/react-player.tsx'),
     },
   },
 })
