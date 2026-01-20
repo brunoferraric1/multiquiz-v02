@@ -248,7 +248,136 @@ Every button, label, and message will work in three languages:
 
 ---
 
-### Milestone 5: AI Chat Integration (Week 6)
+### Milestone 4.5: UX Polish & Enhancements ✅ COMPLETED
+*"Fine-tuning the experience"*
+
+**Goal:** Polish block editors and sidebar UX after milestone 4
+
+**Enhancements Completed:**
+- [x] Rich text editor for Text block (Tiptap with bold, italic, underline, strikethrough, alignment)
+- [x] Drag-and-drop reordering for List block editor (matching Options pattern)
+- [x] Block limitations: Options and Price limited to one per page with tooltip feedback
+- [x] Button block smart defaults (shows "Preço selecionado" only when Price exists)
+- [x] Sidebar restructure: Three sections (INTRODUÇÃO, ETAPAS, RESULTADOS) with unified scroll
+- [x] Dotted add buttons at bottom of Etapas and Resultados sections
+- [x] Progress bar and back button now display in preview when enabled
+- [x] Default list items (3 items instead of empty state)
+
+**Key UX Improvements:**
+- Single scroll for entire sidebar (no independent scrolls)
+- Intro step separated into dedicated INTRODUÇÃO section
+- Consistent section title styling throughout
+- Primary color (yellow) for add buttons
+- Logical content-first, add-action-last progression
+
+**Success:** Polished editing experience with consistent patterns across all block types
+
+---
+
+### Milestone 5A: Core Flows (Week 6)
+*"Making sure the engine runs"*
+
+**Goal:** Auto-save, preview, and publish working end-to-end
+
+**Tasks:**
+- [ ] Update auto-save for visual builder (integrate with new data model)
+- [ ] Update quiz loading flow (load existing quiz into visual builder)
+- [ ] Complete publish flow (draft → live with explicit publish action)
+- [ ] Keep publish/update/unpublish behavior identical to production (draft/live separation)
+- [ ] Preview button in header opens quiz in new tab
+
+**Success:** Can create, edit, save, preview, and publish a quiz with the new visual builder
+
+---
+
+### Milestone 5B: Top Navigation Tabs (Week 6-7)
+*"Installing the control panels"*
+
+**Goal:** Complete the top navigation experience (Tema, Configuração, Relatórios)
+
+**Tasks:**
+- [ ] **Tema tab** - Theme customization experience
+  - Color palette selection
+  - Logo upload
+  - Font selection (if applicable)
+  - Preview theme changes in real-time
+- [ ] **Configuração tab** - Quiz settings
+  - Quiz name and URL slug
+  - SEO settings (title, description)
+  - Analytics integration
+  - Share settings
+- [ ] **Relatórios tab** - Link to reports
+  - Link to `/dashboard/[quizId]/report` (reuse existing reports page)
+  - Show basic stats preview if available
+
+**Success:** All top navigation tabs functional with appropriate content
+
+---
+
+### Milestone 5C: Quality Polish (Week 7)
+*"Interior decorating and final touches"*
+
+**Goal:** Production-ready quality and appearance
+
+**Tasks:**
+- [ ] Light mode CSS variables
+- [ ] Theme toggle component (in header or settings)
+- [ ] Performance optimization (memoization, lazy loading)
+- [ ] Accessibility pass (keyboard nav, screen readers)
+
+**Success:** Light/dark modes polished, smooth performance
+
+---
+
+### Milestone 6: Dashboard Update (Week 8)
+*"Updating the lobby"*
+
+**Goal:** Update dashboard with new create quiz modal
+
+**Approach:** Reuse current dashboard UI - the main change is the "Create" flow.
+
+**Create Flow:**
+1. User clicks "+ Create Quiz" button
+2. Modal opens with 3 creation methods:
+   - **AI Assistant** (coming soon) - Chat creates the quiz
+   - **Blank Quiz** - Start from scratch
+   - **Templates** (coming soon) - Pre-built structures
+3. User picks "Blank Quiz" → enters name + slug
+4. Redirects to visual builder
+
+**Tasks:**
+- [ ] "Create quiz" modal with creation method picker
+- [ ] Quiz name + URL slug form (step 2 of modal)
+- [ ] Slug auto-generation from name
+- [ ] Connect "Editar" action on quiz cards to visual builder
+- [ ] Keep old builder at `/editor-legacy` during transition (fallback only)
+
+**Success:** Dashboard creates quizzes via new modal, opens visual builder for editing
+
+---
+
+### Milestone 7: Mobile Layout (Week 9)
+*"Making it pocket-sized"*
+
+**Goal:** Full mobile experience from prototype
+
+**Initial Approach - Desktop-Only Gate:**
+Before building the full mobile experience, we'll first block mobile access to the quiz editor with a friendly message: "Para usar o editor de quiz, use um desktop". Other simpler pages/screens (dashboard, settings, etc.) can remain mobile-accessible.
+
+**Tasks:**
+- [ ] **Phase 1: Desktop-only gate** - Block mobile access to visual builder with friendly message
+- [ ] Build collapsible step rail (icons when collapsed)
+- [ ] Build expandable sidebar (70% overlay when expanded)
+- [ ] Build bottom drawer for block editing
+- [ ] Build overflow menu (actions dropdown)
+- [ ] Touch drag-and-drop for reordering
+- [ ] Test on real devices (iOS Safari, Android Chrome)
+
+**Success:** Mobile experience matches prototype, smooth animations
+
+---
+
+### Milestone 8: AI Chat Integration (Week 10)
 *"Connecting the smart home system"*
 
 **Goal:** Floating AI chat works, full chat in tab
@@ -264,72 +393,7 @@ Every button, label, and message will work in three languages:
 
 ---
 
-### Milestone 6: Mobile Layout (Week 7)
-*"Making it pocket-sized"*
-
-**Goal:** Full mobile experience from prototype
-
-**Tasks:**
-- [ ] Build collapsible step rail (icons when collapsed)
-- [ ] Build expandable sidebar (70% overlay when expanded)
-- [ ] Build bottom drawer for block editing
-- [ ] Build overflow menu (actions dropdown)
-- [ ] Touch drag-and-drop for reordering
-- [ ] Test on real devices (iOS Safari, Android Chrome)
-
-**Success:** Mobile experience matches prototype, smooth animations
-
----
-
-### Milestone 7: Polish (Week 8)
-*"Interior decorating and final touches"*
-
-**Goal:** Production-ready quality
-
-**Tasks:**
-- [ ] Update auto-save for visual builder
-- [ ] Update quiz loading flow
-- [ ] Complete publish flow
-- [ ] Keep publish/update/unpublish behavior identical to production (draft/live separation)
-- [ ] Light mode CSS variables
-- [ ] Theme toggle component
-- [ ] Performance optimization (memoization, lazy loading)
-- [ ] Accessibility pass (keyboard nav, screen readers)
-
-**Success:** All flows work end-to-end, light/dark modes polished
-
----
-
-### Milestone 8: Dashboard Rebuild (Week 9)
-*"Building the new lobby"*
-
-**Goal:** New dashboard matching prototype design
-
-**Key Change:** Instead of "Create" going directly to the builder, it now opens a modal with options.
-
-**Create Flow:**
-1. User clicks "+ Create Quiz" button
-2. Modal opens with 3 creation methods:
-   - **AI Assistant** (coming soon) - Chat creates the quiz
-   - **Blank Quiz** - Start from scratch
-   - **Templates** (coming soon) - Pre-built structures
-3. User picks "Blank Quiz" → enters name + slug
-4. Redirects to visual builder
-
-**Tasks:**
-- [ ] Quiz list with cards view
-- [ ] Empty state (no quizzes yet)
-- [ ] "Create quiz" modal with creation method picker
-- [ ] Quiz name + URL slug form (step 2 of modal)
-- [ ] Slug auto-generation from name
-- [ ] Keep old dashboard at `/dashboard-legacy` during transition (fallback only)
-- [ ] Translate all dashboard strings
-
-**Success:** New dashboard fully functional in all 3 languages
-
----
-
-### Milestone 9: Rollout (Week 10)
+### Milestone 9: Rollout (Week 11)
 *"Grand opening"*
 
 **Goal:** Safe transition to new builder
@@ -444,15 +508,17 @@ Every button, label, and message will work in three languages:
 
 ```
 Week 1:  Foundation + i18n setup
-Week 2:  Three-column layout shell
-Week 3:  Step navigation + CRUD
-Week 4:  Block rendering + preview
-Week 5:  Properties panel + editing
-Week 6:  AI chat integration
-Week 7:  Mobile layout
-Week 8:  Polish + themes
-Week 9:  Dashboard rebuild
-Week 10: Testing + rollout
+Week 2:  Three-column layout shell ✅
+Week 3:  Step navigation + CRUD ✅
+Week 4:  Block rendering + preview ✅
+Week 5:  Properties panel + editing ✅
+Week 5.5: UX Polish & Enhancements ✅
+Week 6:  5A - Core Flows (auto-save, preview, publish) ← CURRENT
+Week 7:  5B - Top Nav Tabs (Tema, Configuração, Relatórios) + 5C - Quality Polish
+Week 8:  Dashboard update (create modal)
+Week 9:  Mobile layout (desktop-only gate first)
+Week 10: AI chat integration
+Week 11: Testing + rollout
 ```
 
-**Total: 10 weeks**
+**Total: 11 weeks**

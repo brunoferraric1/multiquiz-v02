@@ -13,6 +13,65 @@ Prototype reference: `http://localhost:3500/prototype`
 
 This section tracks the iterations and changes made during the prototyping process.
 
+### Post-Milestone 4: UX Polish & Enhancements
+**Date:** January 2025
+
+**What was done:**
+Series of UX improvements and enhancements to the visual builder after milestone 4 completion.
+
+**Key Enhancements:**
+
+**1. Rich Text Editor for Text Block:**
+- Integrated Tiptap editor with formatting toolbar
+- Supports: bold, italic, underline, strikethrough, text alignment (left/center/right)
+- Default alignment set to center
+- SSR-compatible with `immediatelyRender: false`
+
+**2. Drag-and-Drop for List Block Editor:**
+- List items now support drag-and-drop reordering using @dnd-kit
+- Matches the Options block editor pattern for consistency
+- List block now shows 3 default items when added (instead of empty state)
+
+**3. Block Limitations with Smart Feedback:**
+- Options and Price blocks limited to one per page
+- Disabled blocks show cursor-following tooltip: "Apenas um por página"
+- Prevents duplicate interactive elements on same step
+
+**4. Button Block Smart Defaults:**
+- "Preço selecionado" action only appears when Price block exists on page
+- When adding Button after Price block, defaults to "selected_price" action
+- Context-aware options improve user experience
+
+**5. Sidebar Restructure (Three-Section Layout):**
+- **INTRODUÇÃO section**: Dedicated area for the fixed intro step
+- **ETAPAS section**: Regular steps (questions, lead-gen, promo) with drag-and-drop
+- **RESULTADOS section**: Outcomes list
+- Single unified scroll for all sections (no independent scrolls)
+- Consistent section title styling across all three sections
+
+**6. Dotted Add Buttons:**
+- "Adicionar etapa" button at bottom of Etapas section
+- "Adicionar resultado" button at bottom of Resultados section
+- Primary color (yellow) styling for better visibility
+- Follows logical progression (content first, then add action)
+
+**7. Live Preview Enhancements:**
+- Progress bar displays in preview when enabled in step settings
+- Back button displays in preview when enabled (except on intro step)
+- Immediate visual feedback for step configuration changes
+
+**Files Modified:**
+- `components/visual-builder/editors/text-block-editor.tsx` - Tiptap integration
+- `components/visual-builder/editors/list-block-editor.tsx` - Drag-and-drop rewrite
+- `components/visual-builder/add-block-sheet.tsx` - Block limitations & tooltips
+- `components/visual-builder/connected-visual-builder.tsx` - Sidebar restructure
+- `components/visual-builder/sortable-steps-list.tsx` - Exclude intro step
+- `components/visual-builder/step-preview.tsx` - Progress/back button preview
+- `components/ui/ghost-add-button.tsx` - Primary color styling
+- `types/blocks.ts` - Default list items
+
+---
+
 ### Implementation: Milestone 4 - Properties Panel
 **Date:** January 2025
 
