@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { ArrowLeft, Play, Edit3, Sparkles, Palette, BarChart3, Settings } from 'lucide-react'
+import { ArrowLeft, Play, Edit3, Sparkles, Palette, BarChart3, Settings, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export type HeaderTab = 'editar' | 'assistente' | 'tema' | 'relatorio' | 'config'
@@ -13,6 +13,8 @@ interface BuilderHeaderNavProps {
   onBack?: () => void
   onPreview?: () => void
   onPublish?: () => void
+  isPublishing?: boolean
+  isPublished?: boolean
 }
 
 const tabs: { id: HeaderTab; label: string; icon: React.ReactNode }[] = [
@@ -30,7 +32,15 @@ export function BuilderHeaderNav({
   onBack,
   onPreview,
   onPublish,
+  isPublishing = false,
+  isPublished = false,
 }: BuilderHeaderNavProps) {
+  // Determine button text based on publish state
+  const publishButtonText = isPublishing
+    ? 'Publicando...'
+    : isPublished
+      ? 'Atualizar'
+      : 'Publicar'
   return (
     <header className="h-14 bg-card border-b flex items-center px-4 shrink-0">
       {/* Left: Back + Quiz name */}
@@ -82,8 +92,14 @@ export function BuilderHeaderNav({
           <Play className="w-4 h-4 fill-current" />
           <span className="hidden sm:inline">Preview</span>
         </Button>
-        <Button size="sm" onClick={onPublish} aria-label="Publicar">
-          Publicar
+        <Button
+          size="sm"
+          onClick={onPublish}
+          aria-label={publishButtonText}
+          disabled={isPublishing}
+        >
+          {isPublishing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          {publishButtonText}
         </Button>
       </div>
     </header>
