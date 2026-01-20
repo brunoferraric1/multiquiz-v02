@@ -38,6 +38,7 @@ export interface VisualBuilderState {
   selectedBlockId: string | undefined
   isAddStepSheetOpen: boolean
   isAddBlockSheetOpen: boolean
+  blockInsertionIndex: number | undefined
 
   // Actions - Step management
   setSteps: (steps: Step[]) => void
@@ -79,7 +80,7 @@ export interface VisualBuilderState {
 
   // Actions - UI state
   setAddStepSheetOpen: (isOpen: boolean) => void
-  setAddBlockSheetOpen: (isOpen: boolean) => void
+  setAddBlockSheetOpen: (isOpen: boolean, insertAtIndex?: number) => void
 
   // Actions - Initialization
   initialize: (data: { steps: Step[]; outcomes: Outcome[] }) => void
@@ -189,6 +190,7 @@ const initialState = {
   selectedBlockId: undefined as string | undefined,
   isAddStepSheetOpen: false,
   isAddBlockSheetOpen: false,
+  blockInsertionIndex: undefined as number | undefined,
 }
 
 // Helper to get step label based on type and existing steps
@@ -388,7 +390,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
             return { ...step, blocks }
           })
 
-          return { steps, selectedBlockId: block.id, isAddBlockSheetOpen: false }
+          return { steps, selectedBlockId: block.id, isAddBlockSheetOpen: false, blockInsertionIndex: undefined }
         }),
 
       updateBlock: (stepId, blockId, config) =>
@@ -479,7 +481,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
             return { ...outcome, blocks }
           })
 
-          return { outcomes, selectedBlockId: block.id, isAddBlockSheetOpen: false }
+          return { outcomes, selectedBlockId: block.id, isAddBlockSheetOpen: false, blockInsertionIndex: undefined }
         }),
 
       updateOutcomeBlock: (outcomeId, blockId, config) =>
@@ -620,7 +622,10 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 
       // UI state
       setAddStepSheetOpen: (isOpen) => set({ isAddStepSheetOpen: isOpen }),
-      setAddBlockSheetOpen: (isOpen) => set({ isAddBlockSheetOpen: isOpen }),
+      setAddBlockSheetOpen: (isOpen, insertAtIndex) => set({
+        isAddBlockSheetOpen: isOpen,
+        blockInsertionIndex: isOpen ? insertAtIndex : undefined,
+      }),
 
       // Initialization
       initialize: (data) =>

@@ -44,6 +44,7 @@ export function AddBlockSheet() {
   const activeStepId = useVisualBuilderStore((state) => state.activeStepId)
   const selectedOutcomeId = useVisualBuilderStore((state) => state.selectedOutcomeId)
   const steps = useVisualBuilderStore((state) => state.steps)
+  const blockInsertionIndex = useVisualBuilderStore((state) => state.blockInsertionIndex)
 
   // Get actions from store
   const setAddBlockSheetOpen = useVisualBuilderStore((state) => state.setAddBlockSheetOpen)
@@ -58,11 +59,11 @@ export function AddBlockSheet() {
     const newBlock = createBlock(type)
 
     if (isResultStep && selectedOutcomeId) {
-      // Add to outcome
-      addOutcomeBlock(selectedOutcomeId, newBlock)
+      // Add to outcome at specified index
+      addOutcomeBlock(selectedOutcomeId, newBlock, blockInsertionIndex)
     } else if (activeStepId) {
-      // Add to step
-      addBlock(activeStepId, newBlock)
+      // Add to step at specified index
+      addBlock(activeStepId, newBlock, blockInsertionIndex)
     }
 
     setAddBlockSheetOpen(false)

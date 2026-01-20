@@ -61,10 +61,8 @@ export function StepPreview() {
 
   // Handle block insertion
   const handleInsertBlock = (index: number) => {
-    // Open the add block sheet - the sheet will handle the actual insertion
-    // We store the index in a way the sheet can access it
-    // For now, we just open the sheet
-    setAddBlockSheetOpen(true)
+    // Open the add block sheet with the insertion index
+    setAddBlockSheetOpen(true, index)
   }
 
   // Handle block deletion

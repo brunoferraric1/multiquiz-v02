@@ -16,10 +16,10 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
   const { type, url, alt } = config as MediaConfig
 
   if (!url) {
-    // Placeholder state
+    // Placeholder state - no background to allow parent hover effects to show
     return (
       <div className={cn('p-4', !enabled && 'opacity-50')}>
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 py-8">
+        <div className="flex flex-col items-center justify-center py-8">
           {type === 'video' ? (
             <Video className="w-8 h-8 text-muted-foreground/50" />
           ) : (

@@ -39,6 +39,19 @@ interface BlockRendererProps {
  * based on the block type. It handles selection state and click events.
  */
 export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRendererProps) {
+  // Check if media block has no content (show placeholder styling)
+  const isEmptyMedia = block.type === 'media' && !(block.config as MediaConfig).url
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onDelete?.()
+  }
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onClick?.()
+  }
+
   // Render the appropriate block component based on type
   const renderBlockContent = () => {
     switch (block.type) {
@@ -74,8 +87,10 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRen
         data-block-type={block.type}
         data-block-enabled="false"
         className={cn(
-          'relative rounded-lg border border-dashed border-muted-foreground/30 transition-all cursor-pointer',
-          isSelected && 'ring-2 ring-primary border-primary/30'
+          'relative rounded-lg border border-dashed transition-all cursor-pointer group',
+          isSelected
+            ? 'ring-2 ring-primary border-primary/30'
+            : 'border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/20'
         )}
         onClick={onClick}
         role="button"
@@ -87,19 +102,34 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRen
           }
         }}
       >
+        {/* Hover action buttons for disabled blocks too */}
+        <div
+          className={cn(
+            'absolute -top-2 -right-2 flex items-center gap-1 z-10',
+            'opacity-0 group-hover:opacity-100 transition-opacity',
+            isSelected && 'opacity-100'
+          )}
+        >
+          <button
+            onClick={handleEdit}
+            className="p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+            aria-label="Editar bloco"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          {onDelete && (
+            <button
+              onClick={handleDelete}
+              className="p-1.5 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors shadow-sm"
+              aria-label="Excluir bloco"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
         {renderBlockContent()}
       </div>
     )
-  }
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onDelete?.()
-  }
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onClick?.()
   }
 
   return (
@@ -111,7 +141,9 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRen
         'relative rounded-lg border transition-all cursor-pointer group',
         isSelected
           ? 'ring-2 ring-primary border-primary bg-primary/5'
-          : 'border-transparent hover:border-muted-foreground/50 hover:bg-muted/20'
+          : isEmptyMedia
+            ? 'border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/20'
+            : 'border-transparent hover:border-muted-foreground/50 hover:bg-muted/20'
       )}
       onClick={onClick}
       role="button"
