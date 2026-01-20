@@ -10,6 +10,29 @@ interface MediaBlockPreviewProps {
 }
 
 /**
+ * Extract YouTube video ID from various URL formats
+ */
+function getYouTubeVideoId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/,
+    /youtube\.com\/shorts\/([^&\s?]+)/,
+  ]
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match) return match[1]
+  }
+  return null
+}
+
+/**
+ * Extract Vimeo video ID from URL
+ */
+function getVimeoVideoId(url: string): string | null {
+  const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
+  return match ? match[1] : null
+}
+
+/**
  * MediaBlockPreview - Renders media block (image or video)
  */
 export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
@@ -34,12 +57,49 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
   }
 
   if (type === 'video') {
+    // Check for YouTube
+    const youtubeId = getYouTubeVideoId(url)
+    if (youtubeId) {
+      return (
+        <div className={cn('p-4', !enabled && 'opacity-50')}>
+          <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeId}`}
+              title="YouTube video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      )
+    }
+
+    // Check for Vimeo
+    const vimeoId = getVimeoVideoId(url)
+    if (vimeoId) {
+      return (
+        <div className={cn('p-4', !enabled && 'opacity-50')}>
+          <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+            <iframe
+              src={`https://player.vimeo.com/video/${vimeoId}`}
+              title="Vimeo video"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      )
+    }
+
+    // Fallback to native video for direct video URLs
     return (
       <div className={cn('p-4', !enabled && 'opacity-50')}>
         <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
           <video
             src={url}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain bg-black"
             controls
           />
         </div>

@@ -161,15 +161,77 @@ function TextBlock({ config }: { config: TextConfig }) {
   );
 }
 
+/**
+ * Extract YouTube video ID from various URL formats
+ */
+function getYouTubeVideoId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/,
+    /youtube\.com\/shorts\/([^&\s?]+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+/**
+ * Extract Vimeo video ID from URL
+ */
+function getVimeoVideoId(url: string): string | null {
+  const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  return match ? match[1] : null;
+}
+
 function MediaBlock({ config }: { config: MediaConfig }) {
   const { type, url, alt } = config;
 
   if (!url) return null;
 
   if (type === 'video') {
+    // Check for YouTube
+    const youtubeId = getYouTubeVideoId(url);
+    if (youtubeId) {
+      return (
+        <div className="w-full rounded-xl overflow-hidden">
+          <div className="aspect-video">
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeId}`}
+              title="YouTube video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Check for Vimeo
+    const vimeoId = getVimeoVideoId(url);
+    if (vimeoId) {
+      return (
+        <div className="w-full rounded-xl overflow-hidden">
+          <div className="aspect-video">
+            <iframe
+              src={`https://player.vimeo.com/video/${vimeoId}`}
+              title="Vimeo video"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Fallback to native video for direct video URLs (mp4, webm, etc.)
     return (
       <div className="w-full rounded-xl overflow-hidden">
-        <video src={url} controls className="w-full" />
+        <div className="aspect-video">
+          <video src={url} controls className="w-full h-full object-contain bg-black" />
+        </div>
       </div>
     );
   }
