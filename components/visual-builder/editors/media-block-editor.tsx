@@ -22,6 +22,9 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
       // Convert file to data URL for preview
       const reader = new FileReader()
       reader.onloadend = () => {
+        // Note: We only update config here. The parent component (BuilderPropertiesPanel)
+        // should auto-enable the block when media is uploaded.
+        // We signal this by calling onAutoEnable if provided.
         onChange({ url: reader.result as string })
       }
       reader.readAsDataURL(file)

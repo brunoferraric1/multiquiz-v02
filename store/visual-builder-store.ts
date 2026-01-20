@@ -400,11 +400,24 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 
             return {
               ...step,
-              blocks: (step.blocks || []).map((block) =>
-                block.id === blockId
-                  ? { ...block, config: { ...block.config, ...config } as BlockConfig }
-                  : block
-              ),
+              blocks: (step.blocks || []).map((block) => {
+                if (block.id !== blockId) return block
+
+                const updatedConfig = { ...block.config, ...config } as BlockConfig
+
+                // Auto-enable media blocks when a URL is added
+                const shouldAutoEnable =
+                  block.type === 'media' &&
+                  !block.enabled &&
+                  'url' in config &&
+                  (config as { url?: string }).url
+
+                return {
+                  ...block,
+                  config: updatedConfig,
+                  ...(shouldAutoEnable ? { enabled: true } : {}),
+                }
+              }),
             }
           }),
         })),
@@ -491,11 +504,24 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 
             return {
               ...outcome,
-              blocks: (outcome.blocks || []).map((block) =>
-                block.id === blockId
-                  ? { ...block, config: { ...block.config, ...config } as BlockConfig }
-                  : block
-              ),
+              blocks: (outcome.blocks || []).map((block) => {
+                if (block.id !== blockId) return block
+
+                const updatedConfig = { ...block.config, ...config } as BlockConfig
+
+                // Auto-enable media blocks when a URL is added
+                const shouldAutoEnable =
+                  block.type === 'media' &&
+                  !block.enabled &&
+                  'url' in config &&
+                  (config as { url?: string }).url
+
+                return {
+                  ...block,
+                  config: updatedConfig,
+                  ...(shouldAutoEnable ? { enabled: true } : {}),
+                }
+              }),
             }
           }),
         })),

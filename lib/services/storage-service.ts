@@ -155,3 +155,23 @@ export function getQuestionImagePath(quizId: string, questionId: string): string
 export function getBrandKitLogoPath(userId: string): string {
     return `users/${userId}/brand-kit/logo`;
 }
+
+/**
+ * Generate storage path for visual builder block media
+ * @param quizId - The quiz ID
+ * @param stepId - The step ID containing the block
+ * @param blockId - The block ID
+ */
+export function getBlockMediaPath(quizId: string, stepId: string, blockId: string): string {
+    return `quizzes/${quizId}/blocks/${stepId}/${blockId}`;
+}
+
+/**
+ * Generate storage path for visual builder outcome block media
+ * @param quizId - The quiz ID
+ * @param outcomeId - The outcome ID containing the block
+ * @param blockId - The block ID
+ */
+export function getOutcomeBlockMediaPath(quizId: string, outcomeId: string, blockId: string): string {
+    return `quizzes/${quizId}/outcome-blocks/${outcomeId}/${blockId}`;
+}

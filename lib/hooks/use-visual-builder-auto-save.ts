@@ -5,58 +5,108 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useVisualBuilderStore, Step, Outcome } from '@/store/visual-builder-store'
 import { QuizService } from '@/lib/services/quiz-service'
 import { visualBuilderToQuiz } from '@/lib/utils/visual-builder-converters'
+import {
+  isBase64DataUrl,
+  migrateBase64ToStorage,
+  getBlockMediaPath,
+  getOutcomeBlockMediaPath,
+} from '@/lib/services/storage-service'
 import type { QuizDraft } from '@/types'
 import type { Block, MediaConfig } from '@/types/blocks'
 
 /**
- * Check if a URL is a base64 data URL (which can be very large)
+ * Migrate base64 images in blocks to Firebase Storage
+ * Returns new blocks array with Storage URLs instead of base64
  */
-function isBase64DataUrl(url: string | undefined): boolean {
-  if (!url) return false
-  return url.startsWith('data:')
-}
+async function migrateBlockImages(
+  blocks: Block[],
+  quizId: string,
+  containerId: string,
+  getPath: (quizId: string, containerId: string, blockId: string) => string
+): Promise<Block[]> {
+  const migratedBlocks: Block[] = []
 
-/**
- * Strip base64 data URLs from blocks to reduce size
- * Images should be uploaded to Firebase Storage before saving
- */
-function stripBase64FromBlocks(blocks: Block[]): Block[] {
-  return blocks.map((block) => {
+  for (const block of blocks) {
     if (block.type === 'media') {
       const config = block.config as MediaConfig
       if (isBase64DataUrl(config.url)) {
-        // Remove base64 URL - image should be uploaded to Storage first
-        return {
-          ...block,
-          config: {
-            ...config,
-            url: '', // Clear the base64 URL
-          },
+        try {
+          // Upload to Firebase Storage and get URL
+          const storagePath = getPath(quizId, containerId, block.id)
+          const downloadUrl = await migrateBase64ToStorage(config.url!, storagePath)
+          console.log('[VBAutoSave] Migrated block image to Storage:', block.id)
+
+          migratedBlocks.push({
+            ...block,
+            config: {
+              ...config,
+              url: downloadUrl,
+            },
+          })
+        } catch (err) {
+          console.error('[VBAutoSave] Failed to migrate block image:', block.id, err)
+          // Keep the block but clear the base64 URL (too large for Firestore)
+          migratedBlocks.push({
+            ...block,
+            config: {
+              ...config,
+              url: '',
+            },
+          })
         }
+      } else {
+        migratedBlocks.push(block)
       }
+    } else {
+      migratedBlocks.push(block)
     }
-    return block
-  })
+  }
+
+  return migratedBlocks
 }
 
 /**
- * Strip base64 data URLs from steps
+ * Migrate base64 images in steps to Firebase Storage
  */
-function stripBase64FromSteps(steps: Step[]): Step[] {
-  return steps.map((step) => ({
-    ...step,
-    blocks: stripBase64FromBlocks(step.blocks),
-  }))
+async function migrateStepImages(steps: Step[], quizId: string): Promise<Step[]> {
+  const migratedSteps: Step[] = []
+
+  for (const step of steps) {
+    const migratedBlocks = await migrateBlockImages(
+      step.blocks,
+      quizId,
+      step.id,
+      getBlockMediaPath
+    )
+    migratedSteps.push({
+      ...step,
+      blocks: migratedBlocks,
+    })
+  }
+
+  return migratedSteps
 }
 
 /**
- * Strip base64 data URLs from outcomes
+ * Migrate base64 images in outcomes to Firebase Storage
  */
-function stripBase64FromOutcomes(outcomes: Outcome[]): Outcome[] {
-  return outcomes.map((outcome) => ({
-    ...outcome,
-    blocks: stripBase64FromBlocks(outcome.blocks),
-  }))
+async function migrateOutcomeImages(outcomes: Outcome[], quizId: string): Promise<Outcome[]> {
+  const migratedOutcomes: Outcome[] = []
+
+  for (const outcome of outcomes) {
+    const migratedBlocks = await migrateBlockImages(
+      outcome.blocks,
+      quizId,
+      outcome.id,
+      getOutcomeBlockMediaPath
+    )
+    migratedOutcomes.push({
+      ...outcome,
+      blocks: migratedBlocks,
+    })
+  }
+
+  return migratedOutcomes
 }
 
 interface UseVisualBuilderAutoSaveOptions {
@@ -121,6 +171,10 @@ export function useVisualBuilderAutoSave({
   const steps = useVisualBuilderStore((state) => state.steps)
   const outcomes = useVisualBuilderStore((state) => state.outcomes)
 
+  // Store actions to update after migration
+  const setSteps = useVisualBuilderStore((state) => state.setSteps)
+  const setOutcomes = useVisualBuilderStore((state) => state.setOutcomes)
+
   // Refs for tracking state
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastSavedRef = useRef<string>('')
@@ -182,8 +236,49 @@ export function useVisualBuilderAutoSave({
       isSavingRef.current = true
       console.log('[VBAutoSave] Saving quiz...')
 
-      // Convert visual builder data to quiz format
-      const vbData = { steps, outcomes }
+      // Check if there are any base64 images that need migration
+      const hasBase64Images = [...steps, ...outcomes].some((item) =>
+        item.blocks?.some((block) =>
+          block.type === 'media' && isBase64DataUrl((block.config as any)?.url)
+        )
+      )
+
+      // For new quizzes with images, we need to save a skeleton first
+      // so that Storage rules can verify quiz ownership
+      if (isNewQuiz && hasBase64Images) {
+        console.log('[VBAutoSave] New quiz with images - saving skeleton first...')
+        const baseQuiz = existingQuizRef.current || {}
+        const skeletonQuiz: QuizDraft = {
+          id: quizId,
+          title: baseQuiz.title || 'Sem título',
+          description: baseQuiz.description || '',
+          questions: [],
+          outcomes: [],
+          ownerId: userId,
+          updatedAt: Date.now(),
+          createdAt: baseQuiz.createdAt || Date.now(),
+          isPublished: false,
+          stats: { views: 0, starts: 0, completions: 0 },
+        }
+        await QuizService.saveQuiz(skeletonQuiz, userId, { isNewQuiz: true })
+        console.log('[VBAutoSave] Skeleton saved, now migrating images...')
+      }
+
+      // Migrate base64 images to Firebase Storage
+      // This converts data URLs to storage URLs and avoids Firestore's 1MB limit
+      console.log('[VBAutoSave] Migrating images to Storage...')
+      const migratedSteps = await migrateStepImages(
+        JSON.parse(JSON.stringify(steps)),
+        quizId
+      )
+      const migratedOutcomes = await migrateOutcomeImages(
+        JSON.parse(JSON.stringify(outcomes)),
+        quizId
+      )
+      console.log('[VBAutoSave] Image migration complete')
+
+      // Convert visual builder data to quiz format (for legacy compatibility)
+      const vbData = { steps: migratedSteps, outcomes: migratedOutcomes }
       const converted = visualBuilderToQuiz(vbData)
 
       // Merge with existing quiz data to preserve metadata
@@ -213,21 +308,38 @@ export function useVisualBuilderAutoSave({
         publishedVersion: baseQuiz.publishedVersion ?? null,
         publishedAt: baseQuiz.publishedAt ?? null,
         // Store visual builder data for production rendering
-        // Strip base64 data URLs to avoid Firestore's 1MB field limit
+        // Images have been migrated to Storage, so URLs are now storage URLs
         visualBuilderData: {
           schemaVersion: 1,
-          steps: stripBase64FromSteps(JSON.parse(JSON.stringify(steps))),
-          outcomes: stripBase64FromOutcomes(JSON.parse(JSON.stringify(outcomes))),
+          steps: migratedSteps,
+          outcomes: migratedOutcomes,
         },
       }
 
-      await QuizService.saveQuiz(quizToSave, userId, { isNewQuiz })
+      // If we saved a skeleton earlier (for new quiz with images), this is no longer a new quiz
+      const effectiveIsNewQuiz = isNewQuiz && !hasBase64Images
+      await QuizService.saveQuiz(quizToSave, userId, { isNewQuiz: effectiveIsNewQuiz })
 
       // Invalidate the quizzes list (for dashboard)
       queryClient.invalidateQueries({ queryKey: ['quizzes', userId] })
 
-      // Update the last saved snapshot
-      lastSavedRef.current = currentSnapshot
+      // Check if any images were migrated (compare URLs)
+      const hadMigration = JSON.stringify(steps) !== JSON.stringify(migratedSteps) ||
+        JSON.stringify(outcomes) !== JSON.stringify(migratedOutcomes)
+
+      if (hadMigration) {
+        console.log('[VBAutoSave] Images were migrated, updating store with Storage URLs')
+        // Update the store with migrated data so base64 URLs are replaced with Storage URLs
+        // This prevents re-uploading the same images on subsequent saves
+        setSteps(migratedSteps)
+        setOutcomes(migratedOutcomes)
+      }
+
+      // Update the last saved snapshot with MIGRATED data
+      lastSavedRef.current = JSON.stringify({
+        steps: migratedSteps,
+        outcomes: migratedOutcomes,
+      })
 
       console.log('[VBAutoSave] Save completed successfully')
       onSaveComplete?.()
@@ -250,7 +362,7 @@ export function useVisualBuilderAutoSave({
     } finally {
       isSavingRef.current = false
     }
-  }, [steps, outcomes, quizId, userId, isNewQuiz, queryClient, onSaveComplete, onSaveError, onLimitError])
+  }, [steps, outcomes, quizId, userId, isNewQuiz, queryClient, setSteps, setOutcomes, onSaveComplete, onSaveError, onLimitError])
 
   // Keep saveToFirestore ref updated
   const saveToFirestoreRef = useRef(saveToFirestore)

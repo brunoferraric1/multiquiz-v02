@@ -459,7 +459,12 @@ export class QuizService {
 
       return baseQuiz;
     } catch (error) {
-      console.error('Error fetching quiz:', error);
+      // Don't log permission errors - they're expected when checking if a quiz exists
+      const isPermissionError = (error as any)?.code === 'permission-denied' ||
+        (error as Error)?.message?.includes('permission');
+      if (!isPermissionError) {
+        console.error('Error fetching quiz:', error);
+      }
       throw error;
     }
   }
