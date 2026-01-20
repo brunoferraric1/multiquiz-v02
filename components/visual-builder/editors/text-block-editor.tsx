@@ -40,6 +40,7 @@ export function TextBlockEditor({ config, onChange }: TextBlockEditorProps) {
       Underline,
       TextAlign.configure({
         types: ['paragraph'],
+        defaultAlignment: 'center',
       }),
     ],
     content: config.content || '',

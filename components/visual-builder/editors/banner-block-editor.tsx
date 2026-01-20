@@ -76,21 +76,6 @@ export function BannerBlockEditor({ config, onChange }: BannerBlockEditorProps) 
           rows={2}
         />
       </div>
-
-      {/* Preview */}
-      {config.text && (
-        <div className="space-y-2">
-          <Label>Prévia</Label>
-          <div className={cn(
-            'p-3 rounded-lg border flex items-center gap-2',
-            urgencyConfig[config.urgency].color
-          )}>
-            {config.emoji && <span>{config.emoji}</span>}
-            {urgencyConfig[config.urgency].icon}
-            <span className="text-sm">{config.text}</span>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

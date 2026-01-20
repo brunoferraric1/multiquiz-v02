@@ -39,12 +39,20 @@ export function BannerBlockPreview({ config, enabled }: BannerBlockPreviewProps)
   const style = urgencyStyles[urgency] || urgencyStyles.info
   const Icon = style.icon
 
+  // Render icon or emoji
+  const renderIcon = () => {
+    if (emoji) {
+      return <span className="text-lg shrink-0">{emoji}</span>
+    }
+    return <Icon className={cn('w-5 h-5 shrink-0', style.text)} />
+  }
+
   if (!text) {
     // Placeholder state
     return (
       <div className={cn('p-4', !enabled && 'opacity-50')}>
-        <div className={cn('flex items-start gap-3 rounded-lg border p-3', style.bg, style.border)}>
-          <Icon className={cn('w-5 h-5 mt-0.5 shrink-0', style.text)} />
+        <div className={cn('flex items-center justify-center gap-3 rounded-lg border p-3', style.bg, style.border)}>
+          {renderIcon()}
           <p className={cn('text-sm', style.text, 'opacity-50')}>
             Texto do banner...
           </p>
@@ -55,12 +63,8 @@ export function BannerBlockPreview({ config, enabled }: BannerBlockPreviewProps)
 
   return (
     <div className={cn('p-4', !enabled && 'opacity-50')}>
-      <div className={cn('flex items-start gap-3 rounded-lg border p-3', style.bg, style.border)}>
-        {emoji ? (
-          <span className="text-lg shrink-0">{emoji}</span>
-        ) : (
-          <Icon className={cn('w-5 h-5 mt-0.5 shrink-0', style.text)} />
-        )}
+      <div className={cn('flex items-center justify-center gap-3 rounded-lg border p-3', style.bg, style.border)}>
+        {renderIcon()}
         <p className={cn('text-sm', style.text)}>{text}</p>
       </div>
     </div>
