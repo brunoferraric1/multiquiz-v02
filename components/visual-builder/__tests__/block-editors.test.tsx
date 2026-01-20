@@ -346,14 +346,6 @@ describe('PriceBlockEditor', () => {
     selectionType: 'single' as const,
   }
 
-  it('renders selection type toggle', () => {
-    render(<PriceBlockEditor config={defaultConfig} onChange={() => {}} />)
-
-    expect(screen.getByText(/tipo de seleção/i)).toBeInTheDocument()
-    expect(screen.getByText('Única')).toBeInTheDocument()
-    expect(screen.getByText('Múltipla')).toBeInTheDocument()
-  })
-
   it('renders price items', () => {
     render(<PriceBlockEditor config={defaultConfig} onChange={() => {}} />)
 

@@ -23,9 +23,8 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
-import { ToggleGroup } from '@/components/ui/toggle-group'
 import { PriceConfig, PriceItem } from '@/types/blocks'
-import { Trash2, GripVertical, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trash2, GripVertical, ChevronDown, ChevronUp, Star } from 'lucide-react'
 
 interface PriceBlockEditorProps {
   config: PriceConfig
@@ -91,10 +90,8 @@ function SortablePriceItem({
         <span className="text-sm text-muted-foreground">
           {price.value || 'R$ 0,00'}
         </span>
-        {price.showHighlight && price.highlightText && (
-          <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
-            {price.highlightText}
-          </span>
+        {price.showHighlight && (
+          <Star className="w-4 h-4 text-primary fill-primary" />
         )}
         {isExpanded ? (
           <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -289,20 +286,6 @@ export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
 
   return (
     <div className="space-y-4" data-testid="price-block-editor">
-      {/* Selection type */}
-      <div className="space-y-2">
-        <Label>Tipo de seleção</Label>
-        <ToggleGroup
-          options={[
-            { value: 'single', label: 'Única' },
-            { value: 'multiple', label: 'Múltipla' },
-          ]}
-          value={config.selectionType || 'single'}
-          onChange={(selectionType) => onChange({ selectionType })}
-          aria-label="Tipo de seleção"
-        />
-      </div>
-
       {/* Price items list */}
       <div className="space-y-2">
         <Label>Opções de preço</Label>

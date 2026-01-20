@@ -66,8 +66,9 @@ function PriceCard({ price, selectionType, showSelection }: PriceCardProps) {
           {/* Original price with "de X por:" format */}
           {hasOriginalPrice && (
             <p className="text-sm text-muted-foreground">
+              <span>de </span>
               <span className="line-through">{price.originalPrice}</span>
-              <span className="ml-1">por:</span>
+              <span> por:</span>
             </p>
           )}
 

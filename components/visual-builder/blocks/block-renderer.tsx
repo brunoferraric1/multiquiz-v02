@@ -65,7 +65,8 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRen
     }
   }
 
-  // Don't render disabled blocks (they show as placeholder)
+  // For disabled blocks, show the actual content with reduced opacity
+  // This allows blocks like media to show their proper placeholder
   if (!block.enabled) {
     return (
       <div
@@ -73,7 +74,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRen
         data-block-type={block.type}
         data-block-enabled="false"
         className={cn(
-          'relative rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 transition-all cursor-pointer',
+          'relative rounded-lg border border-dashed border-muted-foreground/30 transition-all cursor-pointer',
           isSelected && 'ring-2 ring-primary border-primary/30'
         )}
         onClick={onClick}
@@ -86,9 +87,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRen
           }
         }}
       >
-        <div className="p-3 text-center text-sm text-muted-foreground/60">
-          {getBlockLabel(block.type)} (desativado)
-        </div>
+        {renderBlockContent()}
       </div>
     )
   }

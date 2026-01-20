@@ -43,7 +43,7 @@ describe('BlockRenderer', () => {
 
       render(<BlockRenderer block={block} />)
 
-      expect(screen.getByText('Adicionar imagem')).toBeInTheDocument()
+      expect(screen.getByText('Adicionar mídia')).toBeInTheDocument()
     })
 
     it('renders options block with items', () => {
@@ -169,7 +169,8 @@ describe('BlockRenderer', () => {
 
       const blockElement = screen.getByTestId('block-block-1')
       expect(blockElement).toHaveAttribute('data-block-enabled', 'false')
-      expect(screen.getByText(/desativado/i)).toBeInTheDocument()
+      // Disabled blocks still render their content but with reduced opacity
+      expect(screen.getByText('Test Title')).toBeInTheDocument()
     })
   })
 

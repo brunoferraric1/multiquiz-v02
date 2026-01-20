@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupOption } from '@/components/ui/toggle-group'
 import { ButtonConfig, ButtonAction } from '@/types/blocks'
-import { ArrowRight, Link, DollarSign } from 'lucide-react'
+import { ArrowRight, Link } from 'lucide-react'
 
 interface ButtonBlockEditorProps {
   config: ButtonConfig
@@ -42,7 +42,7 @@ export function ButtonBlockEditor({
       options.push({ value: 'url', label: 'Abrir URL', icon: <Link /> })
     }
     if (!disableSelectedPrice) {
-      options.push({ value: 'selected_price', label: 'Preço selecionado', icon: <DollarSign /> })
+      options.push({ value: 'selected_price', label: 'Preço selecionado' })
     }
     return options
   }, [disableNextStep, disableUrl, disableSelectedPrice])

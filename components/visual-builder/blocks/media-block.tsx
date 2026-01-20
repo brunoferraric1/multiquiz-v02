@@ -26,7 +26,7 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
             <Image className="w-8 h-8 text-muted-foreground/50" />
           )}
           <span className="mt-2 text-sm text-muted-foreground/50">
-            {type === 'video' ? 'Adicionar vídeo' : 'Adicionar imagem'}
+            Adicionar mídia
           </span>
         </div>
       </div>

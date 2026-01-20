@@ -2,7 +2,7 @@
 
 import { ButtonConfig } from '@/types/blocks'
 import { cn } from '@/lib/utils'
-import { ArrowRight, ExternalLink, DollarSign } from 'lucide-react'
+import { ArrowRight, ExternalLink } from 'lucide-react'
 
 interface ButtonBlockPreviewProps {
   config: ButtonConfig
@@ -19,8 +19,6 @@ export function ButtonBlockPreview({ config, enabled }: ButtonBlockPreviewProps)
     switch (action) {
       case 'url':
         return <ExternalLink className="w-4 h-4" />
-      case 'selected_price':
-        return <DollarSign className="w-4 h-4" />
       default:
         return <ArrowRight className="w-4 h-4" />
     }
