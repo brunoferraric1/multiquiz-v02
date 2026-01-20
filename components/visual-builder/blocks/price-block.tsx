@@ -12,10 +12,12 @@ interface PriceBlockPreviewProps {
 interface PriceCardProps {
   price: PriceItem
   selectionType: 'single' | 'multiple'
+  showSelection: boolean
 }
 
-function PriceCard({ price, selectionType }: PriceCardProps) {
-  const hasHighlight = !!price.highlightText
+function PriceCard({ price, selectionType, showSelection }: PriceCardProps) {
+  const hasHighlight = price.showHighlight && !!price.highlightText
+  const hasOriginalPrice = price.showOriginalPrice && !!price.originalPrice
 
   return (
     <div
@@ -40,7 +42,7 @@ function PriceCard({ price, selectionType }: PriceCardProps) {
       <div className="flex items-center justify-between p-4 gap-4">
         {/* Left side: checkbox/radio + title */}
         <div className="flex items-center gap-3 min-w-0">
-          {price.showCheckbox !== false && (
+          {showSelection && (
             <div className="shrink-0">
               {selectionType === 'multiple' ? (
                 <Square className="w-5 h-5 text-muted-foreground" />
@@ -61,10 +63,11 @@ function PriceCard({ price, selectionType }: PriceCardProps) {
             <p className="text-xs text-muted-foreground">{price.prefix}</p>
           )}
 
-          {/* Original price (slashed) */}
-          {price.originalPrice && (
-            <p className="text-sm text-muted-foreground line-through">
-              {price.originalPrice}
+          {/* Original price with "de X por:" format */}
+          {hasOriginalPrice && (
+            <p className="text-sm text-muted-foreground">
+              <span className="line-through">{price.originalPrice}</span>
+              <span className="ml-1">por:</span>
             </p>
           )}
 
@@ -90,6 +93,8 @@ function PriceCard({ price, selectionType }: PriceCardProps) {
 export function PriceBlockPreview({ config, enabled }: PriceBlockPreviewProps) {
   const items = config.items || []
   const selectionType = config.selectionType || 'single'
+  // Auto show selection only when there are 2+ items
+  const showSelection = items.length > 1
 
   if (items.length === 0) {
     // Placeholder state
@@ -121,6 +126,7 @@ export function PriceBlockPreview({ config, enabled }: PriceBlockPreviewProps) {
             key={price.id}
             price={price}
             selectionType={selectionType}
+            showSelection={showSelection}
           />
         ))}
       </div>

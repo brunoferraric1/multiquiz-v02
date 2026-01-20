@@ -69,14 +69,15 @@ export interface FieldsConfig {
 // Price item for price block (supports multiple prices)
 export interface PriceItem {
   id: string
-  title: string           // Product/plan name (e.g., "Plano PRO")
-  prefix?: string         // Text above price (e.g., "10% off")
-  value: string           // Main price (e.g., "R$ 89,90")
-  suffix?: string         // Text below price (e.g., "à vista")
-  originalPrice?: string  // Slashed/strikethrough price (e.g., "R$ 129,90")
-  highlightText?: string  // Badge text (e.g., "MAIS POPULAR")
-  showCheckbox?: boolean  // Show selection checkbox/radio
-  redirectUrl?: string    // URL to redirect when clicked
+  title: string              // Product/plan name (e.g., "Plano PRO")
+  prefix?: string            // Text above price (e.g., "10% off")
+  value: string              // Main price (e.g., "R$ 89,90")
+  suffix?: string            // Text below price (e.g., "à vista")
+  originalPrice?: string     // Slashed price value (e.g., "R$ 129,90")
+  showOriginalPrice?: boolean // Toggle to enable "de X por" display
+  highlightText?: string     // Badge text (e.g., "MAIS POPULAR")
+  showHighlight?: boolean    // Toggle to enable highlight banner
+  redirectUrl?: string       // URL to redirect when clicked
 }
 
 // Price block configuration
@@ -86,7 +87,7 @@ export interface PriceConfig {
 }
 
 // Button action types
-export type ButtonAction = 'url' | 'next_step'
+export type ButtonAction = 'url' | 'next_step' | 'selected_price'
 
 // Button block configuration
 export interface ButtonConfig {
@@ -174,7 +175,6 @@ export function getDefaultBlockConfig(type: BlockType): BlockConfig {
             title: 'Plano',
             value: 'R$ 99,90',
             suffix: 'à vista',
-            showCheckbox: true,
           },
         ],
         selectionType: 'single',

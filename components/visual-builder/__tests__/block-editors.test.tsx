@@ -393,11 +393,12 @@ describe('ButtonBlockEditor', () => {
     expect(screen.getByLabelText(/texto do botão/i)).toBeInTheDocument()
   })
 
-  it('renders action type buttons when both are enabled', () => {
+  it('renders action type buttons when all are enabled', () => {
     render(<ButtonBlockEditor config={defaultConfig} onChange={() => {}} />)
 
     expect(screen.getByTestId('toggle-next_step')).toBeInTheDocument()
     expect(screen.getByTestId('toggle-url')).toBeInTheDocument()
+    expect(screen.getByTestId('toggle-selected_price')).toBeInTheDocument()
   })
 
   it('hides toggle group when only url action is available', () => {
@@ -406,12 +407,14 @@ describe('ButtonBlockEditor', () => {
         config={defaultConfig}
         onChange={() => {}}
         disableNextStep
+        disableSelectedPrice
       />
     )
 
     // Toggle group hidden when only one option - no need to choose
     expect(screen.queryByTestId('toggle-next_step')).not.toBeInTheDocument()
     expect(screen.queryByTestId('toggle-url')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('toggle-selected_price')).not.toBeInTheDocument()
   })
 
   it('hides toggle group when only next_step action is available', () => {
@@ -420,12 +423,14 @@ describe('ButtonBlockEditor', () => {
         config={defaultConfig}
         onChange={() => {}}
         disableUrl
+        disableSelectedPrice
       />
     )
 
     // Toggle group hidden when only one option - no need to choose
     expect(screen.queryByTestId('toggle-next_step')).not.toBeInTheDocument()
     expect(screen.queryByTestId('toggle-url')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('toggle-selected_price')).not.toBeInTheDocument()
   })
 
   it('shows URL input when action is url', () => {

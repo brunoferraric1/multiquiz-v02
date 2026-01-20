@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupOption } from '@/components/ui/toggle-group'
 import { ButtonConfig, ButtonAction } from '@/types/blocks'
-import { ArrowRight, Link } from 'lucide-react'
+import { ArrowRight, Link, DollarSign } from 'lucide-react'
 
 interface ButtonBlockEditorProps {
   config: ButtonConfig
@@ -14,6 +14,8 @@ interface ButtonBlockEditorProps {
   disableUrl?: boolean
   /** Whether next_step action is disabled (e.g., on result step) */
   disableNextStep?: boolean
+  /** Whether selected_price action is disabled (e.g., when no price block exists) */
+  disableSelectedPrice?: boolean
 }
 
 export function ButtonBlockEditor({
@@ -21,11 +23,13 @@ export function ButtonBlockEditor({
   onChange,
   disableUrl = false,
   disableNextStep = false,
+  disableSelectedPrice = false,
 }: ButtonBlockEditorProps) {
   // Auto-switch action if current action is disabled
   const effectiveAction: ButtonAction =
     (config.action === 'url' && disableUrl) ? 'next_step' :
     (config.action === 'next_step' && disableNextStep) ? 'url' :
+    (config.action === 'selected_price' && disableSelectedPrice) ? 'next_step' :
     config.action
 
   // Build options based on what's enabled
@@ -37,8 +41,11 @@ export function ButtonBlockEditor({
     if (!disableUrl) {
       options.push({ value: 'url', label: 'Abrir URL', icon: <Link /> })
     }
+    if (!disableSelectedPrice) {
+      options.push({ value: 'selected_price', label: 'Preço selecionado', icon: <DollarSign /> })
+    }
     return options
-  }, [disableNextStep, disableUrl])
+  }, [disableNextStep, disableUrl, disableSelectedPrice])
 
   return (
     <div className="space-y-4" data-testid="button-block-editor">
@@ -84,6 +91,11 @@ export function ButtonBlockEditor({
       {effectiveAction === 'next_step' && (
         <p className="text-xs text-muted-foreground">
           O botão avançará para a próxima etapa do quiz.
+        </p>
+      )}
+      {effectiveAction === 'selected_price' && (
+        <p className="text-xs text-muted-foreground">
+          Redireciona para a URL do preço selecionado pelo usuário.
         </p>
       )}
     </div>

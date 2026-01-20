@@ -2,7 +2,7 @@
 
 import { ButtonConfig } from '@/types/blocks'
 import { cn } from '@/lib/utils'
-import { ArrowRight, ExternalLink } from 'lucide-react'
+import { ArrowRight, ExternalLink, DollarSign } from 'lucide-react'
 
 interface ButtonBlockPreviewProps {
   config: ButtonConfig
@@ -15,6 +15,17 @@ interface ButtonBlockPreviewProps {
 export function ButtonBlockPreview({ config, enabled }: ButtonBlockPreviewProps) {
   const { text, action } = config as ButtonConfig
 
+  const getActionIcon = () => {
+    switch (action) {
+      case 'url':
+        return <ExternalLink className="w-4 h-4" />
+      case 'selected_price':
+        return <DollarSign className="w-4 h-4" />
+      default:
+        return <ArrowRight className="w-4 h-4" />
+    }
+  }
+
   return (
     <div className={cn('p-4', !enabled && 'opacity-50')}>
       <button
@@ -23,12 +34,13 @@ export function ButtonBlockPreview({ config, enabled }: ButtonBlockPreviewProps)
         disabled
       >
         {text || 'Botão'}
-        {action === 'url' ? (
-          <ExternalLink className="w-4 h-4" />
-        ) : (
-          <ArrowRight className="w-4 h-4" />
-        )}
+        {getActionIcon()}
       </button>
+      {action === 'selected_price' && (
+        <p className="text-xs text-center text-muted-foreground mt-2">
+          URL dinâmica: redireciona para o preço selecionado
+        </p>
+      )}
     </div>
   )
 }

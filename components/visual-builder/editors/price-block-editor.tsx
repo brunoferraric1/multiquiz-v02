@@ -91,7 +91,7 @@ function SortablePriceItem({
         <span className="text-sm text-muted-foreground">
           {price.value || 'R$ 0,00'}
         </span>
-        {price.highlightText && (
+        {price.showHighlight && price.highlightText && (
           <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
             {price.highlightText}
           </span>
@@ -164,42 +164,55 @@ function SortablePriceItem({
             </div>
           </div>
 
-          {/* Original price (slashed) */}
-          <div className="space-y-2">
-            <Label htmlFor={`price-original-${price.id}`}>Preço original (riscado)</Label>
-            <Input
-              id={`price-original-${price.id}`}
-              value={price.originalPrice || ''}
-              onChange={(e) => onUpdate({ originalPrice: e.target.value })}
-              placeholder="Ex: R$ 129,90"
-            />
-            <p className="text-xs text-muted-foreground">
-              Será exibido riscado acima do preço atual
-            </p>
+          {/* Original price (de/por format) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor={`price-show-original-${price.id}`}>
+                Mostrar preço original (de/por)
+              </Label>
+              <Switch
+                id={`price-show-original-${price.id}`}
+                checked={price.showOriginalPrice ?? false}
+                onCheckedChange={(checked) => onUpdate({ showOriginalPrice: checked })}
+              />
+            </div>
+            {price.showOriginalPrice && (
+              <div className="space-y-2 pl-4 border-l-2 border-muted">
+                <Label htmlFor={`price-original-${price.id}`}>Preço original</Label>
+                <Input
+                  id={`price-original-${price.id}`}
+                  value={price.originalPrice || ''}
+                  onChange={(e) => onUpdate({ originalPrice: e.target.value })}
+                  placeholder="R$ 129,90"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Exibido como &quot;de R$ X por:&quot; acima do preço atual
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Highlight text */}
-          <div className="space-y-2">
-            <Label htmlFor={`price-highlight-${price.id}`}>Texto destaque</Label>
-            <Input
-              id={`price-highlight-${price.id}`}
-              value={price.highlightText || ''}
-              onChange={(e) => onUpdate({ highlightText: e.target.value })}
-              placeholder="Ex: MAIS POPULAR"
-            />
-            <p className="text-xs text-muted-foreground">
-              Aparece como badge no topo do card
-            </p>
-          </div>
-
-          {/* Show checkbox toggle */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor={`price-checkbox-${price.id}`}>Exibir seleção</Label>
-            <Switch
-              id={`price-checkbox-${price.id}`}
-              checked={price.showCheckbox ?? true}
-              onCheckedChange={(checked) => onUpdate({ showCheckbox: checked })}
-            />
+          {/* Highlight toggle with conditional input */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor={`price-show-highlight-${price.id}`}>Destacar</Label>
+              <Switch
+                id={`price-show-highlight-${price.id}`}
+                checked={price.showHighlight ?? false}
+                onCheckedChange={(checked) => onUpdate({ showHighlight: checked })}
+              />
+            </div>
+            {price.showHighlight && (
+              <div className="space-y-2 pl-4 border-l-2 border-muted">
+                <Label htmlFor={`price-highlight-${price.id}`}>Texto do destaque</Label>
+                <Input
+                  id={`price-highlight-${price.id}`}
+                  value={price.highlightText || ''}
+                  onChange={(e) => onUpdate({ highlightText: e.target.value })}
+                  placeholder="MAIS POPULAR"
+                />
+              </div>
+            )}
           </div>
 
           {/* Redirect URL */}
@@ -233,7 +246,6 @@ export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
       id: `price-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       title: '',
       value: '',
-      showCheckbox: true,
     }
 
     onChange({
