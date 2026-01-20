@@ -28,6 +28,8 @@ export function StepPreview() {
   const deleteBlock = useVisualBuilderStore((state) => state.deleteBlock)
   const deleteOutcomeBlock = useVisualBuilderStore((state) => state.deleteOutcomeBlock)
   const setAddBlockSheetOpen = useVisualBuilderStore((state) => state.setAddBlockSheetOpen)
+  const reorderBlocks = useVisualBuilderStore((state) => state.reorderBlocks)
+  const reorderOutcomeBlocks = useVisualBuilderStore((state) => state.reorderOutcomeBlocks)
 
   // Get the active step
   const activeStep = useMemo(
@@ -76,6 +78,17 @@ export function StepPreview() {
     }
   }
 
+  // Handle block reordering
+  const handleReorderBlocks = (fromIndex: number, toIndex: number) => {
+    if (!activeStep) return
+
+    if (activeStep.type === 'result' && selectedOutcomeId) {
+      reorderOutcomeBlocks(selectedOutcomeId, fromIndex, toIndex)
+    } else if (activeStepId) {
+      reorderBlocks(activeStepId, fromIndex, toIndex)
+    }
+  }
+
   // Show empty state if no step is selected
   if (!activeStep) {
     return (
@@ -104,6 +117,7 @@ export function StepPreview() {
         onBlockSelect={handleBlockSelect}
         onDeleteBlock={handleDeleteBlock}
         onInsertBlock={handleInsertBlock}
+        onReorderBlocks={handleReorderBlocks}
       />
     </div>
   )

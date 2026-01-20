@@ -14,7 +14,7 @@ import {
   ListConfig,
 } from '@/types/blocks'
 import { cn } from '@/lib/utils'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, GripVertical } from 'lucide-react'
 import { HeaderBlockPreview } from './header-block'
 import { TextBlockPreview } from './text-block'
 import { MediaBlockPreview } from './media-block'
@@ -30,6 +30,8 @@ interface BlockRendererProps {
   isSelected?: boolean
   onClick?: () => void
   onDelete?: () => void
+  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>
+  isDragging?: boolean
 }
 
 /**
@@ -38,7 +40,7 @@ interface BlockRendererProps {
  * This component acts as a switch to render the appropriate block preview
  * based on the block type. It handles selection state and click events.
  */
-export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRendererProps) {
+export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandleProps, isDragging }: BlockRendererProps) {
   // Check if media block has no content (show placeholder styling)
   const isEmptyMedia = block.type === 'media' && !(block.config as MediaConfig).url
 
@@ -88,6 +90,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRen
         data-block-enabled="false"
         className={cn(
           'relative rounded-lg border border-dashed transition-all cursor-pointer group',
+          isDragging && 'opacity-50',
           isSelected
             ? 'ring-2 ring-primary border-primary/30'
             : 'border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/20'
@@ -102,6 +105,26 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRen
           }
         }}
       >
+        {/* Drag handle - top left */}
+        {dragHandleProps && (
+          <div
+            className={cn(
+              'absolute -top-2 -left-2 z-10',
+              'opacity-0 group-hover:opacity-100 transition-opacity',
+              isSelected && 'opacity-100'
+            )}
+          >
+            <button
+              type="button"
+              className="p-1.5 rounded-md bg-muted-foreground/80 text-background hover:bg-muted-foreground transition-colors shadow-sm cursor-grab active:cursor-grabbing"
+              aria-label="Arrastar bloco"
+              {...dragHandleProps}
+            >
+              <GripVertical className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Hover action buttons for disabled blocks too */}
         <div
           className={cn(
@@ -139,6 +162,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRen
       data-block-enabled="true"
       className={cn(
         'relative rounded-lg border transition-all cursor-pointer group',
+        isDragging && 'opacity-50',
         isSelected
           ? 'ring-2 ring-primary border-primary bg-primary/5'
           : isEmptyMedia
@@ -155,6 +179,26 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete }: BlockRen
         }
       }}
     >
+      {/* Drag handle - top left */}
+      {dragHandleProps && (
+        <div
+          className={cn(
+            'absolute -top-2 -left-2 z-10',
+            'opacity-0 group-hover:opacity-100 transition-opacity',
+            isSelected && 'opacity-100'
+          )}
+        >
+          <button
+            type="button"
+            className="p-1.5 rounded-md bg-muted-foreground/80 text-background hover:bg-muted-foreground transition-colors shadow-sm cursor-grab active:cursor-grabbing"
+            aria-label="Arrastar bloco"
+            {...dragHandleProps}
+          >
+            <GripVertical className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Hover action buttons */}
       <div
         className={cn(

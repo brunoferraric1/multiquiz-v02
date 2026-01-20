@@ -1,7 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useId } from 'react'
 import { useVisualBuilderStore, createOutcome } from '@/store/visual-builder-store'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { BuilderProperties } from './builder-properties'
 import {
   HeaderBlockEditor,
@@ -43,7 +59,9 @@ import {
   AlertTriangle,
   ListChecks,
   Settings,
+  GripVertical,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const blockTypeIcons: Record<BlockType, React.ReactNode> = {
   header: <Heading1 className="w-4 h-4" />,
@@ -57,6 +75,62 @@ const blockTypeIcons: Record<BlockType, React.ReactNode> = {
   list: <ListChecks className="w-4 h-4" />,
 }
 
+// Sortable block item for the sidebar list
+interface SortableBlockItemProps {
+  block: Block
+  isSelected: boolean
+  onClick: () => void
+}
+
+function SortableBlockItem({ block, isSelected, onClick }: SortableBlockItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'group flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors',
+        isDragging && 'opacity-50',
+        isSelected && 'bg-muted'
+      )}
+    >
+      <button
+        onClick={onClick}
+        className="flex-1 flex items-center gap-2 text-left"
+      >
+        <span className="text-muted-foreground">
+          {blockTypeIcons[block.type]}
+        </span>
+        <span className="flex-1 text-sm">
+          {blockTypeLabels[block.type]}
+        </span>
+      </button>
+      <button
+        type="button"
+        className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-muted-foreground/20 transition-all cursor-grab active:cursor-grabbing"
+        aria-label="Arrastar bloco"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="w-4 h-4 text-muted-foreground" />
+      </button>
+    </div>
+  )
+}
+
 interface ConnectedPropertiesPanelProps {
   className?: string
 }
@@ -64,6 +138,26 @@ interface ConnectedPropertiesPanelProps {
 export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanelProps) {
   // Local state for config sheet
   const [isConfigOpen, setIsConfigOpen] = useState(false)
+
+  // DnD state to avoid hydration mismatch
+  const dndId = useId()
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   // Read state from store
   const steps = useVisualBuilderStore((state) => state.steps)
@@ -141,6 +235,24 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
   const handleBack = () => {
     setSelectedBlockId(undefined)
+  }
+
+  // Handle DnD reorder from sidebar
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = currentBlocks.findIndex((b) => b.id === active.id)
+      const newIndex = currentBlocks.findIndex((b) => b.id === over.id)
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        if (isResultStep && selectedOutcomeId) {
+          reorderOutcomeBlocks(selectedOutcomeId, oldIndex, newIndex)
+        } else if (activeStepId) {
+          reorderBlocks(activeStepId, oldIndex, newIndex)
+        }
+      }
+    }
   }
 
   const handleCreateOutcome = () => {
@@ -272,22 +384,47 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
           <Separator />
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Blocos neste resultado</h4>
-            <div className="space-y-1">
-              {currentBlocks.map((block) => (
-                <button
-                  key={block.id}
-                  onClick={() => setSelectedBlockId(block.id)}
-                  className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
+            {isMounted ? (
+              <DndContext
+                id={`${dndId}-outcome`}
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={currentBlocks.map((b) => b.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  <span className="text-muted-foreground">
-                    {blockTypeIcons[block.type]}
-                  </span>
-                  <span className="flex-1 text-sm">
-                    {blockTypeLabels[block.type]}
-                  </span>
-                </button>
-              ))}
-            </div>
+                  <div className="space-y-1">
+                    {currentBlocks.map((block) => (
+                      <SortableBlockItem
+                        key={block.id}
+                        block={block}
+                        isSelected={selectedBlockId === block.id}
+                        onClick={() => setSelectedBlockId(block.id)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            ) : (
+              <div className="space-y-1">
+                {currentBlocks.map((block) => (
+                  <button
+                    key={block.id}
+                    onClick={() => setSelectedBlockId(block.id)}
+                    className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
+                  >
+                    <span className="text-muted-foreground">
+                      {blockTypeIcons[block.type]}
+                    </span>
+                    <span className="flex-1 text-sm">
+                      {blockTypeLabels[block.type]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             <GhostAddButton
               onClick={() => setAddBlockSheetOpen(true)}
               aria-label="Adicionar bloco"
@@ -326,22 +463,47 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
             <Separator />
             <div className="space-y-2">
               <h4 className="text-sm font-medium">Blocos nesta etapa</h4>
-              <div className="space-y-1">
-                {currentBlocks.map((block) => (
-                  <button
-                    key={block.id}
-                    onClick={() => setSelectedBlockId(block.id)}
-                    className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
+              {isMounted ? (
+                <DndContext
+                  id={`${dndId}-step`}
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={currentBlocks.map((b) => b.id)}
+                    strategy={verticalListSortingStrategy}
                   >
-                    <span className="text-muted-foreground">
-                      {blockTypeIcons[block.type]}
-                    </span>
-                    <span className="flex-1 text-sm">
-                      {blockTypeLabels[block.type]}
-                    </span>
-                  </button>
-                ))}
-              </div>
+                    <div className="space-y-1">
+                      {currentBlocks.map((block) => (
+                        <SortableBlockItem
+                          key={block.id}
+                          block={block}
+                          isSelected={selectedBlockId === block.id}
+                          onClick={() => setSelectedBlockId(block.id)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <div className="space-y-1">
+                  {currentBlocks.map((block) => (
+                    <button
+                      key={block.id}
+                      onClick={() => setSelectedBlockId(block.id)}
+                      className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
+                    >
+                      <span className="text-muted-foreground">
+                        {blockTypeIcons[block.type]}
+                      </span>
+                      <span className="flex-1 text-sm">
+                        {blockTypeLabels[block.type]}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <GhostAddButton
                 onClick={() => setAddBlockSheetOpen(true)}
                 aria-label="Adicionar bloco"
