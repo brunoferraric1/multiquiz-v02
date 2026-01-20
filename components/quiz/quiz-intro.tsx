@@ -1,8 +1,7 @@
 'use client';
 
-import { Play, Sparkles } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { FormattedText } from './formatted-text';
 
 type QuizIntroProps = {

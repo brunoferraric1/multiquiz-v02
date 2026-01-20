@@ -303,6 +303,11 @@ export class QuizService {
       console.log('[QuizService] saveQuiz - NO leadGen in quiz draft');
     }
 
+    // Store visual builder data if provided
+    if (quiz.visualBuilderData) {
+      quizData.visualBuilderData = quiz.visualBuilderData;
+    }
+
     // Recursively remove all undefined values (Firestore doesn't accept them)
     const cleanedData = removeUndefinedDeep(quizData);
     console.log('[QuizService] saveQuiz - cleanedData.leadGen after removeUndefinedDeep:', JSON.stringify(cleanedData.leadGen));
@@ -471,6 +476,8 @@ export class QuizService {
       questions: quiz.questions || [],
       outcomes: quiz.outcomes || [],
       leadGen: quiz.leadGen,
+      // Include visual builder data for blocks-based rendering
+      visualBuilderData: quiz.visualBuilderData,
     };
   }
 

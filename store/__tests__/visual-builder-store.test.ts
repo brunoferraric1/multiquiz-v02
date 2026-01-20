@@ -47,7 +47,7 @@ describe('VisualBuilderStore', () => {
 
     it('clears outcome selection when selecting non-result step', () => {
       const store = useVisualBuilderStore.getState()
-      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome' })
+      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome', blocks: [] })
       store.setSelectedOutcomeId('outcome-1')
       store.setActiveStepId('intro')
       expect(useVisualBuilderStore.getState().selectedOutcomeId).toBeUndefined()
@@ -55,7 +55,7 @@ describe('VisualBuilderStore', () => {
 
     it('auto-selects first outcome when selecting result step with no outcome selected', () => {
       const store = useVisualBuilderStore.getState()
-      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome' })
+      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome', blocks: [] })
       store.setActiveStepId('intro') // Clear outcome selection
       store.setActiveStepId('result')
       expect(useVisualBuilderStore.getState().selectedOutcomeId).toBe('outcome-1')
@@ -65,7 +65,7 @@ describe('VisualBuilderStore', () => {
   describe('Step Management - Add', () => {
     it('addStep inserts step before result', () => {
       const store = useVisualBuilderStore.getState()
-      const newStep: Step = { id: 'q1', type: 'question', label: 'P1' }
+      const newStep: Step = { id: 'q1', type: 'question', label: 'P1', blocks: [] }
       store.addStep(newStep)
 
       const { steps } = useVisualBuilderStore.getState()
@@ -76,7 +76,7 @@ describe('VisualBuilderStore', () => {
 
     it('addStep sets the new step as active', () => {
       const store = useVisualBuilderStore.getState()
-      const newStep: Step = { id: 'q1', type: 'question', label: 'P1' }
+      const newStep: Step = { id: 'q1', type: 'question', label: 'P1', blocks: [] }
       store.addStep(newStep)
 
       expect(useVisualBuilderStore.getState().activeStepId).toBe('q1')
@@ -85,7 +85,7 @@ describe('VisualBuilderStore', () => {
     it('addStep closes the sheet', () => {
       const store = useVisualBuilderStore.getState()
       store.setAddStepSheetOpen(true)
-      const newStep: Step = { id: 'q1', type: 'question', label: 'P1' }
+      const newStep: Step = { id: 'q1', type: 'question', label: 'P1', blocks: [] }
       store.addStep(newStep)
 
       expect(useVisualBuilderStore.getState().isAddStepSheetOpen).toBe(false)
@@ -93,8 +93,8 @@ describe('VisualBuilderStore', () => {
 
     it('addStep can insert after a specific step', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
-      store.addStep({ id: 'q2', type: 'question', label: 'P2' }, 'q1')
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
+      store.addStep({ id: 'q2', type: 'question', label: 'P2', blocks: [] }, 'q1')
 
       const { steps } = useVisualBuilderStore.getState()
       expect(steps[1].id).toBe('q1')
@@ -105,7 +105,7 @@ describe('VisualBuilderStore', () => {
   describe('Step Management - Delete', () => {
     it('deleteStep removes a non-fixed step', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
       store.deleteStep('q1')
 
       const { steps } = useVisualBuilderStore.getState()
@@ -131,8 +131,8 @@ describe('VisualBuilderStore', () => {
 
     it('deleteStep selects previous step if active step is deleted', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
-      store.addStep({ id: 'q2', type: 'question', label: 'P2' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
+      store.addStep({ id: 'q2', type: 'question', label: 'P2', blocks: [] })
       store.setActiveStepId('q2')
       store.deleteStep('q2')
 
@@ -143,7 +143,7 @@ describe('VisualBuilderStore', () => {
   describe('Step Management - Duplicate', () => {
     it('duplicateStep creates a copy of the step', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1', subtitle: 'Original subtitle' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', subtitle: 'Original subtitle', blocks: [] })
       store.duplicateStep('q1')
 
       const { steps } = useVisualBuilderStore.getState()
@@ -156,8 +156,8 @@ describe('VisualBuilderStore', () => {
 
     it('duplicateStep inserts the copy after the original', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
-      store.addStep({ id: 'q2', type: 'question', label: 'P2' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
+      store.addStep({ id: 'q2', type: 'question', label: 'P2', blocks: [] })
       store.duplicateStep('q1')
 
       const { steps } = useVisualBuilderStore.getState()
@@ -168,7 +168,7 @@ describe('VisualBuilderStore', () => {
 
     it('duplicateStep sets the duplicated step as active', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
       store.duplicateStep('q1')
 
       const { activeStepId, steps } = useVisualBuilderStore.getState()
@@ -194,7 +194,7 @@ describe('VisualBuilderStore', () => {
 
     it('duplicateStep generates a unique ID for the copy', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
       store.duplicateStep('q1')
 
       const { steps } = useVisualBuilderStore.getState()
@@ -207,7 +207,7 @@ describe('VisualBuilderStore', () => {
   describe('Step Management - Update', () => {
     it('updateStep updates step properties', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
       store.updateStep('q1', { label: 'Updated Label', subtitle: 'New subtitle' })
 
       const { steps } = useVisualBuilderStore.getState()
@@ -220,9 +220,9 @@ describe('VisualBuilderStore', () => {
   describe('Step Management - Reorder', () => {
     it('reorderSteps moves a step to a new position', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
-      store.addStep({ id: 'q2', type: 'question', label: 'P2' })
-      store.addStep({ id: 'q3', type: 'question', label: 'P3' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
+      store.addStep({ id: 'q2', type: 'question', label: 'P2', blocks: [] })
+      store.addStep({ id: 'q3', type: 'question', label: 'P3', blocks: [] })
 
       // Move q3 to position after intro (index 1)
       store.reorderSteps(3, 1)
@@ -235,7 +235,7 @@ describe('VisualBuilderStore', () => {
 
     it('reorderSteps cannot move fixed steps', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
 
       // Try to move intro (fixed)
       store.reorderSteps(0, 1)
@@ -246,7 +246,7 @@ describe('VisualBuilderStore', () => {
 
     it('reorderSteps cannot move step to position 0 (intro position)', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
 
       store.reorderSteps(1, 0)
 
@@ -256,8 +256,8 @@ describe('VisualBuilderStore', () => {
 
     it('reorderSteps cannot move step after result', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
-      store.addStep({ id: 'q2', type: 'question', label: 'P2' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
+      store.addStep({ id: 'q2', type: 'question', label: 'P2', blocks: [] })
 
       const resultIndex = useVisualBuilderStore.getState().steps.findIndex(s => s.type === 'result')
       store.reorderSteps(1, resultIndex)
@@ -271,7 +271,7 @@ describe('VisualBuilderStore', () => {
   describe('Outcome Management', () => {
     it('addOutcome adds a new outcome', () => {
       const store = useVisualBuilderStore.getState()
-      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome' })
+      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome', blocks: [] })
 
       const { outcomes } = useVisualBuilderStore.getState()
       expect(outcomes).toHaveLength(1)
@@ -280,7 +280,7 @@ describe('VisualBuilderStore', () => {
 
     it('addOutcome selects the result step and new outcome', () => {
       const store = useVisualBuilderStore.getState()
-      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome' })
+      store.addOutcome({ id: 'outcome-1', name: 'Test Outcome', blocks: [] })
 
       const state = useVisualBuilderStore.getState()
       expect(state.activeStepId).toBe('result')
@@ -289,7 +289,7 @@ describe('VisualBuilderStore', () => {
 
     it('updateOutcome updates outcome properties', () => {
       const store = useVisualBuilderStore.getState()
-      store.addOutcome({ id: 'outcome-1', name: 'Original Name' })
+      store.addOutcome({ id: 'outcome-1', name: 'Original Name', blocks: [] })
       store.updateOutcome('outcome-1', { name: 'Updated Name' })
 
       const { outcomes } = useVisualBuilderStore.getState()
@@ -298,8 +298,8 @@ describe('VisualBuilderStore', () => {
 
     it('deleteOutcome removes an outcome', () => {
       const store = useVisualBuilderStore.getState()
-      store.addOutcome({ id: 'outcome-1', name: 'Outcome 1' })
-      store.addOutcome({ id: 'outcome-2', name: 'Outcome 2' })
+      store.addOutcome({ id: 'outcome-1', name: 'Outcome 1', blocks: [] })
+      store.addOutcome({ id: 'outcome-2', name: 'Outcome 2', blocks: [] })
       store.deleteOutcome('outcome-1')
 
       const { outcomes } = useVisualBuilderStore.getState()
@@ -309,7 +309,7 @@ describe('VisualBuilderStore', () => {
 
     it('deleteOutcome cannot remove the last outcome', () => {
       const store = useVisualBuilderStore.getState()
-      store.addOutcome({ id: 'outcome-1', name: 'Only Outcome' })
+      store.addOutcome({ id: 'outcome-1', name: 'Only Outcome', blocks: [] })
       store.deleteOutcome('outcome-1')
 
       const { outcomes } = useVisualBuilderStore.getState()
@@ -318,8 +318,8 @@ describe('VisualBuilderStore', () => {
 
     it('deleteOutcome selects first remaining outcome if selected one is deleted', () => {
       const store = useVisualBuilderStore.getState()
-      store.addOutcome({ id: 'outcome-1', name: 'Outcome 1' })
-      store.addOutcome({ id: 'outcome-2', name: 'Outcome 2' })
+      store.addOutcome({ id: 'outcome-1', name: 'Outcome 1', blocks: [] })
+      store.addOutcome({ id: 'outcome-2', name: 'Outcome 2', blocks: [] })
       store.setSelectedOutcomeId('outcome-1')
       store.deleteOutcome('outcome-1')
 
@@ -344,11 +344,11 @@ describe('VisualBuilderStore', () => {
     it('initialize sets steps and outcomes', () => {
       const store = useVisualBuilderStore.getState()
       const steps: Step[] = [
-        { id: 'intro', type: 'intro', label: 'Intro', isFixed: true },
-        { id: 'q1', type: 'question', label: 'P1' },
-        { id: 'result', type: 'result', label: 'Resultado', isFixed: true },
+        { id: 'intro', type: 'intro', label: 'Intro', isFixed: true, blocks: [] },
+        { id: 'q1', type: 'question', label: 'P1', blocks: [] },
+        { id: 'result', type: 'result', label: 'Resultado', isFixed: true, blocks: [] },
       ]
-      const outcomes = [{ id: 'o1', name: 'Outcome 1' }]
+      const outcomes = [{ id: 'o1', name: 'Outcome 1', blocks: [] }]
 
       store.initialize({ steps, outcomes })
 
@@ -360,8 +360,8 @@ describe('VisualBuilderStore', () => {
 
     it('reset returns to initial state', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1' })
-      store.addOutcome({ id: 'o1', name: 'Test' })
+      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
+      store.addOutcome({ id: 'o1', name: 'Test', blocks: [] })
 
       store.reset()
 
@@ -583,7 +583,7 @@ describe('VisualBuilderStore', () => {
       it('creates numbered label when steps of same type exist', () => {
         const existingSteps: Step[] = [
           ...DEFAULT_STEPS.slice(0, 1),
-          { id: 'q1', type: 'question', label: 'Pergunta' },
+          { id: 'q1', type: 'question', label: 'Pergunta', blocks: [] },
           DEFAULT_STEPS[1],
         ]
         const step = createStep('question', existingSteps)

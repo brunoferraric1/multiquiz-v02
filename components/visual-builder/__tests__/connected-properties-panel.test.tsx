@@ -22,20 +22,33 @@ describe('ConnectedPropertiesPanel', () => {
   })
 
   describe('Step settings view', () => {
-    it('shows settings button when a step is selected', () => {
+    it('shows step blocks when a step is selected', () => {
       // The store is initialized with intro step active
       render(<ConnectedPropertiesPanel />)
 
-      expect(screen.getByRole('button', { name: /abrir configurações/i })).toBeInTheDocument()
+      // Step settings are now inline - check for block list
+      expect(screen.getByText('Cabeçalho')).toBeInTheDocument()
     })
 
-    it('opens settings sheet when clicking settings button', async () => {
-      const user = userEvent.setup()
+    it('shows inline settings toggles for non-intro steps', async () => {
+      // Add a question step first (initialState only has intro and result)
+      const store = useVisualBuilderStore.getState()
+      const questionStep = {
+        id: 'q1',
+        type: 'question' as const,
+        label: 'P1',
+        subtitle: 'Question 1',
+        blocks: [createBlock('header'), createBlock('options')],
+        settings: { showProgress: true, allowBack: true },
+      }
+      store.setSteps([store.steps[0], questionStep, store.steps[1]])
+      store.setActiveStepId('q1')
+
       render(<ConnectedPropertiesPanel />)
 
-      await user.click(screen.getByRole('button', { name: /abrir configurações/i }))
-
-      expect(screen.getByTestId('step-settings-editor')).toBeInTheDocument()
+      // Settings are now inline switches
+      expect(screen.getByText('Exibir progresso')).toBeInTheDocument()
+      expect(screen.getByText('Exibir botão voltar')).toBeInTheDocument()
     })
 
     it('shows step name in title', () => {
@@ -141,8 +154,8 @@ describe('ConnectedPropertiesPanel', () => {
 
       await user.click(screen.getByRole('button', { name: /voltar/i }))
 
-      // Should now show step view with settings button
-      expect(screen.getByRole('button', { name: /abrir configurações/i })).toBeInTheDocument()
+      // Should now show step view with block list
+      expect(screen.getByText('Cabeçalho')).toBeInTheDocument()
     })
   })
 

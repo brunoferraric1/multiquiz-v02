@@ -1,4 +1,55 @@
 import { z } from 'zod';
+import type { Block, StepSettings } from './blocks';
+
+// Visual Builder types (for storing blocks in quiz format)
+export interface VisualBuilderStep {
+  id: string;
+  type: 'intro' | 'question' | 'lead-gen' | 'promo' | 'result';
+  label: string;
+  isFixed?: boolean;
+  subtitle?: string;
+  blocks: Block[];
+  settings?: StepSettings;
+}
+
+export interface VisualBuilderOutcome {
+  id: string;
+  name: string;
+  blocks: Block[];
+}
+
+export interface VisualBuilderData {
+  schemaVersion: number;
+  steps: VisualBuilderStep[];
+  outcomes: VisualBuilderOutcome[];
+}
+
+// Zod schemas for Visual Builder types (runtime validation)
+// Using z.any() for blocks since they have complex nested structures validated elsewhere
+export const VisualBuilderStepSchema = z.object({
+  id: z.string(),
+  type: z.enum(['intro', 'question', 'lead-gen', 'promo', 'result']),
+  label: z.string(),
+  isFixed: z.boolean().optional(),
+  subtitle: z.string().optional(),
+  blocks: z.array(z.any()),
+  settings: z.object({
+    showProgress: z.boolean().optional(),
+    allowBack: z.boolean().optional(),
+  }).optional(),
+});
+
+export const VisualBuilderOutcomeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  blocks: z.array(z.any()),
+});
+
+export const VisualBuilderDataSchema = z.object({
+  schemaVersion: z.number().default(1),
+  steps: z.array(VisualBuilderStepSchema),
+  outcomes: z.array(VisualBuilderOutcomeSchema),
+});
 
 // Zod schemas for runtime validation
 export const AnswerOptionSchema = z.object({
@@ -67,6 +118,8 @@ export const QuizSnapshotSchema = z.object({
     fields: z.array(z.enum(['name', 'email', 'phone'])),
     ctaText: z.string().optional(),
   }).optional(),
+  // Visual builder data for blocks-based rendering
+  visualBuilderData: VisualBuilderDataSchema.nullish(),
 });
 
 export const QuizSchema = z.object({
@@ -97,6 +150,8 @@ export const QuizSchema = z.object({
   // Draft/Live separation fields
   publishedVersion: QuizSnapshotSchema.nullable().optional(),
   publishedAt: z.number().nullable().optional(),
+  // Visual builder data for blocks-based rendering
+  visualBuilderData: VisualBuilderDataSchema.nullish(),
 });
 
 // TypeScript types inferred from Zod schemas

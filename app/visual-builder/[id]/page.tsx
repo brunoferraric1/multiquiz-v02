@@ -203,19 +203,24 @@ function VisualBuilderEditor() {
 
   // Handler: Back to dashboard
   const handleBack = useCallback(async () => {
+    console.log('[VisualBuilder] handleBack - forcing save before navigation')
     // Force save before navigating away
     await forceSave()
+    console.log('[VisualBuilder] handleBack - save complete, navigating to dashboard')
     router.push('/dashboard')
   }, [forceSave, router])
 
   // Handler: Preview quiz
   const handlePreview = useCallback(async () => {
+    console.log('[VisualBuilder] handlePreview called', { id, isSavingForPreview })
     if (!id || isSavingForPreview) return
 
     try {
       setIsSavingForPreview(true)
+      console.log('[VisualBuilder] handlePreview - forcing save before preview')
       // Force save before preview to ensure latest changes are visible
       await forceSave()
+      console.log('[VisualBuilder] handlePreview - save complete, opening preview')
       // Open quiz preview in new tab
       window.open(`/quiz/${id}?preview=true`, '_blank')
     } catch (err) {

@@ -6,9 +6,9 @@ import { AddStepSheet } from '../add-step-sheet'
 
 // Test data
 const testSteps: Step[] = [
-  { id: 'intro', type: 'intro', label: 'Intro', isFixed: true },
-  { id: 'q1', type: 'question', label: 'Pergunta', subtitle: 'Question 1' },
-  { id: 'result', type: 'result', label: 'Resultado', isFixed: true },
+  { id: 'intro', type: 'intro', label: 'Intro', isFixed: true, blocks: [] },
+  { id: 'q1', type: 'question', label: 'Pergunta', subtitle: 'Question 1', blocks: [] },
+  { id: 'result', type: 'result', label: 'Resultado', isFixed: true, blocks: [] },
 ]
 
 describe('AddStepSheet', () => {

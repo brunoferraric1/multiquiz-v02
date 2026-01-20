@@ -6,15 +6,15 @@ import { ConnectedBuilderSidebar } from '../connected-builder-sidebar'
 
 // Test data
 const testSteps: Step[] = [
-  { id: 'intro', type: 'intro', label: 'Intro', isFixed: true, subtitle: 'Welcome' },
-  { id: 'q1', type: 'question', label: 'P1', subtitle: 'Question 1' },
-  { id: 'q2', type: 'question', label: 'P2', subtitle: 'Question 2' },
-  { id: 'result', type: 'result', label: 'Resultado', isFixed: true },
+  { id: 'intro', type: 'intro', label: 'Intro', isFixed: true, subtitle: 'Welcome', blocks: [] },
+  { id: 'q1', type: 'question', label: 'P1', subtitle: 'Question 1', blocks: [] },
+  { id: 'q2', type: 'question', label: 'P2', subtitle: 'Question 2', blocks: [] },
+  { id: 'result', type: 'result', label: 'Resultado', isFixed: true, blocks: [] },
 ]
 
 const testOutcomes: Outcome[] = [
-  { id: 'outcome-1', name: 'Outcome A' },
-  { id: 'outcome-2', name: 'Outcome B' },
+  { id: 'outcome-1', name: 'Outcome A', blocks: [] },
+  { id: 'outcome-2', name: 'Outcome B', blocks: [] },
 ]
 
 describe('ConnectedBuilderSidebar', () => {

@@ -429,8 +429,10 @@ function quizOutcomeToVBOutcome(outcome: Partial<QuizOutcome>): VBOutcome {
 
 /**
  * Convert quiz format to visual builder data for loading
+ * Always reconstructs from the legacy format to ensure consistency
  */
 export function quizToVisualBuilder(quiz: QuizDraft | Quiz): VisualBuilderData {
+  // Always reconstruct from legacy format to ensure consistency
   const steps: Step[] = []
 
   // 1. Add intro step

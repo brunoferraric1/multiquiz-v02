@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { QuizService } from '@/lib/services/quiz-service';
 import { getBrandKit } from '@/lib/services/brand-kit-service';
-import { QuizPlayer } from '@/components/quiz/quiz-player';
+import { BlocksQuizPlayer } from '@/components/quiz/blocks-quiz-player';
 import type { BrandKitColors, Quiz } from '@/types';
 
 export default function PublicQuizPage() {
@@ -163,9 +163,9 @@ export default function PublicQuizPage() {
         </div>
       )}
       <div className="flex-1 flex items-center justify-center">
-        <QuizPlayer
+        <BlocksQuizPlayer
           quiz={quiz}
-          mode="live"
+          mode={isPreviewMode ? 'preview' : 'live'}
           onExit={handleExit}
           brandKitColors={brandKitColors}
           brandKitLogoUrl={brandKitLogoUrl}

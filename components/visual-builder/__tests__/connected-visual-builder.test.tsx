@@ -6,15 +6,15 @@ import { ConnectedVisualBuilder } from '../connected-visual-builder'
 
 // Test data
 const testSteps: Step[] = [
-  { id: 'intro', type: 'intro', label: 'Intro', isFixed: true, subtitle: 'Welcome' },
-  { id: 'q1', type: 'question', label: 'P1', subtitle: 'Question 1' },
-  { id: 'q2', type: 'question', label: 'P2', subtitle: 'Question 2' },
-  { id: 'result', type: 'result', label: 'Resultado', isFixed: true },
+  { id: 'intro', type: 'intro', label: 'Intro', isFixed: true, subtitle: 'Welcome', blocks: [] },
+  { id: 'q1', type: 'question', label: 'P1', subtitle: 'Question 1', blocks: [] },
+  { id: 'q2', type: 'question', label: 'P2', subtitle: 'Question 2', blocks: [] },
+  { id: 'result', type: 'result', label: 'Resultado', isFixed: true, blocks: [] },
 ]
 
 const testOutcomes: Outcome[] = [
-  { id: 'outcome-1', name: 'Outcome A' },
-  { id: 'outcome-2', name: 'Outcome B' },
+  { id: 'outcome-1', name: 'Outcome A', blocks: [] },
+  { id: 'outcome-2', name: 'Outcome B', blocks: [] },
 ]
 
 describe('ConnectedVisualBuilder', () => {
@@ -41,7 +41,8 @@ describe('ConnectedVisualBuilder', () => {
       render(<ConnectedVisualBuilder />)
 
       expect(screen.getByTestId('left-sidebar')).toBeInTheDocument()
-      expect(screen.getByText(/1\. Intro/)).toBeInTheDocument()
+      // Intro and result are filtered out, question steps start at 1
+      expect(screen.getByText(/1\. P1/)).toBeInTheDocument()
     })
 
     it('renders center preview area', () => {
@@ -58,9 +59,9 @@ describe('ConnectedVisualBuilder', () => {
 
       render(<ConnectedVisualBuilder />)
 
-      // Check that Q1 is marked as active in sidebar
+      // Check that Q1 is marked as active in sidebar (intro is filtered out, so P1 is 1.)
       const sidebar = screen.getByTestId('left-sidebar')
-      const activeStep = within(sidebar).getByText(/2\. P1/)
+      const activeStep = within(sidebar).getByText(/1\. P1/)
       expect(activeStep.closest('[aria-pressed="true"]')).toBeInTheDocument()
     })
 
@@ -71,9 +72,9 @@ describe('ConnectedVisualBuilder', () => {
 
       render(<ConnectedVisualBuilder />)
 
-      // Click on P2 step
+      // Click on P2 step (intro is filtered out, so P2 is 2.)
       const sidebar = screen.getByTestId('left-sidebar')
-      const q2Step = within(sidebar).getByText(/3\. P2/).closest('[role="button"]')
+      const q2Step = within(sidebar).getByText(/2\. P2/).closest('[role="button"]')
       await user.click(q2Step!)
 
       expect(useVisualBuilderStore.getState().activeStepId).toBe('q2')
@@ -184,7 +185,7 @@ describe('ConnectedVisualBuilder', () => {
 
       render(<ConnectedVisualBuilder />)
 
-      const addOutcomeButton = screen.getByRole('button', { name: /add outcome/i })
+      const addOutcomeButton = screen.getByRole('button', { name: /adicionar resultado/i })
       await user.click(addOutcomeButton)
 
       expect(useVisualBuilderStore.getState().outcomes.length).toBe(3)

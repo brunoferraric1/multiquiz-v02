@@ -96,7 +96,6 @@ describe('BlockRenderer', () => {
               id: 'price-1',
               title: 'Product Name',
               value: 'R$ 99,90',
-              showCheckbox: true,
             },
           ],
           selectionType: 'single',

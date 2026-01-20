@@ -81,8 +81,10 @@ export function useVisualBuilderAutoSave({
   }, [existingQuiz])
 
   const saveToFirestore = useCallback(async () => {
+    console.log('[VBAutoSave] saveToFirestore called', { userId, quizId, stepsCount: steps.length, outcomesCount: outcomes.length })
+
     if (!userId || !quizId) {
-      console.log('[VBAutoSave] Skipped: missing userId or quizId')
+      console.log('[VBAutoSave] Skipped: missing userId or quizId', { userId, quizId })
       return
     }
 
@@ -129,6 +131,12 @@ export function useVisualBuilderAutoSave({
       // Merge with existing quiz data to preserve metadata
       const baseQuiz = existingQuizRef.current || {}
 
+      console.log('[VBAutoSave] Converted data:', {
+        title: converted.title,
+        questionsCount: converted.questions?.length,
+        outcomesCount: converted.outcomes?.length,
+      })
+
       const quizToSave: QuizDraft = {
         ...baseQuiz,
         id: quizId,
@@ -146,6 +154,12 @@ export function useVisualBuilderAutoSave({
         // Preserve live snapshot fields
         publishedVersion: baseQuiz.publishedVersion ?? null,
         publishedAt: baseQuiz.publishedAt ?? null,
+        // Store visual builder data for production rendering
+        visualBuilderData: {
+          schemaVersion: 1,
+          steps,
+          outcomes,
+        },
       }
 
       await QuizService.saveQuiz(quizToSave, userId, { isNewQuiz })

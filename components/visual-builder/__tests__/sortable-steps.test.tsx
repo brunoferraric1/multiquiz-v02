@@ -6,11 +6,11 @@ import { SortableStepsList } from '../sortable-steps-list'
 
 // Test data
 const testSteps: Step[] = [
-  { id: 'intro', type: 'intro', label: 'Intro', isFixed: true },
-  { id: 'q1', type: 'question', label: 'P1', subtitle: 'Question 1' },
-  { id: 'q2', type: 'question', label: 'P2', subtitle: 'Question 2' },
-  { id: 'q3', type: 'question', label: 'P3', subtitle: 'Question 3' },
-  { id: 'result', type: 'result', label: 'Resultado', isFixed: true },
+  { id: 'intro', type: 'intro', label: 'Intro', isFixed: true, blocks: [] },
+  { id: 'q1', type: 'question', label: 'P1', subtitle: 'Question 1', blocks: [] },
+  { id: 'q2', type: 'question', label: 'P2', subtitle: 'Question 2', blocks: [] },
+  { id: 'q3', type: 'question', label: 'P3', subtitle: 'Question 3', blocks: [] },
+  { id: 'result', type: 'result', label: 'Resultado', isFixed: true, blocks: [] },
 ]
 
 describe('SortableStepsList', () => {
@@ -19,16 +19,19 @@ describe('SortableStepsList', () => {
   })
 
   describe('Structure', () => {
-    it('renders all non-result steps', () => {
+    it('renders all sortable steps (excludes intro and result)', () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
 
       render(<SortableStepsList />)
 
-      expect(screen.getByText(/1\. Intro/)).toBeInTheDocument()
-      expect(screen.getByText(/2\. P1/)).toBeInTheDocument()
-      expect(screen.getByText(/3\. P2/)).toBeInTheDocument()
-      expect(screen.getByText(/4\. P3/)).toBeInTheDocument()
+      // Intro and result are filtered out, only question steps are shown
+      expect(screen.getByText(/1\. P1/)).toBeInTheDocument()
+      expect(screen.getByText(/2\. P2/)).toBeInTheDocument()
+      expect(screen.getByText(/3\. P3/)).toBeInTheDocument()
+      // Intro and result should not be in this list
+      expect(screen.queryByText(/Intro/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Resultado/)).not.toBeInTheDocument()
     })
 
     it('makes non-fixed steps draggable (entire card)', () => {
@@ -42,15 +45,15 @@ describe('SortableStepsList', () => {
       expect(q1Step).toHaveClass('cursor-grab')
     })
 
-    it('does not make fixed steps (intro) draggable', () => {
+    it('filters out intro and result steps from sortable list', () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
 
       render(<SortableStepsList />)
 
-      // Fixed step (intro) should not have cursor-grab class
-      const introStep = screen.getByTestId('step-item-intro')
-      expect(introStep).not.toHaveClass('cursor-grab')
+      // Intro and result steps should not be in the sortable list at all
+      expect(screen.queryByTestId('step-item-intro')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('step-item-result')).not.toBeInTheDocument()
     })
   })
 
@@ -89,7 +92,7 @@ describe('SortableStepsList', () => {
 
       render(<SortableStepsList />)
 
-      const q1Step = screen.getByText(/2\. P1/).closest('[role="button"]')
+      const q1Step = screen.getByText(/1\. P1/).closest('[role="button"]')
       await user.click(q1Step!)
 
       expect(useVisualBuilderStore.getState().activeStepId).toBe('q1')
@@ -102,7 +105,7 @@ describe('SortableStepsList', () => {
 
       render(<SortableStepsList />)
 
-      const q2Step = screen.getByText(/3\. P2/).closest('[role="button"]')
+      const q2Step = screen.getByText(/2\. P2/).closest('[role="button"]')
       expect(q2Step).toHaveAttribute('aria-pressed', 'true')
     })
   })

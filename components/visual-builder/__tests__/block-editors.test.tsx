@@ -50,21 +50,20 @@ describe('HeaderBlockEditor', () => {
 describe('TextBlockEditor', () => {
   const defaultConfig = { content: '' }
 
-  it('renders content textarea', () => {
+  it('renders text editor', () => {
     render(<TextBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByLabelText(/conteúdo/i)).toBeInTheDocument()
+    // TextBlockEditor uses TipTap rich text editor
+    expect(screen.getByTestId('text-block-editor')).toBeInTheDocument()
+    expect(screen.getByText('Conteúdo')).toBeInTheDocument()
   })
 
-  it('calls onChange when content is updated', async () => {
-    const onChange = vi.fn()
-    const user = userEvent.setup()
+  it('renders toolbar with formatting buttons', () => {
+    render(<TextBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    render(<TextBlockEditor config={defaultConfig} onChange={onChange} />)
-
-    await user.type(screen.getByLabelText(/conteúdo/i), 'New content')
-
-    expect(onChange).toHaveBeenCalled()
+    // Check for toolbar buttons
+    expect(screen.getByTitle('Negrito')).toBeInTheDocument()
+    expect(screen.getByTitle('Itálico')).toBeInTheDocument()
   })
 })
 
@@ -475,11 +474,11 @@ describe('BannerBlockEditor', () => {
 describe('ListBlockEditor', () => {
   const defaultConfig = { items: [] }
 
-  it('renders new item input', () => {
+  it('renders add item button', () => {
     render(<ListBlockEditor config={defaultConfig} onChange={() => {}} />)
 
-    expect(screen.getByTestId('new-list-item-input')).toBeInTheDocument()
     expect(screen.getByTestId('add-list-item-button')).toBeInTheDocument()
+    expect(screen.getByText('Adicionar item')).toBeInTheDocument()
   })
 
   it('can add new items', async () => {
@@ -488,14 +487,12 @@ describe('ListBlockEditor', () => {
 
     render(<ListBlockEditor config={defaultConfig} onChange={onChange} />)
 
-    const input = screen.getByTestId('new-list-item-input')
-    await user.type(input, 'Item 1')
     await user.click(screen.getByTestId('add-list-item-button'))
 
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
         items: expect.arrayContaining([
-          expect.objectContaining({ text: 'Item 1' })
+          expect.objectContaining({ text: '', emoji: '✓' })
         ])
       })
     )
@@ -505,7 +502,7 @@ describe('ListBlockEditor', () => {
     const config = {
       items: [
         { id: '1', text: 'First item' },
-        { id: '2', text: 'Second item', emoji: '✓' },
+        { id: '2', text: 'Second item', emoji: '★' },
       ],
     }
 
@@ -513,6 +510,6 @@ describe('ListBlockEditor', () => {
 
     expect(screen.getByDisplayValue('First item')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Second item')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('✓')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('★')).toBeInTheDocument()
   })
 })
