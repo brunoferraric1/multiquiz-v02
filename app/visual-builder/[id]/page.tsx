@@ -69,6 +69,7 @@ function VisualBuilderEditor() {
 
   // Local state
   const [isPublishing, setIsPublishing] = useState(false)
+  const [isSavingForPreview, setIsSavingForPreview] = useState(false)
   const [isNewQuiz, setIsNewQuiz] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [isCheckingQuiz, setIsCheckingQuiz] = useState(true)
@@ -208,11 +209,22 @@ function VisualBuilderEditor() {
   }, [forceSave, router])
 
   // Handler: Preview quiz
-  const handlePreview = useCallback(() => {
-    if (!id) return
-    // Open quiz preview in new tab
-    window.open(`/quiz/${id}?preview=true`, '_blank')
-  }, [id])
+  const handlePreview = useCallback(async () => {
+    if (!id || isSavingForPreview) return
+
+    try {
+      setIsSavingForPreview(true)
+      // Force save before preview to ensure latest changes are visible
+      await forceSave()
+      // Open quiz preview in new tab
+      window.open(`/quiz/${id}?preview=true`, '_blank')
+    } catch (err) {
+      console.error('[VisualBuilder] Error saving before preview:', err)
+      toast.error('Erro ao salvar. Tente novamente.')
+    } finally {
+      setIsSavingForPreview(false)
+    }
+  }, [id, forceSave, isSavingForPreview])
 
   // Handler: Publish quiz
   const handlePublish = useCallback(async () => {
