@@ -200,6 +200,9 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
     ? currentBlocks.findIndex((b) => b.id === selectedBlock.id)
     : -1
 
+  // Check if there's a price block in the current blocks
+  const hasPriceBlock = currentBlocks.some((b) => b.type === 'price')
+
   // Handlers for block operations
   const handleUpdateBlock = (config: Partial<Block['config']>) => {
     if (!selectedBlockId) return
@@ -321,6 +324,7 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
             onChange={handleUpdateBlock}
             disableUrl={isIntroStep}
             disableNextStep={isResultStep}
+            disableSelectedPrice={!hasPriceBlock}
           />
         )
       case 'banner':

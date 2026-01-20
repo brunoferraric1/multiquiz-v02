@@ -1,7 +1,7 @@
 'use client'
 
 import { useVisualBuilderStore, createBlock } from '@/store/visual-builder-store'
-import { BlockType, blockTypeLabels, blockTypeDescriptions } from '@/types/blocks'
+import { BlockType, blockTypeLabels, blockTypeDescriptions, ButtonConfig } from '@/types/blocks'
 import {
   Sheet,
   SheetContent,
@@ -51,12 +51,27 @@ export function AddBlockSheet() {
   const addBlock = useVisualBuilderStore((state) => state.addBlock)
   const addOutcomeBlock = useVisualBuilderStore((state) => state.addOutcomeBlock)
 
-  // Get the active step
+  // Get the active step and outcomes
   const activeStep = steps.find((s) => s.id === activeStepId)
+  const outcomes = useVisualBuilderStore((state) => state.outcomes)
+  const selectedOutcome = outcomes.find((o) => o.id === selectedOutcomeId)
   const isResultStep = activeStep?.type === 'result'
+
+  // Get current blocks to check for price block
+  const currentBlocks = isResultStep && selectedOutcome
+    ? (selectedOutcome.blocks || [])
+    : (activeStep?.blocks || [])
 
   const handleSelectBlockType = (type: BlockType) => {
     const newBlock = createBlock(type)
+
+    // If adding a button and there's a price block, default to selected_price action
+    if (type === 'button') {
+      const hasPriceBlock = currentBlocks.some((b) => b.type === 'price')
+      if (hasPriceBlock) {
+        (newBlock.config as ButtonConfig).action = 'selected_price'
+      }
+    }
 
     if (isResultStep && selectedOutcomeId) {
       // Add to outcome at specified index
