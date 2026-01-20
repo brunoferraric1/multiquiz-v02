@@ -165,7 +165,9 @@ function DashboardContent() {
   };
 
   const handleNewQuiz = () => {
-    router.push('/builder');
+    // Generate a new quiz ID and navigate to visual builder
+    const newQuizId = crypto.randomUUID();
+    router.push(`/visual-builder/${newQuizId}`);
   };
 
   // Show skeleton during initial load OR when refetching to prevent stale image flicker

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ConnectedVisualBuilder } from '@/components/visual-builder'
 import {
   useVisualBuilderStore,
@@ -9,9 +10,13 @@ import {
   getDefaultBlocksForStepType,
   getDefaultOutcomeBlocks,
 } from '@/store/visual-builder-store'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function VisualBuilderPage() {
+  const router = useRouter()
   const initialize = useVisualBuilderStore((state) => state.initialize)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Initialize store with demo data on mount (client-side only)
   useEffect(() => {
@@ -67,14 +72,45 @@ export default function VisualBuilderPage() {
     ]
 
     initialize({ steps: initialSteps, outcomes: initialOutcomes })
+    setIsInitialized(true)
   }, [initialize])
+
+  // Show loading state until store is initialized
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const handlePreview = () => {
+    toast.info('Esta é uma página de demonstração. Crie um quiz para usar o Preview.', {
+      action: {
+        label: 'Criar Quiz',
+        onClick: () => router.push('/builder'),
+      },
+    })
+  }
+
+  const handlePublish = () => {
+    toast.info('Esta é uma página de demonstração. Crie um quiz para publicar.', {
+      action: {
+        label: 'Criar Quiz',
+        onClick: () => router.push('/builder'),
+      },
+    })
+  }
 
   return (
     <ConnectedVisualBuilder
       quizName="Quiz Skincare - Demo"
-      onBack={() => window.history.back()}
-      onPreview={() => console.log('Preview clicked')}
-      onPublish={() => console.log('Publish clicked')}
+      onBack={() => router.push('/dashboard')}
+      onPreview={handlePreview}
+      onPublish={handlePublish}
     />
   )
 }

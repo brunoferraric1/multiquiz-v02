@@ -169,6 +169,7 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
   const setSelectedBlockId = useVisualBuilderStore((state) => state.setSelectedBlockId)
   const updateBlock = useVisualBuilderStore((state) => state.updateBlock)
   const deleteBlock = useVisualBuilderStore((state) => state.deleteBlock)
+  const deleteStep = useVisualBuilderStore((state) => state.deleteStep)
   const reorderBlocks = useVisualBuilderStore((state) => state.reorderBlocks)
   const updateOutcomeBlock = useVisualBuilderStore((state) => state.updateOutcomeBlock)
   const deleteOutcomeBlock = useVisualBuilderStore((state) => state.deleteOutcomeBlock)
@@ -441,9 +442,6 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
       </BuilderProperties>
     )
   }
-
-  // Get deleteStep action
-  const deleteStep = useVisualBuilderStore((state) => state.deleteStep)
 
   // If step is selected, show step settings
   if (activeStep) {
