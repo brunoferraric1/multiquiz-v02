@@ -3,6 +3,7 @@
 import { useVisualBuilderStore, createBlock } from '@/store/visual-builder-store'
 import { BlockList } from './blocks'
 import { useMemo } from 'react'
+import { ArrowLeft } from 'lucide-react'
 
 /**
  * StepPreview - Renders the blocks for the currently active step
@@ -55,6 +56,21 @@ export function StepPreview() {
     // For other steps, show step blocks
     return activeStep.blocks || []
   }, [activeStep, selectedOutcome])
+
+  // Calculate progress percentage
+  const progressPercentage = useMemo(() => {
+    if (!activeStep || steps.length <= 1) return 0
+    const currentIndex = steps.findIndex((s) => s.id === activeStepId)
+    // Don't count the result step in the progress
+    const totalSteps = steps.filter((s) => s.type !== 'result').length
+    if (totalSteps <= 1) return 100
+    return Math.round((currentIndex / (totalSteps - 1)) * 100)
+  }, [steps, activeStep, activeStepId])
+
+  // Get step settings
+  const showProgress = activeStep?.settings?.showProgress ?? false
+  const allowBack = activeStep?.settings?.allowBack ?? false
+  const isIntroStep = activeStep?.type === 'intro'
 
   // Handle block selection
   const handleBlockSelect = (blockId: string) => {
@@ -110,15 +126,46 @@ export function StepPreview() {
   }
 
   return (
-    <div data-testid="step-preview" className="p-4">
-      <BlockList
-        blocks={blocks}
-        selectedBlockId={selectedBlockId}
-        onBlockSelect={handleBlockSelect}
-        onDeleteBlock={handleDeleteBlock}
-        onInsertBlock={handleInsertBlock}
-        onReorderBlocks={handleReorderBlocks}
-      />
+    <div data-testid="step-preview">
+      {/* Navigation header - back button and progress bar */}
+      {(showProgress || (allowBack && !isIntroStep)) && (
+        <div className="px-4 pt-4 pb-2 space-y-3">
+          {/* Back button */}
+          {allowBack && !isIntroStep && (
+            <button
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              onClick={(e) => e.preventDefault()}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Voltar</span>
+            </button>
+          )}
+
+          {/* Progress bar */}
+          {showProgress && (
+            <div className="w-full">
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-300"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Blocks */}
+      <div className="p-4">
+        <BlockList
+          blocks={blocks}
+          selectedBlockId={selectedBlockId}
+          onBlockSelect={handleBlockSelect}
+          onDeleteBlock={handleDeleteBlock}
+          onInsertBlock={handleInsertBlock}
+          onReorderBlocks={handleReorderBlocks}
+        />
+      </div>
     </div>
   )
 }
