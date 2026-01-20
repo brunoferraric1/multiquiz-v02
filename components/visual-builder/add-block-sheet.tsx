@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useVisualBuilderStore, createBlock } from '@/store/visual-builder-store'
 import { BlockType, blockTypeLabels, blockTypeDescriptions, ButtonConfig } from '@/types/blocks'
 import {
@@ -39,6 +40,9 @@ const blockTypeOptions: { type: BlockType; icon: React.ReactNode }[] = [
  * AddBlockSheet - Bottom sheet for selecting block type to add
  */
 export function AddBlockSheet() {
+  // Custom tooltip state
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
+
   // Get state from store
   const isOpen = useVisualBuilderStore((state) => state.isAddBlockSheetOpen)
   const activeStepId = useVisualBuilderStore((state) => state.activeStepId)
@@ -57,12 +61,25 @@ export function AddBlockSheet() {
   const selectedOutcome = outcomes.find((o) => o.id === selectedOutcomeId)
   const isResultStep = activeStep?.type === 'result'
 
-  // Get current blocks to check for price block
+  // Get current blocks to check for existing blocks
   const currentBlocks = isResultStep && selectedOutcome
     ? (selectedOutcome.blocks || [])
     : (activeStep?.blocks || [])
 
+  // Check for blocks that can only appear once per page
+  const hasOptionsBlock = currentBlocks.some((b) => b.type === 'options')
+  const hasPriceBlock = currentBlocks.some((b) => b.type === 'price')
+
+  // Determine if a block type is disabled
+  const isBlockTypeDisabled = (type: BlockType): boolean => {
+    if (type === 'options' && hasOptionsBlock) return true
+    if (type === 'price' && hasPriceBlock) return true
+    return false
+  }
+
   const handleSelectBlockType = (type: BlockType) => {
+    // Don't allow adding if disabled
+    if (isBlockTypeDisabled(type)) return
     const newBlock = createBlock(type)
 
     // If adding a button and there's a price block, default to selected_price action
@@ -95,26 +112,54 @@ export function AddBlockSheet() {
         </SheetHeader>
 
         <div className="grid grid-cols-3 gap-3 mt-6 pb-6">
-          {blockTypeOptions.map(({ type, icon }) => (
-            <button
-              key={type}
-              onClick={() => handleSelectBlockType(type)}
-              className={cn(
-                'flex flex-col items-center gap-2 p-4 rounded-xl border border-muted-foreground/20',
-                'hover:bg-muted/60 hover:border-primary/30 transition-all',
-                'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
-              )}
-              aria-label={blockTypeLabels[type]}
-            >
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted text-muted-foreground">
-                {icon}
+          {blockTypeOptions.map(({ type, icon }) => {
+            const isDisabled = isBlockTypeDisabled(type)
+            return (
+              <div
+                key={type}
+                onMouseMove={(e) => {
+                  if (isDisabled) {
+                    setTooltip({ x: e.clientX, y: e.clientY })
+                  }
+                }}
+                onMouseLeave={() => setTooltip(null)}
+              >
+                <button
+                  onClick={() => handleSelectBlockType(type)}
+                  disabled={isDisabled}
+                  className={cn(
+                    'w-full flex flex-col items-center gap-2 p-4 rounded-xl border border-muted-foreground/20 transition-all',
+                    'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                    isDisabled
+                      ? 'opacity-40 cursor-not-allowed'
+                      : 'hover:bg-muted/60 hover:border-primary/30'
+                  )}
+                  aria-label={blockTypeLabels[type]}
+                >
+                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted text-muted-foreground">
+                    {icon}
+                  </div>
+                  <span className="text-xs font-medium text-foreground">
+                    {blockTypeLabels[type]}
+                  </span>
+                </button>
               </div>
-              <span className="text-xs font-medium text-foreground">
-                {blockTypeLabels[type]}
-              </span>
-            </button>
-          ))}
+            )
+          })}
         </div>
+
+        {/* Custom cursor tooltip */}
+        {tooltip && (
+          <div
+            className="fixed z-[100] px-2 py-1 text-xs font-medium text-foreground bg-popover border border-border rounded-md shadow-md pointer-events-none"
+            style={{
+              left: tooltip.x + 12,
+              top: tooltip.y + 12,
+            }}
+          >
+            Apenas um por página
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   )
