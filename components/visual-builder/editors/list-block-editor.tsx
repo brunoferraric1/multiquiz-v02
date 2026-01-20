@@ -1,32 +1,131 @@
 'use client'
 
-import { useState } from 'react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import { ListConfig, ListItem } from '@/types/blocks'
-import { Plus, Trash2, GripVertical } from 'lucide-react'
+import { Trash2, GripVertical } from 'lucide-react'
 
 interface ListBlockEditorProps {
   config: ListConfig
   onChange: (config: Partial<ListConfig>) => void
 }
 
+interface SortableListItemProps {
+  item: ListItem
+  index: number
+  onUpdate: (updates: Partial<ListItem>) => void
+  onDelete: () => void
+}
+
+function SortableListItem({
+  item,
+  index,
+  onUpdate,
+  onDelete,
+}: SortableListItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`p-3 rounded-lg bg-muted/50 ${isDragging ? 'opacity-50 z-50' : ''}`}
+      data-testid={`list-item-${index}`}
+    >
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 touch-none"
+          {...attributes}
+          {...listeners}
+          aria-label={`Arrastar item ${index + 1}`}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+
+        {/* Emoji input */}
+        <Input
+          value={item.emoji || ''}
+          onChange={(e) => onUpdate({ emoji: e.target.value })}
+          placeholder="✓"
+          maxLength={4}
+          className="w-12 text-center px-1 shrink-0"
+          aria-label={`Emoji do item ${index + 1}`}
+        />
+
+        {/* Text input */}
+        <div className="flex-1">
+          <Input
+            value={item.text}
+            onChange={(e) => onUpdate({ text: e.target.value })}
+            placeholder={`Item ${index + 1}`}
+          />
+        </div>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onDelete}
+          className="text-muted-foreground hover:text-destructive shrink-0"
+          aria-label={`Remover item ${index + 1}`}
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export function ListBlockEditor({ config, onChange }: ListBlockEditorProps) {
-  const [newItemText, setNewItemText] = useState('')
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   const handleAddItem = () => {
-    if (!newItemText.trim()) return
-
     const newItem: ListItem = {
       id: `list-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      text: newItemText.trim(),
+      text: '',
+      emoji: '✓',
     }
 
     onChange({
       items: [...(config.items || []), newItem],
     })
-    setNewItemText('')
   }
 
   const handleUpdateItem = (itemId: string, updates: Partial<ListItem>) => {
@@ -43,92 +142,58 @@ export function ListBlockEditor({ config, onChange }: ListBlockEditorProps) {
     })
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleAddItem()
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const items = config.items || []
+      const oldIndex = items.findIndex((item) => item.id === active.id)
+      const newIndex = items.findIndex((item) => item.id === over.id)
+
+      onChange({
+        items: arrayMove(items, oldIndex, newIndex),
+      })
     }
   }
+
+  const items = config.items || []
 
   return (
     <div className="space-y-4" data-testid="list-block-editor">
       <Label>Itens da lista</Label>
 
-      {/* Existing items */}
-      <div className="space-y-2">
-        {(config.items || []).map((item, index) => (
-          <div
-            key={item.id}
-            className="flex items-center gap-2 group"
-            data-testid={`list-item-${index}`}
-          >
-            <GripVertical className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 cursor-grab" />
-
-            {/* Emoji input */}
-            <div className="w-12">
-              <Input
-                value={item.emoji || ''}
-                onChange={(e) => handleUpdateItem(item.id, { emoji: e.target.value })}
-                placeholder="✓"
-                maxLength={4}
-                className="text-center px-1"
-                aria-label={`Emoji do item ${index + 1}`}
-              />
-            </div>
-
-            {/* Text input */}
-            <div className="flex-1">
-              <Input
-                value={item.text}
-                onChange={(e) => handleUpdateItem(item.id, { text: e.target.value })}
-                placeholder={`Item ${index + 1}`}
-              />
-            </div>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => handleDeleteItem(item.id)}
-              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-              aria-label={`Remover item ${index + 1}`}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
-
-      {/* Add new item */}
-      <div className="flex items-center gap-2">
-        <div className="w-12" />
-        <div className="flex-1">
-          <Input
-            value={newItemText}
-            onChange={(e) => setNewItemText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Novo item..."
-            data-testid="new-list-item-input"
-          />
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={handleAddItem}
-          disabled={!newItemText.trim()}
-          aria-label="Adicionar item"
-          data-testid="add-list-item-button"
+      {/* List items with drag and drop */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={items.map((item) => item.id)}
+          strategy={verticalListSortingStrategy}
         >
-          <Plus className="w-4 h-4" />
-        </Button>
-      </div>
+          <div className="space-y-3">
+            {items.map((item, index) => (
+              <SortableListItem
+                key={item.id}
+                item={item}
+                index={index}
+                onUpdate={(updates) => handleUpdateItem(item.id, updates)}
+                onDelete={() => handleDeleteItem(item.id)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
-      {(config.items || []).length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          Nenhum item adicionado. Digite acima para criar itens.
-        </p>
-      )}
+      {/* Add new item button */}
+      <GhostAddButton
+        size="compact"
+        onClick={handleAddItem}
+        data-testid="add-list-item-button"
+      >
+        Adicionar item
+      </GhostAddButton>
 
       <p className="text-xs text-muted-foreground">
         Dica: Use emojis como ✓, •, ★ para personalizar os marcadores

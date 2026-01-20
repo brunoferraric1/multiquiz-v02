@@ -184,7 +184,25 @@ export function getDefaultBlockConfig(type: BlockType): BlockConfig {
     case 'banner':
       return { urgency: 'info', text: '' } as BannerConfig
     case 'list':
-      return { items: [] } as ListConfig
+      return {
+        items: [
+          {
+            id: `list-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            text: 'Item da lista 1',
+            emoji: '✓',
+          },
+          {
+            id: `list-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            text: 'Item da lista 2',
+            emoji: '✓',
+          },
+          {
+            id: `list-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            text: 'Item da lista 3',
+            emoji: '✓',
+          },
+        ],
+      } as ListConfig
   }
 }
 
