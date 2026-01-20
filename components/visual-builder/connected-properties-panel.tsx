@@ -177,8 +177,6 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
   const setAddBlockSheetOpen = useVisualBuilderStore((state) => state.setAddBlockSheetOpen)
   const setActiveStepId = useVisualBuilderStore((state) => state.setActiveStepId)
   const addOutcome = useVisualBuilderStore((state) => state.addOutcome)
-  const deleteStep = useVisualBuilderStore((state) => state.deleteStep)
-  const deleteOutcome = useVisualBuilderStore((state) => state.deleteOutcome)
 
   // Find the active step and selected block
   const activeStep = steps.find((s) => s.id === activeStepId)
@@ -376,28 +374,19 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
   // If result step with outcome selected, show outcome info
   if (isResultStep && selectedOutcome) {
-    // Check if we can delete (need at least one outcome)
-    const canDeleteOutcome = outcomes.length > 1
-
     return (
       <BuilderProperties
         title={selectedOutcome.name || 'Resultado'}
-        actions={
-          canDeleteOutcome ? (
-            <button
-              onClick={() => deleteOutcome(selectedOutcome.id)}
-              className="flex items-center gap-1 text-muted-foreground hover:text-destructive transition-colors"
-              aria-label="Excluir resultado"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          ) : null
-        }
         className={className}
       >
         <div className="space-y-4">
-          <div className="space-y-3">
-            <span className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          <p className="text-sm text-muted-foreground">
+            Clique em um bloco na prévia para editar seu conteúdo.
+          </p>
+
+          <Separator />
+          <div className="space-y-2">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Blocos neste resultado
             </span>
             {isMounted ? (
@@ -452,6 +441,9 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
       </BuilderProperties>
     )
   }
+
+  // Get deleteStep action
+  const deleteStep = useVisualBuilderStore((state) => state.deleteStep)
 
   // If step is selected, show step settings
   if (activeStep) {
@@ -539,8 +531,8 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
             {/* Block list */}
             {!isIntroStep && <Separator />}
-            <div className="space-y-3">
-              <span className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Blocos nesta etapa
               </span>
               {isMounted ? (
