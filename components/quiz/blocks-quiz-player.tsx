@@ -15,6 +15,7 @@ import { QuizBlocksRenderer } from './quiz-blocks-renderer';
 import { AnalyticsService } from '@/lib/services/analytics-service';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { quizToVisualBuilder } from '@/lib/utils/visual-builder-converters';
+import { ArrowLeft } from 'lucide-react';
 
 interface BlocksQuizPlayerProps {
   quiz: QuizDraft | Quiz;
@@ -439,6 +440,17 @@ export function BlocksQuizPlayer({
     ? questionSteps.findIndex((s) => s.id === currentStep.id) + 1
     : 0;
 
+  // Calculate progress percentage based on all steps (excluding result)
+  // This matches the editor preview calculation in step-preview.tsx
+  const progressPercentage = useMemo(() => {
+    const stepsExcludingResult = steps.filter((s) => s.type !== 'result');
+    if (stepsExcludingResult.length <= 1) return 100;
+    return Math.round((currentStepIndex / (stepsExcludingResult.length - 1)) * 100);
+  }, [steps, currentStepIndex]);
+
+  // Check if back button should be shown
+  const showBackButton = currentStepIndex > 0 && currentStep?.settings?.allowBack !== false;
+
   return (
     <div
       className="relative min-h-screen w-full bg-background px-4 py-8 pb-20 text-foreground sm:px-8 sm:pb-24 flex flex-col justify-center"
@@ -464,10 +476,32 @@ export function BlocksQuizPlayer({
 
       {/* Main content */}
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-        {/* Progress indicator for question steps */}
-        {showProgress && questionSteps.length > 0 && currentStep?.type === 'question' && (
-          <div className="text-center text-sm text-muted-foreground">
-            Pergunta {currentQuestionNumber} de {questionSteps.length}
+        {/* Navigation header - back button and progress bar */}
+        {(showProgress || showBackButton) && currentStep?.type !== 'intro' && currentStep?.type !== 'result' && (
+          <div className="space-y-2">
+            {/* Back button at top left */}
+            {showBackButton && (
+              <button
+                type="button"
+                onClick={goToPreviousStep}
+                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Voltar</span>
+              </button>
+            )}
+
+            {/* Progress bar */}
+            {showProgress && questionSteps.length > 0 && (
+              <div className="w-full">
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -481,16 +515,6 @@ export function BlocksQuizPlayer({
           onFieldChange={handleFieldChange}
         />
 
-        {/* Back button for question steps */}
-        {currentStep?.type === 'question' && currentStep.settings?.allowBack !== false && currentStepIndex > 0 && (
-          <button
-            type="button"
-            onClick={goToPreviousStep}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Voltar
-          </button>
-        )}
       </div>
 
       {/* Footer branding */}
