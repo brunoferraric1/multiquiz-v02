@@ -160,7 +160,11 @@ export function ListBlockEditor({ config, onChange }: ListBlockEditorProps) {
 
   return (
     <div className="space-y-4" data-testid="list-block-editor">
-      <Label>Itens da lista</Label>
+      <div className="mb-3">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          Itens da lista
+        </span>
+      </div>
 
       {/* List items with drag and drop */}
       <DndContext

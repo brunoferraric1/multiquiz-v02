@@ -215,8 +215,12 @@ export function OptionsBlockEditor({
   return (
     <div className="space-y-4" data-testid="options-block-editor">
       {/* Selection type */}
-      <div className="space-y-2">
-        <Label>Tipo de seleção</Label>
+      <div>
+        <div className="mb-3">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Tipo de seleção
+          </span>
+        </div>
         <ToggleGroup
           options={[
             { value: 'single', label: 'Única' },
@@ -229,8 +233,12 @@ export function OptionsBlockEditor({
       </div>
 
       {/* Options list */}
-      <div className="space-y-2">
-        <Label>Opções de resposta</Label>
+      <div>
+        <div className="mb-3">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Opções de resposta
+          </span>
+        </div>
 
         {/* Existing options with drag and drop */}
         <DndContext

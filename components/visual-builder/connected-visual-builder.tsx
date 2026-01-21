@@ -94,8 +94,8 @@ export function ConnectedVisualBuilder({
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
             {/* Introdução section */}
             {introStep && (
-              <div className="p-2 pr-3">
-                <div className="px-2.5 mb-2">
+              <div className="p-3 pb-2">
+                <div className="mb-2">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     Introdução
                   </span>
@@ -112,10 +112,10 @@ export function ConnectedVisualBuilder({
                     }
                   }}
                   className={cn(
-                    'flex items-center gap-3 p-2.5 rounded-lg transition-all text-left cursor-pointer',
+                    'flex items-center gap-3 p-2 rounded-lg transition-colors text-left cursor-pointer',
                     isIntroActive
                       ? 'bg-primary/10 border border-primary/30'
-                      : 'hover:bg-muted/60 border border-transparent'
+                      : 'bg-muted/50 hover:bg-muted/80 border border-transparent'
                   )}
                 >
                   <div
@@ -153,8 +153,8 @@ export function ConnectedVisualBuilder({
             )}
 
             {/* Etapas section */}
-            <div className="p-2 pr-3 pt-0">
-              <div className="px-2.5 mb-2">
+            <div className="px-3 pb-2">
+              <div className="mb-2">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Etapas
                 </span>
@@ -172,8 +172,8 @@ export function ConnectedVisualBuilder({
             </div>
 
             {/* Results section */}
-            <div data-testid="results-section" className="p-2 pr-3 pt-4">
-              <div className="px-2.5 mb-2">
+            <div data-testid="results-section" className="px-3 pt-4 pb-3">
+              <div className="mb-2">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Resultados
                 </span>

@@ -287,8 +287,12 @@ export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
   return (
     <div className="space-y-4" data-testid="price-block-editor">
       {/* Price items list */}
-      <div className="space-y-2">
-        <Label>Opções de preço</Label>
+      <div>
+        <div className="mb-3">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Opções de preço
+          </span>
+        </div>
 
         <DndContext
           sensors={sensors}

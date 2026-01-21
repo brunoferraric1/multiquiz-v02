@@ -26,8 +26,12 @@ export function BlockControls({
   return (
     <div className="space-y-4" data-testid="block-controls">
       {/* Reorder controls */}
-      <div className="space-y-2">
-        <Label>Reordenar</Label>
+      <div>
+        <div className="mb-3">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Reordenar
+          </span>
+        </div>
         <div className="flex gap-2">
           <Button
             type="button"
