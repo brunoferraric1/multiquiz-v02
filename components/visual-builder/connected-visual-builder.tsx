@@ -161,14 +161,14 @@ export function ConnectedVisualBuilder({
               </div>
               <SortableStepsList />
               {/* Add step button - below the list */}
-              <div className="mt-2">
-                <GhostAddButton
-                  onClick={handleAddStep}
-                  aria-label="Adicionar etapa"
-                >
-                  Adicionar etapa
-                </GhostAddButton>
-              </div>
+              <GhostAddButton
+                size="compact"
+                className="mt-2"
+                onClick={handleAddStep}
+                aria-label="Adicionar etapa"
+              >
+                Adicionar etapa
+              </GhostAddButton>
             </div>
 
             {/* Results section */}
@@ -182,14 +182,14 @@ export function ConnectedVisualBuilder({
               <SortableOutcomesList />
 
               {/* Add resultado button - below the list */}
-              <div className="mt-2">
-                <GhostAddButton
-                  onClick={handleAddOutcome}
-                  aria-label="Adicionar resultado"
-                >
-                  Adicionar resultado
-                </GhostAddButton>
-              </div>
+              <GhostAddButton
+                size="compact"
+                className="mt-2"
+                onClick={handleAddOutcome}
+                aria-label="Adicionar resultado"
+              >
+                Adicionar resultado
+              </GhostAddButton>
             </div>
           </div>
         </aside>
