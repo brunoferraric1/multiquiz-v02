@@ -23,6 +23,7 @@ interface ConnectedVisualBuilderProps {
   onPublish?: () => void
   isPublishing?: boolean
   isPublished?: boolean
+  isPreviewing?: boolean
 }
 
 /**
@@ -38,6 +39,7 @@ export function ConnectedVisualBuilder({
   onPublish,
   isPublishing = false,
   isPublished = false,
+  isPreviewing = false,
 }: ConnectedVisualBuilderProps) {
   // Local UI state
   const [activeTab, setActiveTab] = useState<HeaderTab>('editar')
@@ -82,6 +84,7 @@ export function ConnectedVisualBuilder({
         onPublish={onPublish}
         isPublishing={isPublishing}
         isPublished={isPublished}
+        isPreviewing={isPreviewing}
       />
 
       {/* MAIN CONTENT - Three column layout */}

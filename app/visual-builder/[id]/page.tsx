@@ -291,6 +291,7 @@ function VisualBuilderEditor() {
       onPublish={handlePublish}
       isPublishing={isPublishing}
       isPublished={quizIsPublished}
+      isPreviewing={isSavingForPreview}
     />
   )
 }

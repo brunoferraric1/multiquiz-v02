@@ -15,6 +15,7 @@ interface BuilderHeaderNavProps {
   onPublish?: () => void
   isPublishing?: boolean
   isPublished?: boolean
+  isPreviewing?: boolean
 }
 
 const tabs: { id: HeaderTab; label: string; icon: React.ReactNode }[] = [
@@ -34,6 +35,7 @@ export function BuilderHeaderNav({
   onPublish,
   isPublishing = false,
   isPublished = false,
+  isPreviewing = false,
 }: BuilderHeaderNavProps) {
   // Determine button text based on publish state
   const publishButtonText = isPublishing
@@ -88,9 +90,16 @@ export function BuilderHeaderNav({
           onClick={onPreview}
           className="flex items-center gap-2"
           aria-label="Preview"
+          disabled={isPreviewing}
         >
-          <Play className="w-4 h-4 fill-current" />
-          <span className="hidden sm:inline">Preview</span>
+          {isPreviewing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Play className="w-4 h-4 fill-current" />
+          )}
+          <span className="hidden sm:inline">
+            {isPreviewing ? 'Abrindo...' : 'Preview'}
+          </span>
         </Button>
         <Button
           size="sm"

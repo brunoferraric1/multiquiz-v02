@@ -16,7 +16,7 @@ interface SectionTitleProps {
  */
 export function SectionTitle({ children, className }: SectionTitleProps) {
   return (
-    <div className={cn('mb-3', className)}>
+    <div className={cn('mb-2', className)}>
       <span className="text-xs font-normal text-muted-foreground uppercase tracking-wide">
         {children}
       </span>
