@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ToggleGroup } from '@/components/ui/toggle-group'
+import { SectionTitle } from '@/components/ui/section-title'
 import { MediaConfig } from '@/types/blocks'
 import { Image, Video, ImageIcon, UploadCloud, Trash2 } from 'lucide-react'
 
@@ -50,8 +51,8 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
   return (
     <div className="space-y-4" data-testid="media-block-editor">
       {/* Media type selector */}
-      <div className="space-y-2">
-        <Label>Tipo de mídia</Label>
+      <div>
+        <SectionTitle>Tipo de mídia</SectionTitle>
         <ToggleGroup
           options={[
             { value: 'image', label: 'Imagem', icon: <Image /> },
@@ -65,8 +66,8 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
 
       {/* Image upload area */}
       {config.type === 'image' && (
-        <div className="space-y-2">
-          <Label>Imagem</Label>
+        <div>
+          <SectionTitle>Imagem</SectionTitle>
 
           {config.url ? (
             <div className="space-y-2">

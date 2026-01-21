@@ -12,6 +12,7 @@ import { SortableOutcomesList } from './sortable-outcomes-list'
 import { StepPreview } from './step-preview'
 import { cn } from '@/lib/utils'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
+import { SectionTitle } from '@/components/ui/section-title'
 import { Play } from 'lucide-react'
 import { HeaderConfig } from '@/types/blocks'
 
@@ -95,11 +96,7 @@ export function ConnectedVisualBuilder({
             {/* Introdução section */}
             {introStep && (
               <div className="p-3 pb-2">
-                <div className="mb-2">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    Introdução
-                  </span>
-                </div>
+                <SectionTitle className="mb-2">Introdução</SectionTitle>
                 <div
                   role="button"
                   tabIndex={0}
@@ -154,11 +151,7 @@ export function ConnectedVisualBuilder({
 
             {/* Etapas section */}
             <div className="px-3 pb-2">
-              <div className="mb-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Etapas
-                </span>
-              </div>
+              <SectionTitle className="mb-2">Etapas</SectionTitle>
               <SortableStepsList />
               {/* Add step button - below the list */}
               <GhostAddButton
@@ -173,11 +166,7 @@ export function ConnectedVisualBuilder({
 
             {/* Results section */}
             <div data-testid="results-section" className="px-3 pt-4 pb-3">
-              <div className="mb-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Resultados
-                </span>
-              </div>
+              <SectionTitle className="mb-2">Resultados</SectionTitle>
 
               <SortableOutcomesList />
 

@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
+import { SectionTitle } from '@/components/ui/section-title'
 import {
   Select,
   SelectContent,
@@ -293,11 +294,7 @@ export function FieldsBlockEditor({ config, onChange }: FieldsBlockEditorProps) 
 
   return (
     <div className="space-y-4" data-testid="fields-block-editor">
-      <div className="mb-3">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Campos do formulário
-        </span>
-      </div>
+      <SectionTitle>Campos do formulário</SectionTitle>
 
       {/* Fields list with drag and drop */}
       <DndContext

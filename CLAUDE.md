@@ -95,6 +95,37 @@ Tests use Vitest + React Testing Library with TDD approach. Tests focus on struc
 2. Will future features need to maintain multiple code paths?
 3. Is there a cleaner approach that takes slightly longer now but saves time later?
 
+## Design System & Reusable Components
+
+**Always think in terms of reusable components to avoid redundancy and ensure consistency:**
+
+- Before writing UI code, check if a component already exists in `components/ui/` that solves the need
+- If you find yourself copying the same styling pattern across multiple files, **proactively propose creating a reusable component**
+- When updating styles that appear in multiple places, ask: "Should this be a component instead?"
+
+**Existing UI components to use:**
+- `SectionTitle` - Uppercase muted labels for grouping controls (e.g., "TIPO DE MÍDIA", "REORDENAR")
+- `Label` - Form field labels tied to specific inputs (e.g., "Texto do botão", "URL de destino")
+- `GhostAddButton` - Dashed "add item" buttons with consistent styling
+- `Button`, `Input`, `Switch`, `Select` - Standard form controls from shadcn/ui
+- `ToggleGroup` - Segmented control for mutually exclusive options
+
+**SectionTitle vs Label:**
+- Use `SectionTitle` for section headers that group multiple controls (ToggleGroups, lists, upload areas)
+- Use `Label` for individual form fields with `htmlFor` attribute linking to an input
+
+**When to create a new component:**
+1. The same pattern appears 3+ times across files
+2. A style change would require updating multiple files manually
+3. The pattern has clear, consistent behavior worth encapsulating
+
+**Component guidelines:**
+- Place in `components/ui/` for generic components
+- Include JSDoc with `@example` for discoverability
+- Add basic tests in `components/ui/__tests__/`
+- Accept `className` prop for customization when appropriate
+- Keep components focused - one responsibility per component
+
 ## Current Development Focus
 
 Milestone 5A (Core Flows) is in progress: auto-save integration, quiz loading, publish flow. See the implementation plan for task breakdown.

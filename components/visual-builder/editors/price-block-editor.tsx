@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
+import { SectionTitle } from '@/components/ui/section-title'
 import { PriceConfig, PriceItem } from '@/types/blocks'
 import { Trash2, GripVertical, ChevronDown, ChevronUp, Star } from 'lucide-react'
 
@@ -288,11 +289,7 @@ export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
     <div className="space-y-4" data-testid="price-block-editor">
       {/* Price items list */}
       <div>
-        <div className="mb-3">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Opções de preço
-          </span>
-        </div>
+        <SectionTitle>Opções de preço</SectionTitle>
 
         <DndContext
           sensors={sensors}

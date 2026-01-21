@@ -47,6 +47,7 @@ import {
 } from '@/types/blocks'
 import { Separator } from '@/components/ui/separator'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
+import { SectionTitle } from '@/components/ui/section-title'
 import {
   Heading1,
   Type,
@@ -387,9 +388,7 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
           <Separator />
           <div className="space-y-2">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Blocos neste resultado
-            </span>
+            <SectionTitle className="mb-0">Blocos neste resultado</SectionTitle>
             {isMounted ? (
               <DndContext
                 id={`${dndId}-outcome`}
@@ -530,9 +529,7 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
             {/* Block list */}
             {!isIntroStep && <Separator />}
             <div className="space-y-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Blocos nesta etapa
-              </span>
+              <SectionTitle className="mb-0">Blocos nesta etapa</SectionTitle>
               {isMounted ? (
                 <DndContext
                   id={`${dndId}-step`}

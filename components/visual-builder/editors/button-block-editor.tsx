@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupOption } from '@/components/ui/toggle-group'
+import { SectionTitle } from '@/components/ui/section-title'
 import { ButtonConfig, ButtonAction } from '@/types/blocks'
 import { ArrowRight, Link } from 'lucide-react'
 
@@ -62,8 +63,8 @@ export function ButtonBlockEditor({
 
       {/* Action type */}
       {actionOptions.length > 1 && (
-        <div className="space-y-2">
-          <Label>Ação do botão</Label>
+        <div>
+          <SectionTitle>Ação do botão</SectionTitle>
           <ToggleGroup
             options={actionOptions}
             value={effectiveAction}

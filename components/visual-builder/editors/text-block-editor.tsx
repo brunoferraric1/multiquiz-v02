@@ -4,8 +4,8 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { SectionTitle } from '@/components/ui/section-title'
 import { TextConfig } from '@/types/blocks'
 import {
   Bold,
@@ -69,11 +69,12 @@ export function TextBlockEditor({ config, onChange }: TextBlockEditorProps) {
 
   return (
     <div className="space-y-4" data-testid="text-block-editor">
-      <div className="space-y-2">
-        <Label>Conteúdo</Label>
+      <div>
+        <SectionTitle>Conteúdo</SectionTitle>
 
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-1 p-1 border rounded-md bg-muted/30">
+        <div className="space-y-2">
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-center gap-1 p-1 border rounded-md bg-muted/30">
           {/* Text formatting */}
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -133,10 +134,11 @@ export function TextBlockEditor({ config, onChange }: TextBlockEditorProps) {
           >
             <AlignRight className="w-4 h-4" />
           </ToolbarButton>
-        </div>
+          </div>
 
-        {/* Editor */}
-        <EditorContent editor={editor} />
+          {/* Editor */}
+          <EditorContent editor={editor} />
+        </div>
       </div>
     </div>
   )

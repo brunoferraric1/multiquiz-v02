@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup } from '@/components/ui/toggle-group'
+import { SectionTitle } from '@/components/ui/section-title'
 import { BannerConfig, BannerUrgency } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { Info, AlertTriangle, AlertCircle } from 'lucide-react'
@@ -35,8 +36,8 @@ export function BannerBlockEditor({ config, onChange }: BannerBlockEditorProps) 
   return (
     <div className="space-y-4" data-testid="banner-block-editor">
       {/* Urgency level */}
-      <div className="space-y-2">
-        <Label>Tipo de banner</Label>
+      <div>
+        <SectionTitle>Tipo de banner</SectionTitle>
         <ToggleGroup
           options={[
             { value: 'info' as BannerUrgency, label: 'Info', icon: <Info /> },

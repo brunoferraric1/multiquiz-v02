@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
+import { SectionTitle } from '@/components/ui/section-title'
 import { ListConfig, ListItem } from '@/types/blocks'
 import { Trash2, GripVertical } from 'lucide-react'
 
@@ -160,11 +161,7 @@ export function ListBlockEditor({ config, onChange }: ListBlockEditorProps) {
 
   return (
     <div className="space-y-4" data-testid="list-block-editor">
-      <div className="mb-3">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Itens da lista
-        </span>
-      </div>
+      <SectionTitle>Itens da lista</SectionTitle>
 
       {/* List items with drag and drop */}
       <DndContext

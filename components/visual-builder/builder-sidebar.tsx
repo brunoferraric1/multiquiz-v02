@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils'
 import { Plus, Play, HelpCircle, Users, Gift, BarChart3, Trash2 } from 'lucide-react'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
+import { SectionTitle } from '@/components/ui/section-title'
 
 export type StepType = 'intro' | 'question' | 'lead-gen' | 'promo' | 'result'
 
@@ -151,9 +152,7 @@ export function BuilderSidebar({
         {/* Results section */}
         <div data-testid="results-section" className="p-2">
           <div className="flex items-center justify-between px-2.5 mb-2">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Resultados
-            </span>
+            <SectionTitle className="mb-0">Resultados</SectionTitle>
             <button
               onClick={onAddOutcome}
               className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded"

@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ToggleGroup } from '@/components/ui/toggle-group'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
+import { SectionTitle } from '@/components/ui/section-title'
 import { OptionsConfig, OptionItem } from '@/types/blocks'
 import type { Outcome } from '@/store/visual-builder-store'
 import { Trash2, GripVertical, ArrowRight, Plus } from 'lucide-react'
@@ -216,11 +217,7 @@ export function OptionsBlockEditor({
     <div className="space-y-4" data-testid="options-block-editor">
       {/* Selection type */}
       <div>
-        <div className="mb-3">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Tipo de seleção
-          </span>
-        </div>
+        <SectionTitle>Tipo de seleção</SectionTitle>
         <ToggleGroup
           options={[
             { value: 'single', label: 'Única' },
@@ -234,11 +231,7 @@ export function OptionsBlockEditor({
 
       {/* Options list */}
       <div>
-        <div className="mb-3">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Opções de resposta
-          </span>
-        </div>
+        <SectionTitle>Opções de resposta</SectionTitle>
 
         {/* Existing options with drag and drop */}
         <DndContext

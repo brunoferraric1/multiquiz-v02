@@ -1,8 +1,8 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { SectionTitle } from '@/components/ui/section-title'
 import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -27,11 +27,7 @@ export function BlockControls({
     <div className="space-y-4" data-testid="block-controls">
       {/* Reorder controls */}
       <div>
-        <div className="mb-3">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Reordenar
-          </span>
-        </div>
+        <SectionTitle>Reordenar</SectionTitle>
         <div className="flex gap-2">
           <Button
             type="button"
