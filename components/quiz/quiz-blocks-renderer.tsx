@@ -34,6 +34,9 @@ interface QuizBlocksRendererProps {
   // For options block
   onOptionSelect?: (optionId: string) => void;
   selectedOptionIds?: string[];
+  // For price block
+  onPriceSelect?: (priceId: string) => void;
+  selectedPriceIds?: string[];
   // For button block
   onButtonClick?: () => void;
   // For fields block
@@ -47,6 +50,8 @@ export function QuizBlocksRenderer({
   blocks,
   onOptionSelect,
   selectedOptionIds = [],
+  onPriceSelect,
+  selectedPriceIds = [],
   onButtonClick,
   fieldValues = {},
   onFieldChange,
@@ -67,6 +72,8 @@ export function QuizBlocksRenderer({
           block={block}
           onOptionSelect={onOptionSelect}
           selectedOptionIds={selectedOptionIds}
+          onPriceSelect={onPriceSelect}
+          selectedPriceIds={selectedPriceIds}
           onButtonClick={onButtonClick}
           fieldValues={fieldValues}
           onFieldChange={onFieldChange}
@@ -80,6 +87,8 @@ interface BlockRendererProps {
   block: Block;
   onOptionSelect?: (optionId: string) => void;
   selectedOptionIds?: string[];
+  onPriceSelect?: (priceId: string) => void;
+  selectedPriceIds?: string[];
   onButtonClick?: () => void;
   fieldValues?: Record<string, string>;
   onFieldChange?: (fieldId: string, value: string) => void;
@@ -89,6 +98,8 @@ function BlockRenderer({
   block,
   onOptionSelect,
   selectedOptionIds = [],
+  onPriceSelect,
+  selectedPriceIds = [],
   onButtonClick,
   fieldValues = {},
   onFieldChange,
@@ -123,7 +134,13 @@ function BlockRenderer({
         />
       );
     case 'price':
-      return <PriceBlock config={block.config as PriceConfig} />;
+      return (
+        <PriceBlock
+          config={block.config as PriceConfig}
+          onSelect={onPriceSelect}
+          selectedIds={selectedPriceIds}
+        />
+      );
     default:
       return null;
   }
@@ -352,9 +369,18 @@ function BannerBlock({ config }: { config: BannerConfig }) {
   );
 }
 
-function PriceBlock({ config }: { config: PriceConfig }) {
+function PriceBlock({
+  config,
+  onSelect,
+  selectedIds = [],
+}: {
+  config: PriceConfig;
+  onSelect?: (priceId: string) => void;
+  selectedIds?: string[];
+}) {
   const items = config.items || [];
   const selectionType = config.selectionType || 'single';
+  const isMultiple = selectionType === 'multiple';
   const showSelection = items.length > 1;
 
   if (items.length === 0) return null;
@@ -362,17 +388,24 @@ function PriceBlock({ config }: { config: PriceConfig }) {
   return (
     <div className="space-y-3">
       {items.map((price) => {
+        const isSelected = selectedIds.includes(price.id);
         const hasHighlight = price.showHighlight && !!price.highlightText;
         const hasOriginalPrice = price.showOriginalPrice && !!price.originalPrice;
 
         return (
-          <div
+          <button
             key={price.id}
+            type="button"
+            onClick={() => onSelect?.(price.id)}
             className={cn(
-              'relative rounded-xl overflow-hidden',
-              'bg-card border border-border/50',
-              'shadow-sm',
-              hasHighlight && 'ring-2 ring-primary'
+              'relative w-full rounded-xl overflow-hidden text-left transition-all',
+              'bg-card border-2 shadow-sm',
+              'hover:border-primary/50 hover:bg-[var(--quiz-card-hover,hsl(var(--muted)))]',
+              isSelected
+                ? 'border-primary bg-primary/5'
+                : hasHighlight
+                  ? 'border-primary/50'
+                  : 'border-border/50'
             )}
           >
             {/* Highlight banner */}
@@ -388,8 +421,16 @@ function PriceBlock({ config }: { config: PriceConfig }) {
               <div className="flex items-center gap-3 min-w-0">
                 {showSelection && (
                   <div className="shrink-0">
-                    {selectionType === 'multiple' ? (
-                      <Square className="w-5 h-5 text-muted-foreground" />
+                    {isMultiple ? (
+                      isSelected ? (
+                        <CheckSquare className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Square className="w-5 h-5 text-muted-foreground" />
+                      )
+                    ) : isSelected ? (
+                      <div className="w-5 h-5 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                      </div>
                     ) : (
                       <div className="w-5 h-5 rounded-full border-2 border-muted-foreground" />
                     )}
@@ -427,7 +468,7 @@ function PriceBlock({ config }: { config: PriceConfig }) {
                 )}
               </div>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>

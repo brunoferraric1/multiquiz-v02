@@ -10,7 +10,7 @@
 
 import { useMemo, useState, useEffect, useRef, type CSSProperties } from 'react';
 import type { BrandKitColors, Quiz, QuizDraft, VisualBuilderData } from '@/types';
-import type { Block, OptionsConfig, FieldsConfig, FieldItem } from '@/types/blocks';
+import type { Block, OptionsConfig, FieldsConfig, FieldItem, PriceConfig } from '@/types/blocks';
 import { QuizBlocksRenderer } from './quiz-blocks-renderer';
 import { AnalyticsService } from '@/lib/services/analytics-service';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -210,6 +210,7 @@ export function BlocksQuizPlayer({
   // State machine
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<SelectionState>({});
+  const [selectedPrices, setSelectedPrices] = useState<SelectionState>({});
   const [fieldValues, setFieldValues] = useState<FieldValuesState>({});
   const [resultOutcomeId, setResultOutcomeId] = useState<string | null>(null);
 
@@ -222,6 +223,7 @@ export function BlocksQuizPlayer({
 
   // Get current step's selections and field values
   const currentSelectionIds = currentStep ? selectedOptions[currentStep.id] || [] : [];
+  const currentPriceIds = currentStep ? selectedPrices[currentStep.id] || [] : [];
   const currentFieldValues = currentStep ? fieldValues[currentStep.id] || {} : {};
 
   // Get blocks to render
@@ -280,6 +282,30 @@ export function BlocksQuizPlayer({
         goToNextStep();
       }, 220);
     }
+  };
+
+  // Handle price selection
+  const handlePriceSelect = (priceId: string) => {
+    if (!currentStep) return;
+
+    // Find price block to check if multi-select
+    const priceBlock = currentStep.blocks.find((b) => b.type === 'price' && b.enabled);
+    const priceConfig = priceBlock?.config as PriceConfig | undefined;
+    const isMultiple = priceConfig?.selectionType === 'multiple';
+
+    setSelectedPrices((prev) => {
+      const existing = prev[currentStep.id] || [];
+      const nextSelections = isMultiple
+        ? existing.includes(priceId)
+          ? existing.filter((id) => id !== priceId)
+          : [...existing, priceId]
+        : [priceId];
+
+      return {
+        ...prev,
+        [currentStep.id]: nextSelections,
+      };
+    });
   };
 
   // Handle field value changes
@@ -416,6 +442,7 @@ export function BlocksQuizPlayer({
   const resetQuiz = () => {
     setCurrentStepIndex(0);
     setSelectedOptions({});
+    setSelectedPrices({});
     setFieldValues({});
     setResultOutcomeId(null);
     setAttemptId(null);
@@ -510,6 +537,8 @@ export function BlocksQuizPlayer({
           blocks={blocksToRender}
           onOptionSelect={handleOptionSelect}
           selectedOptionIds={currentSelectionIds}
+          onPriceSelect={handlePriceSelect}
+          selectedPriceIds={currentPriceIds}
           onButtonClick={handleButtonClick}
           fieldValues={currentFieldValues}
           onFieldChange={handleFieldChange}
