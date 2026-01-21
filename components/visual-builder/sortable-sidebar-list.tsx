@@ -45,13 +45,9 @@ export function SortableSidebarList<T>({
     setIsMounted(true)
   }, [])
 
-  // Sensors with distance constraint for smooth, intentional dragging
+  // Sensors without distance constraint for smooth, immediate dragging (matches list-block-editor)
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Require 8px drag before activation
-      },
-    }),
+    useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -75,7 +71,7 @@ export function SortableSidebarList<T>({
   // Render without D&D until mounted (SSR safety)
   if (!isMounted) {
     return (
-      <div data-testid={testId} className="space-y-1">
+      <div data-testid={testId} className="space-y-2">
         {children}
       </div>
     )
@@ -89,7 +85,7 @@ export function SortableSidebarList<T>({
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-        <div data-testid={testId} className="space-y-1">
+        <div data-testid={testId} className="space-y-2">
           {children}
         </div>
       </SortableContext>

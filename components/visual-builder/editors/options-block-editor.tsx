@@ -242,7 +242,7 @@ export function OptionsBlockEditor({
             items={items.map((item) => item.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-3">
+            <div className="space-y-2">
               {items.map((option, index) => (
                 <SortableOptionItem
                   key={option.id}

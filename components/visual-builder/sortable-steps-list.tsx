@@ -1,20 +1,10 @@
 'use client'
 
 import { useMemo } from 'react'
-import { useVisualBuilderStore, Step, StepType } from '@/store/visual-builder-store'
+import { useVisualBuilderStore, Step } from '@/store/visual-builder-store'
 import { HeaderConfig } from '@/types/blocks'
-import { Play, HelpCircle, Users, Gift } from 'lucide-react'
 import { SortableSidebarList } from './sortable-sidebar-list'
 import { SortableSidebarItem } from './sortable-sidebar-item'
-
-// Step type icons
-const stepTypeIcons: Record<StepType, React.ReactNode> = {
-  intro: <Play className="w-4 h-4" />,
-  question: <HelpCircle className="w-4 h-4" />,
-  'lead-gen': <Users className="w-4 h-4" />,
-  promo: <Gift className="w-4 h-4" />,
-  result: null, // Result is not shown in this list
-}
 
 /**
  * Get the subtitle for a step (header title or step subtitle)
@@ -79,7 +69,6 @@ export function SortableStepsList() {
           onDelete={() => deleteStep(step.id)}
           onDuplicate={() => duplicateStep(step.id)}
           disabled={step.isFixed}
-          icon={stepTypeIcons[step.type]}
           title={`${index + 1}. ${step.label}`}
           subtitle={getStepSubtitle(step)}
           data-testid={`step-item-${step.id}`}
