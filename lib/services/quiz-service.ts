@@ -12,7 +12,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { BrandKit, Quiz, QuizDraft, QuizSnapshot, Question, Outcome } from '@/types';
+import type { BrandKit, Quiz, QuizDraft, QuizSnapshot, Question, Outcome, VisualBuilderData } from '@/types';
 import { QuizSchema } from '@/types';
 import { TIER_LIMITS } from '@/lib/stripe';
 import {
@@ -22,6 +22,7 @@ import {
   getOutcomeImagePath,
   getQuestionImagePath,
 } from '@/lib/services/storage-service';
+import { quizToVisualBuilder } from '@/lib/utils/visual-builder-converters';
 
 const QUIZZES_COLLECTION = 'quizzes';
 const LIMIT_ERRORS = {
@@ -280,8 +281,7 @@ export class QuizService {
       description: quiz.description || '',
       primaryColor: quiz.primaryColor || '#4F46E5',
       brandKitMode: quiz.brandKitMode ?? 'default',
-      questions: sanitizeQuestions(quiz.questions || []),
-      outcomes: sanitizeOutcomes(quiz.outcomes || []),
+      // Legacy questions/outcomes are no longer stored - visualBuilderData is the source of truth
       createdAt: quiz.createdAt || now,
       updatedAt: now,
       isPublished: quiz.isPublished || false,
@@ -418,6 +418,45 @@ export class QuizService {
         parsedVisualBuilderData = data.visualBuilderData;
       }
 
+      // Check if this is a legacy quiz that needs migration
+      // (has questions/outcomes but no visualBuilderData)
+      const needsLegacyMigration = !parsedVisualBuilderData &&
+        (Array.isArray(data.questions) && data.questions.length > 0 ||
+         Array.isArray(data.outcomes) && data.outcomes.length > 0);
+
+      if (needsLegacyMigration) {
+        console.log('[QuizService] Legacy quiz detected, converting to visualBuilderData:', quizId);
+        try {
+          // Convert legacy format to visualBuilderData
+          const legacyQuiz = {
+            title: data.title,
+            description: data.description,
+            coverImageUrl: data.coverImageUrl,
+            questions: data.questions || [],
+            outcomes: data.outcomes || [],
+            leadGen: data.leadGen,
+          };
+          const converted = quizToVisualBuilder(legacyQuiz as any);
+          parsedVisualBuilderData = {
+            schemaVersion: 1,
+            steps: converted.steps,
+            outcomes: converted.outcomes,
+          };
+          console.log('[QuizService] Legacy migration complete - converted to', {
+            stepsCount: converted.steps.length,
+            outcomesCount: converted.outcomes.length,
+          });
+        } catch (err) {
+          console.error('[QuizService] Failed to migrate legacy quiz:', err);
+          // Return empty visualBuilderData as fallback
+          parsedVisualBuilderData = {
+            schemaVersion: 1,
+            steps: [],
+            outcomes: [],
+          };
+        }
+      }
+
       let baseQuiz = {
         ...data,
         id: quizDoc.id,
@@ -523,8 +562,13 @@ export class QuizService {
 
   /**
    * Create a snapshot of the current quiz for publishing
+   * Note: Legacy questions/outcomes are no longer included - visualBuilderData is the source of truth
    */
   private static createSnapshot(quiz: Quiz, brandKit?: BrandKit | null): QuizSnapshot {
+    if (!quiz.visualBuilderData) {
+      throw new Error('Cannot create snapshot: visualBuilderData is required');
+    }
+
     return {
       title: quiz.title,
       description: quiz.description,
@@ -533,10 +577,8 @@ export class QuizService {
       primaryColor: quiz.primaryColor || '#4F46E5',
       brandKitMode: quiz.brandKitMode ?? 'default',
       brandKit: quiz.brandKitMode === 'custom' ? brandKit ?? undefined : undefined,
-      questions: quiz.questions || [],
-      outcomes: quiz.outcomes || [],
       leadGen: quiz.leadGen,
-      // visualBuilderData is already stored as JSON string in the quiz
+      // visualBuilderData is the single source of truth for quiz content
       visualBuilderData: quiz.visualBuilderData,
     };
   }

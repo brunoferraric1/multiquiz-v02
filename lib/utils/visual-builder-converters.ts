@@ -1,26 +1,17 @@
 /**
  * Visual Builder Converters
  *
- * These utilities convert between the visual builder's step/block format
- * and the legacy quiz format (questions/outcomes) used by:
- * - Firestore storage
- * - Quiz player
- * - Auto-save system
+ * DEPRECATED: These utilities are being phased out as we migrate to visualBuilderData
+ * as the single source of truth. Only quizToVisualBuilder is still needed for
+ * migrating legacy quizzes.
+ *
+ * For new code, use the helper functions in visual-builder-helpers.ts instead.
  */
 
 import { v4 as uuidv4 } from 'uuid'
-import type { Question, Outcome as QuizOutcome, QuizDraft, Quiz } from '@/types'
-import type {
-  Block,
-  HeaderConfig,
-  TextConfig,
-  MediaConfig,
-  OptionsConfig,
-  FieldsConfig,
-  ButtonConfig,
-  OptionItem,
-} from '@/types/blocks'
-import type { Step, Outcome as VBOutcome, StepType } from '@/store/visual-builder-store'
+import type { Outcome as QuizOutcome, QuizDraft, Quiz } from '@/types'
+import type { Block, HeaderConfig, MediaConfig, OptionsConfig, FieldsConfig } from '@/types/blocks'
+import type { Step, Outcome as VBOutcome } from '@/store/visual-builder-store'
 import { createBlock } from '@/types/blocks'
 import { getDefaultOutcomeBlocks } from '@/store/visual-builder-store'
 
@@ -31,173 +22,6 @@ import { getDefaultOutcomeBlocks } from '@/store/visual-builder-store'
 export interface VisualBuilderData {
   steps: Step[]
   outcomes: VBOutcome[]
-}
-
-export interface QuizData {
-  title: string
-  description: string
-  coverImageUrl?: string
-  ctaText?: string
-  ctaUrl?: string
-  questions: Question[]
-  outcomes: QuizOutcome[]
-  leadGen?: {
-    enabled: boolean
-    title?: string
-    description?: string
-    fields: ('name' | 'email' | 'phone')[]
-    ctaText?: string
-  }
-}
-
-// ============================================================================
-// Visual Builder → Quiz Format (for saving)
-// ============================================================================
-
-/**
- * Extract quiz-level data from visual builder steps
- */
-function extractQuizMetadata(steps: Step[]): Pick<QuizData, 'title' | 'description' | 'coverImageUrl'> {
-  const introStep = steps.find((s) => s.type === 'intro')
-  if (!introStep) {
-    return { title: '', description: '' }
-  }
-
-  const headerBlock = introStep.blocks.find((b) => b.type === 'header' && b.enabled)
-  const mediaBlock = introStep.blocks.find((b) => b.type === 'media' && b.enabled)
-
-  const headerConfig = headerBlock?.config as HeaderConfig | undefined
-  const mediaConfig = mediaBlock?.config as MediaConfig | undefined
-
-  return {
-    title: headerConfig?.title || '',
-    description: headerConfig?.description || '',
-    coverImageUrl: mediaConfig?.type === 'image' ? mediaConfig.url : undefined,
-  }
-}
-
-/**
- * Convert a question step to a Question object
- */
-function stepToQuestion(step: Step, stepIndex: number): Question | null {
-  if (step.type !== 'question') return null
-
-  const headerBlock = step.blocks.find((b) => b.type === 'header' && b.enabled)
-  const mediaBlock = step.blocks.find((b) => b.type === 'media' && b.enabled)
-  const optionsBlock = step.blocks.find((b) => b.type === 'options' && b.enabled)
-
-  const headerConfig = headerBlock?.config as HeaderConfig | undefined
-  const mediaConfig = mediaBlock?.config as MediaConfig | undefined
-  const optionsConfig = optionsBlock?.config as OptionsConfig | undefined
-
-  // Get question text from header title
-  const questionText = headerConfig?.title || `Pergunta ${stepIndex + 1}`
-
-  // Convert option items to answer options
-  const options = (optionsConfig?.items || []).map((item: OptionItem) => ({
-    id: item.id || uuidv4(),
-    text: item.text || '',
-    icon: item.emoji,
-    targetOutcomeId: item.outcomeId || '',
-  }))
-
-  // At minimum need ID and text for a valid question
-  return {
-    id: step.id,
-    text: questionText,
-    imageUrl: mediaConfig?.type === 'image' ? mediaConfig.url : undefined,
-    options: options.length > 0 ? options : [{ id: uuidv4(), text: '', targetOutcomeId: '' }],
-    allowMultiple: optionsConfig?.selectionType === 'multiple',
-  }
-}
-
-/**
- * Extract lead generation config from steps
- */
-function extractLeadGenConfig(steps: Step[]): QuizData['leadGen'] | undefined {
-  const leadGenStep = steps.find((s) => s.type === 'lead-gen')
-  if (!leadGenStep) return undefined
-
-  const headerBlock = leadGenStep.blocks.find((b) => b.type === 'header' && b.enabled)
-  const fieldsBlock = leadGenStep.blocks.find((b) => b.type === 'fields' && b.enabled)
-  const buttonBlock = leadGenStep.blocks.find((b) => b.type === 'button' && b.enabled)
-
-  const headerConfig = headerBlock?.config as HeaderConfig | undefined
-  const fieldsConfig = fieldsBlock?.config as FieldsConfig | undefined
-  const buttonConfig = buttonBlock?.config as ButtonConfig | undefined
-
-  // Map field types to the expected format
-  const fields: ('name' | 'email' | 'phone')[] = []
-  for (const field of fieldsConfig?.items || []) {
-    if (field.type === 'text' && field.label.toLowerCase().includes('nome')) {
-      fields.push('name')
-    } else if (field.type === 'email') {
-      fields.push('email')
-    } else if (field.type === 'phone') {
-      fields.push('phone')
-    }
-  }
-
-  return {
-    enabled: true,
-    title: headerConfig?.title,
-    description: headerConfig?.description,
-    fields: fields.length > 0 ? fields : ['email'],
-    ctaText: buttonConfig?.text,
-  }
-}
-
-/**
- * Convert visual builder outcome to quiz outcome
- */
-function vbOutcomeToQuizOutcome(outcome: VBOutcome): QuizOutcome {
-  const headerBlock = outcome.blocks.find((b) => b.type === 'header' && b.enabled)
-  const textBlock = outcome.blocks.find((b) => b.type === 'text' && b.enabled)
-  const mediaBlock = outcome.blocks.find((b) => b.type === 'media' && b.enabled)
-  const buttonBlock = outcome.blocks.find((b) => b.type === 'button' && b.enabled)
-
-  const headerConfig = headerBlock?.config as HeaderConfig | undefined
-  const textConfig = textBlock?.config as TextConfig | undefined
-  const mediaConfig = mediaBlock?.config as MediaConfig | undefined
-  const buttonConfig = buttonBlock?.config as ButtonConfig | undefined
-
-  return {
-    id: outcome.id,
-    title: headerConfig?.title || outcome.name || 'Resultado',
-    description: textConfig?.content || headerConfig?.description || '',
-    imageUrl: mediaConfig?.type === 'image' ? mediaConfig.url : undefined,
-    ctaText: buttonConfig?.text,
-    ctaUrl: buttonConfig?.action === 'url' ? buttonConfig.url : undefined,
-  }
-}
-
-/**
- * Convert visual builder data to quiz format for saving
- */
-export function visualBuilderToQuiz(data: VisualBuilderData): QuizData {
-  const { steps, outcomes } = data
-
-  // Extract metadata from intro step
-  const metadata = extractQuizMetadata(steps)
-
-  // Convert question steps to questions
-  const questionSteps = steps.filter((s) => s.type === 'question')
-  const questions = questionSteps
-    .map((step, index) => stepToQuestion(step, index))
-    .filter((q): q is Question => q !== null)
-
-  // Extract lead gen config
-  const leadGen = extractLeadGenConfig(steps)
-
-  // Convert outcomes
-  const quizOutcomes = outcomes.map(vbOutcomeToQuizOutcome)
-
-  return {
-    ...metadata,
-    questions,
-    outcomes: quizOutcomes,
-    leadGen,
-  }
 }
 
 // ============================================================================
@@ -429,7 +253,11 @@ function quizOutcomeToVBOutcome(outcome: Partial<QuizOutcome>): VBOutcome {
 
 /**
  * Convert quiz format to visual builder data for loading
- * Always reconstructs from the legacy format to ensure consistency
+ *
+ * @deprecated This function is used ONLY for migrating legacy quizzes that have
+ * questions/outcomes arrays but no visualBuilderData. New quizzes should always
+ * use visualBuilderData directly. After all legacy quizzes are migrated, this
+ * function can be removed.
  */
 export function quizToVisualBuilder(quiz: QuizDraft | Quiz): VisualBuilderData {
   // Always reconstruct from legacy format to ensure consistency
@@ -463,27 +291,8 @@ export function quizToVisualBuilder(quiz: QuizDraft | Quiz): VisualBuilderData {
 }
 
 // ============================================================================
-// Merge Utilities (for auto-save - preserve unchanged fields)
+// REMOVED: Merge Utilities (no longer needed)
 // ============================================================================
-
-/**
- * Merge visual builder data into an existing quiz draft
- * Preserves fields not managed by the visual builder (stats, ownerId, etc.)
- */
-export function mergeVisualBuilderIntoQuiz(
-  existingQuiz: QuizDraft,
-  vbData: VisualBuilderData
-): QuizDraft {
-  const converted = visualBuilderToQuiz(vbData)
-
-  return {
-    ...existingQuiz,
-    title: converted.title,
-    description: converted.description,
-    coverImageUrl: converted.coverImageUrl,
-    questions: converted.questions,
-    outcomes: converted.outcomes,
-    leadGen: converted.leadGen,
-    updatedAt: Date.now(),
-  }
-}
+// The mergeVisualBuilderIntoQuiz function has been removed.
+// Auto-save now works directly with visualBuilderData and uses helper functions
+// from visual-builder-helpers.ts to extract metadata when needed.

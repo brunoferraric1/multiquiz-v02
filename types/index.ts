@@ -109,8 +109,9 @@ export const QuizSnapshotSchema = z.object({
   primaryColor: z.string().optional(),
   brandKitMode: z.enum(['default', 'custom']).optional(),
   brandKit: BrandKitSchema.optional(),
-  questions: z.array(QuestionSchema),
-  outcomes: z.array(OutcomeSchema),
+  // Legacy fields - kept for backwards compatibility during migration, will be removed
+  questions: z.array(QuestionSchema).optional(),
+  outcomes: z.array(OutcomeSchema).optional(),
   leadGen: z.object({
     enabled: z.boolean(),
     title: z.string().optional(),
@@ -118,8 +119,8 @@ export const QuizSnapshotSchema = z.object({
     fields: z.array(z.enum(['name', 'email', 'phone'])),
     ctaText: z.string().optional(),
   }).optional(),
-  // Visual builder data for blocks-based rendering
-  visualBuilderData: VisualBuilderDataSchema.nullish(),
+  // Visual builder data - the single source of truth for quiz content
+  visualBuilderData: VisualBuilderDataSchema,
 });
 
 export const QuizSchema = z.object({
@@ -132,8 +133,9 @@ export const QuizSchema = z.object({
   primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
   brandKitMode: z.enum(['default', 'custom']).optional(),
   brandKit: BrandKitSchema.optional(),
-  questions: z.array(QuestionSchema),
-  outcomes: z.array(OutcomeSchema),
+  // Legacy fields - kept for backwards compatibility during migration, will be removed
+  questions: z.array(QuestionSchema).optional(),
+  outcomes: z.array(OutcomeSchema).optional(),
   createdAt: z.number(),
   updatedAt: z.number(),
   isPublished: z.boolean(),
@@ -150,8 +152,8 @@ export const QuizSchema = z.object({
   // Draft/Live separation fields
   publishedVersion: QuizSnapshotSchema.nullable().optional(),
   publishedAt: z.number().nullable().optional(),
-  // Visual builder data for blocks-based rendering
-  visualBuilderData: VisualBuilderDataSchema.nullish(),
+  // Visual builder data - the single source of truth for quiz content
+  visualBuilderData: VisualBuilderDataSchema,
 });
 
 // TypeScript types inferred from Zod schemas
@@ -179,9 +181,11 @@ export type BrandKit = {
 };
 
 // Partial types for draft states
-export type QuizDraft = Partial<Omit<Quiz, 'questions' | 'outcomes'>> & {
+// Note: visualBuilderData is the source of truth; legacy questions/outcomes are optional for backwards compatibility
+export type QuizDraft = Partial<Omit<Quiz, 'questions' | 'outcomes' | 'visualBuilderData'>> & {
   questions?: Partial<Question>[];
   outcomes?: Partial<Outcome>[];
+  visualBuilderData?: VisualBuilderData;
 };
 
 export type ManualChange = {

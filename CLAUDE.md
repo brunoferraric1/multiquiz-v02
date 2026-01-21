@@ -82,6 +82,19 @@ Tests use Vitest + React Testing Library with TDD approach. Tests focus on struc
 - `documents/UX_REDESIGN_CHANGELOG.md` - Historical UX iteration decisions
 - `knowledge-base/` - Non-technical docs for co-founders/CS team (no code references)
 
+## Code Quality Principles
+
+**Always prioritize code maintainability over shortcuts:**
+- Single source of truth for data models - avoid storing the same data in multiple formats
+- No "temporary" solutions that add conversion layers - they become permanent tech debt
+- When suggesting architectural decisions, ALWAYS present tradeoffs to the user
+- If a solution requires converters/adapters between formats, question if it's the right approach
+
+**Before implementing workarounds, ask:**
+1. Will this add a conversion/translation layer?
+2. Will future features need to maintain multiple code paths?
+3. Is there a cleaner approach that takes slightly longer now but saves time later?
+
 ## Current Development Focus
 
 Milestone 5A (Core Flows) is in progress: auto-save integration, quiz loading, publish flow. See the implementation plan for task breakdown.

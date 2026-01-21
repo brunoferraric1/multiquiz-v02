@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import { QuizService } from '@/lib/services/quiz-service';
 import { getBrandKit } from '@/lib/services/brand-kit-service';
+import { getQuestionMetadata, getOutcomeMetadata } from '@/lib/utils/visual-builder-helpers';
 import { auth } from '@/lib/firebase';
 import type { BrandKitColors, Quiz, QuizAttempt } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { LeadsTable } from '@/components/dashboard/leads-table';
 import { UpgradeModal } from '@/components/upgrade-modal';
-import { QuizPlayer } from '@/components/quiz/quiz-player';
+import { BlocksQuizPlayer } from '@/components/quiz/blocks-quiz-player';
 import { ArrowLeft, CheckCircle2, Download, Eye, Globe, Lock, Mail, Play, Search, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -186,6 +187,26 @@ const buildMockResultData = (outcomes: Quiz['outcomes'] | undefined) => {
     const remainder = total - perOutcome * outcomes.length;
 
     return outcomes.map((outcome, index) => {
+        const name = outcome.title || `Resultado ${index + 1}`;
+        const value = perOutcome + (index < remainder ? 1 : 0);
+
+        return {
+            name: `${name} (${value})`,
+            value,
+            rawName: name
+        };
+    });
+};
+
+// Build mock result data from outcome metadata (visualBuilderData source)
+const buildMockResultDataFromMeta = (outcomeMeta: Array<{ id: string; title: string }>) => {
+    if (!outcomeMeta?.length) return [];
+
+    const total = Math.max(12, outcomeMeta.length * 4);
+    const perOutcome = Math.max(1, Math.floor(total / outcomeMeta.length));
+    const remainder = total - perOutcome * outcomeMeta.length;
+
+    return outcomeMeta.map((outcome, index) => {
         const name = outcome.title || `Resultado ${index + 1}`;
         const value = perOutcome + (index < remainder ? 1 : 0);
 
@@ -373,9 +394,15 @@ export default function QuizReportPage() {
     // If started, we look at currentQuestionId.
     // We need to map Question IDs to their order.
 
-    const questionOrder = (quiz.questions || []).map(q => q.id);
-    const questionLabels = (quiz.questions || []).reduce((acc, q, idx) => {
-        acc[q.id] = `P${idx + 1}`; // Pergunta 1, 2...
+    // Extract question and outcome metadata from visualBuilderData (single source of truth)
+    const steps = quiz.visualBuilderData?.steps || [];
+    const vbOutcomes = quiz.visualBuilderData?.outcomes || [];
+    const questionMeta = getQuestionMetadata(steps);
+    const outcomeMeta = getOutcomeMetadata(vbOutcomes);
+
+    const questionOrder = questionMeta.map(q => q.id);
+    const questionLabels = questionMeta.reduce((acc, q) => {
+        acc[q.id] = q.label; // P1, P2...
         return acc;
     }, {} as Record<string, string>);
 
@@ -430,7 +457,7 @@ export default function QuizReportPage() {
     });
 
     const realResultData = Object.entries(resultCounts).map(([rId, count]) => {
-        const outcome = quiz.outcomes?.find(o => o.id === rId);
+        const outcome = outcomeMeta.find(o => o.id === rId);
         const name = outcome?.title || 'Desconhecido';
         return {
             name: `${name} (${count})`, // This is used for the Legend
@@ -439,7 +466,7 @@ export default function QuizReportPage() {
         };
     });
 
-    const mockResultData = buildMockResultData(quiz.outcomes);
+    const mockResultData = buildMockResultDataFromMeta(outcomeMeta);
     const resultData = useMockReports ? mockResultData : realResultData;
     const resultTotal = resultData.reduce((sum, item) => sum + item.value, 0);
 
@@ -468,7 +495,7 @@ export default function QuizReportPage() {
             headers.join(','),
             ...filteredLeads.map(lead => {
                 const quizTitle = quiz?.title || 'Quiz Desconhecido';
-                const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || 'N/A';
+                const resultName = outcomeMeta.find(o => o.id === lead.resultOutcomeId)?.title || 'N/A';
 
                 return [
                     format(new Date(lead.startedAt), 'dd/MM/yyyy HH:mm'),
@@ -505,7 +532,7 @@ export default function QuizReportPage() {
 
     const visibleLeadCount = hasProAccess ? filteredLeads.length : leads.length;
     const leadRows = filteredLeads.map((lead) => {
-        const resultName = quiz?.outcomes?.find(o => o.id === lead.resultOutcomeId)?.title || '-';
+        const resultName = outcomeMeta.find(o => o.id === lead.resultOutcomeId)?.title || '-';
 
         return {
             id: lead.id,
@@ -799,7 +826,7 @@ export default function QuizReportPage() {
                                 <X className="h-4 w-4" strokeWidth={2.5} />
                             </Button>
                             <main className="flex-1 overflow-auto bg-muted/40">
-                                <QuizPlayer
+                                <BlocksQuizPlayer
                                     quiz={quiz}
                                     mode="preview"
                                     onExit={() => setIsPreviewOpen(false)}

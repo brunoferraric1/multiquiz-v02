@@ -4,7 +4,12 @@ import { useEffect, useRef, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useVisualBuilderStore, Step, Outcome } from '@/store/visual-builder-store'
 import { QuizService } from '@/lib/services/quiz-service'
-import { visualBuilderToQuiz } from '@/lib/utils/visual-builder-converters'
+import {
+  extractTitleFromSteps,
+  extractDescriptionFromSteps,
+  extractCoverImageFromSteps,
+  extractLeadGenConfig,
+} from '@/lib/utils/visual-builder-helpers'
 import {
   isBase64DataUrl,
   migrateBase64ToStorage,
@@ -252,13 +257,17 @@ export function useVisualBuilderAutoSave({
           id: quizId,
           title: baseQuiz.title || 'Sem título',
           description: baseQuiz.description || '',
-          questions: [],
-          outcomes: [],
           ownerId: userId,
           updatedAt: Date.now(),
           createdAt: baseQuiz.createdAt || Date.now(),
           isPublished: false,
           stats: { views: 0, starts: 0, completions: 0 },
+          // Minimal visualBuilderData to satisfy schema
+          visualBuilderData: {
+            schemaVersion: 1,
+            steps: [],
+            outcomes: [],
+          },
         }
         await QuizService.saveQuiz(skeletonQuiz, userId, { isNewQuiz: true })
         console.log('[VBAutoSave] Skeleton saved, now migrating images...')
@@ -277,28 +286,30 @@ export function useVisualBuilderAutoSave({
       )
       console.log('[VBAutoSave] Image migration complete')
 
-      // Convert visual builder data to quiz format (for legacy compatibility)
-      const vbData = { steps: migratedSteps, outcomes: migratedOutcomes }
-      const converted = visualBuilderToQuiz(vbData)
+      // Extract metadata from visual builder steps (no legacy conversion needed)
+      const title = extractTitleFromSteps(migratedSteps)
+      const description = extractDescriptionFromSteps(migratedSteps)
+      const coverImageUrl = extractCoverImageFromSteps(migratedSteps)
+      const leadGen = extractLeadGenConfig(migratedSteps)
 
       // Merge with existing quiz data to preserve metadata
       const baseQuiz = existingQuizRef.current || {}
 
-      console.log('[VBAutoSave] Converted data:', {
-        title: converted.title,
-        questionsCount: converted.questions?.length,
-        outcomesCount: converted.outcomes?.length,
+      console.log('[VBAutoSave] Extracted metadata:', {
+        title: title || baseQuiz.title,
+        stepsCount: migratedSteps.length,
+        outcomesCount: migratedOutcomes.length,
       })
 
+      // Save only visualBuilderData as the single source of truth
       const quizToSave: QuizDraft = {
         ...baseQuiz,
         id: quizId,
-        title: converted.title || baseQuiz.title || 'Sem título',
-        description: converted.description || baseQuiz.description || '',
-        coverImageUrl: converted.coverImageUrl || baseQuiz.coverImageUrl,
-        questions: converted.questions,
-        outcomes: converted.outcomes,
-        leadGen: converted.leadGen,
+        title: title || baseQuiz.title || 'Sem título',
+        description: description || baseQuiz.description || '',
+        coverImageUrl: coverImageUrl || baseQuiz.coverImageUrl,
+        // No longer saving legacy questions/outcomes - visualBuilderData is the source of truth
+        leadGen: leadGen,
         ownerId: userId,
         updatedAt: Date.now(),
         createdAt: baseQuiz.createdAt || Date.now(),
@@ -307,8 +318,7 @@ export function useVisualBuilderAutoSave({
         // Preserve live snapshot fields
         publishedVersion: baseQuiz.publishedVersion ?? null,
         publishedAt: baseQuiz.publishedAt ?? null,
-        // Store visual builder data for production rendering
-        // Images have been migrated to Storage, so URLs are now storage URLs
+        // Visual builder data is the single source of truth
         visualBuilderData: {
           schemaVersion: 1,
           steps: migratedSteps,

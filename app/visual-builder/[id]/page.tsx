@@ -12,7 +12,6 @@ import {
   Outcome as VBOutcome,
 } from '@/store/visual-builder-store'
 import { useVisualBuilderAutoSave } from '@/lib/hooks/use-visual-builder-auto-save'
-import { quizToVisualBuilder } from '@/lib/utils/visual-builder-converters'
 import { QuizService } from '@/lib/services/quiz-service'
 import { ProtectedRoute } from '@/components/protected-route'
 import { ConnectedVisualBuilder } from '@/components/visual-builder'
@@ -96,11 +95,11 @@ function VisualBuilderEditor() {
           }
 
           console.log('[VisualBuilder] Loading existing quiz:', id)
-          // Prefer stored visualBuilderData, fall back to reconstruction for legacy quizzes
+          // visualBuilderData is now always present (quiz-service converts legacy quizzes)
           const vbData = existingQuiz.visualBuilderData
             ? { steps: existingQuiz.visualBuilderData.steps, outcomes: existingQuiz.visualBuilderData.outcomes }
-            : quizToVisualBuilder(existingQuiz)
-          console.log('[VisualBuilder] Using visualBuilderData:', !!existingQuiz.visualBuilderData)
+            : { steps: [], outcomes: [] } // Fallback (should not happen after migration)
+          console.log('[VisualBuilder] Using visualBuilderData with', vbData.steps.length, 'steps')
           initialize(vbData)
           quizRef.current = existingQuiz
           setIsNewQuiz(false)
