@@ -15,6 +15,7 @@ import { useVisualBuilderAutoSave } from '@/lib/hooks/use-visual-builder-auto-sa
 import { QuizService } from '@/lib/services/quiz-service'
 import { ProtectedRoute } from '@/components/protected-route'
 import { ConnectedVisualBuilder } from '@/components/visual-builder'
+import { PublishSuccessModal } from '@/components/builder/publish-success-modal'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Quiz, QuizDraft } from '@/types'
@@ -72,6 +73,8 @@ function VisualBuilderEditor() {
   const [isNewQuiz, setIsNewQuiz] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [isCheckingQuiz, setIsCheckingQuiz] = useState(true)
+  const [isPublished, setIsPublished] = useState(false)
+  const [showPublishModal, setShowPublishModal] = useState(false)
   const quizRef = useRef<QuizDraft | null>(null)
   const checkedRef = useRef(false)
 
@@ -103,6 +106,7 @@ function VisualBuilderEditor() {
           initialize(vbData)
           quizRef.current = existingQuiz
           setIsNewQuiz(false)
+          setIsPublished(existingQuiz.isPublished || false)
         } else {
           // Quiz doesn't exist - create new
           console.log('[VisualBuilder] Creating new quiz with ID:', id)
@@ -252,11 +256,24 @@ function VisualBuilderEditor() {
         return
       }
 
+      // Update local state to reflect published state (triggers re-render)
+      setIsPublished(true)
+
+      // Also update ref for consistency
+      if (quizRef.current) {
+        quizRef.current = {
+          ...quizRef.current,
+          isPublished: true,
+          publishedAt: Date.now(),
+        }
+      }
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['quiz', id] })
       queryClient.invalidateQueries({ queryKey: ['quizzes', user.uid] })
 
-      toast.success('Quiz publicado com sucesso!')
+      // Show success modal with quiz URL
+      setShowPublishModal(true)
     } catch (err) {
       console.error('[VisualBuilder] Publish error:', err)
       toast.error('Erro ao publicar o quiz. Tente novamente.')
@@ -281,18 +298,24 @@ function VisualBuilderEditor() {
 
   // Get quiz name from ref (works for both new and existing quizzes)
   const quizTitle = quizRef.current?.title || 'Novo Quiz'
-  const quizIsPublished = quizRef.current?.isPublished || false
 
   return (
-    <ConnectedVisualBuilder
-      quizName={quizTitle}
-      onBack={handleBack}
-      onPreview={handlePreview}
-      onPublish={handlePublish}
-      isPublishing={isPublishing}
-      isPublished={quizIsPublished}
-      isPreviewing={isSavingForPreview}
-    />
+    <>
+      <ConnectedVisualBuilder
+        quizName={quizTitle}
+        onBack={handleBack}
+        onPreview={handlePreview}
+        onPublish={handlePublish}
+        isPublishing={isPublishing}
+        isPublished={isPublished}
+        isPreviewing={isSavingForPreview}
+      />
+      <PublishSuccessModal
+        open={showPublishModal}
+        onOpenChange={setShowPublishModal}
+        quizId={id as string}
+      />
+    </>
   )
 }
 

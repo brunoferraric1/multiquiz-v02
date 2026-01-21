@@ -633,10 +633,17 @@ export class QuizService {
       const snapshot = this.createSnapshot(quiz, brandKit);
       const cleanedSnapshot = removeUndefinedDeep(snapshot);
 
+      // Stringify visualBuilderData within the snapshot to avoid Firestore nested entity limits
+      // This matches how saveQuiz stores visualBuilderData
+      const snapshotToStore = {
+        ...cleanedSnapshot,
+        visualBuilderData: JSON.stringify(cleanedSnapshot.visualBuilderData),
+      };
+
       const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
       await updateDoc(quizRef, {
         isPublished: true,
-        publishedVersion: cleanedSnapshot,
+        publishedVersion: snapshotToStore,
         publishedAt: Timestamp.fromMillis(now),
         updatedAt: Timestamp.fromMillis(now),
       });
