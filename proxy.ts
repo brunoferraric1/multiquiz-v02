@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { defaultLocale, isSupportedLocale, locales } from "./lib/i18n";
+import { defaultLocale, isSupportedLocale } from "./lib/i18n";
+import { getLocaleFromPathname } from "./lib/i18n/paths";
 
 const PUBLIC_FILE = /\.(.*)$/;
-
-const getLocaleFromPathname = (pathname: string) =>
-  locales.find(
-    (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
-  );
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -31,7 +27,11 @@ export function proxy(request: NextRequest) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-locale", localeFromPath);
 
-    return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+    const response = NextResponse.rewrite(url, {
+      request: { headers: requestHeaders },
+    });
+    response.cookies.set("locale", localeFromPath, { path: "/" });
+    return response;
   }
 
   if (request.method !== "GET" && request.method !== "HEAD") {

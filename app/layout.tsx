@@ -4,7 +4,9 @@ import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
-import { defaultLocale } from "@/lib/i18n";
+import { defaultLocale, isSupportedLocale } from "@/lib/i18n";
+import { getMessages } from "@/lib/i18n/messages";
+import { LocaleProvider } from "@/lib/i18n/context";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,12 +21,16 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const requestHeaders = await headers();
-  const locale = requestHeaders.get("x-locale") ?? defaultLocale;
+  const headerLocale = requestHeaders.get("x-locale");
+  const locale = isSupportedLocale(headerLocale) ? headerLocale : defaultLocale;
+  const messages = getMessages(locale);
 
   return (
     <html lang={locale} className="dark">
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <LocaleProvider locale={locale} messages={messages}>
+          <Providers>{children}</Providers>
+        </LocaleProvider>
       </body>
     </html>
   );

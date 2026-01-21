@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { Menu } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { isPro, useSubscription } from '@/lib/services/subscription-service';
+import { useLocale, useMessages } from '@/lib/i18n/context';
+import { localizePathname, stripLocaleFromPathname } from '@/lib/i18n/paths';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,16 +29,21 @@ export function DashboardHeader() {
   const { subscription } = useSubscription(user?.uid);
   const [menuOpen, setMenuOpen] = useState(false);
   const isProUser = isPro(subscription);
+  const locale = useLocale();
+  const messages = useMessages();
+  const common = messages.common;
+  const dashboard = messages.dashboard;
 
   const handleNavigation = (path: string) => {
-    router.push(path);
+    router.push(localizePathname(path, locale));
     setMenuOpen(false);
   };
 
   const isActiveRoute = (path: string) => {
     if (!pathname) return false;
-    if (path === '/dashboard') return pathname === '/dashboard';
-    return pathname.startsWith(path);
+    const normalizedPath = stripLocaleFromPathname(pathname);
+    if (path === '/dashboard') return normalizedPath === '/dashboard';
+    return normalizedPath.startsWith(path);
   };
 
   return (
@@ -45,14 +52,19 @@ export function DashboardHeader() {
         <div className="flex items-center gap-3">
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Abrir menu" className="md:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={common.aria.openMenu}
+                className="md:hidden"
+              >
                 <Menu size={20} />
               </Button>
             </SheetTrigger>
             <SheetContent className="left-0 right-auto border-l-0 border-r data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left">
               <SheetHeader className="mb-8">
-                <SheetTitle>Menu</SheetTitle>
-                <SheetDescription>Acesse seções rápidas do MultiQuiz.</SheetDescription>
+                <SheetTitle>{dashboard.header.menu}</SheetTitle>
+                <SheetDescription>{dashboard.header.menuDescription}</SheetDescription>
               </SheetHeader>
 
               <nav className="space-y-2">
@@ -65,7 +77,7 @@ export function DashboardHeader() {
                   onClick={() => handleNavigation('/dashboard')}
                   aria-current={isActiveRoute('/dashboard') ? 'page' : undefined}
                 >
-                  Quizzes
+                  {common.navigation.quizzes}
                 </Button>
                 <Button
                   variant="ghost"
@@ -76,7 +88,7 @@ export function DashboardHeader() {
                   onClick={() => handleNavigation('/dashboard/reports')}
                   aria-current={isActiveRoute('/dashboard/reports') ? 'page' : undefined}
                 >
-                  Relatórios
+                  {common.navigation.reports}
                 </Button>
                 <Button
                   variant="ghost"
@@ -87,7 +99,7 @@ export function DashboardHeader() {
                   onClick={() => handleNavigation('/dashboard/leads')}
                   aria-current={isActiveRoute('/dashboard/leads') ? 'page' : undefined}
                 >
-                  Seus Leads
+                  {common.navigation.leads}
                 </Button>
                 <Button
                   variant="ghost"
@@ -98,7 +110,7 @@ export function DashboardHeader() {
                   onClick={() => handleNavigation('/pricing')}
                   aria-current={isActiveRoute('/pricing') ? 'page' : undefined}
                 >
-                  Planos
+                  {common.navigation.pricing}
                 </Button>
                 <Button
                   variant="ghost"
@@ -109,13 +121,13 @@ export function DashboardHeader() {
                   onClick={() => handleNavigation('/dashboard/account')}
                   aria-current={isActiveRoute('/dashboard/account') ? 'page' : undefined}
                 >
-                  Conta
+                  {common.navigation.account}
                 </Button>
               </nav>
 
               <div className="mt-10 border-t pt-6">
                 <Link
-                  href="/dashboard/account"
+                  href={localizePathname("/dashboard/account", locale)}
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3"
                 >
@@ -125,7 +137,9 @@ export function DashboardHeader() {
                   </Avatar>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{user?.displayName || 'Usuário'}</span>
+                      <span className="text-sm font-medium">
+                        {user?.displayName || dashboard.header.user}
+                      </span>
                       {isProUser && <Badge variant="secondary">Pro</Badge>}
                     </div>
                     <span className="text-xs text-muted-foreground">{user?.email}</span>
@@ -160,7 +174,9 @@ export function DashboardHeader() {
             )}
             aria-current={isActiveRoute('/dashboard') ? 'page' : undefined}
           >
-            <Link href="/dashboard">Quizzes</Link>
+            <Link href={localizePathname("/dashboard", locale)}>
+              {common.navigation.quizzes}
+            </Link>
           </Button>
           <Button
             asChild
@@ -172,7 +188,9 @@ export function DashboardHeader() {
             )}
             aria-current={isActiveRoute('/dashboard/reports') ? 'page' : undefined}
           >
-            <Link href="/dashboard/reports">Relatórios</Link>
+            <Link href={localizePathname("/dashboard/reports", locale)}>
+              {common.navigation.reports}
+            </Link>
           </Button>
           <Button
             asChild
@@ -184,7 +202,9 @@ export function DashboardHeader() {
             )}
             aria-current={isActiveRoute('/dashboard/leads') ? 'page' : undefined}
           >
-            <Link href="/dashboard/leads">Seus Leads</Link>
+            <Link href={localizePathname("/dashboard/leads", locale)}>
+              {common.navigation.leads}
+            </Link>
           </Button>
           <Button
             asChild
@@ -196,12 +216,14 @@ export function DashboardHeader() {
             )}
             aria-current={isActiveRoute('/pricing') ? 'page' : undefined}
           >
-            <Link href="/pricing">Planos</Link>
+            <Link href={localizePathname("/pricing", locale)}>
+              {common.navigation.pricing}
+            </Link>
           </Button>
         </nav>
 
         <Link
-          href="/dashboard/account"
+          href={localizePathname("/dashboard/account", locale)}
           className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted ml-auto md:ml-0"
         >
           <Avatar className="h-8 w-8 md:h-9 md:w-9">
@@ -210,7 +232,7 @@ export function DashboardHeader() {
           </Avatar>
           <div className="flex items-center gap-2">
             <span className="hidden lg:inline text-sm font-medium">
-              {user?.displayName?.split(' ')[0] || 'Conta'}
+              {user?.displayName?.split(' ')[0] || common.navigation.account}
             </span>
             {isProUser && (
               <Badge variant="secondary" className="text-[10px] px-1.5 h-4 md:text-xs md:px-2 md:h-5">

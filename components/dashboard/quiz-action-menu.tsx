@@ -35,6 +35,8 @@ import { copyToClipboard } from '@/lib/copy-to-clipboard';
 import { QuizService } from '@/lib/services/quiz-service';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLocale, useMessages } from '@/lib/i18n/context';
+import { localizePathname } from '@/lib/i18n/paths';
 import { PublishSuccessDrawer } from '@/components/dashboard/publish-success-drawer';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import type { Quiz } from '@/types';
@@ -59,11 +61,15 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
         open: boolean;
         reason: 'draft-limit' | 'publish-limit' | 'brand-kit';
     }>({ open: false, reason: 'publish-limit' });
+    const locale = useLocale();
+    const messages = useMessages();
+    const dashboard = messages.dashboard;
+    const common = messages.common;
 
     const handleCopyLink = async () => {
         if (!quiz.isPublished || !quiz.id) return;
         const url = typeof window !== 'undefined'
-            ? `${window.location.origin}/quiz/${quiz.id}`
+            ? `${window.location.origin}${localizePathname(`/quiz/${quiz.id}`, locale)}`
             : '';
         if (!url) return;
 
@@ -71,6 +77,8 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
         if (success) {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
+        } else {
+            toast.error(dashboard.quizActions.linkCopyError);
         }
     };
 
@@ -87,12 +95,12 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
 
     const handleEdit = () => {
         setMobileMenuOpen(false);
-        router.push(`/visual-builder/${quiz.id}`);
+        router.push(localizePathname(`/visual-builder/${quiz.id}`, locale));
     };
 
     const handleReports = () => {
         setMobileMenuOpen(false);
-        router.push(`/dashboard/reports/${quiz.id}`);
+        router.push(localizePathname(`/dashboard/reports/${quiz.id}`, locale));
     };
 
     const handleCopyLinkAndClose = async () => {
@@ -123,7 +131,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
         try {
             const result = await QuizService.publishQuiz(quiz.id, user.uid);
             if (result.status === 'limit-reached') {
-                toast.error('Limite de publicação no plano gratuito');
+                toast.error(dashboard.toast.publishLimit);
                 setMobileMenuOpen(false);
                 setUpgradeModalState({ open: true, reason: 'publish-limit' });
                 return;
@@ -138,7 +146,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
             }, 750);
         } catch (error) {
             console.error('Publish failed', error);
-            toast.error('Erro ao publicar quiz');
+            toast.error(dashboard.toast.publishError);
         } finally {
             setIsPublishing(false);
         }
@@ -173,11 +181,11 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                     <>
                         <button onClick={handleEdit} className={itemClass}>
                             <Edit size={iconSize} />
-                            <span>Editar</span>
+                            <span>{common.buttons.edit}</span>
                         </button>
                         <button onClick={handleReports} className={itemClass}>
                             <LineChart size={iconSize} />
-                            <span>Relatório</span>
+                            <span>{dashboard.quizActions.viewReport}</span>
                         </button>
                         <div className="h-px bg-border my-2" />
                         {quiz.isPublished ? (
@@ -187,7 +195,9 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                                 className={`${itemClass} text-orange-500 ${isPublishing ? 'opacity-50' : ''}`}
                             >
                                 <GlobeLock size={iconSize} />
-                                <span>{isPublishing ? 'Despublicando...' : 'Despublicar'}</span>
+                                <span>
+                                    {isPublishing ? dashboard.quizActions.unpublishing : dashboard.quizActions.unpublish}
+                                </span>
                             </button>
                         ) : (
                             <button
@@ -196,7 +206,9 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                                 className={`${itemClass} text-green-500 ${isPublishing ? 'opacity-50' : ''}`}
                             >
                                 <Globe size={iconSize} />
-                                <span>{isPublishing ? 'Publicando...' : 'Publicar'}</span>
+                                <span>
+                                    {isPublishing ? common.buttons.publishing : common.buttons.publish}
+                                </span>
                             </button>
                         )}
                         <button
@@ -209,7 +221,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                             ) : (
                                 <Share2 size={iconSize} />
                             )}
-                            <span>{copied ? 'Copiado!' : 'Copiar Link'}</span>
+                            <span>{copied ? dashboard.quizActions.linkCopied : dashboard.quizActions.copyLink}</span>
                         </button>
                         <div className="h-px bg-border my-2" />
                         <button
@@ -217,18 +229,18 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                             className={`${itemClass} text-destructive`}
                         >
                             <Trash2 size={iconSize} />
-                            <span>Excluir</span>
+                            <span>{common.buttons.delete}</span>
                         </button>
                     </>
                 ) : (
                     <>
                         <DropdownMenuItem onClick={handleEdit}>
                             <Edit className="mr-2 h-4 w-4" />
-                            Editar
+                            {common.buttons.edit}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleReports}>
                             <LineChart className="mr-2 h-4 w-4" />
-                            Relatório
+                            {dashboard.quizActions.viewReport}
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator />
@@ -240,7 +252,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                                 className="text-orange-600 focus:text-orange-700 focus:bg-orange-100"
                             >
                                 <GlobeLock className="mr-2 h-4 w-4" />
-                                {isPublishing ? 'Despublicando...' : 'Despublicar'}
+                                {isPublishing ? dashboard.quizActions.unpublishing : dashboard.quizActions.unpublish}
                             </DropdownMenuItem>
                         ) : (
                             <DropdownMenuItem
@@ -249,7 +261,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                                 className="text-green-600 focus:text-green-700 focus:bg-green-100"
                             >
                                 <Globe className="mr-2 h-4 w-4" />
-                                {isPublishing ? 'Publicando...' : 'Publicar'}
+                                {isPublishing ? common.buttons.publishing : common.buttons.publish}
                             </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
@@ -262,7 +274,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                             ) : (
                                 <Share2 className="mr-2 h-4 w-4" />
                             )}
-                            {copied ? 'Copiado!' : 'Copiar Link'}
+                            {copied ? dashboard.quizActions.linkCopied : dashboard.quizActions.copyLink}
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator />
@@ -272,7 +284,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                             className="text-red-600 focus:text-red-600 focus:bg-red-100"
                         >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
+                            {common.buttons.delete}
                         </DropdownMenuItem>
                     </>
                 )}
@@ -288,11 +300,11 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                             <MoreVertical className="h-4 w-4" />
-                            <span className="sr-only">Abrir menu</span>
+                            <span className="sr-only">{common.aria.openMenu}</span>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuLabel>{dashboard.quizActions.actions}</DropdownMenuLabel>
                         <MenuItems isMobile={false} />
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -310,13 +322,13 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                     }}
                 >
                     <MoreVertical className="h-4 w-4" />
-                    <span className="sr-only">Abrir menu</span>
+                    <span className="sr-only">{common.aria.openMenu}</span>
                 </Button>
 
                 <BottomDrawer
                     open={mobileMenuOpen}
                     onClose={() => setMobileMenuOpen(false)}
-                    title="Ações"
+                    title={dashboard.quizActions.actions}
                 >
                     <div className="py-2">
                         <MenuItems isMobile={true} />
@@ -327,11 +339,11 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogContent onClick={(e) => e.stopPropagation()}>
                     <DialogHeader>
-                        <DialogTitle>Excluir Quiz</DialogTitle>
+                        <DialogTitle>{dashboard.deleteDialog.title}</DialogTitle>
                         <DialogDescription>
-                            Tem certeza que deseja excluir o quiz &quot;{quiz.title}&quot;?
-                            Esta ação não pode ser desfeita.
+                            {dashboard.deleteDialog.description}
                         </DialogDescription>
+                        <p className="text-sm font-medium text-foreground">{quiz.title}</p>
                     </DialogHeader>
                     <DialogFooter>
                         <Button
@@ -339,14 +351,14 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                             onClick={() => setShowDeleteDialog(false)}
                             disabled={isDeleting || isDeletingInternal}
                         >
-                            Cancelar
+                            {common.buttons.cancel}
                         </Button>
                         <Button
                             variant="destructive"
                             onClick={handleDeleteConfirm}
                             disabled={isDeleting || isDeletingInternal}
                         >
-                            {isDeletingInternal ? 'Excluindo...' : 'Excluir'}
+                            {isDeletingInternal ? dashboard.deleteDialog.confirming : common.buttons.delete}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

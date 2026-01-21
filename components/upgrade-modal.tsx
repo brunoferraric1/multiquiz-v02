@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Sparkles, Lock, ArrowRight } from 'lucide-react';
 import {
@@ -9,6 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useLocale } from '@/lib/i18n/context';
+import { localizePathname } from '@/lib/i18n/paths';
 
 type UpgradeReason = 'draft-limit' | 'publish-limit' | 'brand-kit' | 'pro-feature';
 
@@ -40,6 +44,8 @@ interface UpgradeModalProps {
 
 export function UpgradeModal({ open, reason, onOpenChange, className }: UpgradeModalProps) {
   const content = copy[reason];
+  const locale = useLocale();
+  const pricingHref = localizePathname('/pricing', locale);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -67,7 +73,7 @@ export function UpgradeModal({ open, reason, onOpenChange, className }: UpgradeM
             Continuar depois
           </Button>
           <Button asChild>
-            <Link href="/pricing">
+            <Link href={pricingHref}>
               Fazer upgrade
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

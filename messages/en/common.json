@@ -1,0 +1,38 @@
+{
+  "buttons": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "back": "Back",
+    "close": "Close",
+    "edit": "Edit",
+    "copy": "Copy",
+    "duplicate": "Duplicate",
+    "preview": "Preview",
+    "publish": "Publish",
+    "publishing": "Publishing...",
+    "update": "Update"
+  },
+  "labels": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone"
+  },
+  "navigation": {
+    "quizzes": "Quizzes",
+    "reports": "Reports",
+    "leads": "Your Leads",
+    "pricing": "Plans",
+    "account": "Account"
+  },
+  "aria": {
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "back": "Back"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "header": {
+    "menu": "Menu",
+    "menuDescription": "Quick access to MultiQuiz sections.",
+    "user": "User"
+  },
+  "language": {
+    "label": "Language",
+    "options": {
+      "pt-BR": "Portuguese (BR)",
+      "en": "English",
+      "es": "Spanish"
+    }
+  },
+  "page": {
+    "title": "My Quizzes",
+    "subtitle": "Manage your recommendation quizzes and track your leads.",
+    "newQuiz": "New Quiz",
+    "createWithAi": "Create with AI",
+    "loadingQuizzes": "Loading quizzes...",
+    "redirectingUpgrade": "Opening available plans...",
+    "viewGrid": "Grid view",
+    "viewList": "List view",
+    "gridShort": "Grid",
+    "listShort": "List"
+  },
+  "quizCard": {
+    "published": "Published",
+    "draft": "Draft",
+    "responses": "responses",
+    "leads": "leads",
+    "noDescription": "No description"
+  },
+  "quizActions": {
+    "edit": "Edit",
+    "viewReport": "View Report",
+    "duplicate": "Duplicate",
+    "copyLink": "Copy Link",
+    "delete": "Delete",
+    "linkCopied": "Link copied!",
+    "linkCopyError": "Error copying link",
+    "unpublish": "Unpublish",
+    "unpublishing": "Unpublishing...",
+    "actions": "Actions"
+  },
+  "deleteDialog": {
+    "title": "Delete quiz?",
+    "description": "This action cannot be undone. The quiz will be permanently deleted.",
+    "cancel": "Cancel",
+    "confirm": "Delete",
+    "confirming": "Deleting..."
+  },
+  "empty": {
+    "title": "No quizzes yet",
+    "description": "Start a conversation with our AI to create your first quiz.",
+    "createButton": "Create with AI"
+  },
+  "errors": {
+    "authRequiredDelete": "You must be signed in to delete a quiz."
+  },
+  "toast": {
+    "checkoutSyncError": "Payment confirmed, but we couldn't update your plan.",
+    "subscriptionActivated": "Subscription activated successfully!",
+    "subscriptionUpdateError": "Error updating your plan. Please try again.",
+    "checkoutCanceled": "Checkout canceled. You can try again whenever you want.",
+    "publishLimit": "Publish limit reached on the free plan.",
+    "publishError": "Error publishing quiz."
+  },
+  "publishSuccess": {
+    "title": "Quiz Published!",
+    "description": "Your quiz is live and ready to collect responses. Share the link below with your audience.",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link Copied!",
+    "close": "Close"
+  }
+}

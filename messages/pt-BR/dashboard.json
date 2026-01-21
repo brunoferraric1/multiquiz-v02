@@ -1,0 +1,76 @@
+{
+  "header": {
+    "menu": "Menu",
+    "menuDescription": "Acesse seções rápidas do MultiQuiz.",
+    "user": "Usuário"
+  },
+  "language": {
+    "label": "Idioma",
+    "options": {
+      "pt-BR": "Português (BR)",
+      "en": "Inglês",
+      "es": "Espanhol"
+    }
+  },
+  "page": {
+    "title": "Meus Quizzes",
+    "subtitle": "Gerencie seus quizzes de recomendação e veja seus leads.",
+    "newQuiz": "Novo Quiz",
+    "createWithAi": "Criar com IA",
+    "loadingQuizzes": "Carregando quizzes...",
+    "redirectingUpgrade": "Abrindo planos disponíveis...",
+    "viewGrid": "Visualização em Grade",
+    "viewList": "Visualização em Lista",
+    "gridShort": "Grid",
+    "listShort": "Lista"
+  },
+  "quizCard": {
+    "published": "Publicado",
+    "draft": "Rascunho",
+    "responses": "respostas",
+    "leads": "leads",
+    "noDescription": "Sem descrição"
+  },
+  "quizActions": {
+    "edit": "Editar",
+    "viewReport": "Ver Relatório",
+    "duplicate": "Duplicar",
+    "copyLink": "Copiar Link",
+    "delete": "Excluir",
+    "linkCopied": "Link copiado!",
+    "linkCopyError": "Erro ao copiar link",
+    "unpublish": "Despublicar",
+    "unpublishing": "Despublicando...",
+    "actions": "Ações"
+  },
+  "deleteDialog": {
+    "title": "Excluir quiz?",
+    "description": "Esta ação não pode ser desfeita. O quiz será excluído permanentemente.",
+    "cancel": "Cancelar",
+    "confirm": "Excluir",
+    "confirming": "Excluindo..."
+  },
+  "empty": {
+    "title": "Nenhum quiz criado ainda",
+    "description": "Comece uma conversa com nossa IA para criar seu primeiro quiz.",
+    "createButton": "Criar com IA"
+  },
+  "errors": {
+    "authRequiredDelete": "Você precisa estar autenticado para excluir um quiz."
+  },
+  "toast": {
+    "checkoutSyncError": "Pagamento confirmado, mas não conseguimos atualizar seu plano.",
+    "subscriptionActivated": "Assinatura ativada com sucesso!",
+    "subscriptionUpdateError": "Erro ao atualizar seu plano. Tente novamente.",
+    "checkoutCanceled": "Checkout cancelado. Você pode tentar novamente quando quiser.",
+    "publishLimit": "Limite de publicação no plano gratuito.",
+    "publishError": "Erro ao publicar quiz."
+  },
+  "publishSuccess": {
+    "title": "Quiz Publicado!",
+    "description": "Seu quiz está no ar e pronto para receber respostas. Compartilhe o link abaixo com sua audiência.",
+    "copyLink": "Copiar Link",
+    "linkCopied": "Link copiado!",
+    "close": "Fechar"
+  }
+}

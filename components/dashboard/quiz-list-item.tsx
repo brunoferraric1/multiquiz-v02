@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Globe, Lock, User } from 'lucide-react';
+import { Globe, Lock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import type { Quiz } from '@/types';
+import { useLocale, useMessages } from '@/lib/i18n/context';
+import { getDateLocale } from '@/lib/i18n/date-locale';
+import { localizePathname } from '@/lib/i18n/paths';
 import { Badge } from '@/components/ui/badge';
 import { QuizActionMenu } from './quiz-action-menu';
 
@@ -19,9 +21,12 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
     const router = useRouter();
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
+    const locale = useLocale();
+    const messages = useMessages();
+    const dashboard = messages.dashboard;
 
     const handleEdit = () => {
-        router.push(`/visual-builder/${quiz.id}`);
+        router.push(localizePathname(`/visual-builder/${quiz.id}`, locale));
     };
 
     // Add cache-busting param to prevent showing stale cached images
@@ -72,10 +77,13 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
                     </h3>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>
-                            {formatDistanceToNow(quiz.updatedAt, { addSuffix: true, locale: ptBR })}
+                            {formatDistanceToNow(quiz.updatedAt, {
+                                addSuffix: true,
+                                locale: getDateLocale(locale),
+                            })}
                         </span>
                         <span>•</span>
-                        <span>{quiz.stats.completions} leads</span>
+                        <span>{quiz.stats.completions} {dashboard.quizCard.leads}</span>
                     </div>
                 </div>
             </div>
@@ -84,11 +92,11 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
             <div className="flex items-center gap-4 ml-4">
                 {quiz.isPublished ? (
                     <Badge variant="published" className="items-center gap-1 hidden sm:flex">
-                        <Globe size={10} /> Publicado
+                        <Globe size={10} /> {dashboard.quizCard.published}
                     </Badge>
                 ) : (
                     <Badge variant="draft" className="items-center gap-1 hidden sm:flex">
-                        <Lock size={10} /> Rascunho
+                        <Lock size={10} /> {dashboard.quizCard.draft}
                     </Badge>
                 )}
 
@@ -97,4 +105,3 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
         </div>
     );
 }
-

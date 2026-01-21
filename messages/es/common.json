@@ -1,0 +1,38 @@
+{
+  "buttons": {
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "confirm": "Confirmar",
+    "continue": "Continuar",
+    "back": "Volver",
+    "close": "Cerrar",
+    "edit": "Editar",
+    "copy": "Copiar",
+    "duplicate": "Duplicar",
+    "preview": "Vista previa",
+    "publish": "Publicar",
+    "publishing": "Publicando...",
+    "update": "Actualizar"
+  },
+  "labels": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "name": "Nombre",
+    "email": "Email",
+    "phone": "Teléfono"
+  },
+  "navigation": {
+    "quizzes": "Quizzes",
+    "reports": "Informes",
+    "leads": "Tus Leads",
+    "pricing": "Planes",
+    "account": "Cuenta"
+  },
+  "aria": {
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "back": "Volver"
+  }
+}

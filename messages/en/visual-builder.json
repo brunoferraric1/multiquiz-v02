@@ -1,0 +1,100 @@
+{
+  "header": {
+    "tabs": {
+      "editar": "Edit",
+      "assistente": "AI Assistant",
+      "tema": "Theme",
+      "relatorio": "Report",
+      "config": "Settings"
+    },
+    "actions": {
+      "preview": "Preview",
+      "publish": "Publish",
+      "publishing": "Publishing...",
+      "update": "Update"
+    },
+    "aria": {
+      "back": "Back",
+      "preview": "Preview"
+    }
+  },
+  "addStep": {
+    "title": "Add step",
+    "description": "Choose the type of step you want to add to your quiz",
+    "types": {
+      "question": {
+        "label": "Question",
+        "description": "Add a question with answer options"
+      },
+      "leadGen": {
+        "label": "Lead Capture",
+        "description": "Collect user information (name, email, etc.)"
+      },
+      "promo": {
+        "label": "Promotion",
+        "description": "Add an offer or promotional content"
+      }
+    }
+  },
+  "addBlock": {
+    "title": "Add block",
+    "description": "Choose the type of block you want to add.",
+    "tooltip": {
+      "onlyOnePerPage": "Only one per page"
+    }
+  },
+  "blockTypes": {
+    "header": "Header",
+    "text": "Text",
+    "media": "Media",
+    "options": "Options",
+    "fields": "Fields",
+    "price": "Price",
+    "button": "Button",
+    "banner": "Banner",
+    "list": "List"
+  },
+  "blockDescriptions": {
+    "header": "Title and description",
+    "text": "Simple text block",
+    "media": "Image or video",
+    "options": "Answer options",
+    "fields": "Form fields",
+    "price": "Price display",
+    "button": "Action button",
+    "banner": "Highlight banner",
+    "list": "List of items"
+  },
+  "defaults": {
+    "introTitle": "Welcome!",
+    "introDescription": "Discover the ideal result for you.",
+    "buttonStart": "Start",
+    "buttonContinue": "Continue",
+    "buttonSeeResult": "See result",
+    "buttonLearnMore": "Learn more",
+    "buttonUse": "Get it now",
+    "leadGenTitle": "Almost there!",
+    "leadGenDescription": "Fill in your details to see the result.",
+    "promoTitle": "Special offer",
+    "resultTitle": "Your result",
+    "fieldNameLabel": "Name",
+    "fieldNamePlaceholder": "Enter your name...",
+    "fieldEmailLabel": "Email",
+    "pricePlanTitle": "Plan",
+    "pricePlanValue": "$99.90",
+    "pricePlanSuffix": "one-time",
+    "listItem": "List item"
+  },
+  "stepLabels": {
+    "intro": "Intro",
+    "question": "Question",
+    "leadGen": "Capture",
+    "promo": "Promotion",
+    "result": "Result"
+  },
+  "loading": {
+    "creatingQuiz": "Creating new quiz...",
+    "loadingQuiz": "Loading quiz..."
+  },
+  "duplicateSuffix": "(copy)"
+}

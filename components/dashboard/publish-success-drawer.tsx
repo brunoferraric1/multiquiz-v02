@@ -6,6 +6,8 @@ import { Globe, Copy, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { copyToClipboard } from '@/lib/copy-to-clipboard';
+import { useLocale, useMessages } from '@/lib/i18n/context';
+import { localizePathname } from '@/lib/i18n/paths';
 
 interface PublishSuccessDrawerProps {
     open: boolean;
@@ -19,10 +21,13 @@ export function PublishSuccessDrawer({
     quizId,
 }: PublishSuccessDrawerProps) {
     const [copied, setCopied] = useState(false);
+    const locale = useLocale();
+    const messages = useMessages();
+    const dashboard = messages.dashboard;
 
     // Generate the quiz URL - uses current domain + /quiz/[id] route
     const quizUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/quiz/${quizId}`
+        ? `${window.location.origin}${localizePathname(`/quiz/${quizId}`, locale)}`
         : '';
 
     // Prevent body scroll when drawer is open
@@ -101,7 +106,7 @@ export function PublishSuccessDrawer({
                             className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                         >
                             <X size={20} />
-                            <span className="sr-only">Fechar</span>
+                            <span className="sr-only">{dashboard.publishSuccess.close}</span>
                         </button>
 
                         {/* Content */}
@@ -110,9 +115,9 @@ export function PublishSuccessDrawer({
                                 <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
                                     <Globe className="w-8 h-8 text-green-600 dark:text-green-500" />
                                 </div>
-                                <h2 className="text-2xl font-semibold">Quiz Publicado!</h2>
+                                <h2 className="text-2xl font-semibold">{dashboard.publishSuccess.title}</h2>
                                 <p className="text-base text-muted-foreground">
-                                    Seu quiz está no ar e pronto para receber respostas. Compartilhe o link abaixo com sua audiência.
+                                    {dashboard.publishSuccess.description}
                                 </p>
                             </div>
 
@@ -134,12 +139,12 @@ export function PublishSuccessDrawer({
                                     {copied ? (
                                         <>
                                             <Check size={20} />
-                                            Link Copiado!
+                                            {dashboard.publishSuccess.linkCopied}
                                         </>
                                     ) : (
                                         <>
                                             <Copy size={20} />
-                                            Copiar Link
+                                            {dashboard.publishSuccess.copyLink}
                                         </>
                                     )}
                                 </Button>
@@ -149,7 +154,7 @@ export function PublishSuccessDrawer({
                                     onClick={onClose}
                                     className="w-full"
                                 >
-                                    Fechar
+                                    {dashboard.publishSuccess.close}
                                 </Button>
                             </div>
                         </div>

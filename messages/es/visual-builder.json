@@ -1,0 +1,100 @@
+{
+  "header": {
+    "tabs": {
+      "editar": "Editar",
+      "assistente": "Asistente IA",
+      "tema": "Tema",
+      "relatorio": "Informe",
+      "config": "Configuración"
+    },
+    "actions": {
+      "preview": "Vista previa",
+      "publish": "Publicar",
+      "publishing": "Publicando...",
+      "update": "Actualizar"
+    },
+    "aria": {
+      "back": "Volver",
+      "preview": "Vista previa"
+    }
+  },
+  "addStep": {
+    "title": "Agregar paso",
+    "description": "Elige el tipo de paso que deseas agregar a tu quiz",
+    "types": {
+      "question": {
+        "label": "Pregunta",
+        "description": "Agrega una pregunta con opciones de respuesta"
+      },
+      "leadGen": {
+        "label": "Captura de Leads",
+        "description": "Recopila información del usuario (nombre, email, etc.)"
+      },
+      "promo": {
+        "label": "Promoción",
+        "description": "Agrega una oferta o contenido promocional"
+      }
+    }
+  },
+  "addBlock": {
+    "title": "Agregar bloque",
+    "description": "Elige el tipo de bloque que deseas agregar.",
+    "tooltip": {
+      "onlyOnePerPage": "Solo uno por página"
+    }
+  },
+  "blockTypes": {
+    "header": "Encabezado",
+    "text": "Texto",
+    "media": "Medios",
+    "options": "Opciones",
+    "fields": "Campos",
+    "price": "Precio",
+    "button": "Botón",
+    "banner": "Banner",
+    "list": "Lista"
+  },
+  "blockDescriptions": {
+    "header": "Título y descripción",
+    "text": "Bloque de texto simple",
+    "media": "Imagen o video",
+    "options": "Opciones de respuesta",
+    "fields": "Campos de formulario",
+    "price": "Visualización de precio",
+    "button": "Botón de acción",
+    "banner": "Banner destacado",
+    "list": "Lista de elementos"
+  },
+  "defaults": {
+    "introTitle": "¡Bienvenido!",
+    "introDescription": "Descubre el resultado ideal para ti.",
+    "buttonStart": "Comenzar",
+    "buttonContinue": "Continuar",
+    "buttonSeeResult": "Ver resultado",
+    "buttonLearnMore": "Saber más",
+    "buttonUse": "Aprovecharlo",
+    "leadGenTitle": "¡Casi listo!",
+    "leadGenDescription": "Completa tus datos para ver el resultado.",
+    "promoTitle": "Oferta especial",
+    "resultTitle": "Tu resultado",
+    "fieldNameLabel": "Nombre",
+    "fieldNamePlaceholder": "Ingresa tu nombre...",
+    "fieldEmailLabel": "Email",
+    "pricePlanTitle": "Plan",
+    "pricePlanValue": "$99.90",
+    "pricePlanSuffix": "pago único",
+    "listItem": "Elemento de lista"
+  },
+  "stepLabels": {
+    "intro": "Intro",
+    "question": "Pregunta",
+    "leadGen": "Captura",
+    "promo": "Promoción",
+    "result": "Resultado"
+  },
+  "loading": {
+    "creatingQuiz": "Creando nuevo quiz...",
+    "loadingQuiz": "Cargando quiz..."
+  },
+  "duplicateSuffix": "(copia)"
+}
