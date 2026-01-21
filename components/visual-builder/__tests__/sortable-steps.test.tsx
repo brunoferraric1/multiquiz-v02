@@ -34,15 +34,15 @@ describe('SortableStepsList', () => {
       expect(screen.queryByText(/Resultado/)).not.toBeInTheDocument()
     })
 
-    it('makes non-fixed steps draggable (entire card)', () => {
+    it('makes non-fixed steps draggable via drag handle', () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
 
       render(<SortableStepsList />)
 
-      // Non-fixed steps should have cursor-grab class indicating they are draggable
-      const q1Step = screen.getByTestId('step-item-q1')
-      expect(q1Step).toHaveClass('cursor-grab')
+      // Non-fixed steps should have a drag handle
+      const dragHandles = screen.getAllByLabelText(/arrastar/i)
+      expect(dragHandles.length).toBeGreaterThan(0)
     })
 
     it('filters out intro and result steps from sortable list', () => {
@@ -58,28 +58,19 @@ describe('SortableStepsList', () => {
   })
 
   describe('Drag and Drop', () => {
-    it('supports keyboard reordering on the entire card', async () => {
+    it('has drag handles for keyboard reordering', async () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
 
       render(<SortableStepsList />)
 
-      // The entire card is now draggable - find the q2 step item
-      const q2StepItem = screen.getByTestId('step-item-q2')
+      // Each non-fixed step should have a drag handle
+      const dragHandles = screen.getAllByLabelText(/arrastar/i)
+      expect(dragHandles.length).toBe(3) // 3 question steps
 
-      // Focus the draggable item
-      q2StepItem.focus()
-
-      // Simulate keyboard reorder (Space to pick up, Up to move, Space to drop)
-      fireEvent.keyDown(q2StepItem, { key: ' ', code: 'Space' })
-      fireEvent.keyDown(q2StepItem, { key: 'ArrowUp', code: 'ArrowUp' })
-      fireEvent.keyDown(q2StepItem, { key: ' ', code: 'Space' })
-
-      // Wait for potential state updates
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Note: dnd-kit keyboard sorting is complex to test fully
-      // The important thing is that the component renders correctly
+      // Drag handles should be keyboard focusable
+      const firstHandle = dragHandles[0]
+      expect(firstHandle).toHaveAttribute('type', 'button')
     })
   })
 
@@ -118,8 +109,8 @@ describe('SortableStepsList', () => {
 
       render(<SortableStepsList />)
 
-      // Find step q1 and open its options menu
-      const optionsButton = screen.getByRole('button', { name: /options for p1/i })
+      // Find step q1 and open its options menu (aria-label uses "Opções para" format)
+      const optionsButton = screen.getByRole('button', { name: /opções para 1\. p1/i })
       await user.click(optionsButton)
 
       // Click delete option in the dropdown
@@ -139,8 +130,8 @@ describe('SortableStepsList', () => {
 
       render(<SortableStepsList />)
 
-      // Find step q1 and open its options menu
-      const optionsButton = screen.getByRole('button', { name: /options for p1/i })
+      // Find step q1 and open its options menu (aria-label uses "Opções para" format)
+      const optionsButton = screen.getByRole('button', { name: /opções para 1\. p1/i })
       await user.click(optionsButton)
 
       // Click duplicate option in the dropdown
@@ -175,10 +166,10 @@ describe('SortableStepsList', () => {
 
       render(<SortableStepsList />)
 
-      // Non-fixed steps should have options menu with proper aria-label
-      expect(screen.getByRole('button', { name: /options for p1/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /options for p2/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /options for p3/i })).toBeInTheDocument()
+      // Non-fixed steps should have options menu with proper aria-label (Portuguese: "Opções para")
+      expect(screen.getByRole('button', { name: /opções para 1\. p1/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /opções para 2\. p2/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /opções para 3\. p3/i })).toBeInTheDocument()
     })
 
     it('does not show options menu for fixed steps', () => {
@@ -187,8 +178,8 @@ describe('SortableStepsList', () => {
 
       render(<SortableStepsList />)
 
-      // Fixed step (intro) should not have options menu
-      expect(screen.queryByRole('button', { name: /options for intro/i })).not.toBeInTheDocument()
+      // Fixed step (intro) should not have options menu - and intro is not rendered in this list
+      expect(screen.queryByRole('button', { name: /opções para intro/i })).not.toBeInTheDocument()
     })
   })
 })

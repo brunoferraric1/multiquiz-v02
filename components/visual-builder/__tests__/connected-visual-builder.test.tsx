@@ -124,9 +124,9 @@ describe('ConnectedVisualBuilder', () => {
 
       render(<ConnectedVisualBuilder />)
 
-      // Find and open options menu for q1
+      // Find and open options menu for q1 (uses "Opções para" format with step number)
       const sidebar = screen.getByTestId('left-sidebar')
-      const optionsButton = within(sidebar).getByRole('button', { name: /options for p1/i })
+      const optionsButton = within(sidebar).getByRole('button', { name: /opções para 1\. p1/i })
       await user.click(optionsButton)
 
       // Click delete option in the dropdown
@@ -145,8 +145,8 @@ describe('ConnectedVisualBuilder', () => {
 
       const sidebar = screen.getByTestId('left-sidebar')
 
-      // Intro step should not have an options menu
-      expect(within(sidebar).queryByRole('button', { name: /options for intro/i })).not.toBeInTheDocument()
+      // Intro step is shown separately and should not have an options menu
+      expect(within(sidebar).queryByRole('button', { name: /opções para intro/i })).not.toBeInTheDocument()
     })
   })
 
@@ -199,11 +199,14 @@ describe('ConnectedVisualBuilder', () => {
 
       render(<ConnectedVisualBuilder />)
 
+      // Outcomes now use dropdown menu for actions
       const resultsSection = screen.getByTestId('results-section')
-      const outcomeA = within(resultsSection).getByText('Outcome A').closest('[role="button"]') as HTMLElement
-      const deleteButton = within(outcomeA).getByRole('button', { name: /delete/i })
+      const optionsButton = within(resultsSection).getByRole('button', { name: /opções para outcome a/i })
+      await user.click(optionsButton)
 
-      await user.click(deleteButton)
+      // Click delete option in the dropdown
+      const deleteOption = await screen.findByRole('menuitem', { name: /excluir/i })
+      await user.click(deleteOption)
 
       expect(useVisualBuilderStore.getState().outcomes.length).toBe(1)
     })

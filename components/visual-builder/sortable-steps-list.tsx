@@ -1,32 +1,11 @@
 'use client'
 
 import { useMemo } from 'react'
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { cn } from '@/lib/utils'
 import { useVisualBuilderStore, Step, StepType } from '@/store/visual-builder-store'
 import { HeaderConfig } from '@/types/blocks'
-import { Play, HelpCircle, Users, Gift, MoreVertical, Copy, Trash2 } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Play, HelpCircle, Users, Gift } from 'lucide-react'
+import { SortableSidebarList } from './sortable-sidebar-list'
+import { SortableSidebarItem } from './sortable-sidebar-item'
 
 // Step type icons
 const stepTypeIcons: Record<StepType, React.ReactNode> = {
@@ -37,147 +16,20 @@ const stepTypeIcons: Record<StepType, React.ReactNode> = {
   result: null, // Result is not shown in this list
 }
 
-interface SortableStepItemProps {
-  step: Step
-  index: number
-  isActive: boolean
-  onSelect: () => void
-  onDelete: () => void
-  onDuplicate: () => void
-}
-
-function SortableStepItem({ step, index, isActive, onSelect, onDelete, onDuplicate }: SortableStepItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: step.id, disabled: step.isFixed })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
-  const stepNumber = index + 1
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      data-testid={`step-item-${step.id}`}
-      className={cn(
-        'group relative rounded-lg transition-all',
-        isDragging && 'opacity-50 z-50',
-        !step.isFixed && 'cursor-grab active:cursor-grabbing'
-      )}
-      {...(!step.isFixed ? { ...attributes, ...listeners } : {})}
-    >
-      {/* Step content */}
-      <div
-        role="button"
-        tabIndex={0}
-        aria-pressed={isActive}
-        onClick={onSelect}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            onSelect()
-          }
-        }}
-        className={cn(
-          'flex items-center gap-3 p-2.5 rounded-lg transition-all text-left overflow-hidden',
-          isActive
-            ? 'bg-primary/10 border border-primary/30'
-            : 'hover:bg-muted/60 border border-transparent',
-          !step.isFixed && 'cursor-grab active:cursor-grabbing'
-        )}
-      >
-        {/* Step icon badge */}
-        <div
-          className={cn(
-            'flex items-center justify-center w-8 h-8 rounded-lg text-sm font-medium shrink-0',
-            isActive
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground'
-          )}
-        >
-          {stepTypeIcons[step.type]}
-        </div>
-
-        {/* Step info */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <div
-            className={cn(
-              'text-sm font-medium truncate',
-              isActive ? 'text-primary' : 'text-foreground'
-            )}
-          >
-            {stepNumber}. {step.label}
-          </div>
-          {(() => {
-            // Get header block title as subtitle
-            const headerBlock = step.blocks?.find(b => b.type === 'header')
-            const headerTitle = headerBlock ? (headerBlock.config as HeaderConfig).title : undefined
-            const subtitle = headerTitle || step.subtitle
-            return subtitle ? (
-              <div className="text-xs text-muted-foreground truncate mt-0.5">
-                {subtitle}
-              </div>
-            ) : null
-          })()}
-        </div>
-
-        {/* Actions menu (not for fixed steps) */}
-        {!step.isFixed && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-                className="p-1 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 rounded hover:bg-muted"
-                aria-label={`Options for ${step.label}`}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDuplicate()
-                }}
-                className="cursor-pointer"
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                Duplicar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDelete()
-                }}
-                className="cursor-pointer text-destructive focus:text-destructive"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-    </div>
-  )
+/**
+ * Get the subtitle for a step (header title or step subtitle)
+ */
+function getStepSubtitle(step: Step): string | undefined {
+  const headerBlock = step.blocks?.find(b => b.type === 'header')
+  const headerTitle = headerBlock ? (headerBlock.config as HeaderConfig).title : undefined
+  return headerTitle || step.subtitle
 }
 
 /**
  * SortableStepsList - A drag-and-drop enabled list of steps
  *
- * Uses dnd-kit for drag and drop functionality.
- * Fixed steps (intro, result) cannot be dragged.
- * Steps cannot be moved before intro or after result.
+ * Uses reusable SortableSidebarList and SortableSidebarItem components.
+ * Fixed steps (intro, result) are excluded from this list.
  */
 export function SortableStepsList() {
   // Read state from store
@@ -196,62 +48,43 @@ export function SortableStepsList() {
     [steps]
   )
 
-  // Get IDs for sortable context
-  const stepIds = useMemo(
-    () => regularSteps.map(s => s.id),
-    [regularSteps]
-  )
+  // Handle reorder - convert from filtered indices to full array indices
+  const handleReorder = (fromIndex: number, toIndex: number) => {
+    const fromStep = regularSteps[fromIndex]
+    const toStep = regularSteps[toIndex]
 
-  // Set up sensors for drag and drop
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Require 8px drag before activation
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
+    if (!fromStep || !toStep) return
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
+    const fullFromIndex = steps.findIndex(s => s.id === fromStep.id)
+    const fullToIndex = steps.findIndex(s => s.id === toStep.id)
 
-    if (over && active.id !== over.id) {
-      const oldIndex = regularSteps.findIndex(s => s.id === active.id)
-      const newIndex = regularSteps.findIndex(s => s.id === over.id)
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        // Convert indices to full steps array indices (accounting for filtered result step)
-        const fullOldIndex = steps.findIndex(s => s.id === active.id)
-        const fullNewIndex = steps.findIndex(s => s.id === over.id)
-
-        reorderSteps(fullOldIndex, fullNewIndex)
-      }
+    if (fullFromIndex !== -1 && fullToIndex !== -1) {
+      reorderSteps(fullFromIndex, fullToIndex)
     }
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
+    <SortableSidebarList
+      items={regularSteps}
+      getItemId={(step) => step.id}
+      onReorder={handleReorder}
+      data-testid="steps-list"
     >
-      <SortableContext items={stepIds} strategy={verticalListSortingStrategy}>
-        <div data-testid="steps-list" className="space-y-1">
-          {regularSteps.map((step, index) => (
-            <SortableStepItem
-              key={step.id}
-              step={step}
-              index={index}
-              isActive={activeStepId === step.id}
-              onSelect={() => setActiveStepId(step.id)}
-              onDelete={() => deleteStep(step.id)}
-              onDuplicate={() => duplicateStep(step.id)}
-            />
-          ))}
-        </div>
-      </SortableContext>
-    </DndContext>
+      {regularSteps.map((step, index) => (
+        <SortableSidebarItem
+          key={step.id}
+          id={step.id}
+          isActive={activeStepId === step.id}
+          onSelect={() => setActiveStepId(step.id)}
+          onDelete={() => deleteStep(step.id)}
+          onDuplicate={() => duplicateStep(step.id)}
+          disabled={step.isFixed}
+          icon={stepTypeIcons[step.type]}
+          title={`${index + 1}. ${step.label}`}
+          subtitle={getStepSubtitle(step)}
+          data-testid={`step-item-${step.id}`}
+        />
+      ))}
+    </SortableSidebarList>
   )
 }

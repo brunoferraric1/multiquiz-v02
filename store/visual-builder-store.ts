@@ -76,6 +76,8 @@ export interface VisualBuilderState {
   addOutcome: (outcome: Outcome) => void
   updateOutcome: (id: string, updates: Partial<Outcome>) => void
   deleteOutcome: (id: string) => void
+  duplicateOutcome: (id: string) => void
+  reorderOutcomes: (fromIndex: number, toIndex: number) => void
   setSelectedOutcomeId: (outcomeId: string | undefined) => void
 
   // Actions - UI state
@@ -642,6 +644,66 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           }
 
           return { outcomes: newOutcomes, selectedOutcomeId: newSelectedOutcomeId, selectedBlockId: undefined }
+        }),
+
+      duplicateOutcome: (id) =>
+        set((state) => {
+          const outcomeToDuplicate = state.outcomes.find(o => o.id === id)
+
+          if (!outcomeToDuplicate) {
+            return state
+          }
+
+          const outcomeIndex = state.outcomes.findIndex(o => o.id === id)
+          const outcomes = [...state.outcomes]
+
+          // Create duplicated blocks with new IDs
+          const duplicatedBlocks = (outcomeToDuplicate.blocks || []).map(block => ({
+            ...block,
+            id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          }))
+
+          // Create a duplicate with new ID and updated name
+          const duplicatedOutcome: Outcome = {
+            ...outcomeToDuplicate,
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            name: outcomeToDuplicate.name ? `${outcomeToDuplicate.name} (cópia)` : '',
+            blocks: duplicatedBlocks,
+          }
+
+          // Insert after the original outcome
+          outcomes.splice(outcomeIndex + 1, 0, duplicatedOutcome)
+
+          // Find result step and select it with the new outcome
+          const resultStep = state.steps.find(s => s.type === 'result')
+
+          return {
+            outcomes,
+            activeStepId: resultStep?.id || state.activeStepId,
+            selectedOutcomeId: duplicatedOutcome.id,
+            selectedBlockId: undefined,
+          }
+        }),
+
+      reorderOutcomes: (fromIndex, toIndex) =>
+        set((state) => {
+          const outcomes = [...state.outcomes]
+
+          if (
+            fromIndex < 0 ||
+            toIndex < 0 ||
+            fromIndex >= outcomes.length ||
+            toIndex >= outcomes.length ||
+            fromIndex === toIndex
+          ) {
+            return state
+          }
+
+          // Simple array reorder: remove from source, insert at destination
+          const [movedOutcome] = outcomes.splice(fromIndex, 1)
+          outcomes.splice(toIndex, 0, movedOutcome)
+
+          return { outcomes }
         }),
 
       setSelectedOutcomeId: (outcomeId) => set({ selectedOutcomeId: outcomeId, selectedBlockId: undefined }),

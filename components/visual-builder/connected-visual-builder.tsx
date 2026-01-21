@@ -8,10 +8,11 @@ import { ConnectedPropertiesPanel } from './connected-properties-panel'
 import { AddStepSheet } from './add-step-sheet'
 import { AddBlockSheet } from './add-block-sheet'
 import { SortableStepsList } from './sortable-steps-list'
+import { SortableOutcomesList } from './sortable-outcomes-list'
 import { StepPreview } from './step-preview'
 import { cn } from '@/lib/utils'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
-import { Trash2, Play } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { HeaderConfig } from '@/types/blocks'
 
 interface ConnectedVisualBuilderProps {
@@ -43,23 +44,17 @@ export function ConnectedVisualBuilder({
 
   // Read state from store
   const steps = useVisualBuilderStore((state) => state.steps)
-  const outcomes = useVisualBuilderStore((state) => state.outcomes)
   const activeStepId = useVisualBuilderStore((state) => state.activeStepId)
-  const selectedOutcomeId = useVisualBuilderStore((state) => state.selectedOutcomeId)
 
   // Get actions from store
   const setActiveStepId = useVisualBuilderStore((state) => state.setActiveStepId)
-  const setSelectedOutcomeId = useVisualBuilderStore((state) => state.setSelectedOutcomeId)
   const setSelectedBlockId = useVisualBuilderStore((state) => state.setSelectedBlockId)
   const setAddStepSheetOpen = useVisualBuilderStore((state) => state.setAddStepSheetOpen)
   const addOutcome = useVisualBuilderStore((state) => state.addOutcome)
-  const deleteOutcome = useVisualBuilderStore((state) => state.deleteOutcome)
 
-  // Find intro and result steps
+  // Find intro step
   const introStep = steps.find((s) => s.type === 'intro')
-  const resultStep = steps.find((s) => s.type === 'result')
   const isIntroActive = activeStepId === introStep?.id
-  const isResultActive = activeStepId === resultStep?.id
 
   // Handlers
   const handleAddStep = () => {
@@ -69,17 +64,6 @@ export function ConnectedVisualBuilder({
   const handleAddOutcome = () => {
     const newOutcome = createOutcome()
     addOutcome(newOutcome)
-  }
-
-  const handleOutcomeSelect = (outcomeId: string) => {
-    if (resultStep) {
-      setActiveStepId(resultStep.id)
-    }
-    setSelectedOutcomeId(outcomeId)
-  }
-
-  const handleDeleteOutcome = (outcomeId: string) => {
-    deleteOutcome(outcomeId)
   }
 
   return (
@@ -195,72 +179,8 @@ export function ConnectedVisualBuilder({
                 </span>
               </div>
 
-            {outcomes.length > 0 && (
-              <div className="space-y-1">
-                {outcomes.map((outcome, index) => {
-                  const isOutcomeActive =
-                    isResultActive && selectedOutcomeId === outcome.id
-                  const letter = String.fromCharCode(65 + index)
+              <SortableOutcomesList />
 
-                  return (
-                    <div
-                      key={outcome.id}
-                      role="button"
-                      tabIndex={0}
-                      aria-pressed={isOutcomeActive}
-                      onClick={() => handleOutcomeSelect(outcome.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          handleOutcomeSelect(outcome.id)
-                        }
-                      }}
-                      className={cn(
-                        'group w-full flex items-center gap-3 p-2.5 rounded-lg transition-all text-left cursor-pointer',
-                        isOutcomeActive
-                          ? 'bg-primary/10 border border-primary/30'
-                          : 'hover:bg-muted/60 border border-transparent'
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          'flex items-center justify-center w-8 h-8 rounded-lg text-xs font-medium shrink-0',
-                          isOutcomeActive
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-muted-foreground'
-                        )}
-                      >
-                        {letter}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div
-                          className={cn(
-                            'text-sm truncate',
-                            isOutcomeActive
-                              ? 'text-primary font-medium'
-                              : 'text-foreground'
-                          )}
-                        >
-                          {outcome.name || `Resultado ${index + 1}`}
-                        </div>
-                      </div>
-                      {outcomes.length > 1 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteOutcome(outcome.id)
-                          }}
-                          className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label={`Delete ${outcome.name || `Resultado ${index + 1}`}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
               {/* Add resultado button - below the list */}
               <div className="mt-2">
                 <GhostAddButton
