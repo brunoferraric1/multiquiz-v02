@@ -9,8 +9,8 @@
  */
 
 import { useMemo, useState, useEffect, useRef, type CSSProperties } from 'react';
-import type { BrandKitColors, Quiz, QuizDraft, VisualBuilderData } from '@/types';
-import type { Block, OptionsConfig, FieldsConfig, FieldItem, PriceConfig } from '@/types/blocks';
+import type { BrandKitColors, Quiz, QuizDraft, VisualBuilderData, FieldResponse } from '@/types';
+import type { Block, OptionsConfig, FieldsConfig, FieldItem, PriceConfig, FieldType } from '@/types/blocks';
 import { QuizBlocksRenderer } from './quiz-blocks-renderer';
 import { AnalyticsService } from '@/lib/services/analytics-service';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -325,36 +325,24 @@ export function BlocksQuizPlayer({
   const handleButtonClick = () => {
     if (!currentStep) return;
 
-    // For lead-gen step, validate required fields before advancing
-    if (currentStep.type === 'lead-gen') {
-      const fieldsBlock = currentStep.blocks.find((b) => b.type === 'fields' && b.enabled);
-      const fieldsConfig = fieldsBlock?.config as FieldsConfig | undefined;
-      const stepFields = currentFieldValues;
+    // Validate required fields in current step before advancing
+    const fieldsBlock = currentStep.blocks.find((b) => b.type === 'fields' && b.enabled);
+    const fieldsConfig = fieldsBlock?.config as FieldsConfig | undefined;
+    const stepFields = currentFieldValues;
 
-      // Check required fields
-      const missingRequired = fieldsConfig?.items?.some((field: FieldItem) => {
-        return field.required && !stepFields[field.id]?.trim();
-      });
+    // Check required fields
+    const missingRequired = fieldsConfig?.items?.some((field: FieldItem) => {
+      return field.required && !stepFields[field.id]?.trim();
+    });
 
-      if (missingRequired) {
-        // TODO: Show validation error - for now just don't advance
-        return;
-      }
+    if (missingRequired) {
+      // TODO: Show validation error - for now just don't advance
+      return;
+    }
 
-      // Track lead info
-      if (mode === 'live' && attemptId) {
-        const leadData: Record<string, string | undefined> = {};
-        fieldsConfig?.items?.forEach((field: FieldItem) => {
-          const value = stepFields[field.id];
-          if (field.type === 'email') leadData.email = value;
-          else if (field.type === 'phone') leadData.phone = value;
-          else if (field.label.toLowerCase().includes('nome')) leadData.name = value;
-        });
-
-        AnalyticsService.updateAttempt(attemptId, {
-          lead: leadData,
-        });
-      }
+    // Collect field data from current step if any
+    if (mode === 'live' && attemptId && fieldsConfig?.items?.length) {
+      collectAndSaveFieldResponses();
     }
 
     goToNextStep();
@@ -405,6 +393,53 @@ export function BlocksQuizPlayer({
     }
   };
 
+  // Collect all field responses from entire quiz and save to attempt
+  const collectAndSaveFieldResponses = () => {
+    if (mode !== 'live' || !attemptId) return;
+
+    const fieldResponses: FieldResponse[] = [];
+
+    // Iterate through ALL steps and collect ALL field values
+    steps.forEach((step) => {
+      const fieldsBlock = step.blocks.find((b) => b.type === 'fields' && b.enabled);
+      const fieldsConfig = fieldsBlock?.config as FieldsConfig | undefined;
+      const stepFieldValues = fieldValues[step.id] || {};
+
+      fieldsConfig?.items.forEach((field) => {
+        const value = stepFieldValues[field.id];
+        if (value && value.trim()) {
+          fieldResponses.push({
+            fieldId: field.id,
+            label: field.label,
+            type: field.type as FieldType,
+            value: value.trim(),
+            stepId: step.id,
+          });
+        }
+      });
+    });
+
+    // Build legacy lead object for backward compatibility
+    // Derive from fieldResponses using simple type matching (no heuristics)
+    const legacyLead: { name?: string; email?: string; phone?: string } = {};
+    fieldResponses.forEach((response) => {
+      if (response.type === 'email' && !legacyLead.email) {
+        legacyLead.email = response.value;
+      } else if (response.type === 'phone' && !legacyLead.phone) {
+        legacyLead.phone = response.value;
+      } else if (response.type === 'text' && !legacyLead.name) {
+        // Use first text field as name for backward compat
+        legacyLead.name = response.value;
+      }
+    });
+
+    // Save both fieldResponses (primary) and legacy lead object
+    AnalyticsService.updateAttempt(attemptId, {
+      fieldResponses,
+      lead: Object.keys(legacyLead).length > 0 ? legacyLead : undefined,
+    });
+  };
+
   // Calculate result outcome
   const finalizeQuiz = () => {
     const tally: Record<string, number> = {};
@@ -428,6 +463,9 @@ export function BlocksQuizPlayer({
     const winningOutcomeId = rankedOutcomes[0]?.[0] || outcomes[0]?.id || null;
 
     setResultOutcomeId(winningOutcomeId);
+
+    // Collect all field responses before completion
+    collectAndSaveFieldResponses();
 
     // Track completion
     if (mode === 'live' && attemptId && winningOutcomeId) {
