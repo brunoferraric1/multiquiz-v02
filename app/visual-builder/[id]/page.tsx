@@ -41,13 +41,18 @@ function VisualBuilderEditor() {
   // Local state
   const [isPublishing, setIsPublishing] = useState(false)
   const [isSavingForPreview, setIsSavingForPreview] = useState(false)
+  const [isSavingForBack, setIsSavingForBack] = useState(false)
   const [isNewQuiz, setIsNewQuiz] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [isCheckingQuiz, setIsCheckingQuiz] = useState(true)
   const [isPublished, setIsPublished] = useState(false)
   const [showPublishModal, setShowPublishModal] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const quizRef = useRef<QuizDraft | null>(null)
   const checkedRef = useRef(false)
+  const savingStartedAtRef = useRef<number | null>(null)
+  const savingDelayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const createDefaultVisualBuilderData = useCallback(() => {
     const initialSteps: Step[] = [
@@ -191,8 +196,59 @@ function VisualBuilderEditor() {
     }
   }, [reset])
 
+  useEffect(() => {
+    return () => {
+      if (savingDelayTimeoutRef.current) {
+        clearTimeout(savingDelayTimeoutRef.current)
+      }
+      if (savedResetTimeoutRef.current) {
+        clearTimeout(savedResetTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const clearSaveStatusTimeouts = useCallback(() => {
+    if (savingDelayTimeoutRef.current) {
+      clearTimeout(savingDelayTimeoutRef.current)
+      savingDelayTimeoutRef.current = null
+    }
+    if (savedResetTimeoutRef.current) {
+      clearTimeout(savedResetTimeoutRef.current)
+      savedResetTimeoutRef.current = null
+    }
+  }, [])
+
+  const startSavingStatus = useCallback(() => {
+    clearSaveStatusTimeouts()
+    savingStartedAtRef.current = Date.now()
+    setSaveStatus('saving')
+  }, [clearSaveStatusTimeouts])
+
+  const showSavedStatus = useCallback(() => {
+    const minSavingDurationMs = 900
+    const savedDurationMs = 2000
+    const startedAt = savingStartedAtRef.current
+    const elapsed = startedAt ? Date.now() - startedAt : minSavingDurationMs
+    const delay = Math.max(minSavingDurationMs - elapsed, 0)
+
+    clearSaveStatusTimeouts()
+
+    const finalizeSavedState = () => {
+      setSaveStatus('saved')
+      savedResetTimeoutRef.current = setTimeout(() => {
+        setSaveStatus('idle')
+      }, savedDurationMs)
+    }
+
+    if (delay > 0) {
+      savingDelayTimeoutRef.current = setTimeout(finalizeSavedState, delay)
+    } else {
+      finalizeSavedState()
+    }
+  }, [clearSaveStatusTimeouts])
+
   // Set up auto-save
-  const { forceSave } = useVisualBuilderAutoSave({
+  const { forceSave, isSaving } = useVisualBuilderAutoSave({
     quizId: id as string,
     userId: user?.uid,
     enabled: isInitialized && !!user,
@@ -200,6 +256,7 @@ function VisualBuilderEditor() {
     existingQuiz: quizRef.current,
     onSaveComplete: () => {
       console.log('[VisualBuilder] Auto-save completed')
+      showSavedStatus()
       // After first save of new quiz, it's no longer "new"
       if (isNewQuiz) {
         setIsNewQuiz(false)
@@ -209,6 +266,9 @@ function VisualBuilderEditor() {
     },
     onSaveError: (err) => {
       console.error('[VisualBuilder] Auto-save error:', err)
+      clearSaveStatusTimeouts()
+      savingStartedAtRef.current = null
+      setSaveStatus('idle')
       toast.error(copy.toast.saveError)
     },
     onLimitError: () => {
@@ -217,14 +277,28 @@ function VisualBuilderEditor() {
     },
   })
 
+  useEffect(() => {
+    if (isSaving) {
+      startSavingStatus()
+    }
+  }, [isSaving, startSavingStatus])
+
   // Handler: Back to dashboard
   const handleBack = useCallback(async () => {
+    if (isSavingForBack) return
     console.log('[VisualBuilder] handleBack - forcing save before navigation')
     // Force save before navigating away
-    await forceSave()
-    console.log('[VisualBuilder] handleBack - save complete, navigating to dashboard')
-    router.push(localizePathname('/dashboard', locale))
-  }, [forceSave, locale, router])
+    setIsSavingForBack(true)
+    startSavingStatus()
+    try {
+      await forceSave()
+      showSavedStatus()
+      console.log('[VisualBuilder] handleBack - save complete, navigating to dashboard')
+      router.push(localizePathname('/dashboard', locale))
+    } finally {
+      setIsSavingForBack(false)
+    }
+  }, [forceSave, isSavingForBack, locale, router, showSavedStatus, startSavingStatus])
 
   // Handler: Preview quiz
   const handlePreview = useCallback(async () => {
@@ -233,19 +307,24 @@ function VisualBuilderEditor() {
 
     try {
       setIsSavingForPreview(true)
+      startSavingStatus()
       console.log('[VisualBuilder] handlePreview - forcing save before preview')
       // Force save before preview to ensure latest changes are visible
       await forceSave()
+      showSavedStatus()
       console.log('[VisualBuilder] handlePreview - save complete, opening preview')
       // Open quiz preview in new tab
       window.open(localizePathname(`/quiz/${id}?preview=true`, locale), '_blank')
     } catch (err) {
       console.error('[VisualBuilder] Error saving before preview:', err)
+      clearSaveStatusTimeouts()
+      savingStartedAtRef.current = null
+      setSaveStatus('idle')
       toast.error(copy.toast.previewSaveError)
     } finally {
       setIsSavingForPreview(false)
     }
-  }, [copy.toast.previewSaveError, forceSave, id, isSavingForPreview, locale])
+  }, [clearSaveStatusTimeouts, copy.toast.previewSaveError, forceSave, id, isSavingForPreview, locale, showSavedStatus, startSavingStatus])
 
   // Handler: Publish quiz
   const handlePublish = useCallback(async () => {
@@ -318,6 +397,8 @@ function VisualBuilderEditor() {
         isPublishing={isPublishing}
         isPublished={isPublished}
         isPreviewing={isSavingForPreview}
+        isBackSaving={isSavingForBack}
+        saveStatus={saveStatus}
       />
       <PublishSuccessModal
         open={showPublishModal}

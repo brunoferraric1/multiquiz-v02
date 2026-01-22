@@ -84,6 +84,50 @@ export function getOutcomeMetadata(outcomes: VisualBuilderOutcome[]): Array<{ id
 }
 
 /**
+ * Get field metadata from ALL steps for data collection table
+ * Returns all fields across all steps in quiz order for dynamic column generation
+ */
+export function getFieldMetadata(steps: VisualBuilderStep[]): Array<{
+  id: string
+  label: string
+  type: 'text' | 'email' | 'phone' | 'number' | 'textarea'
+  stepId: string
+  stepLabel: string
+  stepType: string
+  required: boolean
+}> {
+  const fields: Array<{
+    id: string
+    label: string
+    type: 'text' | 'email' | 'phone' | 'number' | 'textarea'
+    stepId: string
+    stepLabel: string
+    stepType: string
+    required: boolean
+  }> = []
+
+  // Extract fields from all steps (intro, question, lead-gen, promo, etc.)
+  steps.forEach((step) => {
+    const fieldsBlock = step.blocks.find((b) => b.type === 'fields' && b.enabled)
+    const fieldsConfig = fieldsBlock?.config as FieldsConfig | undefined
+
+    fieldsConfig?.items.forEach((field) => {
+      fields.push({
+        id: field.id,
+        label: field.label,
+        type: field.type,
+        stepId: step.id,
+        stepLabel: step.label,
+        stepType: step.type,
+        required: field.required ?? false,
+      })
+    })
+  })
+
+  return fields
+}
+
+/**
  * Check if a quiz has lead generation enabled
  */
 export function hasLeadGenStep(steps: VisualBuilderStep[]): boolean {

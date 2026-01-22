@@ -25,6 +25,8 @@ interface ConnectedVisualBuilderProps {
   isPublishing?: boolean
   isPublished?: boolean
   isPreviewing?: boolean
+  isBackSaving?: boolean
+  saveStatus?: 'idle' | 'saving' | 'saved'
 }
 
 /**
@@ -41,6 +43,8 @@ export function ConnectedVisualBuilder({
   isPublishing = false,
   isPublished = false,
   isPreviewing = false,
+  isBackSaving = false,
+  saveStatus = 'idle',
 }: ConnectedVisualBuilderProps) {
   const messages = useMessages()
   const copy = messages.visualBuilder
@@ -88,6 +92,7 @@ export function ConnectedVisualBuilder({
         isPublishing={isPublishing}
         isPublished={isPublished}
         isPreviewing={isPreviewing}
+        isBackSaving={isBackSaving}
       />
 
       {/* MAIN CONTENT - Three column layout */}
@@ -194,6 +199,7 @@ export function ConnectedVisualBuilder({
           device={device}
           onDeviceChange={setDevice}
           onClick={() => setSelectedBlockId(undefined)}
+          saveStatus={saveStatus}
         >
           <StepPreview />
         </BuilderPreview>

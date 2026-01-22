@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useVisualBuilderStore, Step, Outcome } from '@/store/visual-builder-store'
 import { QuizService } from '@/lib/services/quiz-service'
@@ -185,11 +185,25 @@ export function useVisualBuilderAutoSave({
   const lastSavedRef = useRef<string>('')
   const isSavingRef = useRef<boolean>(false)
   const existingQuizRef = useRef<QuizDraft | null | undefined>(existingQuiz)
+  const isMountedRef = useRef(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Keep existingQuiz ref updated
   useEffect(() => {
     existingQuizRef.current = existingQuiz
   }, [existingQuiz])
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  const setSavingState = useCallback((nextState: boolean) => {
+    if (isMountedRef.current) {
+      setIsSaving(nextState)
+    }
+  }, [])
 
   const saveToFirestore = useCallback(async () => {
     console.log('[VBAutoSave] saveToFirestore called', {
@@ -239,6 +253,7 @@ export function useVisualBuilderAutoSave({
 
     try {
       isSavingRef.current = true
+      setSavingState(true)
       console.log('[VBAutoSave] Saving quiz...')
 
       // Check if there are any base64 images that need migration
@@ -371,8 +386,9 @@ export function useVisualBuilderAutoSave({
       }
     } finally {
       isSavingRef.current = false
+      setSavingState(false)
     }
-  }, [steps, outcomes, quizId, userId, isNewQuiz, queryClient, setSteps, setOutcomes, onSaveComplete, onSaveError, onLimitError])
+  }, [steps, outcomes, quizId, userId, isNewQuiz, queryClient, setSteps, setOutcomes, onSaveComplete, onSaveError, onLimitError, setSavingState])
 
   // Keep saveToFirestore ref updated
   const saveToFirestoreRef = useRef(saveToFirestore)
@@ -405,6 +421,7 @@ export function useVisualBuilderAutoSave({
   // Force save on unmount (when user leaves the page)
   useEffect(() => {
     return () => {
+      isMountedRef.current = false
       // Cancel any pending debounced save
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
@@ -428,6 +445,6 @@ export function useVisualBuilderAutoSave({
         clearTimeout(timeoutRef.current)
       }
     },
-    isSaving: isSavingRef.current,
+    isSaving,
   }
 }

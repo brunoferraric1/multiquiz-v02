@@ -17,6 +17,7 @@ interface BuilderHeaderNavProps {
   isPublishing?: boolean
   isPublished?: boolean
   isPreviewing?: boolean
+  isBackSaving?: boolean
 }
 
 export function BuilderHeaderNav({
@@ -29,6 +30,7 @@ export function BuilderHeaderNav({
   isPublishing = false,
   isPublished = false,
   isPreviewing = false,
+  isBackSaving = false,
 }: BuilderHeaderNavProps) {
   const messages = useMessages()
   const header = messages.visualBuilder.header
@@ -55,9 +57,14 @@ export function BuilderHeaderNav({
           size="icon"
           onClick={onBack}
           aria-label={header.aria.back}
+          disabled={isBackSaving}
           className="text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="w-5 h-5" />
+          {isBackSaving ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <ArrowLeft className="w-5 h-5" />
+          )}
         </Button>
         <span className="font-semibold text-foreground truncate">{quizName}</span>
       </div>

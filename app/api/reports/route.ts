@@ -76,6 +76,9 @@ export async function GET(request: Request) {
                 lastUpdatedAt: toMillis(data.lastUpdatedAt),
                 currentQuestionId: data.currentQuestionId,
                 answers: data.answers || {},
+                // Include fieldResponses for data collection
+                fieldResponses: data.fieldResponses || undefined,
+                // Legacy lead object for backward compatibility
                 lead: data.lead
                     ? {
                         name: data.lead.name,

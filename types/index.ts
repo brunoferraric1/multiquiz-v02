@@ -218,6 +218,17 @@ export type AIExtractionResult = {
   };
 };
 
+// Data Collection Schemas (field responses from quiz takers)
+export const FieldResponseSchema = z.object({
+  fieldId: z.string(),
+  label: z.string(),
+  type: z.enum(['text', 'email', 'phone', 'number', 'textarea']),
+  value: z.string(),
+  stepId: z.string(),
+});
+
+export type FieldResponse = z.infer<typeof FieldResponseSchema>;
+
 // Analytics Schemas
 export const QuizAttemptSchema = z.object({
   id: z.string().uuid(),
@@ -228,6 +239,10 @@ export const QuizAttemptSchema = z.object({
   lastUpdatedAt: z.number(),
   currentQuestionId: z.string().optional(),
   answers: z.record(z.string(), z.string()), // questionId -> optionId (simplified for MVP, multiple choice might need array)
+  // Data collection (field responses) - primary storage for all captured field data
+  fieldResponses: z.array(FieldResponseSchema).optional(),
+  // Legacy lead object - kept for backward compatibility only
+  // New attempts should populate this as a convenience, but fieldResponses is the source of truth
   lead: z.object({
     name: z.string().optional(),
     email: z.string().optional(),
