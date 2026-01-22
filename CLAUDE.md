@@ -126,6 +126,39 @@ Tests use Vitest + React Testing Library with TDD approach. Tests focus on struc
 - Accept `className` prop for customization when appropriate
 - Keep components focused - one responsibility per component
 
+## Internationalization (i18n)
+
+**All user-facing text must use i18n translation keys.** Never hardcode strings in components.
+
+**Message files location:**
+- `messages/pt-BR/` - Portuguese (Brazil) - primary language
+- `messages/en/` - English
+- `messages/es/` - Spanish
+
+**When adding new components or features:**
+1. Add translation keys to ALL three language files
+2. Use the `useMessages()` hook to access translations: `const messages = useMessages()`
+3. Access nested keys like `messages.visualBuilder.preview.warning`
+
+**File structure:** Messages are organized by feature area:
+- `visual-builder.json` - Visual builder UI text
+- `dashboard.json` - Dashboard pages
+- `quiz.json` - Quiz player text
+- `common.json` - Shared text (buttons, labels, errors)
+
+**Example - adding a new feature with text:**
+```tsx
+// 1. Add keys to messages/pt-BR/visual-builder.json (and en, es):
+// "myFeature": { "title": "Meu Recurso", "description": "..." }
+
+// 2. Use in component:
+const messages = useMessages()
+const copy = messages.visualBuilder.myFeature
+return <h1>{copy.title}</h1>
+```
+
+**Never forget:** When creating components with user-facing text, always add the corresponding i18n keys to all three language files before the component is complete.
+
 ## Current Development Focus
 
-Milestone 5A (Core Flows) is in progress: auto-save integration, quiz loading, publish flow. See the implementation plan for task breakdown.
+
