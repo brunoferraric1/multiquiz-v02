@@ -8,6 +8,8 @@ import { QuizService } from '@/lib/services/quiz-service';
 import { getBrandKit } from '@/lib/services/brand-kit-service';
 import { getQuestionMetadata, getOutcomeMetadata, getFieldMetadata } from '@/lib/utils/visual-builder-helpers';
 import { auth } from '@/lib/firebase';
+import { useLocale, useMessages } from '@/lib/i18n/context';
+import { localizePathname } from '@/lib/i18n/paths';
 import type { BrandKitColors, Quiz, QuizAttempt, FieldResponse } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { LeadsTable, type DataColumn, type DataRow } from '@/components/dashboard/leads-table';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { PreviewOverlay } from '@/components/preview-overlay';
-import { ArrowLeft, CheckCircle2, Download, Eye, Globe, Lock, Mail, Play, Search } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Download, Edit3, Eye, Globe, Lock, Mail, Play, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import {
     BarChart,
@@ -207,6 +209,8 @@ export default function QuizReportPage() {
     const quizId = params?.quizId as string;
     const { user } = useAuth();
     const router = useRouter();
+    const locale = useLocale();
+    const messages = useMessages();
     const { subscription } = useSubscription(user?.uid);
     const isProUser = isPro(subscription);
 
@@ -600,7 +604,14 @@ export default function QuizReportPage() {
                         Análise detalhada de performance
                     </p>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={() => router.push(localizePathname(`/visual-builder/${quizId}`, locale))}
+                    >
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        {messages.common.buttons.editQuiz}
+                    </Button>
                     <Button variant="outline" onClick={() => setIsPreviewOpen(true)}>
                         <Eye className="mr-2 h-4 w-4" />
                         Pré-visualizar
