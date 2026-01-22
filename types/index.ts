@@ -180,6 +180,23 @@ export type BrandKit = {
   updatedAt?: number;
 };
 
+// Theme system types
+export type PresetThemeId = 'multiquiz-dark' | 'multiquiz-light';
+
+export type UserThemeSettings = {
+  mode: 'preset' | 'custom';
+  presetId?: PresetThemeId;
+  customBrandKit?: BrandKit;
+  updatedAt?: number;
+};
+
+export const UserThemeSettingsSchema = z.object({
+  mode: z.enum(['preset', 'custom']),
+  presetId: z.enum(['multiquiz-dark', 'multiquiz-light']).optional(),
+  customBrandKit: BrandKitSchema.optional(),
+  updatedAt: z.number().optional(),
+});
+
 // Partial types for draft states
 // Note: visualBuilderData is the source of truth; legacy questions/outcomes are optional for backwards compatibility
 export type QuizDraft = Partial<Omit<Quiz, 'questions' | 'outcomes' | 'visualBuilderData'>> & {

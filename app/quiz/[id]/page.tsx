@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { QuizService } from '@/lib/services/quiz-service';
-import { getBrandKit } from '@/lib/services/brand-kit-service';
+import { getThemeSettings, resolveThemeColors, resolveThemeLogo } from '@/lib/services/brand-kit-service';
 import { BlocksQuizPlayer } from '@/components/quiz/blocks-quiz-player';
 import type { BrandKitColors, Quiz } from '@/types';
 
@@ -76,37 +76,34 @@ export default function PublicQuizPage() {
     }
   }, [quizId, isPreviewMode]);
 
+  // Load user's theme settings
   useEffect(() => {
-    if (!quiz?.ownerId || quiz.brandKitMode !== 'custom') {
+    if (!quiz?.ownerId) {
       setBrandKitColors(null);
       setBrandKitLogoUrl(null);
       return;
     }
 
-    if (quiz.brandKit?.colors) {
-      setBrandKitColors(quiz.brandKit.colors);
-      setBrandKitLogoUrl(quiz.brandKit.logoUrl ?? null);
-      return;
-    }
-
     let isActive = true;
-    getBrandKit(quiz.ownerId)
-      .then((kit) => {
+    getThemeSettings(quiz.ownerId)
+      .then((settings) => {
         if (!isActive) return;
-        setBrandKitColors(kit?.colors ?? null);
-        setBrandKitLogoUrl(kit?.logoUrl ?? null);
+        // Always resolve colors (uses default preset if no settings)
+        setBrandKitColors(resolveThemeColors(settings));
+        setBrandKitLogoUrl(resolveThemeLogo(settings));
       })
       .catch((err) => {
         if (!isActive) return;
-        console.error('[PublicQuiz] Error loading brand kit:', err);
-        setBrandKitColors(null);
+        console.error('[PublicQuiz] Error loading theme settings:', err);
+        // On error, use default theme colors
+        setBrandKitColors(resolveThemeColors(null));
         setBrandKitLogoUrl(null);
       });
 
     return () => {
       isActive = false;
     };
-  }, [quiz]);
+  }, [quiz?.ownerId]);
 
   const handleExit = () => {
     router.push('/');

@@ -1,0 +1,179 @@
+'use client';
+
+import { useRef, useState } from 'react';
+import { SectionTitle } from '@/components/ui/section-title';
+import { ColorPickerField } from './color-picker-field';
+import { Button } from '@/components/ui/button';
+import { Upload, X, Loader2 } from 'lucide-react';
+import type { BrandKitColors } from '@/types';
+
+interface CustomThemeEditorProps {
+  colors: BrandKitColors;
+  logoUrl: string | null;
+  onColorsChange: (colors: BrandKitColors) => void;
+  onLogoChange: (file: File) => Promise<void>;
+  onLogoRemove: () => void;
+  isUploadingLogo?: boolean;
+  copy: {
+    colorsTitle: string;
+    primaryLabel: string;
+    primaryHint: string;
+    secondaryLabel: string;
+    secondaryHint: string;
+    accentLabel: string;
+    accentHint: string;
+    logoTitle: string;
+    logoUpload: string;
+    logoUploadHint: string;
+    logoRemove: string;
+  };
+}
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+/**
+ * Editor for custom theme colors and logo upload
+ */
+export function CustomThemeEditor({
+  colors,
+  logoUrl,
+  onColorsChange,
+  onLogoChange,
+  onLogoRemove,
+  isUploadingLogo = false,
+  copy,
+}: CustomThemeEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleColorChange = (key: keyof BrandKitColors, value: string) => {
+    onColorsChange({
+      ...colors,
+      [key]: value,
+    });
+  };
+
+  const handleFileSelect = async (file: File) => {
+    if (!file.type.startsWith('image/') && file.type !== 'image/svg+xml') {
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return;
+    }
+    await onLogoChange(file);
+  };
+
+  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await handleFileSelect(file);
+    }
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await handleFileSelect(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragActive(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Colors section */}
+      <div className="space-y-4">
+        <SectionTitle>{copy.colorsTitle}</SectionTitle>
+        <div className="grid gap-4">
+          <ColorPickerField
+            id="primary-color"
+            label={copy.primaryLabel}
+            hint={copy.primaryHint}
+            value={colors.primary}
+            onChange={(value) => handleColorChange('primary', value)}
+          />
+          <ColorPickerField
+            id="secondary-color"
+            label={copy.secondaryLabel}
+            hint={copy.secondaryHint}
+            value={colors.secondary}
+            onChange={(value) => handleColorChange('secondary', value)}
+          />
+          <ColorPickerField
+            id="accent-color"
+            label={copy.accentLabel}
+            hint={copy.accentHint}
+            value={colors.accent}
+            onChange={(value) => handleColorChange('accent', value)}
+          />
+        </div>
+      </div>
+
+      {/* Logo section */}
+      <div className="space-y-3">
+        <SectionTitle>{copy.logoTitle}</SectionTitle>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.svg"
+          onChange={handleInputChange}
+          className="hidden"
+        />
+
+        {logoUrl ? (
+          <div className="relative w-fit">
+            <img
+              src={logoUrl}
+              alt="Logo"
+              className="h-16 w-auto max-w-[200px] object-contain rounded-lg border"
+            />
+            <Button
+              variant="destructive"
+              size="icon"
+              className="absolute -top-2 -right-2 h-6 w-6"
+              onClick={onLogoRemove}
+              disabled={isUploadingLogo}
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            disabled={isUploadingLogo}
+            className={`
+              w-full p-4 border-2 border-dashed rounded-lg transition-colors
+              flex flex-col items-center gap-2 text-muted-foreground
+              ${dragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}
+              ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+            `}
+          >
+            {isUploadingLogo ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : (
+              <Upload className="w-6 h-6" />
+            )}
+            <span className="text-sm font-medium">{copy.logoUpload}</span>
+            <span className="text-xs">{copy.logoUploadHint}</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

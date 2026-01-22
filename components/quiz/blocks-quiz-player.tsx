@@ -139,52 +139,51 @@ export function BlocksQuizPlayer({
 
   const { steps, outcomes } = visualBuilderData;
 
-  // Brand kit styling
+  // Theme/Brand kit styling - always apply when colors are provided
   const brandKitStyle = useMemo(() => {
-    if (quiz.brandKitMode !== 'custom') return undefined;
+    // If no colors provided, use no custom styling
+    if (!brandKitColors) return undefined;
 
-    const primary = brandKitColors?.primary || quiz.primaryColor || DEFAULT_PURPLE;
+    const primary = brandKitColors.primary || DEFAULT_PURPLE;
+    const cardColor = brandKitColors.secondary;
+    const backgroundColor = brandKitColors.accent;
+    const inputBackground = getInputBackground(cardColor);
+    const inputForeground = getReadableTextColor(inputBackground);
+    const inputBorder = getInputBorder(inputBackground, inputForeground);
+    const cardBorder = getCardBorder(cardColor);
+    const cardHover = getCardHoverBackground(cardColor);
+    const cardHoverBorder = getCardHoverBorder(cardColor);
+    const mutedForeground = mixColors(
+      getReadableTextColor(backgroundColor),
+      backgroundColor,
+      0.45
+    );
+
     const style: BrandKitStyle = {
       '--color-primary': primary,
       '--color-primary-foreground': getReadableTextColor(primary),
       '--color-accent': primary,
       '--color-accent-foreground': getReadableTextColor(primary),
       '--color-ring': primary,
+      '--color-secondary': cardColor,
+      '--color-secondary-foreground': getReadableTextColor(cardColor),
+      '--color-background': backgroundColor,
+      '--color-foreground': getReadableTextColor(backgroundColor),
+      '--color-muted-foreground': mutedForeground,
+      '--color-card': cardColor,
+      '--color-card-foreground': getReadableTextColor(cardColor),
+      '--color-border': cardBorder,
+      '--quiz-card-hover': cardHover,
+      '--quiz-card-hover-border': cardHoverBorder,
+      '--color-input': inputBorder,
+      '--quiz-input-bg': inputBackground,
+      '--quiz-input-border': inputBorder,
+      '--quiz-input-foreground': inputForeground,
+      '--quiz-input-placeholder': mixColors(inputForeground, inputBackground, 0.55),
     };
 
-    if (brandKitColors) {
-      const cardColor = brandKitColors.secondary;
-      const backgroundColor = brandKitColors.accent;
-      const inputBackground = getInputBackground(cardColor);
-      const inputForeground = getReadableTextColor(inputBackground);
-      const inputBorder = getInputBorder(inputBackground, inputForeground);
-      const cardBorder = getCardBorder(cardColor);
-      const cardHover = getCardHoverBackground(cardColor);
-      const cardHoverBorder = getCardHoverBorder(cardColor);
-      const mutedForeground = mixColors(
-        getReadableTextColor(backgroundColor),
-        backgroundColor,
-        0.45
-      );
-      style['--color-secondary'] = cardColor;
-      style['--color-secondary-foreground'] = getReadableTextColor(cardColor);
-      style['--color-background'] = backgroundColor;
-      style['--color-foreground'] = getReadableTextColor(backgroundColor);
-      style['--color-muted-foreground'] = mutedForeground;
-      style['--color-card'] = cardColor;
-      style['--color-card-foreground'] = getReadableTextColor(cardColor);
-      style['--color-border'] = cardBorder;
-      style['--quiz-card-hover'] = cardHover;
-      style['--quiz-card-hover-border'] = cardHoverBorder;
-      style['--color-input'] = inputBorder;
-      style['--quiz-input-bg'] = inputBackground;
-      style['--quiz-input-border'] = inputBorder;
-      style['--quiz-input-foreground'] = inputForeground;
-      style['--quiz-input-placeholder'] = mixColors(inputForeground, inputBackground, 0.55);
-    }
-
     return style;
-  }, [brandKitColors, quiz.brandKitMode, quiz.primaryColor]);
+  }, [brandKitColors]);
 
   // Analytics tracking
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -497,7 +496,7 @@ export function BlocksQuizPlayer({
   };
 
   const isLive = mode === 'live';
-  const showBrandLogo = quiz.brandKitMode === 'custom' && Boolean(brandKitLogoUrl);
+  const showBrandLogo = Boolean(brandKitLogoUrl);
 
   // Show progress for question steps
   const showProgress = currentStep?.settings?.showProgress ?? currentStep?.type === 'question';

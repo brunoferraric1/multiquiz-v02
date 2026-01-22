@@ -1,0 +1,52 @@
+{
+  "page": {
+    "title": "Settings",
+    "subtitle": "Customize the appearance of your quizzes."
+  },
+  "themes": {
+    "title": "THEMES",
+    "presets": {
+      "dark": "MultiQuiz Dark",
+      "light": "MultiQuiz Light"
+    },
+    "custom": {
+      "label": "Custom",
+      "proBadge": "Pro",
+      "upgradeTitle": "Pro exclusive feature",
+      "upgradeDescription": "Customize colors and add your logo with the Pro plan.",
+      "upgradeButton": "Upgrade"
+    }
+  },
+  "colors": {
+    "title": "COLORS",
+    "primary": "Primary color",
+    "primaryHint": "Buttons and accents",
+    "secondary": "Secondary color",
+    "secondaryHint": "Cards and content areas",
+    "accent": "Background color",
+    "accentHint": "Page background"
+  },
+  "logo": {
+    "title": "LOGO",
+    "upload": "Click to upload",
+    "uploadHint": "PNG, JPG or SVG (max 2MB)",
+    "remove": "Remove logo"
+  },
+  "preview": {
+    "title": "PREVIEW",
+    "questionLabel": "What is your preference?",
+    "option1": "Option A",
+    "option2": "Option B",
+    "buttonText": "Continue"
+  },
+  "actions": {
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "toast": {
+    "saveSuccess": "Settings saved successfully!",
+    "saveError": "Error saving settings.",
+    "uploadError": "Error uploading logo.",
+    "uploadTooLarge": "File too large. Maximum 2MB."
+  }
+}

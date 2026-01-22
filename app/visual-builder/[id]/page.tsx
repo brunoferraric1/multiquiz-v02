@@ -13,7 +13,7 @@ import {
 } from '@/store/visual-builder-store'
 import { useVisualBuilderAutoSave } from '@/lib/hooks/use-visual-builder-auto-save'
 import { QuizService } from '@/lib/services/quiz-service'
-import { getBrandKit } from '@/lib/services/brand-kit-service'
+import { getThemeSettings, resolveThemeColors, resolveThemeLogo } from '@/lib/services/brand-kit-service'
 import { ProtectedRoute } from '@/components/protected-route'
 import { ConnectedVisualBuilder } from '@/components/visual-builder'
 import { PublishSuccessModal } from '@/components/builder/publish-success-modal'
@@ -289,25 +289,27 @@ function VisualBuilderEditor() {
     }
   }, [isSaving, startSavingStatus])
 
-  // Fetch brand kit when quiz uses custom branding
+  // Fetch user's theme settings for preview
   useEffect(() => {
-    if (!user?.uid || !quizRef.current || quizRef.current.brandKitMode !== 'custom') {
+    if (!user?.uid) {
       setBrandKitColors(null)
       setBrandKitLogoUrl(null)
       return
     }
 
     let isActive = true
-    getBrandKit(user.uid)
-      .then((kit) => {
+    getThemeSettings(user.uid)
+      .then((settings) => {
         if (!isActive) return
-        setBrandKitColors(kit?.colors ?? null)
-        setBrandKitLogoUrl(kit?.logoUrl ?? null)
+        // Always resolve colors (uses default preset if no settings)
+        setBrandKitColors(resolveThemeColors(settings))
+        setBrandKitLogoUrl(resolveThemeLogo(settings))
       })
       .catch((error) => {
         if (!isActive) return
-        console.error('[VisualBuilder] Failed to load brand kit for preview', error)
-        setBrandKitColors(null)
+        console.error('[VisualBuilder] Failed to load theme settings for preview', error)
+        // On error, use default theme colors
+        setBrandKitColors(resolveThemeColors(null))
         setBrandKitLogoUrl(null)
       })
 
@@ -437,6 +439,8 @@ function VisualBuilderEditor() {
         isPreviewing={isSavingForPreview}
         isBackSaving={isSavingForBack}
         saveStatus={saveStatus}
+        themeColors={brandKitColors}
+        onThemeChange={setBrandKitColors}
       />
       <PublishSuccessModal
         open={showPublishModal}

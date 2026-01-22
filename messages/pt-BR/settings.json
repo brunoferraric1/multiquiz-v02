@@ -1,0 +1,52 @@
+{
+  "page": {
+    "title": "Configurações",
+    "subtitle": "Personalize a aparência dos seus quizzes."
+  },
+  "themes": {
+    "title": "TEMAS",
+    "presets": {
+      "dark": "MultiQuiz Dark",
+      "light": "MultiQuiz Light"
+    },
+    "custom": {
+      "label": "Personalizado",
+      "proBadge": "Pro",
+      "upgradeTitle": "Recurso exclusivo Pro",
+      "upgradeDescription": "Personalize cores e adicione seu logo com o plano Pro.",
+      "upgradeButton": "Fazer upgrade"
+    }
+  },
+  "colors": {
+    "title": "CORES",
+    "primary": "Cor primária",
+    "primaryHint": "Botões e acentos",
+    "secondary": "Cor secundária",
+    "secondaryHint": "Cards e áreas de conteúdo",
+    "accent": "Cor de fundo",
+    "accentHint": "Fundo da página"
+  },
+  "logo": {
+    "title": "LOGO",
+    "upload": "Clique para fazer upload",
+    "uploadHint": "PNG, JPG ou SVG (máx. 2MB)",
+    "remove": "Remover logo"
+  },
+  "preview": {
+    "title": "PREVIEW",
+    "questionLabel": "Qual é a sua preferência?",
+    "option1": "Opção A",
+    "option2": "Opção B",
+    "buttonText": "Continuar"
+  },
+  "actions": {
+    "save": "Salvar",
+    "saving": "Salvando..."
+  },
+  "toast": {
+    "saveSuccess": "Configurações salvas com sucesso!",
+    "saveError": "Erro ao salvar configurações.",
+    "uploadError": "Erro ao fazer upload do logo.",
+    "uploadTooLarge": "Arquivo muito grande. Máximo 2MB."
+  }
+}

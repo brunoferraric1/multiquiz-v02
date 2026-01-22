@@ -9,8 +9,8 @@
  */
 
 import { v4 as uuidv4 } from 'uuid'
-import type { Outcome as QuizOutcome, QuizDraft, Quiz } from '@/types'
-import type { Block, HeaderConfig, MediaConfig, OptionsConfig, FieldsConfig } from '@/types/blocks'
+import type { Outcome as QuizOutcome, QuizDraft, Quiz, Question } from '@/types'
+import type { Block, HeaderConfig, MediaConfig, OptionsConfig, FieldsConfig, ButtonConfig } from '@/types/blocks'
 import type { Step, Outcome as VBOutcome } from '@/store/visual-builder-store'
 import { createBlock } from '@/types/blocks'
 import { getDefaultOutcomeBlocks } from '@/store/visual-builder-store'
@@ -48,6 +48,7 @@ function createIntroStep(quiz: QuizDraft | Quiz): Step {
       config: {
         type: 'image' as const,
         url: quiz.coverImageUrl || '',
+        orientation: 'horizontal',
       },
     },
     {
@@ -92,6 +93,7 @@ function questionToStep(question: Partial<Question>, index: number): Step {
       config: {
         type: 'image' as const,
         url: question.imageUrl || '',
+        orientation: 'horizontal',
       },
     },
     {
@@ -222,6 +224,7 @@ function quizOutcomeToVBOutcome(outcome: Partial<QuizOutcome>): VBOutcome {
       config: {
         type: 'image' as const,
         url: outcome.imageUrl || '',
+        orientation: 'horizontal',
       },
     },
     {

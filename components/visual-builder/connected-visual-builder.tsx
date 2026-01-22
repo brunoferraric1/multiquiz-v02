@@ -10,12 +10,14 @@ import { AddBlockSheet } from './add-block-sheet'
 import { SortableStepsList } from './sortable-steps-list'
 import { SortableOutcomesList } from './sortable-outcomes-list'
 import { StepPreview } from './step-preview'
+import { BuilderThemePanel } from './builder-theme-panel'
 import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import { SectionTitle } from '@/components/ui/section-title'
 import { Play } from 'lucide-react'
 import { HeaderConfig } from '@/types/blocks'
+import type { BrandKitColors } from '@/types'
 
 interface ConnectedVisualBuilderProps {
   quizName?: string
@@ -27,6 +29,8 @@ interface ConnectedVisualBuilderProps {
   isPreviewing?: boolean
   isBackSaving?: boolean
   saveStatus?: 'idle' | 'saving' | 'saved'
+  themeColors?: BrandKitColors | null
+  onThemeChange?: (colors: BrandKitColors) => void
 }
 
 /**
@@ -45,6 +49,8 @@ export function ConnectedVisualBuilder({
   isPreviewing = false,
   isBackSaving = false,
   saveStatus = 'idle',
+  themeColors,
+  onThemeChange,
 }: ConnectedVisualBuilderProps) {
   const messages = useMessages()
   const copy = messages.visualBuilder
@@ -93,119 +99,128 @@ export function ConnectedVisualBuilder({
         isBackSaving={isBackSaving}
       />
 
-      {/* MAIN CONTENT - Three column layout */}
+      {/* MAIN CONTENT */}
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT SIDEBAR - Steps list */}
-        <aside
-          data-testid="left-sidebar"
-          className="w-64 bg-card border-r flex flex-col overflow-hidden shrink-0"
-        >
-          {/* Single scrollable area for all sections */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden">
-            {/* Introdução section */}
-            {introStep && (
-              <div className="p-3 pb-2">
-                <SectionTitle className="mb-2">{copy.sidebar.intro}</SectionTitle>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={isIntroActive}
-                  onClick={() => setActiveStepId(introStep.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      setActiveStepId(introStep.id)
-                    }
-                  }}
-                  className={cn(
-                    'flex items-center gap-3 p-2 rounded-lg transition-colors text-left',
-                    isIntroActive
-                      ? 'bg-primary/10 border border-primary/30'
-                      : 'bg-muted/50 hover:bg-muted/80 border border-transparent'
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'flex items-center justify-center w-8 h-8 rounded-lg shrink-0',
-                      isIntroActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    )}
-                  >
-                    <Play className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0 overflow-hidden">
+        {activeTab === 'tema' ? (
+          /* THEME TAB - Show theme settings panel */
+          <BuilderThemePanel onThemeChange={onThemeChange} />
+        ) : (
+          /* EDITOR TAB - Three column layout */
+          <>
+            {/* LEFT SIDEBAR - Steps list */}
+            <aside
+              data-testid="left-sidebar"
+              className="w-64 bg-card border-r flex flex-col overflow-hidden shrink-0"
+            >
+              {/* Single scrollable area for all sections */}
+              <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                {/* Introdução section */}
+                {introStep && (
+                  <div className="p-3 pb-2">
+                    <SectionTitle className="mb-2">{copy.sidebar.intro}</SectionTitle>
                     <div
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isIntroActive}
+                      onClick={() => setActiveStepId(introStep.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          setActiveStepId(introStep.id)
+                        }
+                      }}
                       className={cn(
-                        'text-sm font-medium truncate',
-                        isIntroActive ? 'text-primary' : 'text-foreground'
+                        'flex items-center gap-3 p-2 rounded-lg transition-colors text-left',
+                        isIntroActive
+                          ? 'bg-primary/10 border border-primary/30'
+                          : 'bg-muted/50 hover:bg-muted/80 border border-transparent'
                       )}
                     >
-                      {introStep.label}
-                    </div>
-                    {(() => {
-                      const headerBlock = introStep.blocks?.find(b => b.type === 'header')
-                      const headerTitle = headerBlock ? (headerBlock.config as HeaderConfig).title : undefined
-                      const subtitle = headerTitle || introStep.subtitle
-                      return subtitle ? (
-                        <div className="text-xs text-muted-foreground truncate mt-0.5">
-                          {subtitle}
+                      <div
+                        className={cn(
+                          'flex items-center justify-center w-8 h-8 rounded-lg shrink-0',
+                          isIntroActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        <Play className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <div
+                          className={cn(
+                            'text-sm font-medium truncate',
+                            isIntroActive ? 'text-primary' : 'text-foreground'
+                          )}
+                        >
+                          {introStep.label}
                         </div>
-                      ) : null
-                    })()}
+                        {(() => {
+                          const headerBlock = introStep.blocks?.find(b => b.type === 'header')
+                          const headerTitle = headerBlock ? (headerBlock.config as HeaderConfig).title : undefined
+                          const subtitle = headerTitle || introStep.subtitle
+                          return subtitle ? (
+                            <div className="text-xs text-muted-foreground truncate mt-0.5">
+                              {subtitle}
+                            </div>
+                          ) : null
+                        })()}
+                      </div>
+                    </div>
                   </div>
+                )}
+
+                {/* Etapas section */}
+                <div className="px-3 pb-2">
+                  <SectionTitle className="mb-2">{copy.sidebar.steps}</SectionTitle>
+                  <SortableStepsList />
+                  {/* Add step button - below the list */}
+                  <GhostAddButton
+                    size="compact"
+                    className="mt-2"
+                    onClick={handleAddStep}
+                    aria-label={copy.sidebar.addStep}
+                  >
+                    {copy.sidebar.addStep}
+                  </GhostAddButton>
+                </div>
+
+                {/* Results section */}
+                <div data-testid="results-section" className="px-3 pt-4 pb-3">
+                  <SectionTitle className="mb-2">{copy.sidebar.results}</SectionTitle>
+
+                  <SortableOutcomesList />
+
+                  {/* Add resultado button - below the list */}
+                  <GhostAddButton
+                    size="compact"
+                    className="mt-2"
+                    onClick={handleAddOutcome}
+                    aria-label={copy.sidebar.addOutcome}
+                  >
+                    {copy.sidebar.addOutcome}
+                  </GhostAddButton>
                 </div>
               </div>
-            )}
+            </aside>
 
-            {/* Etapas section */}
-            <div className="px-3 pb-2">
-              <SectionTitle className="mb-2">{copy.sidebar.steps}</SectionTitle>
-              <SortableStepsList />
-              {/* Add step button - below the list */}
-              <GhostAddButton
-                size="compact"
-                className="mt-2"
-                onClick={handleAddStep}
-                aria-label={copy.sidebar.addStep}
-              >
-                {copy.sidebar.addStep}
-              </GhostAddButton>
-            </div>
+            {/* CENTER - Preview area */}
+            <BuilderPreview
+              device={device}
+              onDeviceChange={setDevice}
+              onClick={() => setSelectedBlockId(undefined)}
+              saveStatus={saveStatus}
+              onPreview={onPreview}
+              isPreviewing={isPreviewing}
+              themeColors={themeColors}
+            >
+              <StepPreview />
+            </BuilderPreview>
 
-            {/* Results section */}
-            <div data-testid="results-section" className="px-3 pt-4 pb-3">
-              <SectionTitle className="mb-2">{copy.sidebar.results}</SectionTitle>
-
-              <SortableOutcomesList />
-
-              {/* Add resultado button - below the list */}
-              <GhostAddButton
-                size="compact"
-                className="mt-2"
-                onClick={handleAddOutcome}
-                aria-label={copy.sidebar.addOutcome}
-              >
-                {copy.sidebar.addOutcome}
-              </GhostAddButton>
-            </div>
-          </div>
-        </aside>
-
-        {/* CENTER - Preview area */}
-        <BuilderPreview
-          device={device}
-          onDeviceChange={setDevice}
-          onClick={() => setSelectedBlockId(undefined)}
-          saveStatus={saveStatus}
-          onPreview={onPreview}
-          isPreviewing={isPreviewing}
-        >
-          <StepPreview />
-        </BuilderPreview>
-
-        {/* RIGHT PANEL - Properties */}
-        <ConnectedPropertiesPanel className="hidden md:flex" />
+            {/* RIGHT PANEL - Properties */}
+            <ConnectedPropertiesPanel className="hidden md:flex" />
+          </>
+        )}
       </div>
 
       {/* Add Step Sheet */}
