@@ -30,7 +30,12 @@
     },
     "custom": {
       "label": "Personalizado",
-      "proBadge": "Pro",
+      "proBadge": "PRO",
+      "benefits": [
+        "Personalize suas cores",
+        "Adicione sua logomarca",
+        "Destaque sua marca"
+      ],
       "upgradeTitle": "Recurso exclusivo Pro",
       "upgradeDescription": "Personalize cores e adicione seu logo com o plano Pro.",
       "upgradeButton": "Fazer upgrade"

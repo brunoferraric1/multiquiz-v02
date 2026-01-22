@@ -30,7 +30,12 @@
     },
     "custom": {
       "label": "Custom",
-      "proBadge": "Pro",
+      "proBadge": "PRO",
+      "benefits": [
+        "Customize your colors",
+        "Add your logo",
+        "Stand out your brand"
+      ],
       "upgradeTitle": "Pro exclusive feature",
       "upgradeDescription": "Customize colors and add your logo with the Pro plan.",
       "upgradeButton": "Upgrade"

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, Palette } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { useSubscription, isPro } from '@/lib/services/subscription-service'
 import { useMessages, useLocale } from '@/lib/i18n/context'
@@ -13,7 +13,7 @@ import {
 import { uploadImage, getBrandKitLogoPath } from '@/lib/services/storage-service'
 import { PRESET_THEMES, DEFAULT_THEME_ID } from '@/lib/themes/preset-themes'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { PageBreadcrumb } from '@/components/ui/page-breadcrumb'
 import { ThemeCard } from '@/components/dashboard/settings/theme-card'
 import { CustomThemeEditor } from '@/components/dashboard/settings/custom-theme-editor'
@@ -86,12 +86,8 @@ export default function ThemesSettingsPage() {
     setPresetId(id)
   }
 
-  // Handle custom theme selection
+  // Handle custom theme selection - allow all users to try it
   const handleCustomSelect = () => {
-    if (!isProUser) {
-      setShowUpgradeModal(true)
-      return
-    }
     setMode('custom')
   }
 
@@ -127,9 +123,15 @@ export default function ThemesSettingsPage() {
     setLogoUrl(null)
   }
 
-  // Handle save
+  // Handle save - block non-Pro users trying to save custom theme
   const handleSave = async () => {
     if (!user?.uid) return
+
+    // Block non-Pro users from saving custom theme
+    if (mode === 'custom' && !isProUser) {
+      setShowUpgradeModal(true)
+      return
+    }
 
     try {
       setIsSaving(true)
@@ -185,19 +187,10 @@ export default function ThemesSettingsPage() {
       </div>
 
       {/* Main content grid */}
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid gap-8 lg:grid-cols-2 items-start">
         {/* Left column - Theme selection */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5 text-primary" />
-              {copy.themes.title}
-            </CardTitle>
-            <CardDescription>
-              {copy.themesPage.subtitle}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pt-6">
             {/* Preset themes */}
             <div className="space-y-3">
               <ThemeCard
@@ -216,14 +209,14 @@ export default function ThemesSettingsPage() {
                 name={copy.themes.custom.label}
                 colors={customColors}
                 isSelected={mode === 'custom'}
-                isLocked={!isProUser}
-                proBadge={copy.themes.custom.proBadge}
+                proBadge={!isProUser ? copy.themes.custom.proBadge : undefined}
+                benefits={!isProUser ? copy.themes.custom.benefits : undefined}
                 onClick={handleCustomSelect}
               />
             </div>
 
-            {/* Custom theme editor (only when custom is selected and user is Pro) */}
-            {mode === 'custom' && isProUser && (
+            {/* Custom theme editor (shown when custom is selected) */}
+            {mode === 'custom' && (
               <CustomThemeEditor
                 colors={customColors}
                 logoUrl={logoUrl}
@@ -247,16 +240,6 @@ export default function ThemesSettingsPage() {
               />
             )}
 
-            {/* Upgrade CTA for free users clicking custom */}
-            {!isProUser && mode !== 'custom' && (
-              <div className="rounded-lg bg-muted p-4 space-y-2">
-                <p className="text-sm font-medium">{copy.themes.custom.upgradeTitle}</p>
-                <p className="text-sm text-muted-foreground">
-                  {copy.themes.custom.upgradeDescription}
-                </p>
-              </div>
-            )}
-
             {/* Save button */}
             <Button
               onClick={handleSave}
@@ -275,25 +258,24 @@ export default function ThemesSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Right column - Preview */}
-        <Card className="overflow-hidden">
-          <CardHeader>
-            <CardTitle>{copy.preview.title}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ThemePreview
-              colors={effectiveColors}
-              logoUrl={mode === 'custom' ? logoUrl : null}
-              copy={{
-                title: copy.preview.title,
-                questionLabel: copy.preview.questionLabel,
-                option1: copy.preview.option1,
-                option2: copy.preview.option2,
-                buttonText: copy.preview.buttonText,
-              }}
-            />
-          </CardContent>
-        </Card>
+        {/* Right column - Preview (sticky) */}
+        <div className="lg:sticky lg:top-8">
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              <ThemePreview
+                colors={effectiveColors}
+                logoUrl={mode === 'custom' ? logoUrl : null}
+                copy={{
+                  title: copy.preview.title,
+                  questionLabel: copy.preview.questionLabel,
+                  option1: copy.preview.option1,
+                  option2: copy.preview.option2,
+                  buttonText: copy.preview.buttonText,
+                }}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Upgrade Modal */}
