@@ -53,6 +53,13 @@ Every button, label, and message will work in three languages:
 - Your quiz content stays as you wrote it (we don't auto-translate that)
 - Store a single `quizLocale` on the quiz for routing + editor defaults
 
+**Status update (Jan 2025):**
+- Locale routing is now active via `proxy.ts` rewrite + `x-locale` header + `locale` cookie.
+- `LocaleProvider` resolves locale from the URL path and serves locale-specific message bundles.
+- Global language selector moved to the dashboard header for app-wide switching.
+- Dashboard and Visual Builder UI copy localized; default Visual Builder seed content is localized.
+- User-generated quiz content is never auto-translated.
+
 ### 3. Light & Dark Modes
 - Toggle between themes anywhere
 - Respects system preference by default
@@ -79,8 +86,8 @@ Every button, label, and message will work in three languages:
 - [ ] Design new data model (Steps, Blocks, Outcomes)
 - [ ] Create Firestore schema for new format
 - [ ] Define `quizLocale` storage + routing defaults
-- [ ] Set up language system (dictionaries, detection, hooks)
-- [ ] Create new route structure for locales
+- [x] Set up language system (dictionaries, detection, hooks) - `LocaleProvider`, messages, path helpers
+- [x] Create new route structure for locales - proxy-based `/[lang]` routing with cookie sync
 - [ ] Add feature flag to switch between builders
 
 **Success:** New data model defined, language system working, routes ready

@@ -13,6 +13,28 @@ Prototype reference: `http://localhost:3500/prototype`
 
 This section tracks the iterations and changes made during the prototyping process.
 
+### Multilanguage Routing + Visual Builder Localization
+**Date:** January 2025
+
+**Context:** We had assumed multilanguage routing was already done, but it wasn't wired up. This update implements it end-to-end and localizes the Visual Builder UI.
+
+**What was done:**
+- Implemented locale routing with `proxy.ts` (replaces deprecated middleware convention), setting `x-locale` header + `locale` cookie and rewriting `/[lang]/*` to base routes.
+- Updated `app/layout.tsx` to resolve locale safely (async `headers()`/`cookies()` flow) and feed `LocaleProvider`.
+- `LocaleProvider` now resolves locale from URL path and loads locale message bundles.
+- Global language selector moved to dashboard header (applies across app).
+- Visual Builder UI copy localized (header, sidebar, preview, properties, block editors, empty states).
+- Default Visual Builder seed content now uses locale defaults; user-entered content is never auto-translated.
+- Locale-aware paths added for preview/dashboard navigation.
+- Tests updated to wrap `LocaleProvider` and mock `next/navigation`.
+
+**Files Modified (high level):**
+- `proxy.ts`, `app/layout.tsx`, `lib/i18n/*`
+- `components/dashboard/language-selector.tsx`, `components/dashboard/dashboard-header.tsx`
+- `components/visual-builder/**/*`
+- `messages/{pt-BR,en,es}/visual-builder.json`
+- `test/test-utils.tsx`, `test/setup.ts`
+
 ### Post-Milestone 4: UX Polish & Enhancements
 **Date:** January 2025
 
