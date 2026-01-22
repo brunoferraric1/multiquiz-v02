@@ -106,6 +106,17 @@ export function DashboardHeader() {
                   variant="ghost"
                   className={cn(
                     "w-full justify-start text-base",
+                    isActiveRoute('/dashboard/settings') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                  onClick={() => handleNavigation('/dashboard/settings')}
+                  aria-current={isActiveRoute('/dashboard/settings') ? 'page' : undefined}
+                >
+                  {common.navigation.settings}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start text-base",
                     isActiveRoute('/dashboard/account') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
                   )}
                   onClick={() => handleNavigation('/dashboard/account')}
@@ -194,6 +205,20 @@ export function DashboardHeader() {
           >
             <Link href={localizePathname("/pricing", locale)}>
               {common.navigation.pricing}
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "text-sm",
+              isActiveRoute('/dashboard/settings') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
+            )}
+            aria-current={isActiveRoute('/dashboard/settings') ? 'page' : undefined}
+          >
+            <Link href={localizePathname("/dashboard/settings", locale)}>
+              {common.navigation.settings}
             </Link>
           </Button>
         </nav>

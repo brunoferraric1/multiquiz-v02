@@ -2,10 +2,10 @@
 
 import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
-import { ArrowLeft, Edit3, Sparkles, Palette, BarChart3, Settings, Loader2 } from 'lucide-react'
+import { ArrowLeft, Edit3, Sparkles, Palette, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export type HeaderTab = 'editar' | 'assistente' | 'tema' | 'relatorio' | 'config'
+export type HeaderTab = 'editar' | 'assistente' | 'tema'
 
 interface BuilderHeaderNavProps {
   quizName: string
@@ -34,8 +34,6 @@ export function BuilderHeaderNav({
     { id: 'editar', label: header.tabs.editar, icon: <Edit3 className="w-4 h-4" /> },
     { id: 'assistente', label: header.tabs.assistente, icon: <Sparkles className="w-4 h-4" /> },
     { id: 'tema', label: header.tabs.tema, icon: <Palette className="w-4 h-4" /> },
-    { id: 'relatorio', label: header.tabs.relatorio, icon: <BarChart3 className="w-4 h-4" /> },
-    { id: 'config', label: header.tabs.config, icon: <Settings className="w-4 h-4" /> },
   ]
 
   // Determine button text based on publish state
