@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator'
 import { SectionTitle } from '@/components/ui/section-title'
 import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useMessages } from '@/lib/i18n/context'
 
 interface BlockControlsProps {
   onMoveUp: () => void
@@ -23,11 +24,15 @@ export function BlockControls({
   canMoveDown,
   blockTypeName,
 }: BlockControlsProps) {
+  const messages = useMessages()
+  const controls = messages.visualBuilder.blockControls
+  const deleteAria = controls.deleteBlockAria.replace('{{name}}', blockTypeName)
+
   return (
     <div className="space-y-4" data-testid="block-controls">
       {/* Reorder controls */}
       <div>
-        <SectionTitle>Reordenar</SectionTitle>
+        <SectionTitle>{controls.reorder}</SectionTitle>
         <div className="flex gap-2">
           <Button
             type="button"
@@ -36,11 +41,11 @@ export function BlockControls({
             onClick={onMoveUp}
             disabled={!canMoveUp}
             className="flex-1"
-            aria-label="Mover bloco para cima"
+            aria-label={controls.moveUp}
             data-testid="move-up-button"
           >
             <ChevronUp className="w-4 h-4 mr-1" />
-            Subir
+            {controls.moveUp}
           </Button>
           <Button
             type="button"
@@ -49,11 +54,11 @@ export function BlockControls({
             onClick={onMoveDown}
             disabled={!canMoveDown}
             className="flex-1"
-            aria-label="Mover bloco para baixo"
+            aria-label={controls.moveDown}
             data-testid="move-down-button"
           >
             <ChevronDown className="w-4 h-4 mr-1" />
-            Descer
+            {controls.moveDown}
           </Button>
         </div>
       </div>
@@ -71,14 +76,14 @@ export function BlockControls({
             'w-full text-destructive border-destructive/50',
             'hover:bg-destructive hover:text-destructive-foreground'
           )}
-          aria-label={`Excluir bloco ${blockTypeName}`}
+          aria-label={deleteAria}
           data-testid="delete-block-button"
         >
           <Trash2 className="w-4 h-4 mr-2" />
-          Excluir bloco
+          {controls.deleteBlock}
         </Button>
         <p className="text-xs text-muted-foreground text-center">
-          Esta ação não pode ser desfeita
+          {controls.deleteHint}
         </p>
       </div>
     </div>

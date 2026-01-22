@@ -3,6 +3,7 @@
 import { BannerConfig, BannerUrgency } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { Info, AlertTriangle, AlertCircle } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
 
 interface BannerBlockPreviewProps {
   config: BannerConfig
@@ -35,6 +36,8 @@ const urgencyStyles: Record<BannerUrgency, { bg: string; border: string; text: s
  * BannerBlockPreview - Renders banner/alert block
  */
 export function BannerBlockPreview({ config, enabled }: BannerBlockPreviewProps) {
+  const messages = useMessages()
+  const bannerCopy = messages.visualBuilder.bannerEditor
   const { urgency, text, emoji } = config as BannerConfig
   const style = urgencyStyles[urgency] || urgencyStyles.info
   const Icon = style.icon
@@ -54,7 +57,7 @@ export function BannerBlockPreview({ config, enabled }: BannerBlockPreviewProps)
         <div className={cn('flex items-center justify-center gap-3 rounded-lg border p-3', style.bg, style.border)}>
           {renderIcon()}
           <p className={cn('text-sm', style.text, 'opacity-50')}>
-            Texto do banner...
+            {bannerCopy.messagePlaceholder}
           </p>
         </div>
       </div>

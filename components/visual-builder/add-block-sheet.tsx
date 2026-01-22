@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useVisualBuilderStore, createBlock } from '@/store/visual-builder-store'
-import { BlockType, blockTypeLabels, blockTypeDescriptions, ButtonConfig } from '@/types/blocks'
+import { BlockType, ButtonConfig, FieldsConfig, PriceConfig, ListConfig } from '@/types/blocks'
 import {
   Sheet,
   SheetContent,
@@ -10,6 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { useMessages } from '@/lib/i18n/context'
 import {
   Type,
   AlignLeft,
@@ -40,6 +41,8 @@ const blockTypeOptions: { type: BlockType; icon: React.ReactNode }[] = [
  * AddBlockSheet - Bottom sheet for selecting block type to add
  */
 export function AddBlockSheet() {
+  const messages = useMessages()
+  const copy = messages.visualBuilder
   // Custom tooltip state
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
 
@@ -61,6 +64,8 @@ export function AddBlockSheet() {
   const selectedOutcome = outcomes.find((o) => o.id === selectedOutcomeId)
   const isResultStep = activeStep?.type === 'result'
 
+  const createId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
   // Get current blocks to check for existing blocks
   const currentBlocks = isResultStep && selectedOutcome
     ? (selectedOutcome.blocks || [])
@@ -81,13 +86,59 @@ export function AddBlockSheet() {
     // Don't allow adding if disabled
     if (isBlockTypeDisabled(type)) return
     const newBlock = createBlock(type)
+    const defaults = copy.defaults
+    const fieldsPlaceholders = copy.fieldsEditor.placeholders
 
     // If adding a button and there's a price block, default to selected_price action
     if (type === 'button') {
       const hasPriceBlock = currentBlocks.some((b) => b.type === 'price')
+      const buttonConfig = newBlock.config as ButtonConfig
+      buttonConfig.text = defaults.buttonContinue
       if (hasPriceBlock) {
-        (newBlock.config as ButtonConfig).action = 'selected_price'
+        buttonConfig.action = 'selected_price'
       }
+    }
+    if (type === 'fields') {
+      newBlock.config = {
+        items: [
+          {
+            id: createId('field'),
+            label: defaults.fieldNameLabel,
+            type: 'text',
+            required: true,
+            placeholder: defaults.fieldNamePlaceholder,
+          },
+          {
+            id: createId('field'),
+            label: defaults.fieldEmailLabel,
+            type: 'email',
+            required: true,
+            placeholder: fieldsPlaceholders.email,
+          },
+        ],
+      } as FieldsConfig
+    }
+    if (type === 'price') {
+      newBlock.config = {
+        items: [
+          {
+            id: createId('price'),
+            title: defaults.pricePlanTitle,
+            value: defaults.pricePlanValue,
+            suffix: defaults.pricePlanSuffix,
+          },
+        ],
+        selectionType: 'single',
+      } as PriceConfig
+    }
+    if (type === 'list') {
+      newBlock.config = {
+        items: [1, 2, 3].map((index) => ({
+          id: createId('list'),
+          text: `${defaults.listItem} ${index}`,
+          emoji: copy.listEditor.emojiPlaceholder,
+        })),
+      } as ListConfig
     }
 
     if (isResultStep && selectedOutcomeId) {
@@ -105,10 +156,8 @@ export function AddBlockSheet() {
     <Sheet open={isOpen} onOpenChange={setAddBlockSheetOpen}>
       <SheetContent side="bottom" className="rounded-t-2xl">
         <SheetHeader className="text-left">
-          <SheetTitle>Adicionar bloco</SheetTitle>
-          <SheetDescription>
-            Escolha o tipo de bloco que deseja adicionar.
-          </SheetDescription>
+          <SheetTitle>{copy.addBlock.title}</SheetTitle>
+          <SheetDescription>{copy.addBlock.description}</SheetDescription>
         </SheetHeader>
 
         <div className="grid grid-cols-3 gap-3 mt-6 pb-6">
@@ -131,16 +180,16 @@ export function AddBlockSheet() {
                     'w-full flex flex-col items-center gap-2 p-4 rounded-xl border border-muted-foreground/20 transition-all',
                     'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                     isDisabled
-                      ? 'opacity-40 cursor-not-allowed'
+                      ? 'opacity-40'
                       : 'hover:bg-muted/60 hover:border-primary/30'
                   )}
-                  aria-label={blockTypeLabels[type]}
+                  aria-label={copy.blockTypes[type]}
                 >
                   <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted text-muted-foreground">
                     {icon}
                   </div>
                   <span className="text-xs font-medium text-foreground">
-                    {blockTypeLabels[type]}
+                    {copy.blockTypes[type]}
                   </span>
                 </button>
               </div>
@@ -157,7 +206,7 @@ export function AddBlockSheet() {
               top: tooltip.y + 12,
             }}
           >
-            Apenas um por página
+            {copy.addBlock.tooltip.onlyOnePerPage}
           </div>
         )}
       </SheetContent>

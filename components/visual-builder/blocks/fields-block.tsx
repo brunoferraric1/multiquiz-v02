@@ -2,6 +2,7 @@
 
 import { FieldsConfig, FieldType } from '@/types/blocks'
 import { cn } from '@/lib/utils'
+import { useMessages } from '@/lib/i18n/context'
 
 interface FieldsBlockPreviewProps {
   config: FieldsConfig
@@ -17,20 +18,21 @@ const fieldTypeToInputType: Record<FieldType, string> = {
   textarea: 'textarea',
 }
 
-// Default placeholders for each field type (must match editor)
-const defaultPlaceholders: Record<FieldType, string> = {
-  text: 'Digite aqui...',
-  email: 'seu@email.com',
-  phone: '(00) 00000-0000',
-  number: '0',
-  textarea: 'Digite sua mensagem...',
-}
-
 /**
  * FieldsBlockPreview - Renders form fields block
  */
 export function FieldsBlockPreview({ config, enabled }: FieldsBlockPreviewProps) {
+  const messages = useMessages()
+  const fieldsCopy = messages.visualBuilder.fieldsEditor
+  const defaults = messages.visualBuilder.defaults
   const { items } = config as FieldsConfig
+  const defaultPlaceholders: Record<FieldType, string> = {
+    text: fieldsCopy.placeholders.text,
+    email: fieldsCopy.placeholders.email,
+    phone: fieldsCopy.placeholders.phone,
+    number: fieldsCopy.placeholders.number,
+    textarea: fieldsCopy.placeholders.textarea,
+  }
 
   if (!items || items.length === 0) {
     // Placeholder state
@@ -38,11 +40,15 @@ export function FieldsBlockPreview({ config, enabled }: FieldsBlockPreviewProps)
       <div className={cn('p-4', !enabled && 'opacity-50')}>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-muted-foreground/50">Nome do campo</label>
+            <label className="text-sm font-medium text-muted-foreground/50">
+              {defaults.fieldNameLabel}
+            </label>
             <div className="h-10 rounded-md border border-dashed border-muted-foreground/30 bg-muted/30" />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-muted-foreground/50">Email</label>
+            <label className="text-sm font-medium text-muted-foreground/50">
+              {defaults.fieldEmailLabel}
+            </label>
             <div className="h-10 rounded-md border border-dashed border-muted-foreground/30 bg-muted/30" />
           </div>
         </div>

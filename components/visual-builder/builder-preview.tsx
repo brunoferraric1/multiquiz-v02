@@ -2,6 +2,7 @@
 
 import { useState, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { useMessages } from '@/lib/i18n/context'
 import { Smartphone, Monitor } from 'lucide-react'
 
 type DeviceType = 'mobile' | 'desktop'
@@ -24,6 +25,8 @@ export function BuilderPreview({
   children,
   onClick,
 }: BuilderPreviewProps) {
+  const messages = useMessages()
+  const previewCopy = messages.visualBuilder.preview
   const [internalDevice, setInternalDevice] = useState<DeviceType>('mobile')
 
   const device = controlledDevice ?? internalDevice
@@ -42,7 +45,7 @@ export function BuilderPreview({
       <div className="absolute top-4 left-4 z-10 flex items-center gap-1 bg-card rounded-lg shadow-md p-1">
         <button
           onClick={() => handleDeviceChange('mobile')}
-          aria-label="Mobile view"
+          aria-label={previewCopy.mobile}
           aria-pressed={device === 'mobile'}
           className={cn(
             'p-2.5 rounded-md transition-all',
@@ -55,7 +58,7 @@ export function BuilderPreview({
         </button>
         <button
           onClick={() => handleDeviceChange('desktop')}
-          aria-label="Desktop view"
+          aria-label={previewCopy.desktop}
           aria-pressed={device === 'desktop'}
           className={cn(
             'p-2.5 rounded-md transition-all',
@@ -86,7 +89,7 @@ export function BuilderPreview({
         >
           {children || (
             <div className="p-6 text-center text-muted-foreground">
-              Preview content will appear here
+              {previewCopy.empty}
             </div>
           )}
         </div>

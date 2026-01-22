@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { Plus } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
 
 interface InsertionPointProps {
   index: number
@@ -17,6 +18,8 @@ interface InsertionPointProps {
  * Use showAlways prop to always show the add button (useful for empty states).
  */
 export function InsertionPoint({ index, onClick, className, showAlways }: InsertionPointProps) {
+  const messages = useMessages()
+  const addBlockCopy = messages.visualBuilder.addBlock
   return (
     <div
       className={cn(
@@ -35,7 +38,7 @@ export function InsertionPoint({ index, onClick, className, showAlways }: Insert
             ? 'h-10 bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5'
             : 'h-1 hover:h-6 bg-transparent hover:bg-primary/10 rounded'
         )}
-        aria-label={`Inserir bloco na posição ${index + 1}`}
+        aria-label={addBlockCopy.title}
       >
         {/* Line indicator (hidden when showAlways) */}
         {!showAlways && (

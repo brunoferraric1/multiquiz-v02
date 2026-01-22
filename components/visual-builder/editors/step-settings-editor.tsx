@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { StepSettings } from '@/types/blocks'
 import { BarChart2, ArrowLeft } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
 
 interface StepSettingsEditorProps {
   settings: StepSettings
@@ -19,10 +20,12 @@ export function StepSettingsEditor({
   isIntroStep = false,
   isResultStep = false,
 }: StepSettingsEditorProps) {
+  const messages = useMessages()
+  const settingsCopy = messages.visualBuilder.stepSettings
   return (
     <div className="space-y-4" data-testid="step-settings-editor">
       <div className="text-sm text-muted-foreground">
-        Configure as opções de navegação desta etapa.
+        {settingsCopy.description}
       </div>
 
       <Separator />
@@ -34,11 +37,11 @@ export function StepSettingsEditor({
             <BarChart2 className="w-4 h-4 text-muted-foreground" />
           </div>
           <div className="space-y-0.5">
-            <Label htmlFor="show-progress">Barra de progresso</Label>
+            <Label htmlFor="show-progress">{settingsCopy.progressLabel}</Label>
             <p className="text-xs text-muted-foreground">
               {isIntroStep
-                ? 'Exibe uma barra de progresso no topo'
-                : 'Exibe o progresso do quiz'}
+                ? settingsCopy.progressHintIntro
+                : settingsCopy.progressHint}
             </p>
           </div>
         </div>
@@ -58,9 +61,9 @@ export function StepSettingsEditor({
               <ArrowLeft className="w-4 h-4 text-muted-foreground" />
             </div>
             <div className="space-y-0.5">
-              <Label htmlFor="allow-back">Botão voltar</Label>
+              <Label htmlFor="allow-back">{settingsCopy.backLabel}</Label>
               <p className="text-xs text-muted-foreground">
-                Permite que o usuário volte para a etapa anterior
+                {settingsCopy.backHint}
               </p>
             </div>
           </div>
@@ -75,13 +78,13 @@ export function StepSettingsEditor({
 
       {isIntroStep && (
         <p className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
-          A etapa de introdução é a primeira do quiz e não possui botão de voltar.
+          {settingsCopy.introHint}
         </p>
       )}
 
       {isResultStep && (
         <p className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
-          A tela de resultados é a etapa final do quiz. Configure cada resultado separadamente.
+          {settingsCopy.resultHint}
         </p>
       )}
     </div>

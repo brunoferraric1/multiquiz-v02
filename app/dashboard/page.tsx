@@ -14,7 +14,6 @@ import { QuizListItem } from '@/components/dashboard/quiz-list-item';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { LanguageSelector } from '@/components/dashboard/language-selector';
 
 const skeletonItems = Array.from({ length: 6 }, (_, index) => index);
 
@@ -200,7 +199,6 @@ function DashboardContent() {
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto self-start sm:self-end">
-            <LanguageSelector className="order-2 sm:order-1 w-full sm:w-auto" />
             <Button onClick={handleNewQuiz} className="w-full sm:w-auto order-1 sm:order-2">
               <Plus size={18} className="mr-2" />
               {dashboard.page.newQuiz}

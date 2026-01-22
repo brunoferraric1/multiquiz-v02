@@ -9,6 +9,7 @@
     },
     "actions": {
       "preview": "Preview",
+      "previewing": "Opening...",
       "publish": "Publish",
       "publishing": "Publishing...",
       "update": "Update"
@@ -91,6 +92,221 @@
     "leadGen": "Capture",
     "promo": "Promotion",
     "result": "Result"
+  },
+  "sidebar": {
+    "intro": "Introduction",
+    "steps": "Steps",
+    "results": "Results",
+    "addStep": "Add step",
+    "addOutcome": "Add result",
+    "emptyResults": "No results created",
+    "outcomeLabel": "Result"
+  },
+  "properties": {
+    "title": "Properties",
+    "emptyBlock": "Select a block to edit its properties.",
+    "emptyBlocks": "No blocks added",
+    "emptySelection": "Select a step or block to edit its properties.",
+    "back": "Back",
+    "clickPreview": "Click a block in the preview to edit its content.",
+    "blocksInStep": "Blocks in this step",
+    "blocksInResult": "Blocks in this result",
+    "addBlock": "Add block",
+    "deleteStep": "Delete step"
+  },
+  "preview": {
+    "mobile": "Mobile preview",
+    "desktop": "Desktop preview",
+    "empty": "Preview will appear here",
+    "selectStep": "Select a step to see the preview",
+    "addOutcome": "Add a result to get started",
+    "selectOutcome": "Select a result to see the preview",
+    "back": "Back"
+  },
+  "itemActions": {
+    "drag": "Drag {{title}}",
+    "optionsFor": "Options for {{title}}",
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "delete": "Delete",
+    "dragBlock": "Drag block"
+  },
+  "blockControls": {
+    "reorder": "Reorder",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "deleteBlock": "Delete block",
+    "deleteBlockAria": "Delete block {{name}}",
+    "deleteHint": "This action cannot be undone"
+  },
+  "textEditor": {
+    "content": "Content",
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "strikethrough": "Strikethrough",
+    "alignLeft": "Align left",
+    "alignCenter": "Align center",
+    "alignRight": "Align right"
+  },
+  "headerEditor": {
+    "titleLabel": "Title",
+    "titlePlaceholder": "Enter the title...",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Enter the description..."
+  },
+  "mediaEditor": {
+    "mediaType": "Media type",
+    "image": "Image",
+    "video": "Video",
+    "imageSection": "Image",
+    "addMedia": "Add media",
+    "replace": "Replace",
+    "remove": "Remove",
+    "drop": "Drag and drop your image here",
+    "upload": "Upload",
+    "videoUrlLabel": "Video URL",
+    "videoUrlPlaceholder": "https://youtube.com/watch?v=...",
+    "previewAlt": "Preview"
+  },
+  "optionsEditor": {
+    "selectionTitle": "Selection type",
+    "single": "Single",
+    "multiple": "Multiple",
+    "optionsTitle": "Answer options",
+    "addOption": "Add option",
+    "outcomeLabel": "Result",
+    "createOutcome": "Create result",
+    "unlinked": "Unlinked",
+    "optionPlaceholder": "Option {{index}}",
+    "dragOption": "Drag option {{index}}",
+    "removeOption": "Remove option {{index}}"
+  },
+  "fieldsEditor": {
+    "title": "Form fields",
+    "addField": "Add field",
+    "typeLabel": "Field type",
+    "labelLabel": "Label",
+    "labelPlaceholder": "e.g., Full name",
+    "requiredLabel": "Required field",
+    "requiredTag": "Required",
+    "customPlaceholder": "Customize placeholder",
+    "defaultPlaceholder": "Default: \"{{value}}\"",
+    "dragField": "Drag field {{index}}",
+    "removeField": "Remove field {{index}}",
+    "fieldFallback": "Field {{index}}",
+    "types": {
+      "text": "Text",
+      "email": "Email",
+      "phone": "Phone",
+      "number": "Number",
+      "textarea": "Long text"
+    },
+    "placeholders": {
+      "text": "Type here...",
+      "email": "your@email.com",
+      "phone": "(000) 000-0000",
+      "number": "0",
+      "textarea": "Type your message..."
+    }
+  },
+  "priceEditor": {
+    "title": "Price options",
+    "addPrice": "Add price",
+    "dragPrice": "Drag price {{index}}",
+    "removePrice": "Remove price {{index}}",
+    "priceLabel": "Price",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g., Pro Plan",
+    "prefixPlaceholder": "10% off",
+    "valuePlaceholder": "$89.90",
+    "suffixPlaceholder": "one-time",
+    "prefixLabel": "Prefix",
+    "valueLabel": "Value",
+    "suffixLabel": "Suffix",
+    "prefixAria": "Price prefix",
+    "valueAria": "Value",
+    "suffixAria": "Suffix",
+    "showOriginal": "Show original price (was/now)",
+    "originalLabel": "Original price",
+    "originalPlaceholder": "$129.90",
+    "originalHint": "Shown as \"was $X now:\" above the current price",
+    "highlightLabel": "Highlight",
+    "highlightTextLabel": "Highlight text",
+    "highlightPlaceholder": "MOST POPULAR",
+    "redirectLabel": "Redirect URL",
+    "redirectPlaceholder": "https://example.com/checkout",
+    "priceFallbackTitle": "Price {{index}}",
+    "priceFallbackValue": "$0.00"
+  },
+  "buttonEditor": {
+    "textLabel": "Button text",
+    "textPlaceholder": "e.g., Continue",
+    "actionTitle": "Button action",
+    "actionAria": "Button action",
+    "actionNext": "Next",
+    "actionUrl": "Open URL",
+    "actionSelectedPrice": "Selected price",
+    "urlLabel": "Destination URL",
+    "urlPlaceholder": "https://example.com",
+    "infoNext": "The button will advance to the next step of the quiz.",
+    "infoSelectedPrice": "Redirects to the URL of the price selected by the user."
+  },
+  "bannerEditor": {
+    "title": "Banner type",
+    "info": "Info",
+    "warning": "Warning",
+    "danger": "Urgent",
+    "infoLabel": "Information",
+    "warningLabel": "Attention",
+    "dangerLabel": "Urgent",
+    "emojiLabel": "Emoji (optional)",
+    "emojiPlaceholder": "e.g., 🔥",
+    "emojiHint": "Add an emoji to highlight the message",
+    "messageLabel": "Banner message",
+    "messagePlaceholder": "e.g., Offer valid for a limited time!"
+  },
+  "listEditor": {
+    "title": "List items",
+    "addItem": "Add item",
+    "itemPlaceholder": "Item {{index}}",
+    "emojiPlaceholder": "✓",
+    "emojiAria": "Item emoji {{index}}",
+    "removeItem": "Remove item {{index}}",
+    "dragItem": "Drag item {{index}}",
+    "hint": "Tip: Use emojis like ✓, •, ★ to customize bullets"
+  },
+  "stepSettings": {
+    "description": "Configure the navigation options for this step.",
+    "progressLabel": "Progress bar",
+    "progressHintIntro": "Shows a progress bar at the top",
+    "progressHint": "Shows quiz progress",
+    "backLabel": "Back button",
+    "backHint": "Allows the user to go back to the previous step",
+    "introHint": "The intro step is the first step of the quiz and has no back button.",
+    "resultHint": "The results screen is the final step of the quiz. Configure each result separately."
+  },
+  "stepConfig": {
+    "title": "Settings"
+  },
+  "toast": {
+    "permissionError": "You do not have permission to edit this quiz.",
+    "loadError": "Error loading the quiz.",
+    "saveError": "Error saving changes.",
+    "limitDraft": "Draft limit reached. Delete a draft or upgrade.",
+    "limitPublish": "Published quiz limit reached. Upgrade to publish more.",
+    "publishSuccess": "Quiz published successfully!",
+    "publishError": "Error publishing the quiz. Please try again.",
+    "previewSaveError": "Error saving. Please try again."
+  },
+  "demo": {
+    "previewNotice": "This is a demo page. Create a quiz to use Preview.",
+    "publishNotice": "This is a demo page. Create a quiz to publish.",
+    "goDashboard": "Go to Dashboard"
+  },
+  "quiz": {
+    "defaultTitle": "New Quiz",
+    "defaultName": "My Quiz"
   },
   "loading": {
     "creatingQuiz": "Creating new quiz...",

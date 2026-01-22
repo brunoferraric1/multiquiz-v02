@@ -7,6 +7,7 @@ import { ToggleGroup, ToggleGroupOption } from '@/components/ui/toggle-group'
 import { SectionTitle } from '@/components/ui/section-title'
 import { ButtonConfig, ButtonAction } from '@/types/blocks'
 import { ArrowRight, Link } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
 
 interface ButtonBlockEditorProps {
   config: ButtonConfig
@@ -26,6 +27,8 @@ export function ButtonBlockEditor({
   disableNextStep = false,
   disableSelectedPrice = false,
 }: ButtonBlockEditorProps) {
+  const messages = useMessages()
+  const buttonCopy = messages.visualBuilder.buttonEditor
   // Auto-switch action if current action is disabled
   const effectiveAction: ButtonAction =
     (config.action === 'url' && disableUrl) ? 'next_step' :
@@ -37,39 +40,39 @@ export function ButtonBlockEditor({
   const actionOptions = useMemo(() => {
     const options: ToggleGroupOption<ButtonAction>[] = []
     if (!disableNextStep) {
-      options.push({ value: 'next_step', label: 'Próxima', icon: <ArrowRight /> })
+      options.push({ value: 'next_step', label: buttonCopy.actionNext, icon: <ArrowRight /> })
     }
     if (!disableUrl) {
-      options.push({ value: 'url', label: 'Abrir URL', icon: <Link /> })
+      options.push({ value: 'url', label: buttonCopy.actionUrl, icon: <Link /> })
     }
     if (!disableSelectedPrice) {
-      options.push({ value: 'selected_price', label: 'Preço selecionado' })
+      options.push({ value: 'selected_price', label: buttonCopy.actionSelectedPrice })
     }
     return options
-  }, [disableNextStep, disableUrl, disableSelectedPrice])
+  }, [buttonCopy, disableNextStep, disableUrl, disableSelectedPrice])
 
   return (
     <div className="space-y-4" data-testid="button-block-editor">
       {/* Button text */}
       <div className="space-y-2">
-        <Label htmlFor="button-text">Texto do botão</Label>
+        <Label htmlFor="button-text">{buttonCopy.textLabel}</Label>
         <Input
           id="button-text"
           value={config.text || ''}
           onChange={(e) => onChange({ text: e.target.value })}
-          placeholder="Ex: Continuar"
+          placeholder={buttonCopy.textPlaceholder}
         />
       </div>
 
       {/* Action type */}
       {actionOptions.length > 1 && (
         <div>
-          <SectionTitle>Ação do botão</SectionTitle>
+          <SectionTitle>{buttonCopy.actionTitle}</SectionTitle>
           <ToggleGroup
             options={actionOptions}
             value={effectiveAction}
             onChange={(action) => onChange({ action })}
-            aria-label="Ação do botão"
+            aria-label={buttonCopy.actionAria}
           />
         </div>
       )}
@@ -77,13 +80,13 @@ export function ButtonBlockEditor({
       {/* URL input (shown when action is url) */}
       {effectiveAction === 'url' && (
         <div className="space-y-2">
-          <Label htmlFor="button-url">URL de destino</Label>
+          <Label htmlFor="button-url">{buttonCopy.urlLabel}</Label>
           <Input
             id="button-url"
             type="url"
             value={config.url || ''}
             onChange={(e) => onChange({ url: e.target.value })}
-            placeholder="https://exemplo.com"
+            placeholder={buttonCopy.urlPlaceholder}
           />
         </div>
       )}
@@ -91,12 +94,12 @@ export function ButtonBlockEditor({
       {/* Info text based on action */}
       {effectiveAction === 'next_step' && (
         <p className="text-xs text-muted-foreground">
-          O botão avançará para a próxima etapa do quiz.
+          {buttonCopy.infoNext}
         </p>
       )}
       {effectiveAction === 'selected_price' && (
         <p className="text-xs text-muted-foreground">
-          Redireciona para a URL do preço selecionado pelo usuário.
+          {buttonCopy.infoSelectedPrice}
         </p>
       )}
     </div>

@@ -24,6 +24,10 @@ import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import { SectionTitle } from '@/components/ui/section-title'
 import { ListConfig, ListItem } from '@/types/blocks'
 import { Trash2, GripVertical } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
+import type { Messages } from '@/lib/i18n/messages'
+
+type ListCopy = Messages['visualBuilder']['listEditor']
 
 interface ListBlockEditorProps {
   config: ListConfig
@@ -35,6 +39,7 @@ interface SortableListItemProps {
   index: number
   onUpdate: (updates: Partial<ListItem>) => void
   onDelete: () => void
+  listCopy: ListCopy
 }
 
 function SortableListItem({
@@ -42,6 +47,7 @@ function SortableListItem({
   index,
   onUpdate,
   onDelete,
+  listCopy,
 }: SortableListItemProps) {
   const {
     attributes,
@@ -70,7 +76,7 @@ function SortableListItem({
           className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 touch-none"
           {...attributes}
           {...listeners}
-          aria-label={`Arrastar item ${index + 1}`}
+          aria-label={listCopy.dragItem.replace('{{index}}', String(index + 1))}
         >
           <GripVertical className="w-4 h-4" />
         </button>
@@ -79,10 +85,10 @@ function SortableListItem({
         <Input
           value={item.emoji || ''}
           onChange={(e) => onUpdate({ emoji: e.target.value })}
-          placeholder="✓"
+          placeholder={listCopy.emojiPlaceholder}
           maxLength={4}
           className="w-12 text-center px-1 shrink-0"
-          aria-label={`Emoji do item ${index + 1}`}
+          aria-label={listCopy.emojiAria.replace('{{index}}', String(index + 1))}
         />
 
         {/* Text input */}
@@ -90,7 +96,7 @@ function SortableListItem({
           <Input
             value={item.text}
             onChange={(e) => onUpdate({ text: e.target.value })}
-            placeholder={`Item ${index + 1}`}
+            placeholder={listCopy.itemPlaceholder.replace('{{index}}', String(index + 1))}
           />
         </div>
 
@@ -100,7 +106,7 @@ function SortableListItem({
           size="icon"
           onClick={onDelete}
           className="text-muted-foreground hover:text-destructive shrink-0"
-          aria-label={`Remover item ${index + 1}`}
+          aria-label={listCopy.removeItem.replace('{{index}}', String(index + 1))}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -110,6 +116,8 @@ function SortableListItem({
 }
 
 export function ListBlockEditor({ config, onChange }: ListBlockEditorProps) {
+  const messages = useMessages()
+  const listCopy = messages.visualBuilder.listEditor
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -121,7 +129,7 @@ export function ListBlockEditor({ config, onChange }: ListBlockEditorProps) {
     const newItem: ListItem = {
       id: `list-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       text: '',
-      emoji: '✓',
+      emoji: listCopy.emojiPlaceholder,
     }
 
     onChange({
@@ -161,7 +169,7 @@ export function ListBlockEditor({ config, onChange }: ListBlockEditorProps) {
 
   return (
     <div className="space-y-4" data-testid="list-block-editor">
-      <SectionTitle>Itens da lista</SectionTitle>
+      <SectionTitle>{listCopy.title}</SectionTitle>
 
       {/* List items with drag and drop */}
       <DndContext
@@ -181,6 +189,7 @@ export function ListBlockEditor({ config, onChange }: ListBlockEditorProps) {
                 index={index}
                 onUpdate={(updates) => handleUpdateItem(item.id, updates)}
                 onDelete={() => handleDeleteItem(item.id)}
+                listCopy={listCopy}
               />
             ))}
           </div>
@@ -193,11 +202,11 @@ export function ListBlockEditor({ config, onChange }: ListBlockEditorProps) {
         onClick={handleAddItem}
         data-testid="add-list-item-button"
       >
-        Adicionar item
+        {listCopy.addItem}
       </GhostAddButton>
 
       <p className="text-xs text-muted-foreground">
-        Dica: Use emojis como ✓, •, ★ para personalizar os marcadores
+        {listCopy.hint}
       </p>
     </div>
   )

@@ -1,9 +1,10 @@
 'use client'
 
-import { useVisualBuilderStore, createBlock } from '@/store/visual-builder-store'
+import { useVisualBuilderStore } from '@/store/visual-builder-store'
 import { BlockList } from './blocks'
 import { useMemo } from 'react'
 import { ArrowLeft } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
 
 /**
  * StepPreview - Renders the blocks for the currently active step
@@ -15,6 +16,8 @@ import { ArrowLeft } from 'lucide-react'
  * - Selection highlighting
  */
 export function StepPreview() {
+  const messages = useMessages()
+  const previewCopy = messages.visualBuilder.preview
   // Get state from store
   const steps = useVisualBuilderStore((state) => state.steps)
   const outcomes = useVisualBuilderStore((state) => state.outcomes)
@@ -109,7 +112,7 @@ export function StepPreview() {
   if (!activeStep) {
     return (
       <div className="p-6 text-center text-muted-foreground">
-        Selecione uma etapa para ver o preview
+        {previewCopy.selectStep}
       </div>
     )
   }
@@ -119,8 +122,8 @@ export function StepPreview() {
     return (
       <div className="p-6 text-center text-muted-foreground">
         {outcomes.length === 0
-          ? 'Adicione um resultado para começar'
-          : 'Selecione um resultado para ver o preview'}
+          ? previewCopy.addOutcome
+          : previewCopy.selectOutcome}
       </div>
     )
   }
@@ -137,7 +140,7 @@ export function StepPreview() {
               onClick={(e) => e.preventDefault()}
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Voltar</span>
+              <span>{previewCopy.back}</span>
             </button>
           )}
 

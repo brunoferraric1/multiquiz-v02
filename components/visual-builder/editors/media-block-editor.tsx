@@ -8,6 +8,7 @@ import { ToggleGroup } from '@/components/ui/toggle-group'
 import { SectionTitle } from '@/components/ui/section-title'
 import { MediaConfig } from '@/types/blocks'
 import { Image, Video, ImageIcon, UploadCloud, Trash2 } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
 
 interface MediaBlockEditorProps {
   config: MediaConfig
@@ -15,6 +16,8 @@ interface MediaBlockEditorProps {
 }
 
 export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
+  const messages = useMessages()
+  const mediaCopy = messages.visualBuilder.mediaEditor
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (files: FileList | null) => {
@@ -52,22 +55,22 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
     <div className="space-y-4" data-testid="media-block-editor">
       {/* Media type selector */}
       <div>
-        <SectionTitle>Tipo de mídia</SectionTitle>
+        <SectionTitle>{mediaCopy.mediaType}</SectionTitle>
         <ToggleGroup
           options={[
-            { value: 'image', label: 'Imagem', icon: <Image /> },
-            { value: 'video', label: 'Vídeo', icon: <Video /> },
+            { value: 'image', label: mediaCopy.image, icon: <Image /> },
+            { value: 'video', label: mediaCopy.video, icon: <Video /> },
           ]}
           value={config.type}
           onChange={(type) => onChange({ type, url: '' })}
-          aria-label="Tipo de mídia"
+          aria-label={mediaCopy.mediaType}
         />
       </div>
 
       {/* Image upload area */}
       {config.type === 'image' && (
         <div>
-          <SectionTitle>Imagem</SectionTitle>
+          <SectionTitle>{mediaCopy.imageSection}</SectionTitle>
 
           {config.url ? (
             <div className="space-y-2">
@@ -75,7 +78,7 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
               <div className="relative rounded-lg overflow-hidden border border-border">
                 <img
                   src={config.url}
-                  alt="Preview"
+                  alt={mediaCopy.previewAlt}
                   className="w-full h-32 object-cover"
                 />
               </div>
@@ -90,7 +93,7 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
                   onClick={handleButtonClick}
                 >
                   <UploadCloud className="mr-1.5 h-3.5 w-3.5" />
-                  Trocar
+                  {mediaCopy.replace}
                 </Button>
                 <Button
                   type="button"
@@ -100,13 +103,13 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
                   onClick={handleRemoveImage}
                 >
                   <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                  Remover
+                  {mediaCopy.remove}
                 </Button>
               </div>
             </div>
           ) : (
             <div
-              className="flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 cursor-pointer hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors"
+              className="flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 cursor-[var(--cursor-interactive)] hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors"
               onClick={handleButtonClick}
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
@@ -115,7 +118,7 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
             >
               <ImageIcon className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                Arraste e solte sua imagem aqui
+                {mediaCopy.drop}
               </p>
               <Button
                 type="button"
@@ -128,7 +131,7 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
                 }}
               >
                 <UploadCloud className="mr-1.5 h-3.5 w-3.5" />
-                Fazer upload
+                {mediaCopy.upload}
               </Button>
             </div>
           )}
@@ -147,13 +150,13 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
       {/* Video URL input */}
       {config.type === 'video' && (
         <div className="space-y-2">
-          <Label htmlFor="media-url">URL do vídeo</Label>
+          <Label htmlFor="media-url">{mediaCopy.videoUrlLabel}</Label>
           <Input
             id="media-url"
             type="url"
             value={config.url || ''}
             onChange={(e) => onChange({ url: e.target.value })}
-            placeholder="https://youtube.com/watch?v=..."
+            placeholder={mediaCopy.videoUrlPlaceholder}
           />
         </div>
       )}

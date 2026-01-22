@@ -3,6 +3,7 @@
 import { MediaConfig } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { Image, Video, Play } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
 
 interface MediaBlockPreviewProps {
   config: MediaConfig
@@ -39,7 +40,7 @@ function getVideoThumbnail(url: string): string | null {
  * Static video thumbnail preview for the visual builder
  * Shows thumbnail + play icon, clicking selects the block (not plays video)
  */
-function VideoThumbnailPreview({ url }: { url: string }) {
+function VideoThumbnailPreview({ url, alt }: { url: string; alt: string }) {
   const thumbnailUrl = getVideoThumbnail(url)
 
   return (
@@ -47,7 +48,7 @@ function VideoThumbnailPreview({ url }: { url: string }) {
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
-          alt="Video thumbnail"
+          alt={alt}
           className="w-full h-full object-cover"
         />
       ) : (
@@ -69,6 +70,8 @@ function VideoThumbnailPreview({ url }: { url: string }) {
  * MediaBlockPreview - Renders media block (image or video)
  */
 export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
+  const messages = useMessages()
+  const mediaCopy = messages.visualBuilder.mediaEditor
   const { type, url, alt } = config as MediaConfig
 
   if (!url) {
@@ -82,7 +85,7 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
             <Image className="w-8 h-8 text-muted-foreground/50" />
           )}
           <span className="mt-2 text-sm text-muted-foreground/50">
-            Adicionar mídia
+            {mediaCopy.addMedia}
           </span>
         </div>
       </div>
@@ -92,7 +95,7 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
   if (type === 'video') {
     return (
       <div className={cn('p-4', !enabled && 'opacity-50')}>
-        <VideoThumbnailPreview url={url} />
+        <VideoThumbnailPreview url={url} alt={mediaCopy.previewAlt} />
       </div>
     )
   }
@@ -102,7 +105,7 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
       <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
         <img
           src={url}
-          alt={alt || 'Image'}
+          alt={alt || mediaCopy.image}
           className="w-full h-full object-cover"
         />
       </div>

@@ -3,6 +3,7 @@
 import { ButtonConfig } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { ArrowRight, ExternalLink } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
 
 interface ButtonBlockPreviewProps {
   config: ButtonConfig
@@ -13,6 +14,9 @@ interface ButtonBlockPreviewProps {
  * ButtonBlockPreview - Renders button/CTA block
  */
 export function ButtonBlockPreview({ config, enabled }: ButtonBlockPreviewProps) {
+  const messages = useMessages()
+  const buttonCopy = messages.visualBuilder.buttonEditor
+  const blockTypes = messages.visualBuilder.blockTypes
   const { text, action } = config as ButtonConfig
 
   const getActionIcon = () => {
@@ -31,12 +35,12 @@ export function ButtonBlockPreview({ config, enabled }: ButtonBlockPreviewProps)
         className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         disabled
       >
-        {text || 'Botão'}
+        {text || blockTypes.button}
         {getActionIcon()}
       </button>
       {action === 'selected_price' && (
         <p className="text-xs text-center text-muted-foreground mt-2">
-          URL dinâmica: redireciona para o preço selecionado
+          {buttonCopy.infoSelectedPrice}
         </p>
       )}
     </div>

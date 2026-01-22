@@ -26,6 +26,10 @@ import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import { SectionTitle } from '@/components/ui/section-title'
 import { PriceConfig, PriceItem } from '@/types/blocks'
 import { Trash2, GripVertical, ChevronDown, ChevronUp, Star } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
+import type { Messages } from '@/lib/i18n/messages'
+
+type PriceCopy = Messages['visualBuilder']['priceEditor']
 
 interface PriceBlockEditorProps {
   config: PriceConfig
@@ -39,6 +43,7 @@ interface SortablePriceItemProps {
   onToggleExpand: () => void
   onUpdate: (updates: Partial<PriceItem>) => void
   onDelete: () => void
+  priceCopy: PriceCopy
 }
 
 function SortablePriceItem({
@@ -48,6 +53,7 @@ function SortablePriceItem({
   onToggleExpand,
   onUpdate,
   onDelete,
+  priceCopy,
 }: SortablePriceItemProps) {
   const {
     attributes,
@@ -72,7 +78,7 @@ function SortablePriceItem({
     >
       {/* Price item header */}
       <div
-        className="flex items-center gap-2 p-3 bg-muted/50 cursor-pointer"
+        className="flex items-center gap-2 p-3 bg-muted/50 cursor-[var(--cursor-interactive)]"
         onClick={onToggleExpand}
       >
         <button
@@ -81,15 +87,15 @@ function SortablePriceItem({
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          aria-label={`Arrastar preço ${index + 1}`}
+          aria-label={priceCopy.dragPrice.replace('{{index}}', String(index + 1))}
         >
           <GripVertical className="w-4 h-4" />
         </button>
         <span className="flex-1 text-sm font-medium truncate">
-          {price.title || `Preço ${index + 1}`}
+          {price.title || priceCopy.priceFallbackTitle.replace('{{index}}', String(index + 1))}
         </span>
         <span className="text-sm text-muted-foreground">
-          {price.value || 'R$ 0,00'}
+          {price.value || priceCopy.priceFallbackValue}
         </span>
         {price.showHighlight && (
           <Star className="w-4 h-4 text-primary fill-primary" />
@@ -108,7 +114,7 @@ function SortablePriceItem({
             onDelete()
           }}
           className="h-8 w-8 text-muted-foreground hover:text-destructive"
-          aria-label={`Remover preço ${index + 1}`}
+          aria-label={priceCopy.removePrice.replace('{{index}}', String(index + 1))}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -119,45 +125,45 @@ function SortablePriceItem({
         <div className="p-3 space-y-4 border-t">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor={`price-title-${price.id}`}>Título</Label>
+            <Label htmlFor={`price-title-${price.id}`}>{priceCopy.titleLabel}</Label>
             <Input
               id={`price-title-${price.id}`}
               value={price.title}
               onChange={(e) => onUpdate({ title: e.target.value })}
-              placeholder="Ex: Plano PRO"
+              placeholder={priceCopy.titlePlaceholder}
             />
           </div>
 
           {/* Price value row: prefix | value | suffix */}
           <div className="space-y-2">
-            <Label>Preço</Label>
+            <Label>{priceCopy.priceLabel}</Label>
             <div className="grid grid-cols-[1fr_1.5fr_1fr] gap-2">
               <div>
                 <Input
                   value={price.prefix || ''}
                   onChange={(e) => onUpdate({ prefix: e.target.value })}
-                  placeholder="10% off"
-                  aria-label="Prefixo do preço"
+                  placeholder={priceCopy.prefixPlaceholder}
+                  aria-label={priceCopy.prefixAria}
                 />
-                <span className="text-xs text-muted-foreground">Prefixo</span>
+                <span className="text-xs text-muted-foreground">{priceCopy.prefixLabel}</span>
               </div>
               <div>
                 <Input
                   value={price.value}
                   onChange={(e) => onUpdate({ value: e.target.value })}
-                  placeholder="R$ 89,90"
-                  aria-label="Valor"
+                  placeholder={priceCopy.valuePlaceholder}
+                  aria-label={priceCopy.valueAria}
                 />
-                <span className="text-xs text-muted-foreground">Valor</span>
+                <span className="text-xs text-muted-foreground">{priceCopy.valueLabel}</span>
               </div>
               <div>
                 <Input
                   value={price.suffix || ''}
                   onChange={(e) => onUpdate({ suffix: e.target.value })}
-                  placeholder="à vista"
-                  aria-label="Sufixo do preço"
+                  placeholder={priceCopy.suffixPlaceholder}
+                  aria-label={priceCopy.suffixAria}
                 />
-                <span className="text-xs text-muted-foreground">Sufixo</span>
+                <span className="text-xs text-muted-foreground">{priceCopy.suffixLabel}</span>
               </div>
             </div>
           </div>
@@ -166,7 +172,7 @@ function SortablePriceItem({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label htmlFor={`price-show-original-${price.id}`}>
-                Mostrar preço original (de/por)
+                {priceCopy.showOriginal}
               </Label>
               <Switch
                 id={`price-show-original-${price.id}`}
@@ -176,15 +182,15 @@ function SortablePriceItem({
             </div>
             {price.showOriginalPrice && (
               <div className="space-y-2 pl-4 border-l-2 border-muted">
-                <Label htmlFor={`price-original-${price.id}`}>Preço original</Label>
+                <Label htmlFor={`price-original-${price.id}`}>{priceCopy.originalLabel}</Label>
                 <Input
                   id={`price-original-${price.id}`}
                   value={price.originalPrice || ''}
                   onChange={(e) => onUpdate({ originalPrice: e.target.value })}
-                  placeholder="R$ 129,90"
+                  placeholder={priceCopy.originalPlaceholder}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Exibido como &quot;de R$ X por:&quot; acima do preço atual
+                  {priceCopy.originalHint}
                 </p>
               </div>
             )}
@@ -193,7 +199,7 @@ function SortablePriceItem({
           {/* Highlight toggle with conditional input */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label htmlFor={`price-show-highlight-${price.id}`}>Destacar</Label>
+              <Label htmlFor={`price-show-highlight-${price.id}`}>{priceCopy.highlightLabel}</Label>
               <Switch
                 id={`price-show-highlight-${price.id}`}
                 checked={price.showHighlight ?? false}
@@ -202,12 +208,12 @@ function SortablePriceItem({
             </div>
             {price.showHighlight && (
               <div className="space-y-2 pl-4 border-l-2 border-muted">
-                <Label htmlFor={`price-highlight-${price.id}`}>Texto do destaque</Label>
+                <Label htmlFor={`price-highlight-${price.id}`}>{priceCopy.highlightTextLabel}</Label>
                 <Input
                   id={`price-highlight-${price.id}`}
                   value={price.highlightText || ''}
                   onChange={(e) => onUpdate({ highlightText: e.target.value })}
-                  placeholder="MAIS POPULAR"
+                  placeholder={priceCopy.highlightPlaceholder}
                 />
               </div>
             )}
@@ -215,12 +221,12 @@ function SortablePriceItem({
 
           {/* Redirect URL */}
           <div className="space-y-2">
-            <Label htmlFor={`price-url-${price.id}`}>URL de redirecionamento</Label>
+            <Label htmlFor={`price-url-${price.id}`}>{priceCopy.redirectLabel}</Label>
             <Input
               id={`price-url-${price.id}`}
               value={price.redirectUrl || ''}
               onChange={(e) => onUpdate({ redirectUrl: e.target.value })}
-              placeholder="https://exemplo.com/checkout"
+              placeholder={priceCopy.redirectPlaceholder}
             />
           </div>
         </div>
@@ -230,6 +236,8 @@ function SortablePriceItem({
 }
 
 export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
+  const messages = useMessages()
+  const priceCopy = messages.visualBuilder.priceEditor
   const [expandedPriceId, setExpandedPriceId] = useState<string | null>(null)
 
   const sensors = useSensors(
@@ -289,7 +297,7 @@ export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
     <div className="space-y-4" data-testid="price-block-editor">
       {/* Price items list */}
       <div>
-        <SectionTitle>Opções de preço</SectionTitle>
+        <SectionTitle>{priceCopy.title}</SectionTitle>
 
         <DndContext
           sensors={sensors}
@@ -312,6 +320,7 @@ export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
                   }
                   onUpdate={(updates) => handleUpdatePrice(price.id, updates)}
                   onDelete={() => handleDeletePrice(price.id)}
+                  priceCopy={priceCopy}
                 />
               ))}
 
@@ -321,7 +330,7 @@ export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
                 onClick={handleAddPrice}
                 data-testid="add-price-button"
               >
-                Adicionar preço
+                {priceCopy.addPrice}
               </GhostAddButton>
             </div>
           </SortableContext>

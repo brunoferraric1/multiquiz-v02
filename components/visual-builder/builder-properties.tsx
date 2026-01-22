@@ -3,7 +3,7 @@
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useMessages } from '@/lib/i18n/context'
 
 interface BuilderPropertiesProps {
   title?: string
@@ -15,13 +15,17 @@ interface BuilderPropertiesProps {
 }
 
 export function BuilderProperties({
-  title = 'Propriedades',
+  title,
   showBack = false,
   onBack,
   actions,
   children,
   className,
 }: BuilderPropertiesProps) {
+  const messages = useMessages()
+  const propertiesCopy = messages.visualBuilder.properties
+  const resolvedTitle = title ?? propertiesCopy.title
+
   return (
     <aside
       data-testid="right-panel"
@@ -39,13 +43,13 @@ export function BuilderProperties({
           {showBack && (
             <button
               onClick={onBack}
-              aria-label="Voltar"
+              aria-label={propertiesCopy.back}
               className="shrink-0 -ml-1 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
           )}
-          <h3 className="font-semibold text-foreground truncate text-sm">{title}</h3>
+          <h3 className="font-semibold text-foreground truncate text-sm">{resolvedTitle}</h3>
         </div>
         {actions && (
           <div className="flex items-center gap-1 shrink-0">
@@ -61,7 +65,7 @@ export function BuilderProperties({
       >
         {children || (
           <div className="text-sm text-muted-foreground">
-            Selecione um bloco para editar suas propriedades.
+            {propertiesCopy.emptyBlock}
           </div>
         )}
       </div>

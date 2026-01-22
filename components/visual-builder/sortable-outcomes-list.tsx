@@ -3,6 +3,7 @@
 import { useVisualBuilderStore } from '@/store/visual-builder-store'
 import { SortableSidebarList } from './sortable-sidebar-list'
 import { SortableSidebarItem } from './sortable-sidebar-item'
+import { useMessages } from '@/lib/i18n/context'
 
 /**
  * SortableOutcomesList - A drag-and-drop enabled list of outcomes
@@ -11,6 +12,8 @@ import { SortableSidebarItem } from './sortable-sidebar-item'
  * Each outcome has drag handle, and actions menu (duplicate, delete).
  */
 export function SortableOutcomesList() {
+  const messages = useMessages()
+  const copy = messages.visualBuilder
   // Read state from store
   const steps = useVisualBuilderStore((state) => state.steps)
   const outcomes = useVisualBuilderStore((state) => state.outcomes)
@@ -58,10 +61,10 @@ export function SortableOutcomesList() {
             isActive={isOutcomeActive}
             onSelect={() => handleOutcomeSelect(outcome.id)}
             onDelete={() => deleteOutcome(outcome.id)}
-            onDuplicate={() => duplicateOutcome(outcome.id)}
+            onDuplicate={() => duplicateOutcome(outcome.id, copy.duplicateSuffix)}
             canDelete={outcomes.length > 1}
             icon={letter}
-            title={outcome.name || `Resultado ${index + 1}`}
+            title={outcome.name || `${copy.sidebar.outcomeLabel} ${index + 1}`}
             data-testid={`outcome-item-${outcome.id}`}
           />
         )

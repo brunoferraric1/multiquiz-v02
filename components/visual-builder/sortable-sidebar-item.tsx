@@ -3,6 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
+import { useMessages } from '@/lib/i18n/context'
 import { GripVertical, MoreVertical, Copy, Trash2 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -45,6 +46,8 @@ export function SortableSidebarItem({
   subtitle,
   'data-testid': testId,
 }: SortableSidebarItemProps) {
+  const messages = useMessages()
+  const itemActions = messages.visualBuilder.itemActions
   const {
     attributes,
     listeners,
@@ -60,6 +63,8 @@ export function SortableSidebarItem({
   }
 
   const hasActions = !disabled && (onDuplicate || onDelete)
+  const dragLabel = itemActions.drag.replace('{{title}}', title)
+  const optionsLabel = itemActions.optionsFor.replace('{{title}}', title)
 
   return (
     <div
@@ -82,7 +87,7 @@ export function SortableSidebarItem({
             className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 touch-none"
             {...attributes}
             {...listeners}
-            aria-label={`Arrastar ${title}`}
+            aria-label={dragLabel}
           >
             <GripVertical className="w-4 h-4" />
           </button>
@@ -114,7 +119,7 @@ export function SortableSidebarItem({
               onSelect()
             }
           }}
-          className="flex-1 min-w-0 cursor-pointer"
+          className="flex-1 min-w-0"
         >
           <div
             className={cn(
@@ -139,7 +144,7 @@ export function SortableSidebarItem({
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 className="p-1 text-muted-foreground hover:text-foreground shrink-0 rounded hover:bg-muted/80"
-                aria-label={`Opções para ${title}`}
+                aria-label={optionsLabel}
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
@@ -151,10 +156,10 @@ export function SortableSidebarItem({
                     e.stopPropagation()
                     onDuplicate()
                   }}
-                  className="cursor-pointer"
+                  className="cursor-[var(--cursor-interactive)]"
                 >
                   <Copy className="w-4 h-4 mr-2" />
-                  Duplicar
+                  {itemActions.duplicate}
                 </DropdownMenuItem>
               )}
               {onDelete && canDelete && (
@@ -163,10 +168,10 @@ export function SortableSidebarItem({
                     e.stopPropagation()
                     onDelete()
                   }}
-                  className="cursor-pointer text-destructive focus:text-destructive"
+                  className="cursor-[var(--cursor-interactive)] text-destructive focus:text-destructive"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Excluir
+                  {itemActions.delete}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

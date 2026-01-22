@@ -26,6 +26,8 @@ import { SectionTitle } from '@/components/ui/section-title'
 import { OptionsConfig, OptionItem } from '@/types/blocks'
 import type { Outcome } from '@/store/visual-builder-store'
 import { Trash2, GripVertical, ArrowRight, Plus } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
+import type { Messages } from '@/lib/i18n/messages'
 import {
   Select,
   SelectContent,
@@ -33,6 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+
+type OptionsCopy = Messages['visualBuilder']['optionsEditor']
 
 interface OptionsBlockEditorProps {
   config: OptionsConfig
@@ -49,6 +53,7 @@ interface SortableOptionItemProps {
   onDelete: () => void
   onCreateOutcome?: () => void
   getOutcomeDisplayName: (outcome: Outcome, index: number) => string
+  optionsCopy: OptionsCopy
 }
 
 function SortableOptionItem({
@@ -59,6 +64,7 @@ function SortableOptionItem({
   onDelete,
   onCreateOutcome,
   getOutcomeDisplayName,
+  optionsCopy,
 }: SortableOptionItemProps) {
   const {
     attributes,
@@ -88,7 +94,7 @@ function SortableOptionItem({
           className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 touch-none"
           {...attributes}
           {...listeners}
-          aria-label={`Arrastar opção ${index + 1}`}
+          aria-label={optionsCopy.dragOption.replace('{{index}}', String(index + 1))}
         >
           <GripVertical className="w-4 h-4" />
         </button>
@@ -96,7 +102,7 @@ function SortableOptionItem({
           <Input
             value={option.text}
             onChange={(e) => onUpdate({ text: e.target.value })}
-            placeholder={`Opção ${index + 1}`}
+            placeholder={optionsCopy.optionPlaceholder.replace('{{index}}', String(index + 1))}
           />
         </div>
         <Button
@@ -105,7 +111,7 @@ function SortableOptionItem({
           size="icon"
           onClick={onDelete}
           className="text-muted-foreground hover:text-destructive shrink-0"
-          aria-label={`Remover opção ${index + 1}`}
+          aria-label={optionsCopy.removeOption.replace('{{index}}', String(index + 1))}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -115,7 +121,7 @@ function SortableOptionItem({
       <div className="flex items-center gap-2 pl-6">
         <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
           <ArrowRight className="w-3 h-3" />
-          Resultado:
+          {optionsCopy.outcomeLabel}:
         </span>
         {outcomes.length === 0 ? (
           <button
@@ -125,7 +131,7 @@ function SortableOptionItem({
             data-testid={`create-outcome-${index}`}
           >
             <Plus className="w-3 h-3" />
-            Criar resultado
+            {optionsCopy.createOutcome}
           </button>
         ) : (
           <Select
@@ -138,10 +144,10 @@ function SortableOptionItem({
               className="flex-1 h-8 text-xs"
               data-testid={`outcome-select-${index}`}
             >
-              <SelectValue placeholder="Não vinculado" />
+              <SelectValue placeholder={optionsCopy.unlinked} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Não vinculado</SelectItem>
+              <SelectItem value="none">{optionsCopy.unlinked}</SelectItem>
               {outcomes.map((outcome, idx) => (
                 <SelectItem key={outcome.id} value={outcome.id}>
                   {getOutcomeDisplayName(outcome, idx)}
@@ -161,6 +167,8 @@ export function OptionsBlockEditor({
   outcomes = [],
   onCreateOutcome,
 }: OptionsBlockEditorProps) {
+  const messages = useMessages()
+  const optionsCopy = messages.visualBuilder.optionsEditor
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -208,7 +216,7 @@ export function OptionsBlockEditor({
   }
 
   const getOutcomeDisplayName = (outcome: Outcome, index: number): string => {
-    return outcome.name?.trim() || `Resultado ${index + 1}`
+    return outcome.name?.trim() || `${optionsCopy.outcomeLabel} ${index + 1}`
   }
 
   const items = config.items || []
@@ -217,21 +225,21 @@ export function OptionsBlockEditor({
     <div className="space-y-4" data-testid="options-block-editor">
       {/* Selection type */}
       <div>
-        <SectionTitle>Tipo de seleção</SectionTitle>
+        <SectionTitle>{optionsCopy.selectionTitle}</SectionTitle>
         <ToggleGroup
           options={[
-            { value: 'single', label: 'Única' },
-            { value: 'multiple', label: 'Múltipla' },
+            { value: 'single', label: optionsCopy.single },
+            { value: 'multiple', label: optionsCopy.multiple },
           ]}
           value={config.selectionType}
           onChange={(selectionType) => onChange({ selectionType })}
-          aria-label="Tipo de seleção"
+          aria-label={optionsCopy.selectionTitle}
         />
       </div>
 
       {/* Options list */}
       <div>
-        <SectionTitle>Opções de resposta</SectionTitle>
+        <SectionTitle>{optionsCopy.optionsTitle}</SectionTitle>
 
         {/* Existing options with drag and drop */}
         <DndContext
@@ -254,6 +262,7 @@ export function OptionsBlockEditor({
                   onDelete={() => handleDeleteOption(option.id)}
                   onCreateOutcome={onCreateOutcome}
                   getOutcomeDisplayName={getOutcomeDisplayName}
+                  optionsCopy={optionsCopy}
                 />
               ))}
             </div>
@@ -266,7 +275,7 @@ export function OptionsBlockEditor({
           onClick={handleAddOption}
           data-testid="add-option-button"
         >
-          Adicionar opção
+          {optionsCopy.addOption}
         </GhostAddButton>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { TextConfig } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import DOMPurify from 'dompurify'
+import { useMessages } from '@/lib/i18n/context'
 
 interface TextBlockPreviewProps {
   config: TextConfig
@@ -13,6 +14,8 @@ interface TextBlockPreviewProps {
  * TextBlockPreview - Renders text block with rich text content
  */
 export function TextBlockPreview({ config, enabled }: TextBlockPreviewProps) {
+  const messages = useMessages()
+  const textCopy = messages.visualBuilder.textEditor
   const { content } = config as TextConfig
 
   // Check if content is empty or just whitespace/empty tags
@@ -21,7 +24,7 @@ export function TextBlockPreview({ config, enabled }: TextBlockPreviewProps) {
   if (isEmpty) {
     return (
       <div className={cn('p-4', !enabled && 'opacity-50')}>
-        <p className="text-sm text-muted-foreground/50">Adicione texto aqui...</p>
+        <p className="text-sm text-muted-foreground/50">{textCopy.content}...</p>
       </div>
     )
   }

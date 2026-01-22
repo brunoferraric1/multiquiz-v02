@@ -2,7 +2,6 @@
 
 import {
   Block,
-  BlockType,
   HeaderConfig,
   TextConfig,
   MediaConfig,
@@ -15,6 +14,7 @@ import {
 } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { Pencil, Trash2, GripVertical } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
 import { HeaderBlockPreview } from './header-block'
 import { TextBlockPreview } from './text-block'
 import { MediaBlockPreview } from './media-block'
@@ -41,6 +41,8 @@ interface BlockRendererProps {
  * based on the block type. It handles selection state and click events.
  */
 export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandleProps, isDragging }: BlockRendererProps) {
+  const messages = useMessages()
+  const copy = messages.visualBuilder
   // Check if media block has no content (show placeholder styling)
   const isEmptyMedia = block.type === 'media' && !(block.config as MediaConfig).url
 
@@ -89,7 +91,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
         data-block-type={block.type}
         data-block-enabled="false"
         className={cn(
-          'relative rounded-lg border border-dashed transition-all cursor-pointer group',
+          'relative rounded-lg border border-dashed transition-all group',
           isDragging && 'opacity-50',
           isSelected
             ? 'ring-2 ring-primary border-primary/30'
@@ -117,7 +119,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
             <button
               type="button"
               className="p-1.5 rounded-md bg-muted-foreground/80 text-background hover:bg-muted-foreground transition-colors shadow-sm cursor-grab active:cursor-grabbing"
-              aria-label="Arrastar bloco"
+              aria-label={copy.itemActions.dragBlock}
               {...dragHandleProps}
             >
               <GripVertical className="w-3.5 h-3.5" />
@@ -136,7 +138,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
           <button
             onClick={handleEdit}
             className="p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
-            aria-label="Editar bloco"
+            aria-label={copy.itemActions.edit}
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
@@ -144,7 +146,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
             <button
               onClick={handleDelete}
               className="p-1.5 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors shadow-sm"
-              aria-label="Excluir bloco"
+              aria-label={copy.itemActions.delete}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -161,7 +163,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
       data-block-type={block.type}
       data-block-enabled="true"
       className={cn(
-        'relative rounded-lg border transition-all cursor-pointer group',
+        'relative rounded-lg border transition-all group',
         isDragging && 'opacity-50',
         isSelected
           ? 'ring-2 ring-primary border-primary bg-primary/5'
@@ -191,7 +193,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
           <button
             type="button"
             className="p-1.5 rounded-md bg-muted-foreground/80 text-background hover:bg-muted-foreground transition-colors shadow-sm cursor-grab active:cursor-grabbing"
-            aria-label="Arrastar bloco"
+            aria-label={copy.itemActions.dragBlock}
             {...dragHandleProps}
           >
             <GripVertical className="w-3.5 h-3.5" />
@@ -210,7 +212,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
         <button
           onClick={handleEdit}
           className="p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
-          aria-label="Editar bloco"
+          aria-label={copy.itemActions.edit}
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
@@ -218,7 +220,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
           <button
             onClick={handleDelete}
             className="p-1.5 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors shadow-sm"
-            aria-label="Excluir bloco"
+            aria-label={copy.itemActions.delete}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -228,21 +230,3 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
     </div>
   )
 }
-
-// Helper function to get block label
-function getBlockLabel(type: BlockType): string {
-  const labels: Record<BlockType, string> = {
-    header: 'Cabeçalho',
-    text: 'Texto',
-    media: 'Mídia',
-    options: 'Opções',
-    fields: 'Campos',
-    price: 'Preço',
-    button: 'Botão',
-    banner: 'Banner',
-    list: 'Lista',
-  }
-  return labels[type]
-}
-
-export { getBlockLabel }

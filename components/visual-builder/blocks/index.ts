@@ -1,5 +1,5 @@
 // Block renderer - main entry point
-export { BlockRenderer, getBlockLabel } from './block-renderer'
+export { BlockRenderer } from './block-renderer'
 
 // Block list with selection and insertion
 export { BlockList } from './block-list'

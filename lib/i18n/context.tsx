@@ -1,8 +1,10 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
+import { usePathname } from "next/navigation";
 import type { Locale } from "@/lib/i18n";
-import type { Messages } from "@/lib/i18n/messages";
+import { getMessages, type Messages } from "@/lib/i18n/messages";
+import { getLocaleFromPathname } from "@/lib/i18n/paths";
 
 type I18nContextValue = {
   locale: Locale;
@@ -20,7 +22,15 @@ export function LocaleProvider({
   messages: Messages;
   children: React.ReactNode;
 }) {
-  const value = useMemo(() => ({ locale, messages }), [locale, messages]);
+  const pathname = usePathname();
+  const pathLocale = getLocaleFromPathname(pathname ?? "");
+  const resolvedLocale = pathLocale ?? locale;
+  const resolvedMessages = pathLocale ? getMessages(pathLocale) : messages;
+
+  const value = useMemo(
+    () => ({ locale: resolvedLocale, messages: resolvedMessages }),
+    [resolvedLocale, resolvedMessages],
+  );
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

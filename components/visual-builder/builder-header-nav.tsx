@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { useMessages } from '@/lib/i18n/context'
 import { ArrowLeft, Play, Edit3, Sparkles, Palette, BarChart3, Settings, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -18,14 +19,6 @@ interface BuilderHeaderNavProps {
   isPreviewing?: boolean
 }
 
-const tabs: { id: HeaderTab; label: string; icon: React.ReactNode }[] = [
-  { id: 'editar', label: 'Editar', icon: <Edit3 className="w-4 h-4" /> },
-  { id: 'assistente', label: 'Assistente IA', icon: <Sparkles className="w-4 h-4" /> },
-  { id: 'tema', label: 'Tema', icon: <Palette className="w-4 h-4" /> },
-  { id: 'relatorio', label: 'Relatório', icon: <BarChart3 className="w-4 h-4" /> },
-  { id: 'config', label: 'Configurações', icon: <Settings className="w-4 h-4" /> },
-]
-
 export function BuilderHeaderNav({
   quizName,
   activeTab,
@@ -37,12 +30,22 @@ export function BuilderHeaderNav({
   isPublished = false,
   isPreviewing = false,
 }: BuilderHeaderNavProps) {
+  const messages = useMessages()
+  const header = messages.visualBuilder.header
+  const tabs: { id: HeaderTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'editar', label: header.tabs.editar, icon: <Edit3 className="w-4 h-4" /> },
+    { id: 'assistente', label: header.tabs.assistente, icon: <Sparkles className="w-4 h-4" /> },
+    { id: 'tema', label: header.tabs.tema, icon: <Palette className="w-4 h-4" /> },
+    { id: 'relatorio', label: header.tabs.relatorio, icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'config', label: header.tabs.config, icon: <Settings className="w-4 h-4" /> },
+  ]
+
   // Determine button text based on publish state
   const publishButtonText = isPublishing
-    ? 'Publicando...'
+    ? header.actions.publishing
     : isPublished
-      ? 'Atualizar'
-      : 'Publicar'
+      ? header.actions.update
+      : header.actions.publish
   return (
     <header className="h-14 bg-card border-b flex items-center px-4 shrink-0">
       {/* Left: Back + Quiz name */}
@@ -51,7 +54,7 @@ export function BuilderHeaderNav({
           variant="ghost"
           size="icon"
           onClick={onBack}
-          aria-label="Voltar"
+          aria-label={header.aria.back}
           className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -89,7 +92,7 @@ export function BuilderHeaderNav({
           size="sm"
           onClick={onPreview}
           className="flex items-center gap-2"
-          aria-label="Preview"
+          aria-label={header.aria.preview}
           disabled={isPreviewing}
         >
           {isPreviewing ? (
@@ -98,7 +101,7 @@ export function BuilderHeaderNav({
             <Play className="w-4 h-4 fill-current" />
           )}
           <span className="hidden sm:inline">
-            {isPreviewing ? 'Abrindo...' : 'Preview'}
+            {isPreviewing ? header.actions.previewing : header.actions.preview}
           </span>
         </Button>
         <Button

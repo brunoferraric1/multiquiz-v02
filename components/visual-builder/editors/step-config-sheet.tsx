@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/sheet'
 import { StepSettingsEditor } from './step-settings-editor'
 import { StepSettings } from '@/types/blocks'
+import { useMessages } from '@/lib/i18n/context'
 
 interface StepConfigSheetProps {
   open: boolean
@@ -28,11 +29,13 @@ export function StepConfigSheet({
   isIntroStep = false,
   isResultStep = false,
 }: StepConfigSheetProps) {
+  const messages = useMessages()
+  const stepConfigCopy = messages.visualBuilder.stepConfig
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-80 sm:w-96">
         <SheetHeader>
-          <SheetTitle>Configurações: {stepLabel}</SheetTitle>
+          <SheetTitle>{stepConfigCopy.title}: {stepLabel}</SheetTitle>
         </SheetHeader>
         <div className="mt-6">
           <StepSettingsEditor

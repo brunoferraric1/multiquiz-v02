@@ -1,6 +1,9 @@
 import { render, RenderOptions } from '@testing-library/react'
 import { ReactElement, ReactNode } from 'react'
 import { useVisualBuilderStore, Step, Outcome } from '@/store/visual-builder-store'
+import { LocaleProvider } from '@/lib/i18n/context'
+import { defaultLocale } from '@/lib/i18n'
+import { getMessages } from '@/lib/i18n/messages'
 
 // Reset store between tests
 export function resetVisualBuilderStore() {
@@ -23,7 +26,11 @@ export function initializeVisualBuilderStore(data: { steps?: Step[]; outcomes?: 
 
 // Custom render with providers (add providers here as needed)
 function AllProviders({ children }: { children: ReactNode }) {
-  return <>{children}</>
+  return (
+    <LocaleProvider locale={defaultLocale} messages={getMessages(defaultLocale)}>
+      {children}
+    </LocaleProvider>
+  )
 }
 
 function customRender(

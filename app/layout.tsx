@@ -1,6 +1,6 @@
 
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
@@ -21,8 +21,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const requestHeaders = await headers();
+  const requestCookies = await cookies();
   const headerLocale = requestHeaders.get("x-locale");
-  const locale = isSupportedLocale(headerLocale) ? headerLocale : defaultLocale;
+  const cookieLocale = requestCookies.get("locale")?.value;
+  const locale = isSupportedLocale(headerLocale)
+    ? headerLocale
+    : isSupportedLocale(cookieLocale)
+      ? cookieLocale
+      : defaultLocale;
   const messages = getMessages(locale);
 
   return (

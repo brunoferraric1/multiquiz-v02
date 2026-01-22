@@ -11,6 +11,7 @@ import { SortableStepsList } from './sortable-steps-list'
 import { SortableOutcomesList } from './sortable-outcomes-list'
 import { StepPreview } from './step-preview'
 import { cn } from '@/lib/utils'
+import { useMessages } from '@/lib/i18n/context'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import { SectionTitle } from '@/components/ui/section-title'
 import { Play } from 'lucide-react'
@@ -41,6 +42,8 @@ export function ConnectedVisualBuilder({
   isPublished = false,
   isPreviewing = false,
 }: ConnectedVisualBuilderProps) {
+  const messages = useMessages()
+  const copy = messages.visualBuilder
   // Local UI state
   const [activeTab, setActiveTab] = useState<HeaderTab>('editar')
   const [device, setDevice] = useState<'mobile' | 'desktop'>('mobile')
@@ -65,8 +68,8 @@ export function ConnectedVisualBuilder({
   }
 
   const handleAddOutcome = () => {
-    const newOutcome = createOutcome()
-    addOutcome(newOutcome)
+    const newOutcome = createOutcome('', copy)
+    addOutcome(newOutcome, copy)
   }
 
   return (
@@ -99,7 +102,7 @@ export function ConnectedVisualBuilder({
             {/* Introdução section */}
             {introStep && (
               <div className="p-3 pb-2">
-                <SectionTitle className="mb-2">Introdução</SectionTitle>
+                <SectionTitle className="mb-2">{copy.sidebar.intro}</SectionTitle>
                 <div
                   role="button"
                   tabIndex={0}
@@ -112,7 +115,7 @@ export function ConnectedVisualBuilder({
                     }
                   }}
                   className={cn(
-                    'flex items-center gap-3 p-2 rounded-lg transition-colors text-left cursor-pointer',
+                    'flex items-center gap-3 p-2 rounded-lg transition-colors text-left',
                     isIntroActive
                       ? 'bg-primary/10 border border-primary/30'
                       : 'bg-muted/50 hover:bg-muted/80 border border-transparent'
@@ -154,22 +157,22 @@ export function ConnectedVisualBuilder({
 
             {/* Etapas section */}
             <div className="px-3 pb-2">
-              <SectionTitle className="mb-2">Etapas</SectionTitle>
+              <SectionTitle className="mb-2">{copy.sidebar.steps}</SectionTitle>
               <SortableStepsList />
               {/* Add step button - below the list */}
               <GhostAddButton
                 size="compact"
                 className="mt-2"
                 onClick={handleAddStep}
-                aria-label="Adicionar etapa"
+                aria-label={copy.sidebar.addStep}
               >
-                Adicionar etapa
+                {copy.sidebar.addStep}
               </GhostAddButton>
             </div>
 
             {/* Results section */}
             <div data-testid="results-section" className="px-3 pt-4 pb-3">
-              <SectionTitle className="mb-2">Resultados</SectionTitle>
+              <SectionTitle className="mb-2">{copy.sidebar.results}</SectionTitle>
 
               <SortableOutcomesList />
 
@@ -178,9 +181,9 @@ export function ConnectedVisualBuilder({
                 size="compact"
                 className="mt-2"
                 onClick={handleAddOutcome}
-                aria-label="Adicionar resultado"
+                aria-label={copy.sidebar.addOutcome}
               >
-                Adicionar resultado
+                {copy.sidebar.addOutcome}
               </GhostAddButton>
             </div>
           </div>

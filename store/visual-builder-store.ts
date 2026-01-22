@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import type { Messages } from '@/lib/i18n/messages'
 import {
   Block,
   BlockConfig,
@@ -8,6 +9,8 @@ import {
   createBlock,
   getDefaultBlockConfig,
 } from '@/types/blocks'
+
+type VisualBuilderCopy = Messages['visualBuilder']
 
 // Step types
 export type StepType = 'intro' | 'question' | 'lead-gen' | 'promo' | 'result'
@@ -45,7 +48,7 @@ export interface VisualBuilderState {
   addStep: (step: Step, insertAfterStepId?: string) => void
   updateStep: (id: string, updates: Partial<Step>) => void
   deleteStep: (id: string) => void
-  duplicateStep: (id: string) => void
+  duplicateStep: (id: string, duplicateSuffix?: string) => void
   reorderSteps: (fromIndex: number, toIndex: number) => void
 
   // Actions - Step selection
@@ -73,10 +76,10 @@ export interface VisualBuilderState {
 
   // Actions - Outcome management
   setOutcomes: (outcomes: Outcome[]) => void
-  addOutcome: (outcome: Outcome) => void
+  addOutcome: (outcome: Outcome, copy?: VisualBuilderCopy) => void
   updateOutcome: (id: string, updates: Partial<Outcome>) => void
   deleteOutcome: (id: string) => void
-  duplicateOutcome: (id: string) => void
+  duplicateOutcome: (id: string, duplicateSuffix?: string) => void
   reorderOutcomes: (fromIndex: number, toIndex: number) => void
   setSelectedOutcomeId: (outcomeId: string | undefined) => void
 
@@ -93,13 +96,31 @@ export interface VisualBuilderState {
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 // Default blocks for each step type (generates new IDs each time - use for new steps)
-export const getDefaultBlocksForStepType = (type: StepType): Block[] => {
+export const getDefaultBlocksForStepType = (type: StepType, copy?: VisualBuilderCopy): Block[] => {
+  const defaults = copy?.defaults
+  const fieldPlaceholders = copy?.fieldsEditor?.placeholders
+  const introTitle = defaults?.introTitle ?? 'Bem-vindo!'
+  const introDescription = defaults?.introDescription ?? 'Descubra o resultado ideal para você.'
+  const buttonStart = defaults?.buttonStart ?? 'Começar'
+  const leadGenTitle = defaults?.leadGenTitle ?? 'Quase lá!'
+  const leadGenDescription = defaults?.leadGenDescription ?? 'Preencha seus dados para ver o resultado.'
+  const buttonSeeResult = defaults?.buttonSeeResult ?? 'Ver resultado'
+  const promoTitle = defaults?.promoTitle ?? 'Oferta especial'
+  const buttonUse = defaults?.buttonUse ?? 'Aproveitar'
+  const fieldNameLabel = defaults?.fieldNameLabel ?? 'Nome'
+  const fieldNamePlaceholder = defaults?.fieldNamePlaceholder ?? 'Digite seu nome...'
+  const fieldEmailLabel = defaults?.fieldEmailLabel ?? 'Email'
+  const fieldEmailPlaceholder = fieldPlaceholders?.email ?? 'seu@email.com'
+  const pricePlanTitle = defaults?.pricePlanTitle ?? 'Plano'
+  const pricePlanValue = defaults?.pricePlanValue ?? 'R$ 99,90'
+  const pricePlanSuffix = defaults?.pricePlanSuffix ?? 'à vista'
+
   switch (type) {
     case 'intro':
       return [
-        { ...createBlock('header'), config: { title: 'Bem-vindo!', description: 'Descubra o resultado ideal para você.' } },
+        { ...createBlock('header'), config: { title: introTitle, description: introDescription } },
         { ...createBlock('media'), enabled: false },
-        { ...createBlock('button'), config: { text: 'Começar', action: 'next_step' } },
+        { ...createBlock('button'), config: { text: buttonStart, action: 'next_step' } },
       ]
     case 'question':
       return [
@@ -109,19 +130,29 @@ export const getDefaultBlocksForStepType = (type: StepType): Block[] => {
       ]
     case 'lead-gen':
       return [
-        { ...createBlock('header'), config: { title: 'Quase lá!', description: 'Preencha seus dados para ver o resultado.' } },
+        { ...createBlock('header'), config: { title: leadGenTitle, description: leadGenDescription } },
         { ...createBlock('fields'), config: { items: [
-          { id: generateId(), label: 'Nome', type: 'text', required: true },
-          { id: generateId(), label: 'Email', type: 'email', required: true },
+          { id: generateId(), label: fieldNameLabel, type: 'text', required: true, placeholder: fieldNamePlaceholder },
+          { id: generateId(), label: fieldEmailLabel, type: 'email', required: true, placeholder: fieldEmailPlaceholder },
         ] } },
-        { ...createBlock('button'), config: { text: 'Ver resultado', action: 'next_step' } },
+        { ...createBlock('button'), config: { text: buttonSeeResult, action: 'next_step' } },
       ]
     case 'promo':
       return [
-        { ...createBlock('header'), config: { title: 'Oferta especial', description: '' } },
+        { ...createBlock('header'), config: { title: promoTitle, description: '' } },
         { ...createBlock('media'), enabled: false },
-        { ...createBlock('price') },
-        { ...createBlock('button'), config: { text: 'Aproveitar', action: 'url' } },
+        { ...createBlock('price'), config: {
+          items: [
+            {
+              id: generateId(),
+              title: pricePlanTitle,
+              value: pricePlanValue,
+              suffix: pricePlanSuffix,
+            },
+          ],
+          selectionType: 'single',
+        } },
+        { ...createBlock('button'), config: { text: buttonUse, action: 'url' } },
       ]
     case 'result':
       // Result step doesn't have default blocks - they're per outcome
@@ -132,12 +163,15 @@ export const getDefaultBlocksForStepType = (type: StepType): Block[] => {
 }
 
 // Default blocks for a new outcome (generates new IDs each time)
-export const getDefaultOutcomeBlocks = (): Block[] => {
+export const getDefaultOutcomeBlocks = (copy?: VisualBuilderCopy): Block[] => {
+  const defaults = copy?.defaults
+  const resultTitle = defaults?.resultTitle ?? 'Seu resultado'
+  const buttonLearnMore = defaults?.buttonLearnMore ?? 'Saber mais'
   return [
-    { ...createBlock('header'), config: { title: 'Seu resultado', description: '' } },
+    { ...createBlock('header'), config: { title: resultTitle, description: '' } },
     { ...createBlock('media'), enabled: false },
     { ...createBlock('text'), config: { content: '' } },
-    { ...createBlock('button'), config: { text: 'Saber mais', action: 'url' } },
+    { ...createBlock('button'), config: { text: buttonLearnMore, action: 'url' } },
   ]
 }
 
@@ -196,13 +230,18 @@ const initialState = {
 }
 
 // Helper to get step label based on type and existing steps
-export const getDefaultStepLabel = (type: StepType, steps: Step[]): string => {
+export const getDefaultStepLabel = (
+  type: StepType,
+  steps: Step[],
+  copy?: VisualBuilderCopy
+): string => {
+  const stepLabels = copy?.stepLabels
   const typeLabels: Record<StepType, string> = {
-    intro: 'Intro',
-    question: 'Pergunta',
-    'lead-gen': 'Captura',
-    promo: 'Promoção',
-    result: 'Resultado',
+    intro: stepLabels?.intro ?? 'Intro',
+    question: stepLabels?.question ?? 'Pergunta',
+    'lead-gen': stepLabels?.leadGen ?? 'Captura',
+    promo: stepLabels?.promo ?? 'Promoção',
+    result: stepLabels?.result ?? 'Resultado',
   }
 
   // Count existing steps of the same type (excluding intro and result which are fixed)
@@ -293,7 +332,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           return { steps: newSteps, activeStepId: newActiveStepId, selectedBlockId: newSelectedBlockId }
         }),
 
-      duplicateStep: (id) =>
+      duplicateStep: (id, duplicateSuffix) =>
         set((state) => {
           const stepToDuplicate = state.steps.find(s => s.id === id)
 
@@ -302,6 +341,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
             return state
           }
 
+          const suffix = duplicateSuffix ?? '(cópia)'
           const stepIndex = state.steps.findIndex(s => s.id === id)
           const steps = [...state.steps]
 
@@ -315,7 +355,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           const duplicatedStep: Step = {
             ...stepToDuplicate,
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            label: `${stepToDuplicate.label} (cópia)`,
+            label: [stepToDuplicate.label, suffix].filter(Boolean).join(' ').trim(),
             blocks: duplicatedBlocks,
           }
 
@@ -600,12 +640,14 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
       // Outcome management
       setOutcomes: (outcomes) => set({ outcomes }),
 
-      addOutcome: (outcome) =>
+      addOutcome: (outcome, copy) =>
         set((state) => {
           // Add default blocks if the outcome doesn't have any
           const outcomeWithBlocks: Outcome = {
             ...outcome,
-            blocks: outcome.blocks && outcome.blocks.length > 0 ? outcome.blocks : getDefaultOutcomeBlocks(),
+            blocks: outcome.blocks && outcome.blocks.length > 0
+              ? outcome.blocks
+              : getDefaultOutcomeBlocks(copy),
           }
 
           const newOutcomes = [...state.outcomes, outcomeWithBlocks]
@@ -646,7 +688,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           return { outcomes: newOutcomes, selectedOutcomeId: newSelectedOutcomeId, selectedBlockId: undefined }
         }),
 
-      duplicateOutcome: (id) =>
+      duplicateOutcome: (id, duplicateSuffix) =>
         set((state) => {
           const outcomeToDuplicate = state.outcomes.find(o => o.id === id)
 
@@ -654,6 +696,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
             return state
           }
 
+          const suffix = duplicateSuffix ?? '(cópia)'
           const outcomeIndex = state.outcomes.findIndex(o => o.id === id)
           const outcomes = [...state.outcomes]
 
@@ -667,7 +710,9 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           const duplicatedOutcome: Outcome = {
             ...outcomeToDuplicate,
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            name: outcomeToDuplicate.name ? `${outcomeToDuplicate.name} (cópia)` : '',
+            name: outcomeToDuplicate.name
+              ? [outcomeToDuplicate.name, suffix].filter(Boolean).join(' ').trim()
+              : '',
             blocks: duplicatedBlocks,
           }
 
@@ -732,23 +777,27 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 )
 
 // Helper function to create a new step
-export const createStep = (type: StepType, steps: Step[]): Step => {
+export const createStep = (
+  type: StepType,
+  steps: Step[],
+  copy?: VisualBuilderCopy
+): Step => {
   return {
     id: generateId(),
     type,
-    label: getDefaultStepLabel(type, steps),
+    label: getDefaultStepLabel(type, steps, copy),
     isFixed: false,
-    blocks: getDefaultBlocksForStepType(type),
+    blocks: getDefaultBlocksForStepType(type, copy),
     settings: { showProgress: true, allowBack: true },
   }
 }
 
 // Helper function to create a new outcome
-export const createOutcome = (name: string = ''): Outcome => {
+export const createOutcome = (name: string = '', copy?: VisualBuilderCopy): Outcome => {
   return {
     id: generateId(),
     name,
-    blocks: getDefaultOutcomeBlocks(),
+    blocks: getDefaultOutcomeBlocks(copy),
   }
 }
 

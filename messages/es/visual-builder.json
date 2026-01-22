@@ -9,6 +9,7 @@
     },
     "actions": {
       "preview": "Vista previa",
+      "previewing": "Abriendo...",
       "publish": "Publicar",
       "publishing": "Publicando...",
       "update": "Actualizar"
@@ -19,15 +20,15 @@
     }
   },
   "addStep": {
-    "title": "Agregar paso",
-    "description": "Elige el tipo de paso que deseas agregar a tu quiz",
+    "title": "Agregar etapa",
+    "description": "Elige el tipo de etapa que deseas agregar a tu quiz",
     "types": {
       "question": {
         "label": "Pregunta",
         "description": "Agrega una pregunta con opciones de respuesta"
       },
       "leadGen": {
-        "label": "Captura de Leads",
+        "label": "Captura de leads",
         "description": "Recopila información del usuario (nombre, email, etc.)"
       },
       "promo": {
@@ -72,7 +73,7 @@
     "buttonContinue": "Continuar",
     "buttonSeeResult": "Ver resultado",
     "buttonLearnMore": "Saber más",
-    "buttonUse": "Aprovecharlo",
+    "buttonUse": "Aprovechar",
     "leadGenTitle": "¡Casi listo!",
     "leadGenDescription": "Completa tus datos para ver el resultado.",
     "promoTitle": "Oferta especial",
@@ -83,7 +84,7 @@
     "pricePlanTitle": "Plan",
     "pricePlanValue": "$99.90",
     "pricePlanSuffix": "pago único",
-    "listItem": "Elemento de lista"
+    "listItem": "Elemento de la lista"
   },
   "stepLabels": {
     "intro": "Intro",
@@ -91,6 +92,221 @@
     "leadGen": "Captura",
     "promo": "Promoción",
     "result": "Resultado"
+  },
+  "sidebar": {
+    "intro": "Introducción",
+    "steps": "Etapas",
+    "results": "Resultados",
+    "addStep": "Agregar etapa",
+    "addOutcome": "Agregar resultado",
+    "emptyResults": "Ningún resultado creado",
+    "outcomeLabel": "Resultado"
+  },
+  "properties": {
+    "title": "Propiedades",
+    "emptyBlock": "Selecciona un bloque para editar sus propiedades.",
+    "emptyBlocks": "No se han agregado bloques",
+    "emptySelection": "Selecciona una etapa o bloque para editar sus propiedades.",
+    "back": "Volver",
+    "clickPreview": "Haz clic en un bloque en la vista previa para editar su contenido.",
+    "blocksInStep": "Bloques en esta etapa",
+    "blocksInResult": "Bloques en este resultado",
+    "addBlock": "Agregar bloque",
+    "deleteStep": "Eliminar etapa"
+  },
+  "preview": {
+    "mobile": "Vista móvil",
+    "desktop": "Vista de escritorio",
+    "empty": "La vista previa aparecerá aquí",
+    "selectStep": "Selecciona una etapa para ver la vista previa",
+    "addOutcome": "Agrega un resultado para comenzar",
+    "selectOutcome": "Selecciona un resultado para ver la vista previa",
+    "back": "Volver"
+  },
+  "itemActions": {
+    "drag": "Arrastrar {{title}}",
+    "optionsFor": "Opciones para {{title}}",
+    "edit": "Editar",
+    "duplicate": "Duplicar",
+    "delete": "Eliminar",
+    "dragBlock": "Arrastrar bloque"
+  },
+  "blockControls": {
+    "reorder": "Reordenar",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "deleteBlock": "Eliminar bloque",
+    "deleteBlockAria": "Eliminar bloque {{name}}",
+    "deleteHint": "Esta acción no se puede deshacer"
+  },
+  "textEditor": {
+    "content": "Contenido",
+    "bold": "Negrita",
+    "italic": "Cursiva",
+    "underline": "Subrayado",
+    "strikethrough": "Tachado",
+    "alignLeft": "Alinear a la izquierda",
+    "alignCenter": "Centrar",
+    "alignRight": "Alinear a la derecha"
+  },
+  "headerEditor": {
+    "titleLabel": "Título",
+    "titlePlaceholder": "Escribe el título...",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Escribe la descripción..."
+  },
+  "mediaEditor": {
+    "mediaType": "Tipo de medio",
+    "image": "Imagen",
+    "video": "Video",
+    "imageSection": "Imagen",
+    "addMedia": "Agregar media",
+    "replace": "Reemplazar",
+    "remove": "Eliminar",
+    "drop": "Arrastra y suelta tu imagen aquí",
+    "upload": "Subir",
+    "videoUrlLabel": "URL del video",
+    "videoUrlPlaceholder": "https://youtube.com/watch?v=...",
+    "previewAlt": "Vista previa"
+  },
+  "optionsEditor": {
+    "selectionTitle": "Tipo de selección",
+    "single": "Única",
+    "multiple": "Múltiple",
+    "optionsTitle": "Opciones de respuesta",
+    "addOption": "Agregar opción",
+    "outcomeLabel": "Resultado",
+    "createOutcome": "Crear resultado",
+    "unlinked": "Sin vincular",
+    "optionPlaceholder": "Opción {{index}}",
+    "dragOption": "Arrastrar opción {{index}}",
+    "removeOption": "Eliminar opción {{index}}"
+  },
+  "fieldsEditor": {
+    "title": "Campos de formulario",
+    "addField": "Agregar campo",
+    "typeLabel": "Tipo de campo",
+    "labelLabel": "Etiqueta",
+    "labelPlaceholder": "p. ej., Nombre completo",
+    "requiredLabel": "Campo obligatorio",
+    "requiredTag": "Obligatorio",
+    "customPlaceholder": "Personalizar placeholder",
+    "defaultPlaceholder": "Predeterminado: \"{{value}}\"",
+    "dragField": "Arrastrar campo {{index}}",
+    "removeField": "Eliminar campo {{index}}",
+    "fieldFallback": "Campo {{index}}",
+    "types": {
+      "text": "Texto",
+      "email": "Email",
+      "phone": "Teléfono",
+      "number": "Número",
+      "textarea": "Texto largo"
+    },
+    "placeholders": {
+      "text": "Escribe aquí...",
+      "email": "tu@email.com",
+      "phone": "(00) 00000-0000",
+      "number": "0",
+      "textarea": "Escribe tu mensaje..."
+    }
+  },
+  "priceEditor": {
+    "title": "Opciones de precio",
+    "addPrice": "Agregar precio",
+    "dragPrice": "Arrastrar precio {{index}}",
+    "removePrice": "Eliminar precio {{index}}",
+    "priceLabel": "Precio",
+    "titleLabel": "Título",
+    "titlePlaceholder": "p. ej., Plan PRO",
+    "prefixPlaceholder": "10% de descuento",
+    "valuePlaceholder": "$89.90",
+    "suffixPlaceholder": "pago único",
+    "prefixLabel": "Prefijo",
+    "valueLabel": "Valor",
+    "suffixLabel": "Sufijo",
+    "prefixAria": "Prefijo del precio",
+    "valueAria": "Valor",
+    "suffixAria": "Sufijo",
+    "showOriginal": "Mostrar precio original (antes/ahora)",
+    "originalLabel": "Precio original",
+    "originalPlaceholder": "$129.90",
+    "originalHint": "Se muestra como \"antes $X ahora:\" encima del precio actual",
+    "highlightLabel": "Destacar",
+    "highlightTextLabel": "Texto destacado",
+    "highlightPlaceholder": "MÁS POPULAR",
+    "redirectLabel": "URL de redirección",
+    "redirectPlaceholder": "https://ejemplo.com/checkout",
+    "priceFallbackTitle": "Precio {{index}}",
+    "priceFallbackValue": "$0.00"
+  },
+  "buttonEditor": {
+    "textLabel": "Texto del botón",
+    "textPlaceholder": "p. ej., Continuar",
+    "actionTitle": "Acción del botón",
+    "actionAria": "Acción del botón",
+    "actionNext": "Siguiente",
+    "actionUrl": "Abrir URL",
+    "actionSelectedPrice": "Precio seleccionado",
+    "urlLabel": "URL de destino",
+    "urlPlaceholder": "https://ejemplo.com",
+    "infoNext": "El botón avanzará al siguiente paso del quiz.",
+    "infoSelectedPrice": "Redirige a la URL del precio seleccionado por el usuario."
+  },
+  "bannerEditor": {
+    "title": "Tipo de banner",
+    "info": "Info",
+    "warning": "Atención",
+    "danger": "Urgente",
+    "infoLabel": "Información",
+    "warningLabel": "Atención",
+    "dangerLabel": "Urgente",
+    "emojiLabel": "Emoji (opcional)",
+    "emojiPlaceholder": "p. ej., 🔥",
+    "emojiHint": "Añade un emoji para destacar el mensaje",
+    "messageLabel": "Mensaje del banner",
+    "messagePlaceholder": "p. ej., ¡Oferta válida por tiempo limitado!"
+  },
+  "listEditor": {
+    "title": "Elementos de la lista",
+    "addItem": "Agregar elemento",
+    "itemPlaceholder": "Elemento {{index}}",
+    "emojiPlaceholder": "✓",
+    "emojiAria": "Emoji del elemento {{index}}",
+    "removeItem": "Eliminar elemento {{index}}",
+    "dragItem": "Arrastrar elemento {{index}}",
+    "hint": "Consejo: Usa emojis como ✓, •, ★ para personalizar los marcadores"
+  },
+  "stepSettings": {
+    "description": "Configura las opciones de navegación de esta etapa.",
+    "progressLabel": "Barra de progreso",
+    "progressHintIntro": "Muestra una barra de progreso en la parte superior",
+    "progressHint": "Muestra el progreso del quiz",
+    "backLabel": "Botón volver",
+    "backHint": "Permite que el usuario vuelva a la etapa anterior",
+    "introHint": "La etapa de introducción es la primera del quiz y no tiene botón de volver.",
+    "resultHint": "La pantalla de resultados es la etapa final del quiz. Configura cada resultado por separado."
+  },
+  "stepConfig": {
+    "title": "Configuración"
+  },
+  "toast": {
+    "permissionError": "No tienes permiso para editar este quiz.",
+    "loadError": "Error al cargar el quiz.",
+    "saveError": "Error al guardar los cambios.",
+    "limitDraft": "Límite de borradores alcanzado. Elimina un borrador o haz upgrade.",
+    "limitPublish": "Límite de quizzes publicados alcanzado. Haz upgrade para publicar más.",
+    "publishSuccess": "¡Quiz publicado con éxito!",
+    "publishError": "Error al publicar el quiz. Inténtalo de nuevo.",
+    "previewSaveError": "Error al guardar. Inténtalo de nuevo."
+  },
+  "demo": {
+    "previewNotice": "Esta es una página de demostración. Crea un quiz para usar la vista previa.",
+    "publishNotice": "Esta es una página de demostración. Crea un quiz para publicar.",
+    "goDashboard": "Ir al Dashboard"
+  },
+  "quiz": {
+    "defaultTitle": "Nuevo Quiz",
+    "defaultName": "Mi Quiz"
   },
   "loading": {
     "creatingQuiz": "Creando nuevo quiz...",

@@ -5,6 +5,7 @@ import { useVisualBuilderStore, Step } from '@/store/visual-builder-store'
 import { HeaderConfig } from '@/types/blocks'
 import { SortableSidebarList } from './sortable-sidebar-list'
 import { SortableSidebarItem } from './sortable-sidebar-item'
+import { useMessages } from '@/lib/i18n/context'
 
 /**
  * Get the subtitle for a step (header title or step subtitle)
@@ -22,6 +23,8 @@ function getStepSubtitle(step: Step): string | undefined {
  * Fixed steps (intro, result) are excluded from this list.
  */
 export function SortableStepsList() {
+  const messages = useMessages()
+  const duplicateSuffix = messages.visualBuilder.duplicateSuffix
   // Read state from store
   const steps = useVisualBuilderStore((state) => state.steps)
   const activeStepId = useVisualBuilderStore((state) => state.activeStepId)
@@ -67,7 +70,7 @@ export function SortableStepsList() {
           isActive={activeStepId === step.id}
           onSelect={() => setActiveStepId(step.id)}
           onDelete={() => deleteStep(step.id)}
-          onDuplicate={() => duplicateStep(step.id)}
+          onDuplicate={() => duplicateStep(step.id, duplicateSuffix)}
           disabled={step.isFixed}
           title={`${index + 1}. ${step.label}`}
           subtitle={getStepSubtitle(step)}

@@ -9,6 +9,7 @@
     },
     "actions": {
       "preview": "Preview",
+      "previewing": "Abrindo...",
       "publish": "Publicar",
       "publishing": "Publicando...",
       "update": "Atualizar"
@@ -91,6 +92,221 @@
     "leadGen": "Captura",
     "promo": "Promoção",
     "result": "Resultado"
+  },
+  "sidebar": {
+    "intro": "Introdução",
+    "steps": "Etapas",
+    "results": "Resultados",
+    "addStep": "Adicionar etapa",
+    "addOutcome": "Adicionar resultado",
+    "emptyResults": "Nenhum resultado criado",
+    "outcomeLabel": "Resultado"
+  },
+  "properties": {
+    "title": "Propriedades",
+    "emptyBlock": "Selecione um bloco para editar suas propriedades.",
+    "emptyBlocks": "Nenhum bloco adicionado",
+    "emptySelection": "Selecione uma etapa ou bloco para editar suas propriedades.",
+    "back": "Voltar",
+    "clickPreview": "Clique em um bloco na prévia para editar seu conteúdo.",
+    "blocksInStep": "Blocos nesta etapa",
+    "blocksInResult": "Blocos neste resultado",
+    "addBlock": "Adicionar bloco",
+    "deleteStep": "Excluir etapa"
+  },
+  "preview": {
+    "mobile": "Visualização mobile",
+    "desktop": "Visualização desktop",
+    "empty": "O preview aparecerá aqui",
+    "selectStep": "Selecione uma etapa para ver o preview",
+    "addOutcome": "Adicione um resultado para começar",
+    "selectOutcome": "Selecione um resultado para ver o preview",
+    "back": "Voltar"
+  },
+  "itemActions": {
+    "drag": "Arrastar {{title}}",
+    "optionsFor": "Opções para {{title}}",
+    "edit": "Editar",
+    "duplicate": "Duplicar",
+    "delete": "Excluir",
+    "dragBlock": "Arrastar bloco"
+  },
+  "blockControls": {
+    "reorder": "Reordenar",
+    "moveUp": "Subir",
+    "moveDown": "Descer",
+    "deleteBlock": "Excluir bloco",
+    "deleteBlockAria": "Excluir bloco {{name}}",
+    "deleteHint": "Esta ação não pode ser desfeita"
+  },
+  "textEditor": {
+    "content": "Conteúdo",
+    "bold": "Negrito",
+    "italic": "Itálico",
+    "underline": "Sublinhado",
+    "strikethrough": "Tachado",
+    "alignLeft": "Alinhar à esquerda",
+    "alignCenter": "Centralizar",
+    "alignRight": "Alinhar à direita"
+  },
+  "headerEditor": {
+    "titleLabel": "Título",
+    "titlePlaceholder": "Digite o título...",
+    "descriptionLabel": "Descrição",
+    "descriptionPlaceholder": "Digite a descrição..."
+  },
+  "mediaEditor": {
+    "mediaType": "Tipo de mídia",
+    "image": "Imagem",
+    "video": "Vídeo",
+    "imageSection": "Imagem",
+    "addMedia": "Adicionar mídia",
+    "replace": "Trocar",
+    "remove": "Remover",
+    "drop": "Arraste e solte sua imagem aqui",
+    "upload": "Fazer upload",
+    "videoUrlLabel": "URL do vídeo",
+    "videoUrlPlaceholder": "https://youtube.com/watch?v=...",
+    "previewAlt": "Preview"
+  },
+  "optionsEditor": {
+    "selectionTitle": "Tipo de seleção",
+    "single": "Única",
+    "multiple": "Múltipla",
+    "optionsTitle": "Opções de resposta",
+    "addOption": "Adicionar opção",
+    "outcomeLabel": "Resultado",
+    "createOutcome": "Criar resultado",
+    "unlinked": "Não vinculado",
+    "optionPlaceholder": "Opção {{index}}",
+    "dragOption": "Arrastar opção {{index}}",
+    "removeOption": "Remover opção {{index}}"
+  },
+  "fieldsEditor": {
+    "title": "Campos do formulário",
+    "addField": "Adicionar campo",
+    "typeLabel": "Tipo de campo",
+    "labelLabel": "Rótulo",
+    "labelPlaceholder": "Ex: Nome completo",
+    "requiredLabel": "Campo obrigatório",
+    "requiredTag": "Obrigatório",
+    "customPlaceholder": "Personalizar placeholder",
+    "defaultPlaceholder": "Padrão: \"{{value}}\"",
+    "dragField": "Arrastar campo {{index}}",
+    "removeField": "Remover campo {{index}}",
+    "fieldFallback": "Campo {{index}}",
+    "types": {
+      "text": "Texto",
+      "email": "Email",
+      "phone": "Telefone",
+      "number": "Número",
+      "textarea": "Texto longo"
+    },
+    "placeholders": {
+      "text": "Digite aqui...",
+      "email": "seu@email.com",
+      "phone": "(00) 00000-0000",
+      "number": "0",
+      "textarea": "Digite sua mensagem..."
+    }
+  },
+  "priceEditor": {
+    "title": "Opções de preço",
+    "addPrice": "Adicionar preço",
+    "dragPrice": "Arrastar preço {{index}}",
+    "removePrice": "Remover preço {{index}}",
+    "priceLabel": "Preço",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Ex: Plano PRO",
+    "prefixPlaceholder": "10% off",
+    "valuePlaceholder": "R$ 89,90",
+    "suffixPlaceholder": "à vista",
+    "prefixLabel": "Prefixo",
+    "valueLabel": "Valor",
+    "suffixLabel": "Sufixo",
+    "prefixAria": "Prefixo do preço",
+    "valueAria": "Valor",
+    "suffixAria": "Sufixo do preço",
+    "showOriginal": "Mostrar preço original (de/por)",
+    "originalLabel": "Preço original",
+    "originalPlaceholder": "R$ 129,90",
+    "originalHint": "Exibido como \"de R$ X por:\" acima do preço atual",
+    "highlightLabel": "Destacar",
+    "highlightTextLabel": "Texto do destaque",
+    "highlightPlaceholder": "MAIS POPULAR",
+    "redirectLabel": "URL de redirecionamento",
+    "redirectPlaceholder": "https://exemplo.com/checkout",
+    "priceFallbackTitle": "Preço {{index}}",
+    "priceFallbackValue": "R$ 0,00"
+  },
+  "buttonEditor": {
+    "textLabel": "Texto do botão",
+    "textPlaceholder": "Ex: Continuar",
+    "actionTitle": "Ação do botão",
+    "actionAria": "Ação do botão",
+    "actionNext": "Próxima",
+    "actionUrl": "Abrir URL",
+    "actionSelectedPrice": "Preço selecionado",
+    "urlLabel": "URL de destino",
+    "urlPlaceholder": "https://exemplo.com",
+    "infoNext": "O botão avançará para a próxima etapa do quiz.",
+    "infoSelectedPrice": "Redireciona para a URL do preço selecionado pelo usuário."
+  },
+  "bannerEditor": {
+    "title": "Tipo de banner",
+    "info": "Info",
+    "warning": "Atenção",
+    "danger": "Urgente",
+    "infoLabel": "Informação",
+    "warningLabel": "Atenção",
+    "dangerLabel": "Urgente",
+    "emojiLabel": "Emoji (opcional)",
+    "emojiPlaceholder": "Ex: 🔥",
+    "emojiHint": "Adicione um emoji para destacar a mensagem",
+    "messageLabel": "Mensagem do banner",
+    "messagePlaceholder": "Ex: Oferta válida por tempo limitado!"
+  },
+  "listEditor": {
+    "title": "Itens da lista",
+    "addItem": "Adicionar item",
+    "itemPlaceholder": "Item {{index}}",
+    "emojiPlaceholder": "✓",
+    "emojiAria": "Emoji do item {{index}}",
+    "removeItem": "Remover item {{index}}",
+    "dragItem": "Arrastar item {{index}}",
+    "hint": "Dica: Use emojis como ✓, •, ★ para personalizar os marcadores"
+  },
+  "stepSettings": {
+    "description": "Configure as opções de navegação desta etapa.",
+    "progressLabel": "Barra de progresso",
+    "progressHintIntro": "Exibe uma barra de progresso no topo",
+    "progressHint": "Exibe o progresso do quiz",
+    "backLabel": "Botão voltar",
+    "backHint": "Permite que o usuário volte para a etapa anterior",
+    "introHint": "A etapa de introdução é a primeira do quiz e não possui botão de voltar.",
+    "resultHint": "A tela de resultados é a etapa final do quiz. Configure cada resultado separadamente."
+  },
+  "stepConfig": {
+    "title": "Configurações"
+  },
+  "toast": {
+    "permissionError": "Você não tem permissão para editar este quiz.",
+    "loadError": "Erro ao carregar o quiz.",
+    "saveError": "Erro ao salvar alterações.",
+    "limitDraft": "Limite de rascunhos atingido. Exclua um rascunho ou faça upgrade.",
+    "limitPublish": "Limite de quizzes publicados atingido. Faça upgrade para publicar mais.",
+    "publishSuccess": "Quiz publicado com sucesso!",
+    "publishError": "Erro ao publicar o quiz. Tente novamente.",
+    "previewSaveError": "Erro ao salvar. Tente novamente."
+  },
+  "demo": {
+    "previewNotice": "Esta é uma página de demonstração. Crie um quiz para usar o Preview.",
+    "publishNotice": "Esta é uma página de demonstração. Crie um quiz para publicar.",
+    "goDashboard": "Ir para Dashboard"
+  },
+  "quiz": {
+    "defaultTitle": "Novo Quiz",
+    "defaultName": "Meu Quiz"
   },
   "loading": {
     "creatingQuiz": "Criando novo quiz...",

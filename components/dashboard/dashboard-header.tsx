@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { LanguageSelector } from '@/components/dashboard/language-selector';
 import {
   Sheet,
   SheetContent,
@@ -222,25 +223,28 @@ export function DashboardHeader() {
           </Button>
         </nav>
 
-        <Link
-          href={localizePathname("/dashboard/account", locale)}
-          className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted ml-auto md:ml-0"
-        >
-          <Avatar className="h-8 w-8 md:h-9 md:w-9">
-            <AvatarImage src={user?.photoURL ?? undefined} />
-            <AvatarFallback>{user?.email?.[0]?.toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div className="flex items-center gap-2">
-            <span className="hidden lg:inline text-sm font-medium">
-              {user?.displayName?.split(' ')[0] || common.navigation.account}
-            </span>
-            {isProUser && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 h-4 md:text-xs md:px-2 md:h-5">
-                Pro
-              </Badge>
-            )}
-          </div>
-        </Link>
+        <div className="ml-auto md:ml-0 flex items-center gap-2">
+          <LanguageSelector />
+          <Link
+            href={localizePathname("/dashboard/account", locale)}
+            className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-muted"
+          >
+            <Avatar className="h-8 w-8 md:h-9 md:w-9">
+              <AvatarImage src={user?.photoURL ?? undefined} />
+              <AvatarFallback>{user?.email?.[0]?.toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex items-center gap-2">
+              <span className="hidden lg:inline text-sm font-medium">
+                {user?.displayName?.split(' ')[0] || common.navigation.account}
+              </span>
+              {isProUser && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 h-4 md:text-xs md:px-2 md:h-5">
+                  Pro
+                </Badge>
+              )}
+            </div>
+          </Link>
+        </div>
       </div>
     </header>
   );

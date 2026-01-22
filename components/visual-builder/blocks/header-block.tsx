@@ -2,6 +2,7 @@
 
 import { HeaderConfig } from '@/types/blocks'
 import { cn } from '@/lib/utils'
+import { useMessages } from '@/lib/i18n/context'
 
 interface HeaderBlockPreviewProps {
   config: HeaderConfig
@@ -12,6 +13,8 @@ interface HeaderBlockPreviewProps {
  * HeaderBlockPreview - Renders header block with title and description
  */
 export function HeaderBlockPreview({ config, enabled }: HeaderBlockPreviewProps) {
+  const messages = useMessages()
+  const headerCopy = messages.visualBuilder.headerEditor
   const { title, description } = config as HeaderConfig
 
   return (
@@ -19,12 +22,16 @@ export function HeaderBlockPreview({ config, enabled }: HeaderBlockPreviewProps)
       {title ? (
         <h2 className="text-xl font-semibold text-foreground">{title}</h2>
       ) : (
-        <h2 className="text-xl font-semibold text-muted-foreground/50">Título do cabeçalho</h2>
+        <h2 className="text-xl font-semibold text-muted-foreground/50">
+          {headerCopy.titlePlaceholder}
+        </h2>
       )}
       {description ? (
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       ) : (
-        <p className="mt-1 text-sm text-muted-foreground/50">Descrição opcional</p>
+        <p className="mt-1 text-sm text-muted-foreground/50">
+          {headerCopy.descriptionPlaceholder}
+        </p>
       )}
     </div>
   )

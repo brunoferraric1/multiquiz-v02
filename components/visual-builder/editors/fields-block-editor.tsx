@@ -33,6 +33,8 @@ import {
 } from '@/components/ui/select'
 import { FieldsConfig, FieldItem, FieldType } from '@/types/blocks'
 import { Trash2, GripVertical, Type, Mail, Phone, Hash, AlignLeft } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
+import type { Messages } from '@/lib/i18n/messages'
 
 interface FieldsBlockEditorProps {
   config: FieldsConfig
@@ -47,22 +49,7 @@ const fieldTypeIcons: Record<FieldType, React.ReactNode> = {
   textarea: <AlignLeft className="w-4 h-4" />,
 }
 
-const fieldTypeLabels: Record<FieldType, string> = {
-  text: 'Texto',
-  email: 'Email',
-  phone: 'Telefone',
-  number: 'Número',
-  textarea: 'Texto longo',
-}
-
-// Default placeholders for each field type
-const defaultPlaceholders: Record<FieldType, string> = {
-  text: 'Digite aqui...',
-  email: 'seu@email.com',
-  phone: '(00) 00000-0000',
-  number: '0',
-  textarea: 'Digite sua mensagem...',
-}
+type FieldsCopy = Messages['visualBuilder']['fieldsEditor']
 
 interface SortableFieldItemProps {
   field: FieldItem
@@ -71,6 +58,9 @@ interface SortableFieldItemProps {
   onToggleExpand: () => void
   onUpdate: (updates: Partial<FieldItem>) => void
   onDelete: () => void
+  fieldsCopy: FieldsCopy
+  fieldTypeLabels: Record<FieldType, string>
+  defaultPlaceholders: Record<FieldType, string>
 }
 
 function SortableFieldItem({
@@ -80,6 +70,9 @@ function SortableFieldItem({
   onToggleExpand,
   onUpdate,
   onDelete,
+  fieldsCopy,
+  fieldTypeLabels,
+  defaultPlaceholders,
 }: SortableFieldItemProps) {
   const {
     attributes,
@@ -110,7 +103,7 @@ function SortableFieldItem({
     >
       {/* Field header */}
       <div
-        className="flex items-center gap-2 p-3 bg-muted/50 cursor-pointer"
+        className="flex items-center gap-2 p-3 bg-muted/50 cursor-[var(--cursor-interactive)]"
         onClick={onToggleExpand}
       >
         <button
@@ -119,16 +112,16 @@ function SortableFieldItem({
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          aria-label={`Arrastar campo ${index + 1}`}
+          aria-label={fieldsCopy.dragField.replace('{{index}}', String(index + 1))}
         >
           <GripVertical className="w-4 h-4" />
         </button>
         <span className="text-muted-foreground">{fieldTypeIcons[field.type]}</span>
         <span className="flex-1 text-sm font-medium truncate">
-          {field.label || `Campo ${index + 1}`}
+          {field.label || fieldsCopy.fieldFallback.replace('{{index}}', String(index + 1))}
         </span>
         {field.required && (
-          <span className="text-xs text-primary">Obrigatório</span>
+          <span className="text-xs text-primary">{fieldsCopy.requiredTag}</span>
         )}
         <Button
           type="button"
@@ -139,7 +132,7 @@ function SortableFieldItem({
             onDelete()
           }}
           className="h-8 w-8 text-muted-foreground hover:text-destructive"
-          aria-label={`Remover campo ${index + 1}`}
+          aria-label={fieldsCopy.removeField.replace('{{index}}', String(index + 1))}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -150,7 +143,7 @@ function SortableFieldItem({
         <div className="p-3 space-y-4 border-t">
           {/* Type selector - first item */}
           <div className="space-y-2">
-            <Label htmlFor={`field-type-${field.id}`}>Tipo de campo</Label>
+            <Label htmlFor={`field-type-${field.id}`}>{fieldsCopy.typeLabel}</Label>
             <Select
               value={field.type}
               onValueChange={(type: FieldType) => {
@@ -176,18 +169,18 @@ function SortableFieldItem({
 
           {/* Label */}
           <div className="space-y-2">
-            <Label htmlFor={`field-label-${field.id}`}>Rótulo</Label>
+            <Label htmlFor={`field-label-${field.id}`}>{fieldsCopy.labelLabel}</Label>
             <Input
               id={`field-label-${field.id}`}
               value={field.label}
               onChange={(e) => onUpdate({ label: e.target.value })}
-              placeholder="Ex: Nome completo"
+              placeholder={fieldsCopy.labelPlaceholder}
             />
           </div>
 
           {/* Required toggle */}
           <div className="flex items-center justify-between">
-            <Label htmlFor={`field-required-${field.id}`}>Campo obrigatório</Label>
+            <Label htmlFor={`field-required-${field.id}`}>{fieldsCopy.requiredLabel}</Label>
             <Switch
               id={`field-required-${field.id}`}
               checked={field.required || false}
@@ -199,7 +192,7 @@ function SortableFieldItem({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor={`field-custom-placeholder-${field.id}`}>
-                Personalizar placeholder
+                {fieldsCopy.customPlaceholder}
               </Label>
               <Switch
                 id={`field-custom-placeholder-${field.id}`}
@@ -225,7 +218,7 @@ function SortableFieldItem({
             )}
             {!hasCustomPlaceholder && (
               <p className="text-xs text-muted-foreground">
-                Padrão: &quot;{effectivePlaceholder}&quot;
+                {fieldsCopy.defaultPlaceholder.replace('{{value}}', effectivePlaceholder)}
               </p>
             )}
           </div>
@@ -236,6 +229,22 @@ function SortableFieldItem({
 }
 
 export function FieldsBlockEditor({ config, onChange }: FieldsBlockEditorProps) {
+  const messages = useMessages()
+  const fieldsCopy = messages.visualBuilder.fieldsEditor
+  const fieldTypeLabels: Record<FieldType, string> = {
+    text: fieldsCopy.types.text,
+    email: fieldsCopy.types.email,
+    phone: fieldsCopy.types.phone,
+    number: fieldsCopy.types.number,
+    textarea: fieldsCopy.types.textarea,
+  }
+  const defaultPlaceholders: Record<FieldType, string> = {
+    text: fieldsCopy.placeholders.text,
+    email: fieldsCopy.placeholders.email,
+    phone: fieldsCopy.placeholders.phone,
+    number: fieldsCopy.placeholders.number,
+    textarea: fieldsCopy.placeholders.textarea,
+  }
   const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null)
 
   const sensors = useSensors(
@@ -294,7 +303,7 @@ export function FieldsBlockEditor({ config, onChange }: FieldsBlockEditorProps) 
 
   return (
     <div className="space-y-4" data-testid="fields-block-editor">
-      <SectionTitle>Campos do formulário</SectionTitle>
+      <SectionTitle>{fieldsCopy.title}</SectionTitle>
 
       {/* Fields list with drag and drop */}
       <DndContext
@@ -318,6 +327,9 @@ export function FieldsBlockEditor({ config, onChange }: FieldsBlockEditorProps) 
                 }
                 onUpdate={(updates) => handleUpdateField(field.id, updates)}
                 onDelete={() => handleDeleteField(field.id)}
+                fieldsCopy={fieldsCopy}
+                fieldTypeLabels={fieldTypeLabels}
+                defaultPlaceholders={defaultPlaceholders}
               />
             ))}
 
@@ -327,7 +339,7 @@ export function FieldsBlockEditor({ config, onChange }: FieldsBlockEditorProps) 
               onClick={handleAddField}
               data-testid="add-field-button"
             >
-              Adicionar campo
+              {fieldsCopy.addField}
             </GhostAddButton>
           </div>
         </SortableContext>

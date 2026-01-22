@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { Plus, Play, HelpCircle, Users, Gift, BarChart3, Trash2 } from 'lucide-react'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import { SectionTitle } from '@/components/ui/section-title'
+import { useMessages } from '@/lib/i18n/context'
 
 export type StepType = 'intro' | 'question' | 'lead-gen' | 'promo' | 'result'
 
@@ -53,6 +54,8 @@ export function BuilderSidebar({
   onDeleteStep,
   onDeleteOutcome,
 }: BuilderSidebarProps) {
+  const messages = useMessages()
+  const copy = messages.visualBuilder
   const regularSteps = steps.filter(s => s.type !== 'result')
   const resultStep = steps.find(s => s.type === 'result')
   const isResultActive = activeStepId === resultStep?.id
@@ -66,9 +69,9 @@ export function BuilderSidebar({
       <div className="p-3 border-b">
         <GhostAddButton
           onClick={onAddStep}
-          aria-label="Adicionar etapa"
+          aria-label={copy.sidebar.addStep}
         >
-          Adicionar etapa
+          {copy.sidebar.addStep}
         </GhostAddButton>
       </div>
 
@@ -93,7 +96,7 @@ export function BuilderSidebar({
                   }
                 }}
                 className={cn(
-                  'group w-full flex items-start gap-3 p-2.5 rounded-lg transition-all text-left cursor-pointer',
+                  'group w-full flex items-start gap-3 p-2.5 rounded-lg transition-all text-left',
                   isActive
                     ? 'bg-primary/10 border border-primary/30'
                     : 'hover:bg-muted/60 border border-transparent'
@@ -136,7 +139,7 @@ export function BuilderSidebar({
                       onDeleteStep?.(step.id)
                     }}
                     className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label={`Delete step ${step.label}`}
+                    aria-label={`${copy.itemActions.delete} ${step.label}`}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -152,11 +155,11 @@ export function BuilderSidebar({
         {/* Results section */}
         <div data-testid="results-section" className="p-2">
           <div className="flex items-center justify-between px-2.5 mb-2">
-            <SectionTitle className="mb-0">Resultados</SectionTitle>
+            <SectionTitle className="mb-0">{copy.sidebar.results}</SectionTitle>
             <button
               onClick={onAddOutcome}
               className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded"
-              aria-label="Add outcome"
+              aria-label={copy.sidebar.addOutcome}
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
@@ -184,16 +187,16 @@ export function BuilderSidebar({
               >
                 {stepTypeIcons.result}
               </div>
-              <span
-                className={cn(
-                  'text-sm',
-                  isResultActive ? 'text-primary font-medium' : 'text-muted-foreground'
-                )}
-              >
-                Nenhum resultado criado
-              </span>
-            </button>
-          ) : (
+                <span
+                  className={cn(
+                    'text-sm',
+                    isResultActive ? 'text-primary font-medium' : 'text-muted-foreground'
+                  )}
+                >
+                  {copy.sidebar.emptyResults}
+                </span>
+              </button>
+            ) : (
             <div className="space-y-1">
               {outcomes.map((outcome, index) => {
                 const isOutcomeActive = isResultActive && selectedOutcomeId === outcome.id
@@ -217,7 +220,7 @@ export function BuilderSidebar({
                       }
                     }}
                     className={cn(
-                      'group w-full flex items-start gap-3 p-2.5 rounded-lg transition-all text-left cursor-pointer',
+                      'group w-full flex items-start gap-3 p-2.5 rounded-lg transition-all text-left',
                       isOutcomeActive
                         ? 'bg-primary/10 border border-primary/30'
                         : 'hover:bg-muted/60 border border-transparent'
@@ -240,7 +243,7 @@ export function BuilderSidebar({
                           isOutcomeActive ? 'text-primary font-medium' : 'text-foreground'
                         )}
                       >
-                        {outcome.name || `Resultado ${index + 1}`}
+                        {outcome.name || `${copy.sidebar.outcomeLabel} ${index + 1}`}
                       </div>
                     </div>
                     {outcomes.length > 1 && (
@@ -250,7 +253,7 @@ export function BuilderSidebar({
                           onDeleteOutcome?.(outcome.id)
                         }}
                         className="p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label={`Delete ${outcome.name || `Resultado ${index + 1}`}`}
+                        aria-label={`${copy.itemActions.delete} ${outcome.name || `${copy.sidebar.outcomeLabel} ${index + 1}`}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

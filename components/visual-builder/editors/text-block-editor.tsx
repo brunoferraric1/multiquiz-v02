@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
+import { useMessages } from '@/lib/i18n/context'
 
 interface TextBlockEditorProps {
   config: TextConfig
@@ -25,6 +26,8 @@ interface TextBlockEditorProps {
 }
 
 export function TextBlockEditor({ config, onChange }: TextBlockEditorProps) {
+  const messages = useMessages()
+  const textCopy = messages.visualBuilder.textEditor
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -51,7 +54,7 @@ export function TextBlockEditor({ config, onChange }: TextBlockEditorProps) {
     editorProps: {
       attributes: {
         class:
-          'min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 prose prose-sm max-w-none dark:prose-invert',
+          'min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-[var(--cursor-not-allowed)] disabled:opacity-50 prose prose-sm max-w-none dark:prose-invert',
       },
     },
   })
@@ -70,70 +73,70 @@ export function TextBlockEditor({ config, onChange }: TextBlockEditorProps) {
   return (
     <div className="space-y-4" data-testid="text-block-editor">
       <div>
-        <SectionTitle>Conteúdo</SectionTitle>
+        <SectionTitle>{textCopy.content}</SectionTitle>
 
         <div className="space-y-2">
           {/* Toolbar */}
           <div className="flex flex-wrap items-center gap-1 p-1 border rounded-md bg-muted/30">
-          {/* Text formatting */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            isActive={editor.isActive('bold')}
-            title="Negrito"
-          >
-            <Bold className="w-4 h-4" />
-          </ToolbarButton>
+            {/* Text formatting */}
+            <ToolbarButton
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              isActive={editor.isActive('bold')}
+              title={textCopy.bold}
+            >
+              <Bold className="w-4 h-4" />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            isActive={editor.isActive('italic')}
-            title="Itálico"
-          >
-            <Italic className="w-4 h-4" />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              isActive={editor.isActive('italic')}
+              title={textCopy.italic}
+            >
+              <Italic className="w-4 h-4" />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            isActive={editor.isActive('underline')}
-            title="Sublinhado"
-          >
-            <UnderlineIcon className="w-4 h-4" />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().toggleUnderline().run()}
+              isActive={editor.isActive('underline')}
+              title={textCopy.underline}
+            >
+              <UnderlineIcon className="w-4 h-4" />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            isActive={editor.isActive('strike')}
-            title="Tachado"
-          >
-            <Strikethrough className="w-4 h-4" />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().toggleStrike().run()}
+              isActive={editor.isActive('strike')}
+              title={textCopy.strikethrough}
+            >
+              <Strikethrough className="w-4 h-4" />
+            </ToolbarButton>
 
-          <ToolbarDivider />
+            <ToolbarDivider />
 
-          {/* Alignment */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign('left').run()}
-            isActive={editor.isActive({ textAlign: 'left' })}
-            title="Alinhar à esquerda"
-          >
-            <AlignLeft className="w-4 h-4" />
-          </ToolbarButton>
+            {/* Alignment */}
+            <ToolbarButton
+              onClick={() => editor.chain().focus().setTextAlign('left').run()}
+              isActive={editor.isActive({ textAlign: 'left' })}
+              title={textCopy.alignLeft}
+            >
+              <AlignLeft className="w-4 h-4" />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign('center').run()}
-            isActive={editor.isActive({ textAlign: 'center' })}
-            title="Centralizar"
-          >
-            <AlignCenter className="w-4 h-4" />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().setTextAlign('center').run()}
+              isActive={editor.isActive({ textAlign: 'center' })}
+              title={textCopy.alignCenter}
+            >
+              <AlignCenter className="w-4 h-4" />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign('right').run()}
-            isActive={editor.isActive({ textAlign: 'right' })}
-            title="Alinhar à direita"
-          >
-            <AlignRight className="w-4 h-4" />
-          </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().setTextAlign('right').run()}
+              isActive={editor.isActive({ textAlign: 'right' })}
+              title={textCopy.alignRight}
+            >
+              <AlignRight className="w-4 h-4" />
+            </ToolbarButton>
           </div>
 
           {/* Editor */}

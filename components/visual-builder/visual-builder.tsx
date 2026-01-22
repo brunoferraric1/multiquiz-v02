@@ -5,6 +5,7 @@ import { BuilderHeaderNav, HeaderTab } from './builder-header-nav'
 import { BuilderSidebar, Step, Outcome } from './builder-sidebar'
 import { BuilderPreview } from './builder-preview'
 import { BuilderProperties } from './builder-properties'
+import { useMessages } from '@/lib/i18n/context'
 
 export type { HeaderTab } from './builder-header-nav'
 export type { Step, Outcome, StepType } from './builder-sidebar'
@@ -26,7 +27,7 @@ interface VisualBuilderProps {
 }
 
 export function VisualBuilder({
-  quizName = 'Meu Quiz',
+  quizName,
   steps = [],
   outcomes = [],
   activeStepId,
@@ -40,6 +41,8 @@ export function VisualBuilder({
   onAddStep,
   onAddOutcome,
 }: VisualBuilderProps) {
+  const messages = useMessages()
+  const copy = messages.visualBuilder
   const [activeTab, setActiveTab] = useState<HeaderTab>('editar')
   const [device, setDevice] = useState<'mobile' | 'desktop'>('mobile')
 
@@ -50,13 +53,14 @@ export function VisualBuilder({
 
   // Get the active step title for properties panel
   const activeStep = steps.find(s => s.id === activeStepId)
-  const propertiesTitle = activeStep?.label || 'Propriedades'
+  const propertiesTitle = activeStep?.label || copy.properties.title
+  const resolvedQuizName = quizName ?? copy.quiz.defaultName
 
   return (
     <div data-testid="visual-builder" className="h-screen flex flex-col bg-muted overflow-hidden">
       {/* HEADER */}
       <BuilderHeaderNav
-        quizName={quizName}
+        quizName={resolvedQuizName}
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onBack={onBack}

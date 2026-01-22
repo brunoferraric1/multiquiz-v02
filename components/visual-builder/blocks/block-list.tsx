@@ -3,6 +3,7 @@
 import { useState, useEffect, useId } from 'react'
 import { Block } from '@/types/blocks'
 import { cn } from '@/lib/utils'
+import { useMessages } from '@/lib/i18n/context'
 import { BlockRenderer } from './block-renderer'
 import { InsertionPoint } from './insertion-point'
 import {
@@ -105,6 +106,8 @@ export function BlockList({
   onReorderBlocks,
   className,
 }: BlockListProps) {
+  const messages = useMessages()
+  const copy = messages.visualBuilder
   // Use a stable ID for DnD context to avoid hydration mismatch
   const dndId = useId()
   const [isMounted, setIsMounted] = useState(false)
@@ -140,7 +143,7 @@ export function BlockList({
   if (blocks.length === 0) {
     return (
       <div className={cn('flex flex-col items-center justify-center py-12', className)}>
-        <p className="text-sm text-muted-foreground">Nenhum bloco adicionado</p>
+        <p className="text-sm text-muted-foreground">{copy.properties.emptyBlocks}</p>
         {onInsertBlock && (
           <InsertionPoint
             index={0}

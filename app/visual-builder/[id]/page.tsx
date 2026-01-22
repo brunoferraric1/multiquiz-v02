@@ -18,50 +18,21 @@ import { ConnectedVisualBuilder } from '@/components/visual-builder'
 import { PublishSuccessModal } from '@/components/builder/publish-success-modal'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useLocale, useMessages } from '@/lib/i18n/context'
+import { localizePathname } from '@/lib/i18n/paths'
 import type { Quiz, QuizDraft } from '@/types'
 
 /**
  * Create default visual builder data for a new quiz
  */
-function createDefaultVisualBuilderData() {
-  const initialSteps: Step[] = [
-    {
-      id: 'intro',
-      type: 'intro',
-      label: 'Intro',
-      isFixed: true,
-      blocks: getDefaultBlocksForStepType('intro'),
-      settings: { showProgress: false, allowBack: false },
-    },
-    {
-      id: `question-${Date.now()}`,
-      type: 'question',
-      label: 'P1',
-      blocks: getDefaultBlocksForStepType('question'),
-      settings: { showProgress: true, allowBack: true },
-    },
-    {
-      id: 'result',
-      type: 'result',
-      label: 'Resultado',
-      isFixed: true,
-      blocks: [],
-      settings: { showProgress: false, allowBack: false },
-    },
-  ]
-
-  const initialOutcomes: VBOutcome[] = [
-    { id: `outcome-${Date.now()}`, name: 'Resultado 1', blocks: getDefaultOutcomeBlocks() },
-  ]
-
-  return { steps: initialSteps, outcomes: initialOutcomes }
-}
-
 function VisualBuilderEditor() {
   const { id } = useParams()
   const router = useRouter()
   const queryClient = useQueryClient()
   const { user } = useAuth()
+  const locale = useLocale()
+  const messages = useMessages()
+  const copy = messages.visualBuilder
 
   // Visual builder store actions
   const initialize = useVisualBuilderStore((state) => state.initialize)
@@ -78,6 +49,44 @@ function VisualBuilderEditor() {
   const quizRef = useRef<QuizDraft | null>(null)
   const checkedRef = useRef(false)
 
+  const createDefaultVisualBuilderData = useCallback(() => {
+    const initialSteps: Step[] = [
+      {
+        id: 'intro',
+        type: 'intro',
+        label: copy.stepLabels.intro,
+        isFixed: true,
+        blocks: getDefaultBlocksForStepType('intro', copy),
+        settings: { showProgress: false, allowBack: false },
+      },
+      {
+        id: `question-${Date.now()}`,
+        type: 'question',
+        label: `${copy.stepLabels.question} 1`,
+        blocks: getDefaultBlocksForStepType('question', copy),
+        settings: { showProgress: true, allowBack: true },
+      },
+      {
+        id: 'result',
+        type: 'result',
+        label: copy.stepLabels.result,
+        isFixed: true,
+        blocks: [],
+        settings: { showProgress: false, allowBack: false },
+      },
+    ]
+
+    const initialOutcomes: VBOutcome[] = [
+      {
+        id: `outcome-${Date.now()}`,
+        name: `${copy.sidebar.outcomeLabel} 1`,
+        blocks: getDefaultOutcomeBlocks(copy),
+      },
+    ]
+
+    return { steps: initialSteps, outcomes: initialOutcomes }
+  }, [copy])
+
   // Check if quiz exists and load it, or create new
   useEffect(() => {
     if (!user || !id || checkedRef.current) return
@@ -92,8 +101,8 @@ function VisualBuilderEditor() {
         if (existingQuiz) {
           // Quiz exists - check ownership and load it
           if (existingQuiz.ownerId !== user.uid) {
-            toast.error('Você não tem permissão para editar este quiz.')
-            router.push('/dashboard')
+            toast.error(copy.toast.permissionError)
+            router.push(localizePathname('/dashboard', locale))
             return
           }
 
@@ -165,15 +174,15 @@ function VisualBuilderEditor() {
 
         // Actual error
         console.error('[VisualBuilder] Error loading quiz:', err)
-        toast.error('Erro ao carregar o quiz.')
-        router.push('/dashboard')
+        toast.error(copy.toast.loadError)
+        router.push(localizePathname('/dashboard', locale))
       } finally {
         setIsCheckingQuiz(false)
       }
     }
 
     checkAndLoadQuiz()
-  }, [user, id, initialize, router])
+  }, [copy.toast.loadError, copy.toast.permissionError, createDefaultVisualBuilderData, id, initialize, locale, router, user])
 
   // Reset store on unmount
   useEffect(() => {
@@ -200,11 +209,11 @@ function VisualBuilderEditor() {
     },
     onSaveError: (err) => {
       console.error('[VisualBuilder] Auto-save error:', err)
-      toast.error('Erro ao salvar alterações.')
+      toast.error(copy.toast.saveError)
     },
     onLimitError: () => {
-      toast.error('Limite de rascunhos atingido. Exclua um rascunho ou faça upgrade.')
-      router.push('/dashboard')
+      toast.error(copy.toast.limitDraft)
+      router.push(localizePathname('/dashboard', locale))
     },
   })
 
@@ -214,8 +223,8 @@ function VisualBuilderEditor() {
     // Force save before navigating away
     await forceSave()
     console.log('[VisualBuilder] handleBack - save complete, navigating to dashboard')
-    router.push('/dashboard')
-  }, [forceSave, router])
+    router.push(localizePathname('/dashboard', locale))
+  }, [forceSave, locale, router])
 
   // Handler: Preview quiz
   const handlePreview = useCallback(async () => {
@@ -229,14 +238,14 @@ function VisualBuilderEditor() {
       await forceSave()
       console.log('[VisualBuilder] handlePreview - save complete, opening preview')
       // Open quiz preview in new tab
-      window.open(`/quiz/${id}?preview=true`, '_blank')
+      window.open(localizePathname(`/quiz/${id}?preview=true`, locale), '_blank')
     } catch (err) {
       console.error('[VisualBuilder] Error saving before preview:', err)
-      toast.error('Erro ao salvar. Tente novamente.')
+      toast.error(copy.toast.previewSaveError)
     } finally {
       setIsSavingForPreview(false)
     }
-  }, [id, forceSave, isSavingForPreview])
+  }, [copy.toast.previewSaveError, forceSave, id, isSavingForPreview, locale])
 
   // Handler: Publish quiz
   const handlePublish = useCallback(async () => {
@@ -252,7 +261,7 @@ function VisualBuilderEditor() {
       const result = await QuizService.publishQuiz(id as string, user.uid)
 
       if (result.status === 'limit-reached') {
-        toast.error('Limite de quizzes publicados atingido. Faça upgrade para publicar mais.')
+        toast.error(copy.toast.limitPublish)
         return
       }
 
@@ -276,11 +285,11 @@ function VisualBuilderEditor() {
       setShowPublishModal(true)
     } catch (err) {
       console.error('[VisualBuilder] Publish error:', err)
-      toast.error('Erro ao publicar o quiz. Tente novamente.')
+      toast.error(copy.toast.publishError)
     } finally {
       setIsPublishing(false)
     }
-  }, [id, user?.uid, isPublishing, forceSave, queryClient])
+  }, [copy.toast.limitPublish, copy.toast.publishError, forceSave, id, isPublishing, queryClient, user?.uid])
 
   // Loading state - show while checking quiz OR before initialization
   if (isCheckingQuiz || !isInitialized) {
@@ -289,7 +298,7 @@ function VisualBuilderEditor() {
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">
-            {isNewQuiz ? 'Criando novo quiz...' : 'Carregando quiz...'}
+            {isNewQuiz ? copy.loading.creatingQuiz : copy.loading.loadingQuiz}
           </p>
         </div>
       </div>
@@ -297,7 +306,7 @@ function VisualBuilderEditor() {
   }
 
   // Get quiz name from ref (works for both new and existing quizzes)
-  const quizTitle = quizRef.current?.title || 'Novo Quiz'
+  const quizTitle = quizRef.current?.title || copy.quiz.defaultTitle
 
   return (
     <>

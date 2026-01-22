@@ -9,29 +9,8 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
+import { useMessages } from '@/lib/i18n/context'
 import { HelpCircle, Users, Gift } from 'lucide-react'
-
-// Available step types for adding (excludes intro and result which are fixed)
-const stepTypeOptions: { type: StepType; label: string; description: string; icon: React.ReactNode }[] = [
-  {
-    type: 'question',
-    label: 'Pergunta',
-    description: 'Adicione uma pergunta com opções de resposta',
-    icon: <HelpCircle className="w-5 h-5" />,
-  },
-  {
-    type: 'lead-gen',
-    label: 'Captura de Leads',
-    description: 'Colete informações do usuário (nome, email, etc.)',
-    icon: <Users className="w-5 h-5" />,
-  },
-  {
-    type: 'promo',
-    label: 'Promoção',
-    description: 'Adicione uma oferta ou conteúdo promocional',
-    icon: <Gift className="w-5 h-5" />,
-  },
-]
 
 /**
  * AddStepSheet - Sheet component for selecting and adding new step types
@@ -41,6 +20,8 @@ const stepTypeOptions: { type: StepType; label: string; description: string; ico
  * Adds the selected step type to the quiz and closes the sheet.
  */
 export function AddStepSheet() {
+  const messages = useMessages()
+  const addStepCopy = messages.visualBuilder.addStep
   // Read state from store
   const isOpen = useVisualBuilderStore((state) => state.isAddStepSheetOpen)
   const steps = useVisualBuilderStore((state) => state.steps)
@@ -49,8 +30,29 @@ export function AddStepSheet() {
   const setAddStepSheetOpen = useVisualBuilderStore((state) => state.setAddStepSheetOpen)
   const addStep = useVisualBuilderStore((state) => state.addStep)
 
+  const stepTypeOptions: { type: StepType; label: string; description: string; icon: React.ReactNode }[] = [
+    {
+      type: 'question',
+      label: addStepCopy.types.question.label,
+      description: addStepCopy.types.question.description,
+      icon: <HelpCircle className="w-5 h-5" />,
+    },
+    {
+      type: 'lead-gen',
+      label: addStepCopy.types.leadGen.label,
+      description: addStepCopy.types.leadGen.description,
+      icon: <Users className="w-5 h-5" />,
+    },
+    {
+      type: 'promo',
+      label: addStepCopy.types.promo.label,
+      description: addStepCopy.types.promo.description,
+      icon: <Gift className="w-5 h-5" />,
+    },
+  ]
+
   const handleAddStep = (type: StepType) => {
-    const newStep = createStep(type, steps)
+    const newStep = createStep(type, steps, messages.visualBuilder)
     addStep(newStep)
     // Note: addStep already closes the sheet and selects the new step
   }
@@ -63,10 +65,8 @@ export function AddStepSheet() {
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetContent side="bottom">
         <SheetHeader>
-          <SheetTitle>Adicionar etapa</SheetTitle>
-          <SheetDescription>
-            Escolha o tipo de etapa que você deseja adicionar ao seu quiz
-          </SheetDescription>
+          <SheetTitle>{addStepCopy.title}</SheetTitle>
+          <SheetDescription>{addStepCopy.description}</SheetDescription>
         </SheetHeader>
 
         <div className="grid gap-3 mt-6">

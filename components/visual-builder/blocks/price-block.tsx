@@ -3,6 +3,7 @@
 import { PriceConfig, PriceItem } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { Circle, Square } from 'lucide-react'
+import { useMessages } from '@/lib/i18n/context'
 
 interface PriceBlockPreviewProps {
   config: PriceConfig
@@ -13,9 +14,19 @@ interface PriceCardProps {
   price: PriceItem
   selectionType: 'single' | 'multiple'
   showSelection: boolean
+  fallbackTitle: string
+  fallbackValue: string
+  originalLabel: string
 }
 
-function PriceCard({ price, selectionType, showSelection }: PriceCardProps) {
+function PriceCard({
+  price,
+  selectionType,
+  showSelection,
+  fallbackTitle,
+  fallbackValue,
+  originalLabel,
+}: PriceCardProps) {
   const hasHighlight = price.showHighlight && !!price.highlightText
   const hasOriginalPrice = price.showOriginalPrice && !!price.originalPrice
 
@@ -27,7 +38,7 @@ function PriceCard({ price, selectionType, showSelection }: PriceCardProps) {
         'shadow-sm hover:shadow-md',
         'hover:scale-[1.01] hover:border-primary/30',
         'transition-all duration-200 ease-out',
-        'cursor-pointer',
+        'cursor-[var(--cursor-interactive)]',
         hasHighlight && 'ring-2 ring-primary'
       )}
     >
@@ -52,7 +63,7 @@ function PriceCard({ price, selectionType, showSelection }: PriceCardProps) {
             </div>
           )}
           <span className="text-base font-medium text-foreground truncate">
-            {price.title || 'Plano'}
+            {price.title || fallbackTitle}
           </span>
         </div>
 
@@ -66,15 +77,14 @@ function PriceCard({ price, selectionType, showSelection }: PriceCardProps) {
           {/* Original price with "de X por:" format */}
           {hasOriginalPrice && (
             <p className="text-sm text-muted-foreground">
-              <span>de </span>
+              <span>{originalLabel}: </span>
               <span className="line-through">{price.originalPrice}</span>
-              <span> por:</span>
             </p>
           )}
 
           {/* Main price */}
           <p className="text-xl font-bold text-foreground">
-            {price.value || 'R$ 0,00'}
+            {price.value || fallbackValue}
           </p>
 
           {/* Suffix (e.g., "à vista") */}
@@ -92,6 +102,8 @@ function PriceCard({ price, selectionType, showSelection }: PriceCardProps) {
  * Supports multiple price options like a pricing table
  */
 export function PriceBlockPreview({ config, enabled }: PriceBlockPreviewProps) {
+  const messages = useMessages()
+  const priceCopy = messages.visualBuilder.priceEditor
   const items = config.items || []
   const selectionType = config.selectionType || 'single'
   // Auto show selection only when there are 2+ items
@@ -109,9 +121,13 @@ export function PriceBlockPreview({ config, enabled }: PriceBlockPreviewProps) {
             >
               <div className="flex items-center gap-3">
                 <Circle className="w-5 h-5 text-muted-foreground/50" />
-                <span className="text-sm text-muted-foreground/50">Plano {i}</span>
+                <span className="text-sm text-muted-foreground/50">
+                  {priceCopy.priceFallbackTitle.replace('{{index}}', String(i))}
+                </span>
               </div>
-              <span className="text-lg font-bold text-muted-foreground/50">R$ 0,00</span>
+              <span className="text-lg font-bold text-muted-foreground/50">
+                {priceCopy.priceFallbackValue}
+              </span>
             </div>
           ))}
         </div>
@@ -122,12 +138,15 @@ export function PriceBlockPreview({ config, enabled }: PriceBlockPreviewProps) {
   return (
     <div className={cn('p-4', !enabled && 'opacity-50')}>
       <div className="space-y-3">
-        {items.map((price) => (
+        {items.map((price, index) => (
           <PriceCard
             key={price.id}
             price={price}
             selectionType={selectionType}
             showSelection={showSelection}
+            fallbackTitle={priceCopy.priceFallbackTitle.replace('{{index}}', String(index + 1))}
+            fallbackValue={priceCopy.priceFallbackValue}
+            originalLabel={priceCopy.originalLabel}
           />
         ))}
       </div>

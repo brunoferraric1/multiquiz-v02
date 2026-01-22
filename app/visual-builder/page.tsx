@@ -12,11 +12,16 @@ import {
 } from '@/store/visual-builder-store'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useLocale, useMessages } from '@/lib/i18n/context'
+import { localizePathname } from '@/lib/i18n/paths'
 
 export default function VisualBuilderPage() {
   const router = useRouter()
   const initialize = useVisualBuilderStore((state) => state.initialize)
   const [isInitialized, setIsInitialized] = useState(false)
+  const locale = useLocale()
+  const messages = useMessages()
+  const copy = messages.visualBuilder
 
   // Initialize store with demo data on mount (client-side only)
   useEffect(() => {
@@ -26,40 +31,38 @@ export default function VisualBuilderPage() {
       {
         id: 'intro',
         type: 'intro',
-        label: 'Intro',
+        label: copy.stepLabels.intro,
         isFixed: true,
-        subtitle: 'Bem-vindo ao Quiz!',
-        blocks: getDefaultBlocksForStepType('intro'),
+        subtitle: copy.defaults.introTitle,
+        blocks: getDefaultBlocksForStepType('intro', copy),
         settings: { showProgress: false, allowBack: false },
       },
       {
         id: 'q1',
         type: 'question',
-        label: 'P1',
-        subtitle: 'Qual seu tipo de pele?',
-        blocks: getDefaultBlocksForStepType('question'),
+        label: `${copy.stepLabels.question} 1`,
+        blocks: getDefaultBlocksForStepType('question', copy),
         settings: { showProgress: true, allowBack: true },
       },
       {
         id: 'q2',
         type: 'question',
-        label: 'P2',
-        subtitle: 'Com que frequência você hidrata?',
-        blocks: getDefaultBlocksForStepType('question'),
+        label: `${copy.stepLabels.question} 2`,
+        blocks: getDefaultBlocksForStepType('question', copy),
         settings: { showProgress: true, allowBack: true },
       },
       {
         id: 'lead',
         type: 'lead-gen',
-        label: 'Captura',
-        subtitle: 'Deixe seus dados',
-        blocks: getDefaultBlocksForStepType('lead-gen'),
+        label: copy.stepLabels.leadGen,
+        subtitle: copy.defaults.leadGenTitle,
+        blocks: getDefaultBlocksForStepType('lead-gen', copy),
         settings: { showProgress: true, allowBack: true },
       },
       {
         id: 'result',
         type: 'result',
-        label: 'Resultado',
+        label: copy.stepLabels.result,
         isFixed: true,
         blocks: [],
         settings: { showProgress: false, allowBack: false },
@@ -67,13 +70,13 @@ export default function VisualBuilderPage() {
     ]
 
     const initialOutcomes: Outcome[] = [
-      { id: 'outcome-1', name: 'Pele Seca', blocks: getDefaultOutcomeBlocks() },
-      { id: 'outcome-2', name: 'Pele Oleosa', blocks: getDefaultOutcomeBlocks() },
+      { id: 'outcome-1', name: `${copy.sidebar.outcomeLabel} 1`, blocks: getDefaultOutcomeBlocks(copy) },
+      { id: 'outcome-2', name: `${copy.sidebar.outcomeLabel} 2`, blocks: getDefaultOutcomeBlocks(copy) },
     ]
 
     initialize({ steps: initialSteps, outcomes: initialOutcomes })
     setIsInitialized(true)
-  }, [initialize])
+  }, [copy, initialize])
 
   // Show loading state until store is initialized
   if (!isInitialized) {
@@ -81,34 +84,34 @@ export default function VisualBuilderPage() {
       <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Carregando...</p>
+          <p className="text-muted-foreground">{copy.loading.loadingQuiz}</p>
         </div>
       </div>
     )
   }
 
   const handlePreview = () => {
-    toast.info('Esta é uma página de demonstração. Crie um quiz para usar o Preview.', {
+    toast.info(copy.demo.previewNotice, {
       action: {
-        label: 'Ir para Dashboard',
-        onClick: () => router.push('/dashboard'),
+        label: copy.demo.goDashboard,
+        onClick: () => router.push(localizePathname('/dashboard', locale)),
       },
     })
   }
 
   const handlePublish = () => {
-    toast.info('Esta é uma página de demonstração. Crie um quiz para publicar.', {
+    toast.info(copy.demo.publishNotice, {
       action: {
-        label: 'Ir para Dashboard',
-        onClick: () => router.push('/dashboard'),
+        label: copy.demo.goDashboard,
+        onClick: () => router.push(localizePathname('/dashboard', locale)),
       },
     })
   }
 
   return (
     <ConnectedVisualBuilder
-      quizName="Quiz Skincare - Demo"
-      onBack={() => router.push('/dashboard')}
+      quizName={copy.quiz.defaultName}
+      onBack={() => router.push(localizePathname('/dashboard', locale))}
       onPreview={handlePreview}
       onPublish={handlePublish}
     />

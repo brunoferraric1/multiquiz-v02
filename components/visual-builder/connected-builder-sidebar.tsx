@@ -2,6 +2,7 @@
 
 import { useVisualBuilderStore, createOutcome } from '@/store/visual-builder-store'
 import { BuilderSidebar } from './builder-sidebar'
+import { useMessages } from '@/lib/i18n/context'
 
 /**
  * ConnectedBuilderSidebar - A store-connected version of BuilderSidebar
@@ -10,6 +11,8 @@ import { BuilderSidebar } from './builder-sidebar'
  * when the user interacts with steps and outcomes.
  */
 export function ConnectedBuilderSidebar() {
+  const messages = useMessages()
+  const copy = messages.visualBuilder
   // Read state from store
   const steps = useVisualBuilderStore((state) => state.steps)
   const outcomes = useVisualBuilderStore((state) => state.outcomes)
@@ -43,8 +46,8 @@ export function ConnectedBuilderSidebar() {
   }
 
   const handleAddOutcome = () => {
-    const newOutcome = createOutcome()
-    addOutcome(newOutcome)
+    const newOutcome = createOutcome('', copy)
+    addOutcome(newOutcome, copy)
   }
 
   const handleDeleteStep = (stepId: string) => {

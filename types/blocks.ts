@@ -217,27 +217,3 @@ export function createBlock(type: BlockType): Block {
 }
 
 // Block type labels (for UI display)
-export const blockTypeLabels: Record<BlockType, string> = {
-  header: 'Cabeçalho',
-  text: 'Texto',
-  media: 'Mídia',
-  options: 'Opções',
-  fields: 'Campos',
-  price: 'Preço',
-  button: 'Botão',
-  banner: 'Banner',
-  list: 'Lista',
-}
-
-// Block type descriptions (for UI display)
-export const blockTypeDescriptions: Record<BlockType, string> = {
-  header: 'Título e descrição',
-  text: 'Bloco de texto simples',
-  media: 'Imagem ou vídeo',
-  options: 'Opções de resposta',
-  fields: 'Campos de formulário',
-  price: 'Exibição de preço',
-  button: 'Botão de ação',
-  banner: 'Banner de destaque',
-  list: 'Lista de itens',
-}

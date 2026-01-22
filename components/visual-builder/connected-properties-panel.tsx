@@ -34,7 +34,6 @@ import {
 import {
   Block,
   BlockType,
-  blockTypeLabels,
   HeaderConfig,
   TextConfig,
   MediaConfig,
@@ -48,6 +47,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import { SectionTitle } from '@/components/ui/section-title'
+import { useMessages } from '@/lib/i18n/context'
 import {
   Heading1,
   Type,
@@ -83,9 +83,11 @@ interface SortableBlockItemProps {
   block: Block
   isSelected: boolean
   onClick: () => void
+  blockLabel: string
+  dragLabel: string
 }
 
-function SortableBlockItem({ block, isSelected, onClick }: SortableBlockItemProps) {
+function SortableBlockItem({ block, isSelected, onClick, blockLabel, dragLabel }: SortableBlockItemProps) {
   const {
     attributes,
     listeners,
@@ -118,13 +120,13 @@ function SortableBlockItem({ block, isSelected, onClick }: SortableBlockItemProp
           {blockTypeIcons[block.type]}
         </span>
         <span className="flex-1 text-sm">
-          {blockTypeLabels[block.type]}
+          {blockLabel}
         </span>
       </button>
       <button
         type="button"
         className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-muted-foreground/20 transition-all cursor-grab active:cursor-grabbing"
-        aria-label="Arrastar bloco"
+        aria-label={dragLabel}
         {...attributes}
         {...listeners}
       >
@@ -139,6 +141,8 @@ interface ConnectedPropertiesPanelProps {
 }
 
 export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanelProps) {
+  const messages = useMessages()
+  const copy = messages.visualBuilder
   // DnD state to avoid hydration mismatch
   const dndId = useId()
   const [isMounted, setIsMounted] = useState(false)
@@ -264,8 +268,8 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
     const resultStep = steps.find((s) => s.type === 'result')
     if (resultStep) {
       // Create a new outcome
-      const newOutcome = createOutcome()
-      addOutcome(newOutcome)
+      const newOutcome = createOutcome('', copy)
+      addOutcome(newOutcome, copy)
       // Navigate to result step (this will also select the new outcome)
       setActiveStepId(resultStep.id)
     }
@@ -351,7 +355,7 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
   if (selectedBlock) {
     return (
       <BuilderProperties
-        title={blockTypeLabels[selectedBlock.type]}
+        title={copy.blockTypes[selectedBlock.type]}
         showBack
         onBack={handleBack}
         className={className}
@@ -368,7 +372,7 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
           onDelete={handleDeleteBlock}
           canMoveUp={blockIndex > 0}
           canMoveDown={blockIndex < currentBlocks.length - 1}
-          blockTypeName={blockTypeLabels[selectedBlock.type]}
+          blockTypeName={copy.blockTypes[selectedBlock.type]}
         />
       </BuilderProperties>
     )
@@ -378,17 +382,17 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
   if (isResultStep && selectedOutcome) {
     return (
       <BuilderProperties
-        title={selectedOutcome.name || 'Resultado'}
+        title={selectedOutcome.name || copy.sidebar.outcomeLabel}
         className={className}
       >
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Clique em um bloco na prévia para editar seu conteúdo.
+            {copy.properties.clickPreview}
           </p>
 
           <Separator />
           <div className="space-y-2">
-            <SectionTitle className="mb-0">Blocos neste resultado</SectionTitle>
+            <SectionTitle className="mb-0">{copy.properties.blocksInResult}</SectionTitle>
             {isMounted ? (
               <DndContext
                 id={`${dndId}-outcome`}
@@ -407,6 +411,8 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
                         block={block}
                         isSelected={selectedBlockId === block.id}
                         onClick={() => setSelectedBlockId(block.id)}
+                        blockLabel={copy.blockTypes[block.type]}
+                        dragLabel={copy.itemActions.dragBlock}
                       />
                     ))}
                   </div>
@@ -414,27 +420,27 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
               </DndContext>
             ) : (
               <div className="space-y-1">
-                {currentBlocks.map((block) => (
-                  <button
-                    key={block.id}
-                    onClick={() => setSelectedBlockId(block.id)}
-                    className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
-                  >
-                    <span className="text-muted-foreground">
-                      {blockTypeIcons[block.type]}
-                    </span>
-                    <span className="flex-1 text-sm">
-                      {blockTypeLabels[block.type]}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
+                  {currentBlocks.map((block) => (
+                    <button
+                      key={block.id}
+                      onClick={() => setSelectedBlockId(block.id)}
+                      className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors text-left"
+                    >
+                      <span className="text-muted-foreground">
+                        {blockTypeIcons[block.type]}
+                      </span>
+                      <span className="flex-1 text-sm">
+                        {copy.blockTypes[block.type]}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             <GhostAddButton
               onClick={() => setAddBlockSheetOpen(true)}
-              aria-label="Adicionar bloco"
+              aria-label={copy.properties.addBlock}
             >
-              Adicionar bloco
+              {copy.properties.addBlock}
             </GhostAddButton>
           </div>
         </div>
@@ -455,7 +461,7 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
               <button
                 onClick={() => deleteStep(activeStep.id)}
                 className="flex items-center gap-1 text-muted-foreground hover:text-destructive transition-colors"
-                aria-label="Excluir etapa"
+                aria-label={copy.properties.deleteStep}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -483,10 +489,10 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
                       })
                     }
                   }}
-                  className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors"
                 >
                   <BarChart3 className="w-4 h-4 text-muted-foreground" />
-                  <span className="flex-1 text-sm text-left">Exibir progresso</span>
+                  <span className="flex-1 text-sm text-left">{copy.stepSettings.progressLabel}</span>
                   <Switch
                     checked={activeStep.settings?.showProgress ?? false}
                     onCheckedChange={(checked) =>
@@ -511,10 +517,10 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
                       })
                     }
                   }}
-                  className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-                  <span className="flex-1 text-sm text-left">Exibir botão voltar</span>
+                  <span className="flex-1 text-sm text-left">{copy.stepSettings.backLabel}</span>
                   <Switch
                     checked={activeStep.settings?.allowBack ?? false}
                     onCheckedChange={(checked) =>
@@ -529,7 +535,7 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
             {/* Block list */}
             {!isIntroStep && <Separator />}
             <div className="space-y-2">
-              <SectionTitle className="mb-0">Blocos nesta etapa</SectionTitle>
+              <SectionTitle className="mb-0">{copy.properties.blocksInStep}</SectionTitle>
               {isMounted ? (
                 <DndContext
                   id={`${dndId}-step`}
@@ -543,16 +549,18 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
                   >
                     <div className="space-y-1">
                       {currentBlocks.map((block) => (
-                        <SortableBlockItem
-                          key={block.id}
-                          block={block}
-                          isSelected={selectedBlockId === block.id}
-                          onClick={() => setSelectedBlockId(block.id)}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
+                      <SortableBlockItem
+                        key={block.id}
+                        block={block}
+                        isSelected={selectedBlockId === block.id}
+                        onClick={() => setSelectedBlockId(block.id)}
+                        blockLabel={copy.blockTypes[block.type]}
+                        dragLabel={copy.itemActions.dragBlock}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
               ) : (
                 <div className="space-y-1">
                   {currentBlocks.map((block) => (
@@ -565,7 +573,7 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
                         {blockTypeIcons[block.type]}
                       </span>
                       <span className="flex-1 text-sm">
-                        {blockTypeLabels[block.type]}
+                        {copy.blockTypes[block.type]}
                       </span>
                     </button>
                   ))}
@@ -573,9 +581,9 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
               )}
               <GhostAddButton
                 onClick={() => setAddBlockSheetOpen(true)}
-                aria-label="Adicionar bloco"
+                aria-label={copy.properties.addBlock}
               >
-                Adicionar bloco
+                {copy.properties.addBlock}
               </GhostAddButton>
             </div>
           </div>
@@ -586,9 +594,9 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
   // Default empty state
   return (
-    <BuilderProperties title="Propriedades" className={className}>
+    <BuilderProperties title={copy.properties.title} className={className}>
       <div className="text-sm text-muted-foreground">
-        Selecione uma etapa ou bloco para editar suas propriedades.
+        {copy.properties.emptySelection}
       </div>
     </BuilderProperties>
   )
