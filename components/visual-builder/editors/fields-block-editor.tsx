@@ -218,7 +218,7 @@ function SortableFieldItem({
             )}
             {!hasCustomPlaceholder && (
               <p className="text-xs text-muted-foreground">
-                {fieldsCopy.defaultPlaceholder.replace('{{value}}', effectivePlaceholder)}
+                {fieldsCopy.defaultPlaceholder.replace('{{value}}', effectivePlaceholder ?? '')}
               </p>
             )}
           </div>
