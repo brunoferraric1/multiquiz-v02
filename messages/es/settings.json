@@ -41,6 +41,10 @@
       "upgradeButton": "Actualizar"
     }
   },
+  "themeName": {
+    "label": "NOMBRE DEL TEMA",
+    "placeholder": "Mi Tema de Marca"
+  },
   "colors": {
     "title": "COLORES",
     "primary": "Color primario",

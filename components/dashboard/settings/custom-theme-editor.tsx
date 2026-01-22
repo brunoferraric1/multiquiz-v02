@@ -9,15 +9,19 @@ import { cn } from '@/lib/utils';
 import type { BrandKitColors, LogoSize } from '@/types';
 
 interface CustomThemeEditorProps {
+  name: string;
   colors: BrandKitColors;
   logoUrl: string | null;
   logoSize?: LogoSize;
+  onNameChange: (name: string) => void;
   onColorsChange: (colors: BrandKitColors) => void;
   onLogoChange: (file: File) => Promise<void>;
   onLogoRemove: () => void;
   onLogoSizeChange?: (size: LogoSize) => void;
   isUploadingLogo?: boolean;
   copy: {
+    nameLabel: string;
+    namePlaceholder: string;
     colorsTitle: string;
     primaryLabel: string;
     primaryHint: string;
@@ -44,9 +48,11 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const LOGO_SIZES: LogoSize[] = ['small', 'medium', 'large'];
 
 export function CustomThemeEditor({
+  name,
   colors,
   logoUrl,
   logoSize = 'medium',
+  onNameChange,
   onColorsChange,
   onLogoChange,
   onLogoRemove,
@@ -109,6 +115,19 @@ export function CustomThemeEditor({
 
   return (
     <div className="space-y-6">
+      {/* Theme name input */}
+      <div className="space-y-2">
+        <SectionTitle>{copy.nameLabel}</SectionTitle>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => onNameChange(e.target.value)}
+          placeholder={copy.namePlaceholder}
+          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          maxLength={50}
+        />
+      </div>
+
       {/* Colors section - 3-column grid */}
       <div className="space-y-4">
         <SectionTitle>{copy.colorsTitle}</SectionTitle>

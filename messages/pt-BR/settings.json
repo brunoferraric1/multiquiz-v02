@@ -41,6 +41,10 @@
       "upgradeButton": "Fazer upgrade"
     }
   },
+  "themeName": {
+    "label": "NOME DO TEMA",
+    "placeholder": "Meu Tema de Marca"
+  },
   "colors": {
     "title": "CORES",
     "primary": "Cor primária",

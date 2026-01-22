@@ -41,6 +41,10 @@
       "upgradeButton": "Upgrade"
     }
   },
+  "themeName": {
+    "label": "THEME NAME",
+    "placeholder": "My Brand Theme"
+  },
   "colors": {
     "title": "COLORS",
     "primary": "Primary color",

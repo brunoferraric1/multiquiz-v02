@@ -41,6 +41,7 @@ export default function ThemesSettingsPage() {
   const [customColors, setCustomColors] = useState<BrandKitColors>(
     DEFAULT_CUSTOM_COLORS
   )
+  const [customThemeName, setCustomThemeName] = useState('')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoSize, setLogoSize] = useState<LogoSize>('medium')
 
@@ -68,6 +69,7 @@ export default function ThemesSettingsPage() {
           }
           if (settings.mode === 'custom' && settings.customBrandKit) {
             setCustomColors(settings.customBrandKit.colors)
+            setCustomThemeName(settings.customBrandKit.name ?? '')
             setLogoUrl(settings.customBrandKit.logoUrl ?? null)
             setLogoSize(settings.customBrandKit.logoSize ?? 'medium')
           }
@@ -88,8 +90,12 @@ export default function ThemesSettingsPage() {
     setPresetId(id)
   }
 
-  // Handle custom theme selection - allow all users to try it
+  // Handle custom theme selection - Pro only
   const handleCustomSelect = () => {
+    if (!isProUser) {
+      setShowUpgradeModal(true)
+      return
+    }
     setMode('custom')
   }
 
@@ -144,6 +150,7 @@ export default function ThemesSettingsPage() {
         customBrandKit:
           mode === 'custom'
             ? {
+                name: customThemeName || undefined,
                 colors: customColors,
                 logoUrl: logoUrl,
                 logoSize: logoSize,
@@ -209,7 +216,7 @@ export default function ThemesSettingsPage() {
                 onClick={() => handlePresetSelect('multiquiz-light')}
               />
               <ThemeCard
-                name={copy.themes.custom.label}
+                name={customThemeName || copy.themes.custom.label}
                 colors={customColors}
                 isSelected={mode === 'custom'}
                 proBadge={!isProUser ? copy.themes.custom.proBadge : undefined}
@@ -221,15 +228,19 @@ export default function ThemesSettingsPage() {
             {/* Custom theme editor (shown when custom is selected) */}
             {mode === 'custom' && (
               <CustomThemeEditor
+                name={customThemeName}
                 colors={customColors}
                 logoUrl={logoUrl}
                 logoSize={logoSize}
+                onNameChange={setCustomThemeName}
                 onColorsChange={setCustomColors}
                 onLogoChange={handleLogoUpload}
                 onLogoRemove={handleLogoRemove}
                 onLogoSizeChange={setLogoSize}
                 isUploadingLogo={isUploadingLogo}
                 copy={{
+                  nameLabel: copy.themeName.label,
+                  namePlaceholder: copy.themeName.placeholder,
                   colorsTitle: copy.colors.title,
                   primaryLabel: copy.colors.primary,
                   primaryHint: copy.colors.primaryHint,
