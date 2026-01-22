@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Palette, Check, Lock, ChevronRight } from 'lucide-react'
+import { ChevronDown, Check, Lock, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { useSubscription, isPro } from '@/lib/services/subscription-service'
 import { useMessages, useLocale } from '@/lib/i18n/context'
@@ -12,7 +12,6 @@ import {
   saveThemeSettings,
 } from '@/lib/services/brand-kit-service'
 import { PRESET_THEMES, DEFAULT_THEME_ID } from '@/lib/themes/preset-themes'
-import { Button } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
@@ -27,8 +26,8 @@ interface ThemeSelectorDropdownProps {
 }
 
 /**
- * ThemeSelectorDropdown - Compact theme selector for the visual builder header
- * Allows quick theme switching and links to full theme customization
+ * ThemeSelectorDropdown - Compact theme selector for the preview toolbar
+ * Shows stacked color dots + theme name, with dropdown for selection
  */
 export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownProps) {
   const { user } = useAuth()
@@ -47,12 +46,19 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
   const [customColors, setCustomColors] = useState<BrandKitColors>(
     PRESET_THEMES[DEFAULT_THEME_ID].colors
   )
+  const [customName, setCustomName] = useState<string | null>(null)
 
   const isProUser = isPro(subscription)
 
-  // Get effective colors
+  // Get effective colors and name
   const effectiveColors =
     mode === 'preset' ? PRESET_THEMES[presetId].colors : customColors
+
+  const currentThemeName = mode === 'custom'
+    ? (customName || copy.themes.custom.label)
+    : presetId === 'multiquiz-dark'
+      ? 'Dark'
+      : 'Light'
 
   // Notify parent of theme changes
   useEffect(() => {
@@ -74,6 +80,7 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
           }
           if (settings.mode === 'custom' && settings.customBrandKit) {
             setCustomColors(settings.customBrandKit.colors)
+            // TODO: Load custom name when we add that feature
           }
         }
       } catch (err) {
@@ -90,6 +97,7 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
 
     setMode('preset')
     setPresetId(id)
+    setIsOpen(false)
 
     // Auto-save
     try {
@@ -110,35 +118,51 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
       setShowUpgradeModal(true)
       return
     }
-    // If user is Pro, just navigate to settings (handled by link)
+    // If user is Pro and has custom theme, select it
+    setMode('custom')
+    setIsOpen(false)
   }
 
   // Theme options
   const presetOptions: { id: PresetThemeId; label: string; colors: BrandKitColors }[] = [
-    { id: 'multiquiz-dark', label: copy.themes.presets.dark, colors: PRESET_THEMES['multiquiz-dark'].colors },
-    { id: 'multiquiz-light', label: copy.themes.presets.light, colors: PRESET_THEMES['multiquiz-light'].colors },
+    { id: 'multiquiz-dark', label: 'Dark', colors: PRESET_THEMES['multiquiz-dark'].colors },
+    { id: 'multiquiz-light', label: 'Light', colors: PRESET_THEMES['multiquiz-light'].colors },
   ]
 
   return (
     <>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
+          <button
+            className="flex items-center gap-2 bg-card rounded-lg shadow-md py-1.5 px-3 hover:bg-muted/50 transition-colors"
             aria-label={copy.themeSelector.title}
           >
-            <Palette className="h-4 w-4" />
-            <span className="hidden lg:inline">{copy.themeSelector.title}</span>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-0" align="end">
-          {/* Header */}
-          <div className="px-3 py-2 border-b">
-            <p className="text-sm font-medium">{copy.themeSelector.title}</p>
-          </div>
+            {/* Stacked color dots */}
+            <div className="flex items-center -space-x-1.5">
+              <div
+                className="w-4 h-4 rounded-full border-2 border-card z-[3]"
+                style={{ backgroundColor: effectiveColors.primary }}
+              />
+              <div
+                className="w-4 h-4 rounded-full border-2 border-card z-[2]"
+                style={{ backgroundColor: effectiveColors.secondary }}
+              />
+              <div
+                className="w-4 h-4 rounded-full border-2 border-card z-[1]"
+                style={{ backgroundColor: effectiveColors.accent }}
+              />
+            </div>
 
+            {/* Theme name */}
+            <span className="text-xs font-medium text-foreground">
+              {currentThemeName}
+            </span>
+
+            {/* Chevron */}
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-0" align="center">
           {/* Theme options */}
           <div className="p-1">
             {/* Preset themes */}
@@ -151,40 +175,33 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
                   className={cn(
                     'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
                     isSelected
-                      ? 'bg-primary/10 text-primary'
-                      : 'hover:bg-muted text-foreground'
+                      ? 'bg-primary/10'
+                      : 'hover:bg-muted'
                   )}
                 >
-                  {/* Radio indicator */}
-                  <div
-                    className={cn(
-                      'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0',
-                      isSelected ? 'border-primary' : 'border-muted-foreground/50'
-                    )}
-                  >
-                    {isSelected && (
-                      <div className="w-2 h-2 rounded-full bg-primary" />
-                    )}
-                  </div>
-
-                  {/* Label */}
-                  <span className="flex-1 text-left">{option.label}</span>
-
-                  {/* Color dots */}
-                  <div className="flex gap-1">
+                  {/* Stacked color dots */}
+                  <div className="flex items-center -space-x-1">
                     <div
-                      className="w-3 h-3 rounded-full border border-white/20"
+                      className="w-3.5 h-3.5 rounded-full border border-background z-[3]"
                       style={{ backgroundColor: option.colors.primary }}
                     />
                     <div
-                      className="w-3 h-3 rounded-full border border-black/10"
+                      className="w-3.5 h-3.5 rounded-full border border-background z-[2]"
                       style={{ backgroundColor: option.colors.secondary }}
                     />
                     <div
-                      className="w-3 h-3 rounded-full border border-black/10"
+                      className="w-3.5 h-3.5 rounded-full border border-background z-[1]"
                       style={{ backgroundColor: option.colors.accent }}
                     />
                   </div>
+
+                  {/* Label */}
+                  <span className="flex-1 text-left text-foreground">{option.label}</span>
+
+                  {/* Check mark */}
+                  {isSelected && (
+                    <Check className="w-4 h-4 text-primary" />
+                  )}
                 </button>
               )
             })}
@@ -195,62 +212,68 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
                 mode === 'custom'
-                  ? 'bg-primary/10 text-primary'
-                  : 'hover:bg-muted text-foreground',
-                !isProUser && 'opacity-60'
+                  ? 'bg-primary/10'
+                  : 'hover:bg-muted'
               )}
             >
-              {/* Radio indicator */}
-              <div
-                className={cn(
-                  'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0',
-                  mode === 'custom' ? 'border-primary' : 'border-muted-foreground/50'
-                )}
-              >
-                {mode === 'custom' && (
-                  <div className="w-2 h-2 rounded-full bg-primary" />
-                )}
+              {/* Stacked color dots */}
+              <div className="flex items-center -space-x-1">
+                <div
+                  className={cn(
+                    "w-3.5 h-3.5 rounded-full border border-background z-[3]",
+                    !isProUser && "opacity-50"
+                  )}
+                  style={{ backgroundColor: customColors.primary }}
+                />
+                <div
+                  className={cn(
+                    "w-3.5 h-3.5 rounded-full border border-background z-[2]",
+                    !isProUser && "opacity-50"
+                  )}
+                  style={{ backgroundColor: customColors.secondary }}
+                />
+                <div
+                  className={cn(
+                    "w-3.5 h-3.5 rounded-full border border-background z-[1]",
+                    !isProUser && "opacity-50"
+                  )}
+                  style={{ backgroundColor: customColors.accent }}
+                />
               </div>
 
-              {/* Label */}
-              <span className="flex-1 text-left">{copy.themes.custom.label}</span>
+              {/* Label + Pro badge */}
+              <span className={cn(
+                "flex-1 text-left",
+                !isProUser ? "text-muted-foreground" : "text-foreground"
+              )}>
+                {copy.themes.custom.label}
+              </span>
 
-              {/* Pro badge or color dots */}
+              {/* Pro badge or check mark */}
               {!isProUser ? (
-                <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                   <Lock className="w-3 h-3" />
                   {copy.themes.custom.proBadge}
                 </span>
-              ) : (
-                <div className="flex gap-1">
-                  <div
-                    className="w-3 h-3 rounded-full border border-white/20"
-                    style={{ backgroundColor: customColors.primary }}
-                  />
-                  <div
-                    className="w-3 h-3 rounded-full border border-black/10"
-                    style={{ backgroundColor: customColors.secondary }}
-                  />
-                  <div
-                    className="w-3 h-3 rounded-full border border-black/10"
-                    style={{ backgroundColor: customColors.accent }}
-                  />
-                </div>
-              )}
+              ) : mode === 'custom' ? (
+                <Check className="w-4 h-4 text-primary" />
+              ) : null}
             </button>
           </div>
 
-          {/* Customize link */}
-          <div className="border-t p-1">
-            <Link
-              href={localizePathname('/dashboard/settings/themes', locale)}
-              onClick={() => setIsOpen(false)}
-              className="flex items-center justify-between px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <span>{copy.themeSelector.customize}</span>
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
+          {/* Customize link - only for Pro users */}
+          {isProUser && (
+            <div className="border-t p-1">
+              <Link
+                href={localizePathname('/dashboard/settings/themes', locale)}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center justify-between px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <span>{copy.themeSelector.customize}</span>
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
 

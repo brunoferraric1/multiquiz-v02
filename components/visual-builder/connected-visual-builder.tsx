@@ -96,7 +96,6 @@ export function ConnectedVisualBuilder({
         isPublishing={isPublishing}
         isPublished={isPublished}
         isBackSaving={isBackSaving}
-        onThemeChange={onThemeChange}
       />
 
       {/* MAIN CONTENT - Three column layout */}
@@ -207,6 +206,7 @@ export function ConnectedVisualBuilder({
           onPreview={onPreview}
           isPreviewing={isPreviewing}
           themeColors={themeColors}
+          onThemeChange={onThemeChange}
         >
           <StepPreview />
         </BuilderPreview>

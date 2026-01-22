@@ -4,8 +4,6 @@ import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
 import { ArrowLeft, Edit3, Sparkles, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ThemeSelectorDropdown } from './theme-selector-dropdown'
-import type { BrandKitColors } from '@/types'
 
 export type HeaderTab = 'editar' | 'assistente'
 
@@ -18,7 +16,6 @@ interface BuilderHeaderNavProps {
   isPublishing?: boolean
   isPublished?: boolean
   isBackSaving?: boolean
-  onThemeChange?: (colors: BrandKitColors) => void
 }
 
 export function BuilderHeaderNav({
@@ -30,7 +27,6 @@ export function BuilderHeaderNav({
   isPublishing = false,
   isPublished = false,
   isBackSaving = false,
-  onThemeChange,
 }: BuilderHeaderNavProps) {
   const messages = useMessages()
   const header = messages.visualBuilder.header
@@ -89,9 +85,8 @@ export function BuilderHeaderNav({
         </nav>
       </div>
 
-      {/* Right: Theme selector + Publish */}
+      {/* Right: Publish */}
       <div className="flex items-center gap-2 w-48 justify-end">
-        <ThemeSelectorDropdown onThemeChange={onThemeChange} />
         <Button
           size="sm"
           onClick={onPublish}

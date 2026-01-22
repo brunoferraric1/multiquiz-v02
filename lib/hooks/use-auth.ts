@@ -12,6 +12,10 @@ import { auth } from '@/lib/firebase';
 import { upsertUserProfile } from '@/lib/services/user-profile-service';
 import type { AuthUser } from '@/types';
 
+// Track which users have been synced this session to prevent repeated writes
+// that would trigger subscription snapshots and cause re-render loops
+const syncedUsersThisSession = new Set<string>();
+
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,9 +40,15 @@ export function useAuth() {
         }
 
         setUser(nextUser);
-        void upsertUserProfile(nextUser).catch((error) => {
-          console.warn('[useAuth] Failed to sync user profile', error);
-        });
+
+        // Only sync profile once per user per session to avoid triggering
+        // subscription snapshot updates that cause re-render loops
+        if (!syncedUsersThisSession.has(firebaseUser.uid)) {
+          syncedUsersThisSession.add(firebaseUser.uid);
+          void upsertUserProfile(nextUser).catch((error) => {
+            console.warn('[useAuth] Failed to sync user profile', error);
+          });
+        }
       } else {
         setUser(null);
       }

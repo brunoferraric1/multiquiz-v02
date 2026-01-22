@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
 import { Smartphone, Monitor, Save, Check, Loader2, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ThemeSelectorDropdown } from './theme-selector-dropdown'
 import type { BrandKitColors } from '@/types'
 import {
   getReadableTextColor,
@@ -24,6 +25,7 @@ interface BuilderPreviewProps {
   onPreview?: () => void
   isPreviewing?: boolean
   themeColors?: BrandKitColors | null
+  onThemeChange?: (colors: BrandKitColors) => void
 }
 
 const DEVICE_WIDTHS: Record<DeviceType, number> = {
@@ -40,6 +42,7 @@ export function BuilderPreview({
   onPreview,
   isPreviewing = false,
   themeColors,
+  onThemeChange,
 }: BuilderPreviewProps) {
   const messages = useMessages()
   const previewCopy = messages.visualBuilder.preview
@@ -116,6 +119,9 @@ export function BuilderPreview({
             <Monitor className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {/* Theme selector */}
+        <ThemeSelectorDropdown onThemeChange={onThemeChange} />
 
         {/* Preview button */}
         <Button

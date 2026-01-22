@@ -38,13 +38,6 @@ describe('BuilderHeaderNav', () => {
       expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument()
     })
-
-    it('renders theme selector button', () => {
-      render(<BuilderHeaderNav {...defaultProps} />)
-
-      // Theme selector button should be present
-      expect(screen.getByRole('button', { name: /tema/i })).toBeInTheDocument()
-    })
   })
 
   describe('Tab Selection', () => {

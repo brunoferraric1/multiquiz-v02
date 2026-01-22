@@ -147,7 +147,9 @@ export function useSubscription(userId: string | undefined) {
 
                 const holdMs = hadProRef.current ? NON_PRO_HOLD_WITH_PRO_MS : NON_PRO_HOLD_DEFAULT_MS;
                 pendingDowngradeRef.current = nextSubscription;
-                if (!hadProRef.current) {
+                // Only set loading on initial load, not on subsequent document updates
+                // This prevents re-render loops when other code updates the user document
+                if (!hadProRef.current && loadedUserId !== userId) {
                     setIsLoadingInternal(true);
                 }
 
