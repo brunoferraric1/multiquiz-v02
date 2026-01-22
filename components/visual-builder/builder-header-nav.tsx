@@ -16,6 +16,7 @@ interface BuilderHeaderNavProps {
   isPublishing?: boolean
   isPublished?: boolean
   isPreviewing?: boolean
+  isBackSaving?: boolean
 }
 
 const tabs: { id: HeaderTab; label: string; icon: React.ReactNode }[] = [
@@ -36,6 +37,7 @@ export function BuilderHeaderNav({
   isPublishing = false,
   isPublished = false,
   isPreviewing = false,
+  isBackSaving = false,
 }: BuilderHeaderNavProps) {
   // Determine button text based on publish state
   const publishButtonText = isPublishing
@@ -43,6 +45,7 @@ export function BuilderHeaderNav({
     : isPublished
       ? 'Atualizar'
       : 'Publicar'
+
   return (
     <header className="h-14 bg-card border-b flex items-center px-4 shrink-0">
       {/* Left: Back + Quiz name */}
@@ -52,9 +55,14 @@ export function BuilderHeaderNav({
           size="icon"
           onClick={onBack}
           aria-label="Voltar"
+          disabled={isBackSaving}
           className="text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="w-5 h-5" />
+          {isBackSaving ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <ArrowLeft className="w-5 h-5" />
+          )}
         </Button>
         <span className="font-semibold text-foreground truncate">{quizName}</span>
       </div>

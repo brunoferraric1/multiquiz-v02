@@ -24,6 +24,8 @@ interface ConnectedVisualBuilderProps {
   isPublishing?: boolean
   isPublished?: boolean
   isPreviewing?: boolean
+  isBackSaving?: boolean
+  saveStatus?: 'idle' | 'saving' | 'saved'
 }
 
 /**
@@ -40,6 +42,8 @@ export function ConnectedVisualBuilder({
   isPublishing = false,
   isPublished = false,
   isPreviewing = false,
+  isBackSaving = false,
+  saveStatus = 'idle',
 }: ConnectedVisualBuilderProps) {
   // Local UI state
   const [activeTab, setActiveTab] = useState<HeaderTab>('editar')
@@ -85,6 +89,7 @@ export function ConnectedVisualBuilder({
         isPublishing={isPublishing}
         isPublished={isPublished}
         isPreviewing={isPreviewing}
+        isBackSaving={isBackSaving}
       />
 
       {/* MAIN CONTENT - Three column layout */}
@@ -191,6 +196,7 @@ export function ConnectedVisualBuilder({
           device={device}
           onDeviceChange={setDevice}
           onClick={() => setSelectedBlockId(undefined)}
+          saveStatus={saveStatus}
         >
           <StepPreview />
         </BuilderPreview>

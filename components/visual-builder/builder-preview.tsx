@@ -2,7 +2,7 @@
 
 import { useState, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { Smartphone, Monitor } from 'lucide-react'
+import { Smartphone, Monitor, Save, Check, Loader2 } from 'lucide-react'
 
 type DeviceType = 'mobile' | 'desktop'
 
@@ -11,6 +11,7 @@ interface BuilderPreviewProps {
   onDeviceChange?: (device: DeviceType) => void
   children?: ReactNode
   onClick?: () => void
+  saveStatus?: 'idle' | 'saving' | 'saved'
 }
 
 const DEVICE_WIDTHS: Record<DeviceType, number> = {
@@ -23,10 +24,14 @@ export function BuilderPreview({
   onDeviceChange,
   children,
   onClick,
+  saveStatus = 'idle',
 }: BuilderPreviewProps) {
   const [internalDevice, setInternalDevice] = useState<DeviceType>('mobile')
 
   const device = controlledDevice ?? internalDevice
+  const isSaving = saveStatus === 'saving'
+  const isSaved = saveStatus === 'saved'
+  const statusLabel = isSaving ? 'Salvando...' : isSaved ? 'Quiz saved' : 'Auto save'
 
   const handleDeviceChange = (newDevice: DeviceType) => {
     setInternalDevice(newDevice)
@@ -78,17 +83,31 @@ export function BuilderPreview({
           }
         }}
       >
-        {/* Preview card */}
-        <div
-          data-testid="preview-card"
-          className="bg-card rounded-2xl shadow-lg max-h-[80vh] overflow-y-auto"
-          style={{ width: DEVICE_WIDTHS[device] }}
-        >
-          {children || (
-            <div className="p-6 text-center text-muted-foreground">
-              Preview content will appear here
-            </div>
-          )}
+        <div className="flex flex-col items-center gap-2">
+          {/* Preview card */}
+          <div
+            data-testid="preview-card"
+            className="bg-card rounded-2xl shadow-lg max-h-[80vh] overflow-y-auto"
+            style={{ width: DEVICE_WIDTHS[device] }}
+          >
+            {children || (
+              <div className="p-6 text-center text-muted-foreground">
+                Preview content will appear here
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            {isSaving ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : isSaved ? (
+              <Check className="w-3 h-3 text-green-500" />
+            ) : (
+              <Save className="w-3 h-3" />
+            )}
+            <span className={cn(isSaved ? 'text-green-500' : 'text-muted-foreground')}>
+              {statusLabel}
+            </span>
+          </div>
         </div>
       </div>
     </main>
