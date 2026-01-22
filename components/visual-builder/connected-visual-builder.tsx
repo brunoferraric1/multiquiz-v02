@@ -87,11 +87,9 @@ export function ConnectedVisualBuilder({
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onBack={onBack}
-        onPreview={onPreview}
         onPublish={onPublish}
         isPublishing={isPublishing}
         isPublished={isPublished}
-        isPreviewing={isPreviewing}
         isBackSaving={isBackSaving}
       />
 
@@ -200,6 +198,8 @@ export function ConnectedVisualBuilder({
           onDeviceChange={setDevice}
           onClick={() => setSelectedBlockId(undefined)}
           saveStatus={saveStatus}
+          onPreview={onPreview}
+          isPreviewing={isPreviewing}
         >
           <StepPreview />
         </BuilderPreview>

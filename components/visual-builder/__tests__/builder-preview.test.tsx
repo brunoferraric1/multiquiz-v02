@@ -88,4 +88,29 @@ describe('BuilderPreview', () => {
       expect(previewCard).toContainElement(screen.getByTestId('test-content'))
     })
   })
+
+  describe('Preview Button', () => {
+    it('renders preview button', () => {
+      render(<BuilderPreview />)
+      expect(screen.getByRole('button', { name: /preview/i })).toBeInTheDocument()
+    })
+
+    it('calls onPreview when clicking preview button', async () => {
+      const onPreview = vi.fn()
+      const user = userEvent.setup()
+
+      render(<BuilderPreview onPreview={onPreview} />)
+
+      await user.click(screen.getByRole('button', { name: /preview/i }))
+
+      expect(onPreview).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows loading state when isPreviewing is true', () => {
+      render(<BuilderPreview isPreviewing={true} />)
+
+      const previewButton = screen.getByRole('button', { name: /preview/i })
+      expect(previewButton).toBeDisabled()
+    })
+  })
 })

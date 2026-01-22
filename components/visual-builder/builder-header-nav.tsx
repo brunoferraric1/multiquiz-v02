@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
-import { ArrowLeft, Play, Edit3, Sparkles, Palette, BarChart3, Settings, Loader2 } from 'lucide-react'
+import { ArrowLeft, Edit3, Sparkles, Palette, BarChart3, Settings, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export type HeaderTab = 'editar' | 'assistente' | 'tema' | 'relatorio' | 'config'
@@ -12,11 +12,9 @@ interface BuilderHeaderNavProps {
   activeTab: HeaderTab
   onTabChange: (tab: HeaderTab) => void
   onBack?: () => void
-  onPreview?: () => void
   onPublish?: () => void
   isPublishing?: boolean
   isPublished?: boolean
-  isPreviewing?: boolean
   isBackSaving?: boolean
 }
 
@@ -25,11 +23,9 @@ export function BuilderHeaderNav({
   activeTab,
   onTabChange,
   onBack,
-  onPreview,
   onPublish,
   isPublishing = false,
   isPublished = false,
-  isPreviewing = false,
   isBackSaving = false,
 }: BuilderHeaderNavProps) {
   const messages = useMessages()
@@ -94,23 +90,6 @@ export function BuilderHeaderNav({
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2 w-48 justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onPreview}
-          className="flex items-center gap-2"
-          aria-label={header.aria.preview}
-          disabled={isPreviewing}
-        >
-          {isPreviewing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Play className="w-4 h-4 fill-current" />
-          )}
-          <span className="hidden sm:inline">
-            {isPreviewing ? header.actions.previewing : header.actions.preview}
-          </span>
-        </Button>
         <Button
           size="sm"
           onClick={onPublish}

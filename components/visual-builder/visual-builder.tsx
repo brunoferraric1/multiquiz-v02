@@ -64,7 +64,6 @@ export function VisualBuilder({
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onBack={onBack}
-        onPreview={onPreview}
         onPublish={onPublish}
       />
 
@@ -86,6 +85,7 @@ export function VisualBuilder({
         <BuilderPreview
           device={device}
           onDeviceChange={setDevice}
+          onPreview={onPreview}
         >
           {/* Preview content will be added in next milestone */}
         </BuilderPreview>

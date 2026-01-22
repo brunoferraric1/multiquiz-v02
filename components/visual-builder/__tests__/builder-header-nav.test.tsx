@@ -9,7 +9,6 @@ describe('BuilderHeaderNav', () => {
     activeTab: 'editar' as HeaderTab,
     onTabChange: vi.fn(),
     onBack: vi.fn(),
-    onPreview: vi.fn(),
     onPublish: vi.fn(),
   }
 
@@ -33,11 +32,10 @@ describe('BuilderHeaderNav', () => {
       expect(tabs).toHaveLength(5)
     })
 
-    it('renders back, preview, and publish buttons', () => {
+    it('renders back and publish buttons', () => {
       render(<BuilderHeaderNav {...defaultProps} />)
 
       expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /preview/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument()
     })
   })
@@ -90,17 +88,6 @@ describe('BuilderHeaderNav', () => {
       expect(onBack).toHaveBeenCalledTimes(1)
     })
 
-    it('calls onPreview when clicking preview button', async () => {
-      const onPreview = vi.fn()
-      const user = userEvent.setup()
-
-      render(<BuilderHeaderNav {...defaultProps} onPreview={onPreview} />)
-
-      await user.click(screen.getByRole('button', { name: /preview/i }))
-
-      expect(onPreview).toHaveBeenCalledTimes(1)
-    })
-
     it('calls onPublish when clicking publish button', async () => {
       const onPublish = vi.fn()
       const user = userEvent.setup()
@@ -118,7 +105,6 @@ describe('BuilderHeaderNav', () => {
       render(<BuilderHeaderNav {...defaultProps} />)
 
       expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /preview/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument()
     })
   })

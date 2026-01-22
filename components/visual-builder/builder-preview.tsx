@@ -3,7 +3,8 @@
 import { useState, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
-import { Smartphone, Monitor, Save, Check, Loader2 } from 'lucide-react'
+import { Smartphone, Monitor, Save, Check, Loader2, Play } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 type DeviceType = 'mobile' | 'desktop'
 
@@ -13,6 +14,8 @@ interface BuilderPreviewProps {
   children?: ReactNode
   onClick?: () => void
   saveStatus?: 'idle' | 'saving' | 'saved'
+  onPreview?: () => void
+  isPreviewing?: boolean
 }
 
 const DEVICE_WIDTHS: Record<DeviceType, number> = {
@@ -26,9 +29,12 @@ export function BuilderPreview({
   children,
   onClick,
   saveStatus = 'idle',
+  onPreview,
+  isPreviewing = false,
 }: BuilderPreviewProps) {
   const messages = useMessages()
   const previewCopy = messages.visualBuilder.preview
+  const headerCopy = messages.visualBuilder.header
   const [internalDevice, setInternalDevice] = useState<DeviceType>('mobile')
 
   const device = controlledDevice ?? internalDevice
@@ -46,34 +52,56 @@ export function BuilderPreview({
       data-testid="center-preview"
       className="flex-1 flex flex-col bg-muted/50 overflow-hidden relative"
     >
-      {/* Device toggle */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-1 bg-card rounded-lg shadow-md p-1">
-        <button
-          onClick={() => handleDeviceChange('mobile')}
-          aria-label={previewCopy.mobile}
-          aria-pressed={device === 'mobile'}
-          className={cn(
-            'p-2.5 rounded-md transition-all',
-            device === 'mobile'
-              ? 'bg-primary/15 text-primary'
-              : 'text-muted-foreground hover:bg-muted/60'
-          )}
+      {/* Top toolbar */}
+      <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
+        {/* Device toggle */}
+        <div className="flex items-center gap-1 bg-card rounded-lg shadow-md p-1">
+          <button
+            onClick={() => handleDeviceChange('mobile')}
+            aria-label={previewCopy.mobile}
+            aria-pressed={device === 'mobile'}
+            className={cn(
+              'py-1.5 px-2 rounded-md transition-all',
+              device === 'mobile'
+                ? 'bg-primary/15 text-primary'
+                : 'text-muted-foreground hover:bg-muted/60'
+            )}
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => handleDeviceChange('desktop')}
+            aria-label={previewCopy.desktop}
+            aria-pressed={device === 'desktop'}
+            className={cn(
+              'py-1.5 px-2 rounded-md transition-all',
+              device === 'desktop'
+                ? 'bg-primary/15 text-primary'
+                : 'text-muted-foreground hover:bg-muted/60'
+            )}
+          >
+            <Monitor className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Preview button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onPreview}
+          className="flex items-center gap-2 bg-card shadow-md h-auto py-1.5 px-3"
+          aria-label={headerCopy.aria.preview}
+          disabled={isPreviewing}
         >
-          <Smartphone className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => handleDeviceChange('desktop')}
-          aria-label={previewCopy.desktop}
-          aria-pressed={device === 'desktop'}
-          className={cn(
-            'p-2.5 rounded-md transition-all',
-            device === 'desktop'
-              ? 'bg-primary/15 text-primary'
-              : 'text-muted-foreground hover:bg-muted/60'
+          {isPreviewing ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Play className="w-3.5 h-3.5 fill-current" />
           )}
-        >
-          <Monitor className="w-5 h-5" />
-        </button>
+          <span className="text-xs font-medium">
+            {isPreviewing ? headerCopy.actions.previewing : headerCopy.actions.preview}
+          </span>
+        </Button>
       </div>
 
       {/* Preview container */}
