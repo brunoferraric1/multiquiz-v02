@@ -456,8 +456,8 @@ export function BlocksQuizPlayer({
       )}
       style={brandKitStyle}
     >
-      {/* Brand logo */}
-      {showBrandLogo && (
+      {/* Brand logo - absolute positioned for full layout */}
+      {showBrandLogo && layout === 'full' && (
         <div className="absolute left-6 top-6 z-10 flex items-center sm:left-10 sm:top-8">
           <button
             type="button"
@@ -476,6 +476,23 @@ export function BlocksQuizPlayer({
 
       {/* Main content */}
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
+        {/* Brand logo - centered for embedded layout */}
+        {showBrandLogo && layout === 'embedded' && (
+          <div className="flex justify-center mb-4">
+            <button
+              type="button"
+              onClick={resetQuiz}
+              aria-label="Voltar ao inicio do quiz"
+              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-[var(--cursor-interactive)]"
+            >
+              <img
+                src={brandKitLogoUrl as string}
+                alt="Logo da marca"
+                className="h-12 w-auto max-w-[180px] object-contain"
+              />
+            </button>
+          </div>
+        )}
         {/* Navigation header - back button and progress bar */}
         {(showProgress || showBackButton) && currentStep?.type !== 'intro' && currentStep?.type !== 'result' && (
           <div className="space-y-2">
