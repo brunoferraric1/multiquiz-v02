@@ -33,6 +33,7 @@ export interface MediaConfig {
   type: 'image' | 'video'
   url?: string
   alt?: string
+  orientation?: 'horizontal' | 'vertical'
 }
 
 // Option item for options block
@@ -152,7 +153,7 @@ export function getDefaultBlockConfig(type: BlockType): BlockConfig {
     case 'text':
       return { content: '' } as TextConfig
     case 'media':
-      return { type: 'image', url: '' } as MediaConfig
+      return { type: 'image', url: '', orientation: 'horizontal' } as MediaConfig
     case 'options':
       return { items: [], selectionType: 'single' } as OptionsConfig
     case 'fields':

@@ -31,6 +31,7 @@
   --color-ring: #fbbf24;
   --cursor-interactive: pointer;
   --cursor-not-allowed: not-allowed;
+  --media-portrait-max-width: 32rem;
 
   /* Border radius */
   --radius-lg: 0.5rem;

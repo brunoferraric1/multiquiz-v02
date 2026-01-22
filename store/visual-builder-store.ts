@@ -187,7 +187,7 @@ const INITIAL_INTRO_BLOCKS: Block[] = [
     id: 'intro-block-media',
     type: 'media',
     enabled: false,
-    config: { type: 'image', url: '' },
+    config: { type: 'image', url: '', orientation: 'horizontal' },
   },
   {
     id: 'intro-block-button',

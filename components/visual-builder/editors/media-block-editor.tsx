@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { ToggleGroup } from '@/components/ui/toggle-group'
 import { SectionTitle } from '@/components/ui/section-title'
 import { MediaConfig } from '@/types/blocks'
-import { Image, Video, ImageIcon, UploadCloud, Trash2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Image, Video, ImageIcon, UploadCloud, Trash2, RectangleHorizontal, RectangleVertical } from 'lucide-react'
 import { useMessages } from '@/lib/i18n/context'
 
 interface MediaBlockEditorProps {
@@ -19,6 +20,7 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
   const messages = useMessages()
   const mediaCopy = messages.visualBuilder.mediaEditor
   const inputRef = useRef<HTMLInputElement>(null)
+  const imageOrientation = config.orientation ?? 'horizontal'
 
   const handleFileSelect = (files: FileList | null) => {
     const file = files && files.length > 0 ? files[0] : null
@@ -26,10 +28,16 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
       // Convert file to data URL for preview
       const reader = new FileReader()
       reader.onloadend = () => {
-        // Note: We only update config here. The parent component (BuilderPropertiesPanel)
-        // should auto-enable the block when media is uploaded.
-        // We signal this by calling onAutoEnable if provided.
-        onChange({ url: reader.result as string })
+        const dataUrl = reader.result as string
+        const img = new window.Image()
+        img.onload = () => {
+          const orientation = img.height > img.width ? 'vertical' : 'horizontal'
+          onChange({ url: dataUrl, orientation })
+        }
+        img.onerror = () => {
+          onChange({ url: dataUrl })
+        }
+        img.src = dataUrl
       }
       reader.readAsDataURL(file)
     }
@@ -69,42 +77,43 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
 
       {/* Image upload area */}
       {config.type === 'image' && (
-        <div>
+        <div className="space-y-3">
           <SectionTitle>{mediaCopy.imageSection}</SectionTitle>
 
           {config.url ? (
             <div className="space-y-2">
               {/* Image preview */}
-              <div className="relative rounded-lg overflow-hidden border border-border">
+              <div
+                className={cn(
+                  'relative rounded-lg overflow-hidden border border-border',
+                  imageOrientation === 'vertical'
+                    ? 'aspect-[3/4] w-full max-w-[var(--media-portrait-max-width)] mx-auto'
+                    : 'aspect-video w-full'
+                )}
+              >
                 <img
                   src={config.url}
                   alt={mediaCopy.previewAlt}
-                  className="w-full h-32 object-cover"
+                  className="w-full h-full object-cover"
                 />
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-xs"
-                  onClick={handleButtonClick}
-                >
-                  <UploadCloud className="mr-1.5 h-3.5 w-3.5" />
-                  {mediaCopy.replace}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-xs text-destructive hover:text-destructive"
-                  onClick={handleRemoveImage}
-                >
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                  {mediaCopy.remove}
-                </Button>
+                <div className="absolute top-2 right-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleButtonClick}
+                    className="h-8 w-8 rounded-full bg-background/90 text-foreground shadow-sm border border-border/50 flex items-center justify-center hover:bg-background transition-colors"
+                    aria-label={mediaCopy.replace}
+                  >
+                    <UploadCloud className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="h-8 w-8 rounded-full bg-background/90 text-destructive shadow-sm border border-border/50 flex items-center justify-center hover:bg-background transition-colors"
+                    aria-label={mediaCopy.remove}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -144,6 +153,43 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
             onChange={(e) => handleFileSelect(e.target.files)}
             data-testid="media-file-input"
           />
+          <div className="space-y-2 pt-1">
+            <Label>{mediaCopy.imageOrientation}</Label>
+            <div
+              role="group"
+              aria-label={mediaCopy.imageOrientation}
+              className="flex items-center gap-1 bg-muted rounded-lg p-1"
+            >
+              <button
+                type="button"
+                aria-label={mediaCopy.orientationHorizontal}
+                aria-pressed={imageOrientation === 'horizontal'}
+                onClick={() => onChange({ orientation: 'horizontal' })}
+                className={cn(
+                  'flex-1 flex items-center justify-center rounded-md px-3 py-1.5 text-xs transition-colors',
+                  imageOrientation === 'horizontal'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <RectangleHorizontal className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                aria-label={mediaCopy.orientationVertical}
+                aria-pressed={imageOrientation === 'vertical'}
+                onClick={() => onChange({ orientation: 'vertical' })}
+                className={cn(
+                  'flex-1 flex items-center justify-center rounded-md px-3 py-1.5 text-xs transition-colors',
+                  imageOrientation === 'vertical'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <RectangleVertical className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

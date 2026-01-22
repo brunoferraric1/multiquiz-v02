@@ -232,7 +232,7 @@ function VideoPlayer({ url }: { url: string }) {
   if (!isPlaying) {
     return (
       <div
-        className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted cursor-pointer group"
+        className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted cursor-[var(--cursor-interactive)] group"
         onClick={() => setIsPlaying(true)}
       >
         {thumbnailUrl ? (
@@ -299,7 +299,15 @@ function VideoPlayer({ url }: { url: string }) {
 }
 
 function MediaBlock({ config }: { config: MediaConfig }) {
-  const { type, url, alt } = config;
+  const { type, url, alt, orientation } = config;
+  const imageOrientation = orientation ?? 'horizontal';
+  const imageWrapperClass = cn(
+    'rounded-xl overflow-hidden border border-border/50',
+    imageOrientation === 'vertical'
+      ? 'w-full max-w-[var(--media-portrait-max-width)] mx-auto'
+      : 'w-full'
+  );
+  const imageAspectClass = imageOrientation === 'vertical' ? 'aspect-[3/4]' : 'aspect-video';
 
   if (!url) return null;
 
@@ -311,10 +319,10 @@ function MediaBlock({ config }: { config: MediaConfig }) {
     );
   }
 
-  // Images use 4:3 aspect ratio with object-cover to crop proportionally
+  // Images match the builder aspect ratio based on the chosen orientation
   return (
-    <div className="w-full rounded-xl overflow-hidden border border-border/50">
-      <div className="aspect-[4/3]">
+    <div className={imageWrapperClass}>
+      <div className={imageAspectClass}>
         <img src={url} alt={alt || ''} className="w-full h-full object-cover" />
       </div>
     </div>

@@ -72,7 +72,14 @@ function VideoThumbnailPreview({ url, alt }: { url: string; alt: string }) {
 export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
   const messages = useMessages()
   const mediaCopy = messages.visualBuilder.mediaEditor
-  const { type, url, alt } = config as MediaConfig
+  const { type, url, alt, orientation } = config as MediaConfig
+  const imageOrientation = orientation ?? 'horizontal'
+  const imageWrapperClass = cn(
+    'relative rounded-lg overflow-hidden bg-muted',
+    imageOrientation === 'vertical'
+      ? 'aspect-[3/4] w-full max-w-[var(--media-portrait-max-width)] mx-auto'
+      : 'aspect-video w-full'
+  )
 
   if (!url) {
     // Placeholder state - no background to allow parent hover effects to show
@@ -102,7 +109,7 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
 
   return (
     <div className={cn('p-4', !enabled && 'opacity-50')}>
-      <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+      <div className={imageWrapperClass}>
         <img
           src={url}
           alt={alt || mediaCopy.image}

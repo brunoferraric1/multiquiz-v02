@@ -128,8 +128,8 @@ describe('MediaBlockEditor', () => {
     )
 
     expect(screen.getByRole('img', { name: /preview/i })).toBeInTheDocument()
-    expect(screen.getByText(/trocar/i)).toBeInTheDocument()
-    expect(screen.getByText(/remover/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/trocar/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/remover/i)).toBeInTheDocument()
   })
 })
 
