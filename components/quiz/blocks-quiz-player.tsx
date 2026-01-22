@@ -474,29 +474,11 @@ export function BlocksQuizPlayer({
       )}
       style={brandKitStyle}
     >
-      {/* Brand logo - absolute positioned for full layout */}
-      {showBrandLogo && layout === 'full' && (
-        <div className="absolute left-6 top-6 z-10 flex items-center sm:left-10 sm:top-8">
-          <button
-            type="button"
-            onClick={resetQuiz}
-            aria-label="Voltar ao inicio do quiz"
-            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-[var(--cursor-interactive)]"
-          >
-            <img
-              src={brandKitLogoUrl as string}
-              alt="Logo da marca"
-              className={cn('w-auto object-contain', LOGO_SIZE_CLASSES[brandKitLogoSize].full)}
-            />
-          </button>
-        </div>
-      )}
-
       {/* Main content */}
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-        {/* Brand logo - centered for embedded layout */}
-        {showBrandLogo && layout === 'embedded' && (
-          <div className="flex justify-center mb-4">
+        {/* Brand logo - centered with spacing */}
+        {showBrandLogo && (
+          <div className="flex justify-center mb-2">
             <button
               type="button"
               onClick={resetQuiz}
@@ -506,7 +488,12 @@ export function BlocksQuizPlayer({
               <img
                 src={brandKitLogoUrl as string}
                 alt="Logo da marca"
-                className={cn('w-auto object-contain', LOGO_SIZE_CLASSES[brandKitLogoSize].embedded)}
+                className={cn(
+                  'w-auto object-contain',
+                  layout === 'full'
+                    ? LOGO_SIZE_CLASSES[brandKitLogoSize].full
+                    : LOGO_SIZE_CLASSES[brandKitLogoSize].embedded
+                )}
               />
             </button>
           </div>
