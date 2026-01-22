@@ -82,6 +82,7 @@ export function ThemePreview({ colors, logoUrl, copy }: ThemePreviewProps) {
         brandKitColors={colors}
         brandKitLogoUrl={logoUrl}
         layout="embedded"
+        hideBranding
         initialSelectedOptions={{
           'theme-preview-step': ['theme-preview-option-b'],
         }}

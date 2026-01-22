@@ -92,10 +92,10 @@ export function CustomThemeEditor({
 
   return (
     <div className="space-y-6">
-      {/* Colors section */}
+      {/* Colors section - 3-column grid */}
       <div className="space-y-4">
         <SectionTitle>{copy.colorsTitle}</SectionTitle>
-        <div className="grid gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <ColorPickerField
             id="primary-color"
             label={copy.primaryLabel}

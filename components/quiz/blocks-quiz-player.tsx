@@ -37,6 +37,7 @@ interface BlocksQuizPlayerProps {
   layout?: 'full' | 'embedded';
   className?: string;
   initialSelectedOptions?: SelectionState;
+  hideBranding?: boolean;
 }
 
 type SelectionState = Record<string, string[]>;
@@ -54,6 +55,7 @@ export function BlocksQuizPlayer({
   layout = 'full',
   className,
   initialSelectedOptions,
+  hideBranding = false,
 }: BlocksQuizPlayerProps) {
   // Get blocks data (prefer stored, fallback to reconstruction for legacy quizzes)
   const visualBuilderData = useMemo((): VisualBuilderData => {
@@ -518,44 +520,46 @@ export function BlocksQuizPlayer({
       </div>
 
       {/* Footer branding */}
-      <div
-        className={cn(
-          'pointer-events-auto bottom-4 right-4 z-10',
-          layout === 'full' ? 'fixed' : 'absolute'
-        )}
-      >
-        {isLive ? (
-          <a
-            href="/"
-            target="_blank"
-            rel="noreferrer"
-            className="group flex flex-col items-center gap-1 text-xs font-medium text-foreground/60 transition-colors hover:text-foreground sm:flex-row sm:gap-2 cursor-[var(--cursor-interactive)]"
-            aria-label="Made with MultiQuiz"
-          >
-            <span className="opacity-70 transition-opacity group-hover:opacity-100">Made with</span>
-            <span className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
-              <img
-                src="/multiquiz-logo.svg"
-                alt="MultiQuiz"
-                className="h-4 w-4"
-              />
-              <span>MultiQuiz</span>
-            </span>
-          </a>
-        ) : (
-          <div className="group flex flex-col items-center gap-1 text-xs font-medium text-foreground/60 sm:flex-row sm:gap-2">
-            <span className="opacity-70 transition-opacity group-hover:opacity-100">Made with</span>
-            <span className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
-              <img
-                src="/multiquiz-logo.svg"
-                alt="MultiQuiz"
-                className="h-4 w-4"
-              />
-              <span>MultiQuiz</span>
-            </span>
-          </div>
-        )}
-      </div>
+      {!hideBranding && (
+        <div
+          className={cn(
+            'pointer-events-auto bottom-4 right-4 z-10',
+            layout === 'full' ? 'fixed' : 'absolute'
+          )}
+        >
+          {isLive ? (
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="group flex flex-col items-center gap-1 text-xs font-medium text-foreground/60 transition-colors hover:text-foreground sm:flex-row sm:gap-2 cursor-[var(--cursor-interactive)]"
+              aria-label="Made with MultiQuiz"
+            >
+              <span className="opacity-70 transition-opacity group-hover:opacity-100">Made with</span>
+              <span className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+                <img
+                  src="/multiquiz-logo.svg"
+                  alt="MultiQuiz"
+                  className="h-4 w-4"
+                />
+                <span>MultiQuiz</span>
+              </span>
+            </a>
+          ) : (
+            <div className="group flex flex-col items-center gap-1 text-xs font-medium text-foreground/60 sm:flex-row sm:gap-2">
+              <span className="opacity-70 transition-opacity group-hover:opacity-100">Made with</span>
+              <span className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+                <img
+                  src="/multiquiz-logo.svg"
+                  alt="MultiQuiz"
+                  className="h-4 w-4"
+                />
+                <span>MultiQuiz</span>
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -11,7 +11,7 @@ import {
   getThemeSettings,
   saveThemeSettings,
 } from '@/lib/services/brand-kit-service'
-import { PRESET_THEMES, DEFAULT_THEME_ID } from '@/lib/themes/preset-themes'
+import { PRESET_THEMES, DEFAULT_THEME_ID, DEFAULT_CUSTOM_COLORS } from '@/lib/themes/preset-themes'
 import {
   Popover,
   PopoverContent,
@@ -44,7 +44,7 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
   const [mode, setMode] = useState<'preset' | 'custom'>('preset')
   const [presetId, setPresetId] = useState<PresetThemeId>(DEFAULT_THEME_ID)
   const [customColors, setCustomColors] = useState<BrandKitColors>(
-    PRESET_THEMES[DEFAULT_THEME_ID].colors
+    DEFAULT_CUSTOM_COLORS
   )
   const [customName, setCustomName] = useState<string | null>(null)
 

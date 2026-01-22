@@ -1,7 +1,6 @@
 'use client';
 
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 
 interface ColorPickerFieldProps {
   id: string;
@@ -12,7 +11,8 @@ interface ColorPickerFieldProps {
 }
 
 /**
- * Color input field with label and optional hint text
+ * Compact color picker with swatch, hex input, and label
+ * Designed for use in a horizontal grid layout
  */
 export function ColorPickerField({
   id,
@@ -22,35 +22,40 @@ export function ColorPickerField({
   onChange,
 }: ColorPickerFieldProps) {
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-sm font-medium">
+    <div className="flex flex-col items-center text-center">
+      {/* Label */}
+      <Label htmlFor={id} className="text-sm font-medium mb-2">
         {label}
       </Label>
-      <div className="flex items-center gap-2">
-        <div className="relative">
-          <input
-            type="color"
-            id={id}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-10 h-10 rounded-lg border border-input cursor-pointer appearance-none bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0"
-          />
-        </div>
-        <Input
-          type="text"
-          value={value.toUpperCase()}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
-              onChange(val);
-            }
-          }}
-          className="w-24 font-mono text-sm uppercase"
-          maxLength={7}
+
+      {/* Color swatch - larger and clickable */}
+      <div className="relative mb-2">
+        <input
+          type="color"
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-14 h-14 rounded-xl border-2 border-input cursor-pointer appearance-none bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-1 [&::-webkit-color-swatch]:rounded-lg [&::-webkit-color-swatch]:border-0 hover:border-primary/50 transition-colors"
         />
       </div>
+
+      {/* Hex input */}
+      <input
+        type="text"
+        value={value.toUpperCase()}
+        onChange={(e) => {
+          const val = e.target.value;
+          if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+            onChange(val);
+          }
+        }}
+        className="w-20 text-center font-mono text-xs bg-muted/50 border border-input rounded-md px-2 py-1 uppercase focus:outline-none focus:ring-1 focus:ring-primary"
+        maxLength={7}
+      />
+
+      {/* Hint */}
       {hint && (
-        <p className="text-xs text-muted-foreground">{hint}</p>
+        <p className="text-xs text-muted-foreground mt-1.5">{hint}</p>
       )}
     </div>
   );

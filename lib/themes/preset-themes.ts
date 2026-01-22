@@ -30,6 +30,16 @@ export const PRESET_THEMES: Record<PresetThemeId, PresetTheme> = {
 export const DEFAULT_THEME_ID: PresetThemeId = 'multiquiz-dark';
 
 /**
+ * Default colors for custom theme - distinct from presets
+ * Uses emerald green primary with dark purple-tinted cards
+ */
+export const DEFAULT_CUSTOM_COLORS: BrandKitColors = {
+  primary: '#10B981',   // Emerald green
+  secondary: '#1E1B2E', // Dark purple-tinted card
+  accent: '#13111C',    // Deep purple background
+};
+
+/**
  * Get colors for a preset theme
  */
 export function getPresetThemeColors(presetId: PresetThemeId): BrandKitColors {

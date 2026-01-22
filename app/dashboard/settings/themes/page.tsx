@@ -11,7 +11,7 @@ import {
   saveThemeSettings,
 } from '@/lib/services/brand-kit-service'
 import { uploadImage, getBrandKitLogoPath } from '@/lib/services/storage-service'
-import { PRESET_THEMES, DEFAULT_THEME_ID } from '@/lib/themes/preset-themes'
+import { PRESET_THEMES, DEFAULT_THEME_ID, DEFAULT_CUSTOM_COLORS } from '@/lib/themes/preset-themes'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { PageBreadcrumb } from '@/components/ui/page-breadcrumb'
@@ -39,7 +39,7 @@ export default function ThemesSettingsPage() {
   const [mode, setMode] = useState<'preset' | 'custom'>('preset')
   const [presetId, setPresetId] = useState<PresetThemeId>(DEFAULT_THEME_ID)
   const [customColors, setCustomColors] = useState<BrandKitColors>(
-    PRESET_THEMES[DEFAULT_THEME_ID].colors
+    DEFAULT_CUSTOM_COLORS
   )
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
@@ -258,8 +258,8 @@ export default function ThemesSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Right column - Preview (sticky) */}
-        <div className="lg:sticky lg:top-8">
+        {/* Right column - Preview (sticky below header) */}
+        <div className="lg:sticky lg:top-24">
           <Card className="overflow-hidden">
             <CardContent className="p-0">
               <ThemePreview
