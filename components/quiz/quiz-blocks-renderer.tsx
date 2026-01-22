@@ -408,9 +408,9 @@ function PriceBlock({
             className={cn(
               'relative w-full rounded-xl overflow-hidden text-left transition-all',
               'bg-card border-2 shadow-sm',
-              'hover:border-primary/50 hover:bg-[var(--quiz-card-hover,hsl(var(--muted)))]',
+              'hover:border-primary hover:bg-[var(--quiz-card-hover,hsl(var(--muted)))] hover:ring-1 hover:ring-primary',
               isSelected
-                ? 'border-primary bg-primary/5'
+                ? 'border-primary bg-primary/5 ring-1 ring-primary'
                 : hasHighlight
                   ? 'border-primary/50'
                   : 'border-border/50'
@@ -528,9 +528,9 @@ function OptionsBlock({
             onClick={() => onSelect?.(item.id)}
             className={cn(
               'w-full p-4 rounded-xl border-2 text-left transition-all',
-              'hover:border-primary/50 hover:bg-[var(--quiz-card-hover,hsl(var(--muted)))]',
+              'hover:border-primary hover:bg-[var(--quiz-card-hover,hsl(var(--muted)))] hover:ring-1 hover:ring-primary',
               isSelected
-                ? 'border-primary bg-primary/5'
+                ? 'border-primary bg-primary/5 ring-1 ring-primary'
                 : 'border-border bg-card'
             )}
           >

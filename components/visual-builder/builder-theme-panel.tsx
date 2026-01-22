@@ -255,7 +255,7 @@ export function BuilderThemePanel({ onThemeChange }: BuilderThemePanelProps) {
 
       {/* Right panel - Preview */}
       <main className="flex-1 flex flex-col items-center justify-center bg-muted/50 p-8">
-        <div className="w-full max-w-sm">
+        <div className="w-full">
           <SectionTitle className="mb-4">{copy.preview.title}</SectionTitle>
           <ThemePreview
             colors={effectiveColors}

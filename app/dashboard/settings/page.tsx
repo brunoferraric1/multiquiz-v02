@@ -268,11 +268,11 @@ export default function SettingsPage() {
         </Card>
 
         {/* Right column - Preview */}
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>{copy.preview.title}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <ThemePreview
               colors={effectiveColors}
               logoUrl={mode === 'custom' ? logoUrl : null}

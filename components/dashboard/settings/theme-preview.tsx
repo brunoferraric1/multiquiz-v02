@@ -1,127 +1,91 @@
 'use client';
 
-import type { BrandKitColors } from '@/types';
-import { useMemo, type CSSProperties } from 'react';
-import {
-  getReadableTextColor,
-  getCardBorder,
-  getMutedForeground,
-} from '@/lib/utils/color';
+import { useMemo } from 'react';
+import type { BrandKitColors, QuizDraft } from '@/types';
+import { BlocksQuizPlayer } from '@/components/quiz/blocks-quiz-player';
+
+type ThemePreviewCopy = {
+  title: string;
+  questionLabel: string;
+  option1: string;
+  option2: string;
+  buttonText: string;
+};
 
 interface ThemePreviewProps {
   colors: BrandKitColors;
   logoUrl?: string | null;
-  copy: {
-    title: string;
-    questionLabel: string;
-    option1: string;
-    option2: string;
-    buttonText: string;
-  };
+  copy: ThemePreviewCopy;
 }
 
-type BrandKitStyle = CSSProperties & Record<`--${string}`, string>;
+const buildPreviewQuiz = (copy: ThemePreviewCopy): QuizDraft => ({
+  title: copy.title,
+  visualBuilderData: {
+    schemaVersion: 1,
+    steps: [
+      {
+        id: 'theme-preview-step',
+        type: 'question',
+        label: copy.title,
+        blocks: [
+          {
+            id: 'theme-preview-header',
+            type: 'header',
+            enabled: true,
+            config: {
+              title: copy.questionLabel,
+            },
+          },
+          {
+            id: 'theme-preview-options',
+            type: 'options',
+            enabled: true,
+            config: {
+              selectionType: 'single',
+              items: [
+                { id: 'theme-preview-option-a', text: copy.option1 },
+                { id: 'theme-preview-option-b', text: copy.option2 },
+              ],
+            },
+          },
+          {
+            id: 'theme-preview-button',
+            type: 'button',
+            enabled: true,
+            config: {
+              text: copy.buttonText,
+              action: 'next_step',
+            },
+          },
+        ],
+        settings: {
+          showProgress: false,
+          allowBack: false,
+        },
+      },
+    ],
+    outcomes: [],
+  },
+});
 
 /**
- * Mini quiz preview showing active theme colors
+ * Theme preview rendered with the real quiz player for accurate styling.
  */
-export function ThemePreview({
-  colors,
-  logoUrl,
-  copy,
-}: ThemePreviewProps) {
-  const style = useMemo(() => {
-    const primary = colors.primary;
-    const cardColor = colors.secondary;
-    const backgroundColor = colors.accent;
-    const cardBorder = getCardBorder(cardColor);
-    const mutedForeground = getMutedForeground(backgroundColor);
-
-    const brandKitStyle: BrandKitStyle = {
-      '--color-primary': primary,
-      '--color-primary-foreground': getReadableTextColor(primary),
-      '--color-secondary': cardColor,
-      '--color-secondary-foreground': getReadableTextColor(cardColor),
-      '--color-background': backgroundColor,
-      '--color-foreground': getReadableTextColor(backgroundColor),
-      '--color-muted-foreground': mutedForeground,
-      '--color-card': cardColor,
-      '--color-card-foreground': getReadableTextColor(cardColor),
-      '--color-border': cardBorder,
-    };
-
-    return brandKitStyle;
-  }, [colors]);
+export function ThemePreview({ colors, logoUrl, copy }: ThemePreviewProps) {
+  const previewQuiz = useMemo(() => buildPreviewQuiz(copy), [copy]);
 
   return (
-    <div
-      className="rounded-xl overflow-hidden border shadow-sm"
-      style={{
-        backgroundColor: 'var(--color-background)',
-        color: 'var(--color-foreground)',
-        ...style,
-      }}
-    >
-      {/* Logo area */}
-      {logoUrl && (
-        <div className="p-3 flex justify-center">
-          <img
-            src={logoUrl}
-            alt="Logo"
-            className="h-8 w-auto max-w-[120px] object-contain"
-          />
-        </div>
-      )}
-
-      {/* Preview content */}
-      <div className="p-4 space-y-4">
-        {/* Question label */}
-        <div className="text-center">
-          <p
-            className="text-sm font-medium"
-            style={{ color: 'var(--color-foreground)' }}
-          >
-            {copy.questionLabel}
-          </p>
-        </div>
-
-        {/* Option cards */}
-        <div className="space-y-2">
-          <div
-            className="p-3 rounded-lg border text-center text-sm"
-            style={{
-              backgroundColor: 'var(--color-card)',
-              color: 'var(--color-card-foreground)',
-              borderColor: 'var(--color-border)',
-            }}
-          >
-            {copy.option1}
-          </div>
-          <div
-            className="p-3 rounded-lg border text-center text-sm"
-            style={{
-              backgroundColor: 'var(--color-card)',
-              color: 'var(--color-card-foreground)',
-              borderColor: 'var(--color-primary)',
-              boxShadow: `0 0 0 1px var(--color-primary)`,
-            }}
-          >
-            {copy.option2}
-          </div>
-        </div>
-
-        {/* Button */}
-        <button
-          type="button"
-          className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
-          style={{
-            backgroundColor: 'var(--color-primary)',
-            color: 'var(--color-primary-foreground)',
-          }}
-        >
-          {copy.buttonText}
-        </button>
-      </div>
+    <div className="relative h-[60vh] min-h-[420px] w-full overflow-x-hidden overflow-y-auto">
+      <BlocksQuizPlayer
+        quiz={previewQuiz}
+        mode="preview"
+        brandKitColors={colors}
+        brandKitLogoUrl={logoUrl}
+        layout="embedded"
+        initialSelectedOptions={{
+          'theme-preview-step': ['theme-preview-option-b'],
+        }}
+      />
     </div>
   );
 }

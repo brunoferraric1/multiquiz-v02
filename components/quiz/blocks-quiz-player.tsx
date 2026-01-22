@@ -16,6 +16,7 @@ import { AnalyticsService } from '@/lib/services/analytics-service';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { quizToVisualBuilder } from '@/lib/utils/visual-builder-converters';
 import { ArrowLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   getReadableTextColor,
   getCardBorder,
@@ -33,6 +34,9 @@ interface BlocksQuizPlayerProps {
   onExit?: () => void;
   brandKitColors?: BrandKitColors | null;
   brandKitLogoUrl?: string | null;
+  layout?: 'full' | 'embedded';
+  className?: string;
+  initialSelectedOptions?: SelectionState;
 }
 
 type SelectionState = Record<string, string[]>;
@@ -47,6 +51,9 @@ export function BlocksQuizPlayer({
   onExit,
   brandKitColors,
   brandKitLogoUrl,
+  layout = 'full',
+  className,
+  initialSelectedOptions,
 }: BlocksQuizPlayerProps) {
   // Get blocks data (prefer stored, fallback to reconstruction for legacy quizzes)
   const visualBuilderData = useMemo((): VisualBuilderData => {
@@ -129,7 +136,9 @@ export function BlocksQuizPlayer({
 
   // State machine
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [selectedOptions, setSelectedOptions] = useState<SelectionState>({});
+  const [selectedOptions, setSelectedOptions] = useState<SelectionState>(
+    initialSelectedOptions ?? {}
+  );
   const [selectedPrices, setSelectedPrices] = useState<SelectionState>({});
   const [fieldValues, setFieldValues] = useState<FieldValuesState>({});
   const [resultOutcomeId, setResultOutcomeId] = useState<string | null>(null);
@@ -438,7 +447,11 @@ export function BlocksQuizPlayer({
 
   return (
     <div
-      className="relative min-h-screen w-full bg-background px-4 py-8 pb-20 text-foreground sm:px-8 sm:pb-24 flex flex-col justify-center"
+      className={cn(
+        'relative w-full bg-background px-4 py-8 pb-20 text-foreground sm:px-8 sm:pb-24 flex flex-col justify-center',
+        layout === 'full' ? 'min-h-screen' : 'min-h-full',
+        className
+      )}
       style={brandKitStyle}
     >
       {/* Brand logo */}
@@ -505,7 +518,12 @@ export function BlocksQuizPlayer({
       </div>
 
       {/* Footer branding */}
-      <div className="pointer-events-auto fixed bottom-4 right-4 z-10">
+      <div
+        className={cn(
+          'pointer-events-auto bottom-4 right-4 z-10',
+          layout === 'full' ? 'fixed' : 'absolute'
+        )}
+      >
         {isLive ? (
           <a
             href="/"
