@@ -79,7 +79,9 @@ function VisualBuilderEditor() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const quizRef = useRef<QuizDraft | null>(null)
   const checkedRef = useRef(false)
-  const saveStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savingStartedAtRef = useRef<number | null>(null)
+  const savingDelayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Check if quiz exists and load it, or create new
   useEffect(() => {
@@ -187,31 +189,54 @@ function VisualBuilderEditor() {
 
   useEffect(() => {
     return () => {
-      if (saveStatusTimeoutRef.current) {
-        clearTimeout(saveStatusTimeoutRef.current)
+      if (savingDelayTimeoutRef.current) {
+        clearTimeout(savingDelayTimeoutRef.current)
+      }
+      if (savedResetTimeoutRef.current) {
+        clearTimeout(savedResetTimeoutRef.current)
       }
     }
   }, [])
 
-  const clearSaveStatusTimeout = useCallback(() => {
-    if (saveStatusTimeoutRef.current) {
-      clearTimeout(saveStatusTimeoutRef.current)
-      saveStatusTimeoutRef.current = null
+  const clearSaveStatusTimeouts = useCallback(() => {
+    if (savingDelayTimeoutRef.current) {
+      clearTimeout(savingDelayTimeoutRef.current)
+      savingDelayTimeoutRef.current = null
+    }
+    if (savedResetTimeoutRef.current) {
+      clearTimeout(savedResetTimeoutRef.current)
+      savedResetTimeoutRef.current = null
     }
   }, [])
 
   const startSavingStatus = useCallback(() => {
-    clearSaveStatusTimeout()
+    clearSaveStatusTimeouts()
+    savingStartedAtRef.current = Date.now()
     setSaveStatus('saving')
-  }, [clearSaveStatusTimeout])
+  }, [clearSaveStatusTimeouts])
 
   const showSavedStatus = useCallback(() => {
-    clearSaveStatusTimeout()
-    setSaveStatus('saved')
-    saveStatusTimeoutRef.current = setTimeout(() => {
-      setSaveStatus('idle')
-    }, 1500)
-  }, [clearSaveStatusTimeout])
+    const minSavingDurationMs = 900
+    const savedDurationMs = 2000
+    const startedAt = savingStartedAtRef.current
+    const elapsed = startedAt ? Date.now() - startedAt : minSavingDurationMs
+    const delay = Math.max(minSavingDurationMs - elapsed, 0)
+
+    clearSaveStatusTimeouts()
+
+    const finalizeSavedState = () => {
+      setSaveStatus('saved')
+      savedResetTimeoutRef.current = setTimeout(() => {
+        setSaveStatus('idle')
+      }, savedDurationMs)
+    }
+
+    if (delay > 0) {
+      savingDelayTimeoutRef.current = setTimeout(finalizeSavedState, delay)
+    } else {
+      finalizeSavedState()
+    }
+  }, [clearSaveStatusTimeouts])
 
   // Set up auto-save
   const { forceSave, isSaving } = useVisualBuilderAutoSave({
@@ -232,7 +257,8 @@ function VisualBuilderEditor() {
     },
     onSaveError: (err) => {
       console.error('[VisualBuilder] Auto-save error:', err)
-      clearSaveStatusTimeout()
+      clearSaveStatusTimeouts()
+      savingStartedAtRef.current = null
       setSaveStatus('idle')
       toast.error('Erro ao salvar alterações.')
     },
@@ -282,13 +308,14 @@ function VisualBuilderEditor() {
       window.open(`/quiz/${id}?preview=true`, '_blank')
     } catch (err) {
       console.error('[VisualBuilder] Error saving before preview:', err)
-      clearSaveStatusTimeout()
+      clearSaveStatusTimeouts()
+      savingStartedAtRef.current = null
       setSaveStatus('idle')
       toast.error('Erro ao salvar. Tente novamente.')
     } finally {
       setIsSavingForPreview(false)
     }
-  }, [id, forceSave, isSavingForPreview, startSavingStatus, showSavedStatus, clearSaveStatusTimeout])
+  }, [id, forceSave, isSavingForPreview, startSavingStatus, showSavedStatus, clearSaveStatusTimeouts])
 
   // Handler: Publish quiz
   const handlePublish = useCallback(async () => {
