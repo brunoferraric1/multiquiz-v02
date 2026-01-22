@@ -2,10 +2,21 @@ import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp, getAdminDb, getUserSubscription } from '@/lib/firebase-admin';
 
-type LeadPreview = {
+type FieldResponse = {
+  fieldId: string;
+  label: string;
+  type: string;
+  value: string;
+  stepId: string;
+};
+
+type DataCollectionPreview = {
   id: string;
   quizId: string;
   startedAt: number;
+  // Primary data collection storage
+  fieldResponses?: FieldResponse[];
+  // Legacy lead object for backward compatibility
   lead?: {
     name?: string;
     email?: string;
@@ -14,8 +25,14 @@ type LeadPreview = {
   resultOutcomeId?: string;
 };
 
-const hasLeadData = (lead?: LeadPreview['lead']) => {
-  return Boolean(lead?.name || lead?.email || lead?.phone);
+// Check if attempt has any collected data (new or legacy format)
+const hasCollectedData = (attempt: DataCollectionPreview) => {
+  // Check new format first
+  if (attempt.fieldResponses && attempt.fieldResponses.length > 0) {
+    return true;
+  }
+  // Fallback to legacy format
+  return Boolean(attempt.lead?.name || attempt.lead?.email || attempt.lead?.phone);
 };
 
 const toMillis = (value: unknown) => {
@@ -61,7 +78,7 @@ export async function GET(request: Request) {
         : quizIds;
 
     if (filteredQuizIds.length === 0) {
-      return NextResponse.json({ totalCount: 0, lockedCount: 0, leads: [], isPro });
+      return NextResponse.json({ totalCount: 0, lockedCount: 0, collectedData: [], isPro });
     }
 
     const attemptsSnapshots = await Promise.all(
@@ -73,13 +90,16 @@ export async function GET(request: Request) {
       ))
     );
 
-    const allLeads: LeadPreview[] = attemptsSnapshots.flatMap((snapshot) => (
+    const allCollectedData: DataCollectionPreview[] = attemptsSnapshots.flatMap((snapshot) => (
       snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
           quizId: data.quizId,
           startedAt: toMillis(data.startedAt),
+          // Include fieldResponses if present
+          fieldResponses: data.fieldResponses || undefined,
+          // Include legacy lead for backward compatibility
           lead: data.lead
             ? {
               name: data.lead.name,
@@ -90,17 +110,17 @@ export async function GET(request: Request) {
           resultOutcomeId: data.resultOutcomeId,
         };
       })
-    )).filter((lead) => hasLeadData(lead.lead));
+    )).filter((attempt) => hasCollectedData(attempt));
 
-    allLeads.sort((a, b) => b.startedAt - a.startedAt);
+    allCollectedData.sort((a, b) => b.startedAt - a.startedAt);
 
-    const totalCount = allLeads.length;
+    const totalCount = allCollectedData.length;
 
     if (!isPro) {
       return NextResponse.json({
         totalCount: 0,
         lockedCount: 0,
-        leads: [],
+        collectedData: [],
         isPro,
       });
     }
@@ -108,11 +128,11 @@ export async function GET(request: Request) {
     return NextResponse.json({
       totalCount,
       lockedCount: 0,
-      leads: allLeads,
+      collectedData: allCollectedData,
       isPro,
     });
   } catch (error) {
-    console.error('[Leads API] Failed to load leads', error);
-    return NextResponse.json({ error: 'Failed to load leads' }, { status: 500 });
+    console.error('[Data Collection API] Failed to load collected data', error);
+    return NextResponse.json({ error: 'Failed to load collected data' }, { status: 500 });
   }
 }

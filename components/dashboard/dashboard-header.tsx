@@ -94,17 +94,6 @@ export function DashboardHeader() {
                   variant="ghost"
                   className={cn(
                     "w-full justify-start text-base",
-                    isActiveRoute('/dashboard/leads') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                  onClick={() => handleNavigation('/dashboard/leads')}
-                  aria-current={isActiveRoute('/dashboard/leads') ? 'page' : undefined}
-                >
-                  {common.navigation.leads}
-                </Button>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start text-base",
                     isActiveRoute('/pricing') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
                   )}
                   onClick={() => handleNavigation('/pricing')}
@@ -190,20 +179,6 @@ export function DashboardHeader() {
           >
             <Link href={localizePathname("/dashboard/reports", locale)}>
               {common.navigation.reports}
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "text-sm",
-              isActiveRoute('/dashboard/leads') && "bg-muted text-foreground hover:bg-muted hover:text-foreground"
-            )}
-            aria-current={isActiveRoute('/dashboard/leads') ? 'page' : undefined}
-          >
-            <Link href={localizePathname("/dashboard/leads", locale)}>
-              {common.navigation.leads}
             </Link>
           </Button>
           <Button

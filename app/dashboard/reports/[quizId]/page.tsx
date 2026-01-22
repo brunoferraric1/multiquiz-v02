@@ -6,14 +6,14 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import { QuizService } from '@/lib/services/quiz-service';
 import { getBrandKit } from '@/lib/services/brand-kit-service';
-import { getQuestionMetadata, getOutcomeMetadata } from '@/lib/utils/visual-builder-helpers';
+import { getQuestionMetadata, getOutcomeMetadata, getFieldMetadata } from '@/lib/utils/visual-builder-helpers';
 import { auth } from '@/lib/firebase';
-import type { BrandKitColors, Quiz, QuizAttempt } from '@/types';
+import type { BrandKitColors, Quiz, QuizAttempt, FieldResponse } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { LeadsTable } from '@/components/dashboard/leads-table';
+import { LeadsTable, type DataColumn, type DataRow } from '@/components/dashboard/leads-table';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { BlocksQuizPlayer } from '@/components/quiz/blocks-quiz-player';
 import { ArrowLeft, CheckCircle2, Download, Eye, Globe, Lock, Mail, Play, Search, X } from 'lucide-react';
@@ -54,10 +54,11 @@ const getReadableTextColor = (hex: string) => {
     return luminance > 0.6 ? '#0f172a' : '#f8fafc';
 };
 
-type LeadPreview = {
+type CollectedDataPreview = {
     id: string;
     quizId: string;
     startedAt: number;
+    fieldResponses?: FieldResponse[];
     lead?: {
         name?: string;
         email?: string;
@@ -66,10 +67,10 @@ type LeadPreview = {
     resultOutcomeId?: string;
 };
 
-type LeadsResponse = {
+type CollectedDataResponse = {
     totalCount: number;
     lockedCount: number;
-    leads: LeadPreview[];
+    collectedData: CollectedDataPreview[];
     isPro: boolean;
 };
 
@@ -99,7 +100,7 @@ const ReportsGate = ({ show, onUpgradeClick, children }: ReportsGateProps) => {
                             <div className="space-y-1.5">
                                 <h3 className="font-semibold text-lg">Desbloqueie todos os dados do relatório</h3>
                                 <p className="text-sm text-muted-foreground leading-relaxed">
-                                    No plano Pro você acessa funil, resultados e leads completos deste quiz.
+                                    No plano Pro você acessa funil, resultados e dados coletados completos deste quiz.
                                 </p>
                             </div>
                             <Button onClick={onUpgradeClick} className="w-full sm:w-auto min-w-[200px]">
@@ -232,11 +233,11 @@ export default function QuizReportPage() {
     const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
     const [loading, setLoading] = useState(true);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-    const [leads, setLeads] = useState<LeadPreview[]>([]);
-    const [totalLeadCount, setTotalLeadCount] = useState(0);
-    const [lockedLeadCount, setLockedLeadCount] = useState(0);
+    const [collectedData, setCollectedData] = useState<CollectedDataPreview[]>([]);
+    const [totalDataCount, setTotalDataCount] = useState(0);
+    const [lockedDataCount, setLockedDataCount] = useState(0);
     const [hasProAccess, setHasProAccess] = useState(false);
-    const [leadsLoading, setLeadsLoading] = useState(true);
+    const [dataLoading, setDataLoading] = useState(true);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const previewCloseButtonStyle = quiz?.brandKitMode === 'custom' && brandKitColors?.primary
@@ -333,19 +334,19 @@ export default function QuizReportPage() {
     }, [user, quizId, isProUser]);
 
     useEffect(() => {
-        async function fetchLeads() {
+        async function fetchCollectedData() {
             if (!user || !quizId) return;
 
             if (!isProUser) {
-                setLeads([]);
-                setTotalLeadCount(0);
-                setLockedLeadCount(0);
+                setCollectedData([]);
+                setTotalDataCount(0);
+                setLockedDataCount(0);
                 setHasProAccess(false);
-                setLeadsLoading(false);
+                setDataLoading(false);
                 return;
             }
 
-            setLeadsLoading(true);
+            setDataLoading(true);
             try {
                 const token = await auth?.currentUser?.getIdToken();
                 if (!token) {
@@ -359,22 +360,22 @@ export default function QuizReportPage() {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch leads');
+                    throw new Error('Failed to fetch collected data');
                 }
 
-                const data = (await response.json()) as LeadsResponse;
-                setLeads(data.leads);
-                setTotalLeadCount(data.totalCount);
-                setLockedLeadCount(data.lockedCount);
+                const data = (await response.json()) as CollectedDataResponse;
+                setCollectedData(data.collectedData);
+                setTotalDataCount(data.totalCount);
+                setLockedDataCount(data.lockedCount);
                 setHasProAccess(data.isPro);
             } catch (error) {
-                console.error('Failed to fetch leads data', error);
+                console.error('Failed to fetch collected data', error);
             } finally {
-                setLeadsLoading(false);
+                setDataLoading(false);
             }
         }
 
-        fetchLeads();
+        fetchCollectedData();
     }, [user, quizId, isProUser]);
 
     if (loading) {
@@ -474,37 +475,68 @@ export default function QuizReportPage() {
     const totalViews = quiz.stats?.views ?? 0;
     const totalStarts = validAttempts.length;
     const totalCompletions = funnelCounts.completed;
-    const totalLeads = validAttempts.filter(a => a.lead && (a.lead.email || a.lead.phone)).length;
+    const totalCollectedData = validAttempts.filter(a =>
+        (a.fieldResponses && a.fieldResponses.length > 0) ||
+        (a.lead && (a.lead.email || a.lead.phone))
+    ).length;
     const startRate = totalViews ? Math.round((totalStarts / totalViews) * 100) : 0;
     const completionRate = totalStarts ? Math.round((totalCompletions / totalStarts) * 100) : 0;
 
-    const filteredLeads = leads.filter(lead => {
+    // Build dynamic columns from field metadata
+    const fieldMeta = getFieldMetadata(steps);
+    const dynamicColumns: DataColumn[] = [
+        { id: 'date', label: 'Data', type: 'date' },
+        ...fieldMeta.map(field => ({
+            id: field.id,
+            label: field.label,
+            type: field.type as DataColumn['type'],
+        })),
+        { id: 'result', label: 'Resultado', type: 'result' as const },
+    ];
+
+    // Filter collected data by search term
+    const filteredData = collectedData.filter(data => {
         const searchLower = searchTerm.toLowerCase();
+
+        // Search in fieldResponses (new format)
+        if (data.fieldResponses) {
+            return data.fieldResponses.some(fr =>
+                fr.value.toLowerCase().includes(searchLower)
+            );
+        }
+
+        // Fallback to legacy lead format
         return (
-            lead.lead?.name?.toLowerCase().includes(searchLower) ||
-            lead.lead?.email?.toLowerCase().includes(searchLower) ||
-            lead.lead?.phone?.includes(searchLower)
+            data.lead?.name?.toLowerCase().includes(searchLower) ||
+            data.lead?.email?.toLowerCase().includes(searchLower) ||
+            data.lead?.phone?.includes(searchLower)
         );
     });
 
     const handleExportCSV = () => {
-        if (filteredLeads.length === 0) return;
+        if (filteredData.length === 0) return;
 
-        const headers = ['Data', 'Nome', 'Email', 'Telefone', 'Quiz', 'Resultado'];
+        const headers = dynamicColumns.map(col => col.label);
         const csvContent = [
             headers.join(','),
-            ...filteredLeads.map(lead => {
-                const quizTitle = quiz?.title || 'Quiz Desconhecido';
-                const resultName = outcomeMeta.find(o => o.id === lead.resultOutcomeId)?.title || 'N/A';
-
-                return [
-                    format(new Date(lead.startedAt), 'dd/MM/yyyy HH:mm'),
-                    `"${lead.lead?.name || ''}"`,
-                    `"${lead.lead?.email || ''}"`,
-                    `"${lead.lead?.phone || ''}"`,
-                    `"${quizTitle}"`,
-                    `"${resultName}"`
-                ].join(',');
+            ...filteredData.map(data => {
+                return dynamicColumns.map(column => {
+                    if (column.id === 'date' && data.startedAt) {
+                        return format(new Date(data.startedAt), 'dd/MM/yyyy HH:mm');
+                    } else if (column.id === 'result') {
+                        const resultName = outcomeMeta.find(o => o.id === data.resultOutcomeId)?.title || 'N/A';
+                        return `"${resultName}"`;
+                    } else {
+                        // Find value in fieldResponses (new format)
+                        if (data.fieldResponses) {
+                            const response = data.fieldResponses.find(fr => fr.fieldId === column.id);
+                            return `"${response?.value || ''}"`;
+                        }
+                        // Fallback to legacy lead format
+                        const legacyValue = data.lead?.[column.id as keyof typeof data.lead];
+                        return `"${legacyValue || ''}"`;
+                    }
+                }).join(',');
             })
         ].join('\n');
 
@@ -512,7 +544,7 @@ export default function QuizReportPage() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `leads_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+        link.setAttribute('download', `dados_coletados_${format(new Date(), 'yyyy-MM-dd')}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -530,22 +562,41 @@ export default function QuizReportPage() {
         setShowUpgradeModal(true);
     };
 
-    const visibleLeadCount = hasProAccess ? filteredLeads.length : leads.length;
-    const leadRows = filteredLeads.map((lead) => {
-        const resultName = outcomeMeta.find(o => o.id === lead.resultOutcomeId)?.title || '-';
+    const visibleDataCount = hasProAccess ? filteredData.length : collectedData.length;
+
+    // Transform collected data to table rows with dynamic fields
+    const dataRows: DataRow[] = filteredData.map((data) => {
+        const fields: Record<string, string> = {};
+
+        // Populate fields from fieldResponses (new format)
+        if (data.fieldResponses) {
+            data.fieldResponses.forEach(response => {
+                fields[response.fieldId] = response.value;
+            });
+        } else if (data.lead) {
+            // Fallback: populate from legacy lead format
+            // Match legacy fields to current field metadata by type
+            fieldMeta.forEach(field => {
+                if (field.type === 'email' && data.lead?.email) {
+                    fields[field.id] = data.lead.email;
+                } else if (field.type === 'phone' && data.lead?.phone) {
+                    fields[field.id] = data.lead.phone;
+                } else if (field.type === 'text' && data.lead?.name && !fields[field.id]) {
+                    fields[field.id] = data.lead.name;
+                }
+            });
+        }
 
         return {
-            id: lead.id,
-            startedAt: lead.startedAt,
-            name: lead.lead?.name,
-            email: lead.lead?.email,
-            phone: lead.lead?.phone,
-            quizTitle: quiz?.title || 'Desconhecido',
-            resultTitle: resultName,
+            id: data.id,
+            startedAt: data.startedAt,
+            resultTitle: outcomeMeta.find(o => o.id === data.resultOutcomeId)?.title || '-',
+            fields,
         };
     });
-    const leadsTitle = 'Leads capturados';
-    const displayLockedCount = hasProAccess ? lockedLeadCount : 10;
+
+    const dataTitle = 'Dados coletados';
+    const displayLockedCount = hasProAccess ? lockedDataCount : 10;
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-12">
@@ -635,13 +686,13 @@ export default function QuizReportPage() {
                 </Card>
                 <Card>
                     <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 text-muted-foreground">
-                        <CardTitle className="text-sm font-medium">Leads capturados</CardTitle>
+                        <CardTitle className="text-sm font-medium">Dados coletados</CardTitle>
                         <Mail className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold h-9 flex items-center">
                             {isProUser ? (
-                                totalLeads
+                                totalCollectedData
                             ) : (
                                 <span className="inline-flex items-center justify-center">
                                     <Lock className="h-6 w-6 text-muted-foreground" />
@@ -649,7 +700,7 @@ export default function QuizReportPage() {
                                 </span>
                             )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Leads com contato informado</p>
+                        <p className="text-xs text-muted-foreground mt-1">Respostas com dados informados</p>
                     </CardContent>
                 </Card>
             </div>
@@ -743,9 +794,9 @@ export default function QuizReportPage() {
 
                 <div className="mt-10">
                     <div className="mb-6">
-                        <h2 className="text-2xl font-semibold">{leadsTitle}</h2>
+                        <h2 className="text-2xl font-semibold">{dataTitle}</h2>
                         <p className="text-muted-foreground mt-1">
-                            Veja os contatos gerados por este quiz.
+                            Veja os dados coletados nas respostas deste quiz.
                         </p>
                     </div>
                     <Card>
@@ -755,7 +806,7 @@ export default function QuizReportPage() {
                                     <div className="relative">
                                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                         <Input
-                                            placeholder="Buscar por nome, email..."
+                                            placeholder="Buscar nos dados..."
                                             className="pl-8"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -766,7 +817,7 @@ export default function QuizReportPage() {
                                     variant="outline"
                                     className="md:self-start h-10"
                                     onClick={handleExportClick}
-                                    disabled={hasProAccess && filteredLeads.length === 0}
+                                    disabled={hasProAccess && filteredData.length === 0}
                                 >
                                     {hasProAccess ? (
                                         <Download className="mr-2 h-4 w-4" />
@@ -779,13 +830,14 @@ export default function QuizReportPage() {
                         </CardHeader>
                         <CardContent>
                             <LeadsTable
-                                rows={leadRows}
-                                loading={leadsLoading}
+                                columns={dynamicColumns}
+                                rows={dataRows}
+                                loading={dataLoading}
                                 lockedCount={displayLockedCount}
-                                visibleCount={visibleLeadCount}
-                                totalCount={totalLeadCount}
+                                visibleCount={visibleDataCount}
+                                totalCount={totalDataCount}
                                 onUpgradeClick={handleUpgradeClick}
-                                showFooter={!leadsLoading}
+                                showFooter={!dataLoading}
                                 showPreviewCounts={false}
                             />
                         </CardContent>

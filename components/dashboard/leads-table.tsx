@@ -4,18 +4,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Lock } from 'lucide-react';
 import { format } from 'date-fns';
 
-type LeadRow = {
+// Column definition for dynamic table
+export type DataColumn = {
+    id: string;
+    label: string;
+    type: 'date' | 'text' | 'email' | 'phone' | 'number' | 'result';
+    width?: string;
+};
+
+// Row data with dynamic fields
+export type DataRow = {
     id: string;
     startedAt?: number | null;
-    name?: string | null;
-    email?: string | null;
-    phone?: string | null;
-    quizTitle?: string | null;
     resultTitle?: string | null;
+    fields: Record<string, string>; // fieldId -> value
 };
 
 type LeadsTableProps = {
-    rows: LeadRow[];
+    columns: DataColumn[]; // Dynamic column definitions
+    rows: DataRow[];
     loading?: boolean;
     lockedCount?: number;
     visibleCount: number;
@@ -30,18 +37,23 @@ const ESTIMATED_ROW_HEIGHT = 53;
 const MIN_SECTION_HEIGHT = 384;
 const SKELETON_ROW_COUNT = 6;
 
-const columnWidths = {
-    date: 'min-w-[9.5rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
-    name: 'min-w-[9rem] sm:min-w-[auto]',
-    email: 'min-w-[12.5rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
-    phone: 'min-w-[10rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
-    quiz: 'min-w-[15rem] sm:min-w-[auto]',
-    result: 'min-w-[11rem] sm:min-w-[auto]',
+// Get responsive width class for a column type
+const getColumnWidth = (type: DataColumn['type']): string => {
+    const widthMap: Record<DataColumn['type'], string> = {
+        date: 'min-w-[9.5rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
+        text: 'min-w-[9rem] sm:min-w-[auto]',
+        email: 'min-w-[12.5rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
+        phone: 'min-w-[10rem] whitespace-nowrap sm:min-w-[auto] sm:whitespace-normal',
+        number: 'min-w-[8rem] sm:min-w-[auto]',
+        result: 'min-w-[11rem] sm:min-w-[auto]',
+    };
+    return widthMap[type] || 'min-w-[9rem] sm:min-w-[auto]';
 };
 
-const leadLabel = (count: number) => (count === 1 ? '1 lead' : `${count} leads`);
+const dataLabel = (count: number) => (count === 1 ? '1 dado coletado' : `${count} dados coletados`);
 
 export function LeadsTable({
+    columns,
     rows,
     loading = false,
     lockedCount = 0,
@@ -57,8 +69,8 @@ export function LeadsTable({
     const placeholderRows = Array.from({ length: displayLockedRows });
     const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT });
     const spacerHeight = Math.max(0, MIN_SECTION_HEIGHT - displayLockedRows * ESTIMATED_ROW_HEIGHT);
-    const visibleLeadLabel = leadLabel(visibleCount);
-    const totalLeadLabel = leadLabel(totalCount);
+    const visibleDataLabel = dataLabel(visibleCount);
+    const totalDataLabel = dataLabel(totalCount);
     const showCounts = showPreviewCounts && totalCount > 0;
 
     const renderUpgradeCard = (className: string) => (
@@ -72,11 +84,11 @@ export function LeadsTable({
                     <p className="text-sm text-muted-foreground leading-relaxed">
                         {showCounts && (
                             <>
-                                Você está vendo <span className="font-medium text-foreground">{visibleLeadLabel}</span> de <span className="font-medium text-foreground">{totalLeadLabel}</span>.
+                                Você está vendo <span className="font-medium text-foreground">{visibleDataLabel}</span> de <span className="font-medium text-foreground">{totalDataLabel}</span>.
                                 <br />
                             </>
                         )}
-                        No plano Pro você acessa os dados de todos os leads que responderam o seu quiz.
+                        No plano Pro você acessa todos os dados coletados nas respostas do seu quiz.
                     </p>
                 </div>
                 <Button onClick={onUpgradeClick} className="w-full sm:w-auto min-w-[200px]">
@@ -88,17 +100,16 @@ export function LeadsTable({
 
     return (
         <>
-            {loading && <span className="sr-only">Carregando leads...</span>}
+            {loading && <span className="sr-only">Carregando dados...</span>}
             <div className="relative rounded-md border">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className={columnWidths.date}>Data</TableHead>
-                            <TableHead className={columnWidths.name}>Nome</TableHead>
-                            <TableHead className={columnWidths.email}>Email</TableHead>
-                            <TableHead className={columnWidths.phone}>Telefone</TableHead>
-                            <TableHead className={columnWidths.quiz}>Quiz</TableHead>
-                            <TableHead className={columnWidths.result}>Resultado</TableHead>
+                            {columns.map((column) => (
+                                <TableHead key={column.id} className={getColumnWidth(column.type)}>
+                                    {column.label}
+                                </TableHead>
+                            ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody className={loading ? 'animate-pulse' : undefined}>
@@ -106,45 +117,41 @@ export function LeadsTable({
                             <>
                                 {skeletonRows.map((_, index) => (
                                     <TableRow key={`skeleton-${index}`} className="hover:bg-transparent">
-                                        <TableCell className={`py-4 ${columnWidths.date}`}>
-                                            <div className="h-3 w-full max-w-[9.5rem] rounded bg-muted/60" />
-                                        </TableCell>
-                                        <TableCell className={`py-4 ${columnWidths.name}`}>
-                                            <div className="h-3 w-full max-w-[8rem] rounded bg-muted/60" />
-                                        </TableCell>
-                                        <TableCell className={`py-4 ${columnWidths.email}`}>
-                                            <div className="h-3 w-full max-w-[13rem] rounded bg-muted/60" />
-                                        </TableCell>
-                                        <TableCell className={`py-4 ${columnWidths.phone}`}>
-                                            <div className="h-3 w-full max-w-[9rem] rounded bg-muted/60" />
-                                        </TableCell>
-                                        <TableCell className={`py-4 ${columnWidths.quiz}`}>
-                                            <div className="h-3 w-full max-w-[16rem] rounded bg-muted/60" />
-                                        </TableCell>
-                                        <TableCell className={`py-4 ${columnWidths.result}`}>
-                                            <div className="h-3 w-full max-w-[9rem] rounded bg-muted/60" />
-                                        </TableCell>
+                                        {columns.map((column) => (
+                                            <TableCell key={column.id} className={`py-4 ${getColumnWidth(column.type)}`}>
+                                                <div className="h-3 w-full max-w-[12rem] rounded bg-muted/60" />
+                                            </TableCell>
+                                        ))}
                                     </TableRow>
                                 ))}
                             </>
                         ) : rows.length === 0 && displayLockedRows === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
-                                    Nenhum lead encontrado.
+                                <TableCell colSpan={columns.length} className="h-24 text-center">
+                                    Nenhum dado encontrado.
                                 </TableCell>
                             </TableRow>
                         ) : (
                             <>
-                                {rows.map((lead) => (
-                                    <TableRow key={lead.id}>
-                                        <TableCell className={columnWidths.date}>
-                                            {lead.startedAt ? format(new Date(lead.startedAt), 'dd/MM/yyyy HH:mm') : '-'}
-                                        </TableCell>
-                                        <TableCell className={`${columnWidths.name} font-medium`}>{lead.name || '-'}</TableCell>
-                                        <TableCell className={columnWidths.email}>{lead.email || '-'}</TableCell>
-                                        <TableCell className={columnWidths.phone}>{lead.phone || '-'}</TableCell>
-                                        <TableCell className={columnWidths.quiz}>{lead.quizTitle || 'Desconhecido'}</TableCell>
-                                        <TableCell className={columnWidths.result}>{lead.resultTitle || '-'}</TableCell>
+                                {rows.map((row) => (
+                                    <TableRow key={row.id}>
+                                        {columns.map((column) => {
+                                            let value = '-';
+
+                                            if (column.type === 'date' && row.startedAt) {
+                                                value = format(new Date(row.startedAt), 'dd/MM/yyyy HH:mm');
+                                            } else if (column.type === 'result') {
+                                                value = row.resultTitle || '-';
+                                            } else {
+                                                value = row.fields[column.id] || '-';
+                                            }
+
+                                            return (
+                                                <TableCell key={column.id} className={getColumnWidth(column.type)}>
+                                                    {value}
+                                                </TableCell>
+                                            );
+                                        })}
                                     </TableRow>
                                 ))}
                                 {displayLockedRows > 0 && (
@@ -154,29 +161,16 @@ export function LeadsTable({
                                                 key={`locked-${index}`}
                                                 className="bg-muted/10 text-muted-foreground/65 hover:bg-muted/20 blur-[2px] select-none pointer-events-none"
                                             >
-                                                <TableCell className={`py-3 ${columnWidths.date}`}>
-                                                    <div className="h-3 w-full max-w-[9.5rem] rounded bg-muted/55" />
-                                                </TableCell>
-                                                <TableCell className={`py-3 ${columnWidths.name}`}>
-                                                    <div className="h-3 w-full max-w-[8rem] rounded bg-muted/55" />
-                                                </TableCell>
-                                                <TableCell className={`py-3 ${columnWidths.email}`}>
-                                                    <div className="h-3 w-full max-w-[13rem] rounded bg-muted/55" />
-                                                </TableCell>
-                                                <TableCell className={`py-3 ${columnWidths.phone}`}>
-                                                    <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
-                                                </TableCell>
-                                                <TableCell className={`py-3 ${columnWidths.quiz}`}>
-                                                    <div className="h-3 w-full max-w-[16rem] rounded bg-muted/55" />
-                                                </TableCell>
-                                                <TableCell className={`py-3 ${columnWidths.result}`}>
-                                                    <div className="h-3 w-full max-w-[9rem] rounded bg-muted/55" />
-                                                </TableCell>
+                                                {columns.map((column) => (
+                                                    <TableCell key={column.id} className={`py-3 ${getColumnWidth(column.type)}`}>
+                                                        <div className="h-3 w-full max-w-[12rem] rounded bg-muted/55" />
+                                                    </TableCell>
+                                                ))}
                                             </TableRow>
                                         ))}
                                         {spacerHeight > 0 && (
                                             <TableRow className="hover:bg-transparent border-0" style={{ height: `${spacerHeight}px` }}>
-                                                <TableCell colSpan={6} className="p-0 border-0" />
+                                                <TableCell colSpan={columns.length} className="p-0 border-0" />
                                             </TableRow>
                                         )}
                                     </>
@@ -195,7 +189,7 @@ export function LeadsTable({
             </div>
             {showFooter && (
                 <div className="mt-4 text-sm text-muted-foreground">
-                    Exibindo {rows.length} de {totalCount} leads
+                    Exibindo {rows.length} de {totalCount} {totalCount === 1 ? 'dado coletado' : 'dados coletados'}
                 </div>
             )}
         </>
