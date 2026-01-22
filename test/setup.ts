@@ -3,6 +3,37 @@ import { cleanup } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { useVisualBuilderStore } from '@/store/visual-builder-store'
 
+// Mock Firebase auth hook
+vi.mock('@/lib/hooks/use-auth', () => ({
+  useAuth: () => ({
+    user: null,
+    loading: false,
+    error: null,
+  }),
+}))
+
+// Mock subscription service
+vi.mock('@/lib/services/subscription-service', () => ({
+  useSubscription: () => ({
+    subscription: null,
+    isLoading: false,
+    error: null,
+  }),
+  isPro: () => false,
+}))
+
+// Mock brand-kit service
+vi.mock('@/lib/services/brand-kit-service', () => ({
+  getThemeSettings: vi.fn().mockResolvedValue(null),
+  saveThemeSettings: vi.fn().mockResolvedValue(undefined),
+}))
+
+// Mock storage service
+vi.mock('@/lib/services/storage-service', () => ({
+  uploadImage: vi.fn().mockResolvedValue('https://example.com/image.png'),
+  getBrandKitLogoPath: vi.fn().mockReturnValue('/brand-kit/logo.png'),
+}))
+
 // Mock next/dynamic to handle dynamic imports in tests
 vi.mock('next/dynamic', () => ({
   default: (dynamicFn: () => Promise<any>, options?: any) => {

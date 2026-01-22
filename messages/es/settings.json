@@ -1,6 +1,25 @@
 {
   "page": {
     "title": "Configuraciones",
+    "subtitle": "Personaliza tu experiencia en MultiQuiz"
+  },
+  "breadcrumb": {
+    "settings": "Configuraciones",
+    "themes": "Temas"
+  },
+  "sections": {
+    "themes": {
+      "title": "Temas",
+      "description": "Personaliza colores y logo para tus quizzes"
+    },
+    "customUrl": {
+      "title": "URL personalizada",
+      "description": "Configura tu dominio personalizado",
+      "badge": "Próximamente"
+    }
+  },
+  "themesPage": {
+    "title": "Temas",
     "subtitle": "Personaliza la apariencia de tus quizzes."
   },
   "themes": {
@@ -48,5 +67,9 @@
     "saveError": "Error al guardar configuraciones.",
     "uploadError": "Error al subir el logo.",
     "uploadTooLarge": "Archivo muy grande. Máximo 2MB."
+  },
+  "themeSelector": {
+    "title": "Tema",
+    "customize": "Personalizar temas"
   }
 }

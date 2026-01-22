@@ -23,13 +23,13 @@ describe('BuilderHeaderNav', () => {
       expect(screen.getByText('My Custom Quiz')).toBeInTheDocument()
     })
 
-    it('renders all five tabs', () => {
+    it('renders two tabs (Editar and Assistente)', () => {
       render(<BuilderHeaderNav {...defaultProps} />)
 
       const tablist = screen.getByRole('tablist')
       const tabs = within(tablist).getAllByRole('tab')
 
-      expect(tabs).toHaveLength(5)
+      expect(tabs).toHaveLength(2)
     })
 
     it('renders back and publish buttons', () => {
@@ -38,16 +38,23 @@ describe('BuilderHeaderNav', () => {
       expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument()
     })
+
+    it('renders theme selector button', () => {
+      render(<BuilderHeaderNav {...defaultProps} />)
+
+      // Theme selector button should be present
+      expect(screen.getByRole('button', { name: /tema/i })).toBeInTheDocument()
+    })
   })
 
   describe('Tab Selection', () => {
     it('marks the active tab as selected', () => {
-      render(<BuilderHeaderNav {...defaultProps} activeTab="tema" />)
+      render(<BuilderHeaderNav {...defaultProps} activeTab="assistente" />)
 
       const tabs = screen.getAllByRole('tab')
-      const temaTab = tabs.find(tab => tab.textContent?.includes('Tema'))
+      const assistenteTab = tabs.find(tab => tab.textContent?.includes('Assistente'))
 
-      expect(temaTab).toHaveAttribute('aria-selected', 'true')
+      expect(assistenteTab).toHaveAttribute('aria-selected', 'true')
     })
 
     it('marks non-active tabs as not selected', () => {
@@ -70,11 +77,11 @@ describe('BuilderHeaderNav', () => {
       render(<BuilderHeaderNav {...defaultProps} onTabChange={onTabChange} />)
 
       const tabs = screen.getAllByRole('tab')
-      const temaTab = tabs.find(tab => tab.textContent?.includes('Tema'))
+      const assistenteTab = tabs.find(tab => tab.textContent?.includes('Assistente'))
 
-      await user.click(temaTab!)
+      await user.click(assistenteTab!)
 
-      expect(onTabChange).toHaveBeenCalledWith('tema')
+      expect(onTabChange).toHaveBeenCalledWith('assistente')
     })
 
     it('calls onBack when clicking back button', async () => {

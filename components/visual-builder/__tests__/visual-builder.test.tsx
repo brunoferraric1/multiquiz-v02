@@ -29,9 +29,9 @@ describe('VisualBuilder', () => {
       const header = screen.getByRole('banner')
       const tablist = within(header).getByRole('tablist')
 
-      // Verify tab group exists with multiple tabs
+      // Verify tab group exists with two tabs (Editar and Assistente)
       const tabs = within(tablist).getAllByRole('tab')
-      expect(tabs.length).toBeGreaterThanOrEqual(4)
+      expect(tabs).toHaveLength(2)
     })
   })
 

@@ -1,6 +1,25 @@
 {
   "page": {
     "title": "Settings",
+    "subtitle": "Customize your MultiQuiz experience"
+  },
+  "breadcrumb": {
+    "settings": "Settings",
+    "themes": "Themes"
+  },
+  "sections": {
+    "themes": {
+      "title": "Themes",
+      "description": "Customize colors and logo for your quizzes"
+    },
+    "customUrl": {
+      "title": "Custom URL",
+      "description": "Configure your custom domain",
+      "badge": "Coming soon"
+    }
+  },
+  "themesPage": {
+    "title": "Themes",
     "subtitle": "Customize the appearance of your quizzes."
   },
   "themes": {
@@ -48,5 +67,9 @@
     "saveError": "Error saving settings.",
     "uploadError": "Error uploading logo.",
     "uploadTooLarge": "File too large. Maximum 2MB."
+  },
+  "themeSelector": {
+    "title": "Theme",
+    "customize": "Customize themes"
   }
 }

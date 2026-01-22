@@ -2,10 +2,12 @@
 
 import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
-import { ArrowLeft, Edit3, Sparkles, Palette, Loader2 } from 'lucide-react'
+import { ArrowLeft, Edit3, Sparkles, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ThemeSelectorDropdown } from './theme-selector-dropdown'
+import type { BrandKitColors } from '@/types'
 
-export type HeaderTab = 'editar' | 'assistente' | 'tema'
+export type HeaderTab = 'editar' | 'assistente'
 
 interface BuilderHeaderNavProps {
   quizName: string
@@ -16,6 +18,7 @@ interface BuilderHeaderNavProps {
   isPublishing?: boolean
   isPublished?: boolean
   isBackSaving?: boolean
+  onThemeChange?: (colors: BrandKitColors) => void
 }
 
 export function BuilderHeaderNav({
@@ -27,13 +30,13 @@ export function BuilderHeaderNav({
   isPublishing = false,
   isPublished = false,
   isBackSaving = false,
+  onThemeChange,
 }: BuilderHeaderNavProps) {
   const messages = useMessages()
   const header = messages.visualBuilder.header
   const tabs: { id: HeaderTab; label: string; icon: React.ReactNode }[] = [
     { id: 'editar', label: header.tabs.editar, icon: <Edit3 className="w-4 h-4" /> },
     { id: 'assistente', label: header.tabs.assistente, icon: <Sparkles className="w-4 h-4" /> },
-    { id: 'tema', label: header.tabs.tema, icon: <Palette className="w-4 h-4" /> },
   ]
 
   // Determine button text based on publish state
@@ -86,8 +89,9 @@ export function BuilderHeaderNav({
         </nav>
       </div>
 
-      {/* Right: Actions */}
+      {/* Right: Theme selector + Publish */}
       <div className="flex items-center gap-2 w-48 justify-end">
+        <ThemeSelectorDropdown onThemeChange={onThemeChange} />
         <Button
           size="sm"
           onClick={onPublish}

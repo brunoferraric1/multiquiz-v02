@@ -15,6 +15,9 @@ interface ThemeCardProps {
 
 /**
  * Selectable theme card with color preview dots
+ *
+ * When locked, the card remains clickable (for showing upgrade modal)
+ * but displays a locked visual state
  */
 export function ThemeCard({
   name,
@@ -28,36 +31,49 @@ export function ThemeCard({
     <button
       type="button"
       onClick={onClick}
-      disabled={isLocked}
       className={cn(
         'relative flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left w-full',
         isSelected
           ? 'border-primary bg-primary/5'
           : 'border-border hover:border-primary/50 hover:bg-muted/50',
-        isLocked && 'opacity-60 cursor-not-allowed hover:border-border hover:bg-transparent'
+        isLocked && !isSelected && 'hover:border-primary/30 hover:bg-muted/30'
       )}
     >
       {/* Color dots */}
       <div className="flex gap-1.5">
         <div
-          className="w-5 h-5 rounded-full border border-white/20"
+          className={cn(
+            'w-5 h-5 rounded-full border border-white/20',
+            isLocked && !isSelected && 'opacity-50'
+          )}
           style={{ backgroundColor: colors.primary }}
           title="Primary"
         />
         <div
-          className="w-5 h-5 rounded-full border border-black/10"
+          className={cn(
+            'w-5 h-5 rounded-full border border-black/10',
+            isLocked && !isSelected && 'opacity-50'
+          )}
           style={{ backgroundColor: colors.secondary }}
           title="Secondary"
         />
         <div
-          className="w-5 h-5 rounded-full border border-black/10"
+          className={cn(
+            'w-5 h-5 rounded-full border border-black/10',
+            isLocked && !isSelected && 'opacity-50'
+          )}
           style={{ backgroundColor: colors.accent }}
           title="Accent"
         />
       </div>
 
       {/* Theme name */}
-      <span className="flex-1 text-sm font-medium">{name}</span>
+      <span className={cn(
+        'flex-1 text-sm font-medium',
+        isLocked && !isSelected && 'text-muted-foreground'
+      )}>
+        {name}
+      </span>
 
       {/* Pro badge or lock icon */}
       {isLocked && proBadge && (
