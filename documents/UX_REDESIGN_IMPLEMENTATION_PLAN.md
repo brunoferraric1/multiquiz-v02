@@ -329,6 +329,58 @@ Every button, label, and message will work in three languages:
 
 ---
 
+### Milestone 5D: Data Collection System Refactor ✅ COMPLETED
+*"Building the flexible data foundation"*
+
+**Goal:** Evolve from fixed 3-field lead capture to flexible dynamic field collection across all quiz steps
+
+**Context:** The previous system only captured name/email/phone from a dedicated "lead-gen" step. The new Visual Builder allows Fields blocks in ANY step type (intro, question, lead-gen, promo), requiring a complete refactor to support arbitrary custom fields.
+
+**Architecture Decisions:**
+- **No heuristics:** Removed all field-guessing logic (e.g., `if label.includes('nome')`)
+- **No conversion layers:** Clean data model as single source of truth
+- **Generic collection:** ALL fields from ALL steps captured uniformly
+- **Terminology:** "Data Collection" / "Dados coletados" instead of "Leads"
+
+**Tasks Completed:**
+- [x] Updated data model with `FieldResponse` schema (types/index.ts)
+- [x] Added `fieldResponses` array to `QuizAttempt` (primary storage)
+- [x] Created `getFieldMetadata()` helper for dynamic column extraction
+- [x] Refactored quiz player to collect ALL fields with full metadata
+- [x] Updated API routes to return `fieldResponses` (app/api/leads, app/api/reports)
+- [x] Transformed LeadsTable to fully dynamic with `DataColumn` and `DataRow` types
+- [x] Updated Reports page with dynamic column generation
+- [x] Built backward compatibility for legacy `lead` object format
+- [x] Removed aggregate /dashboard/leads page (now quiz-specific only)
+- [x] Updated navigation to remove "Leads" link
+- [x] Updated i18n terminology (en, es, pt-BR)
+
+**Files Modified:**
+1. `types/index.ts` - Added FieldResponse schema, updated QuizAttempt
+2. `lib/utils/visual-builder-helpers.ts` - Added getFieldMetadata()
+3. `components/quiz/blocks-quiz-player.tsx` - Clean field collection from all steps
+4. `app/api/leads/route.ts` - Returns collectedData with fieldResponses
+5. `app/api/reports/route.ts` - Includes fieldResponses in response
+6. `components/dashboard/leads-table.tsx` - Dynamic columns, exported DataColumn/DataRow types
+7. `app/dashboard/reports/[quizId]/page.tsx` - Dynamic data integration, CSV export
+8. `components/dashboard/dashboard-header.tsx` - Removed Leads navigation
+9. `messages/{en,es,pt-BR}/common.json` - Removed navigation.leads
+
+**Files Deleted:**
+- `app/dashboard/leads/page.tsx` - Overall leads aggregation page
+
+**Key Features:**
+- Dynamic table columns generated from quiz structure (each quiz has unique columns)
+- Full metadata stored per response (fieldId, label, type, value, stepId)
+- CSV export with dynamic headers matching quiz fields
+- Backward compatibility: handles both new `fieldResponses` and legacy `lead` formats
+- Search across all field values (not just name/email/phone)
+- Clean terminology: "Dados coletados" / "Respostas com dados informados"
+
+**Success:** Production-ready dynamic data collection system with zero hacks, zero conversion layers, and full backward compatibility
+
+---
+
 ### Milestone 6: Dashboard Update (Week 8)
 *"Updating the lobby"*
 
@@ -513,8 +565,8 @@ Week 3:  Step navigation + CRUD ✅
 Week 4:  Block rendering + preview ✅
 Week 5:  Properties panel + editing ✅
 Week 5.5: UX Polish & Enhancements ✅
-Week 6:  5A - Core Flows (auto-save, preview, publish) ← CURRENT
-Week 7:  5B - Top Nav Tabs (Tema, Configuração, Relatórios) + 5C - Quality Polish
+Week 6:  5A - Core Flows (auto-save, preview, publish) + 5D - Data Collection Refactor ✅
+Week 7:  5B - Top Nav Tabs (Tema, Configuração, Relatórios) + 5C - Quality Polish ← CURRENT
 Week 8:  Dashboard update (create modal)
 Week 9:  Mobile layout (desktop-only gate first)
 Week 10: AI chat integration
