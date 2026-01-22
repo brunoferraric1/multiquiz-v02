@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { BrandKitColors, QuizDraft } from '@/types';
+import type { BrandKitColors, QuizDraft, LogoSize } from '@/types';
 import { BlocksQuizPlayer } from '@/components/quiz/blocks-quiz-player';
 
 type ThemePreviewCopy = {
@@ -15,6 +15,7 @@ type ThemePreviewCopy = {
 interface ThemePreviewProps {
   colors: BrandKitColors;
   logoUrl?: string | null;
+  logoSize?: LogoSize;
   copy: ThemePreviewCopy;
 }
 
@@ -71,7 +72,7 @@ const buildPreviewQuiz = (copy: ThemePreviewCopy): QuizDraft => ({
 /**
  * Theme preview rendered with the real quiz player for accurate styling.
  */
-export function ThemePreview({ colors, logoUrl, copy }: ThemePreviewProps) {
+export function ThemePreview({ colors, logoUrl, logoSize, copy }: ThemePreviewProps) {
   const previewQuiz = useMemo(() => buildPreviewQuiz(copy), [copy]);
 
   return (
@@ -81,6 +82,7 @@ export function ThemePreview({ colors, logoUrl, copy }: ThemePreviewProps) {
         mode="preview"
         brandKitColors={colors}
         brandKitLogoUrl={logoUrl}
+        brandKitLogoSize={logoSize}
         layout="embedded"
         hideBranding
         initialSelectedOptions={{

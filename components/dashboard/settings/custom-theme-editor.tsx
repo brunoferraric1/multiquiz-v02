@@ -5,14 +5,17 @@ import { SectionTitle } from '@/components/ui/section-title';
 import { ColorPickerField } from './color-picker-field';
 import { Button } from '@/components/ui/button';
 import { Upload, X, Loader2 } from 'lucide-react';
-import type { BrandKitColors } from '@/types';
+import { cn } from '@/lib/utils';
+import type { BrandKitColors, LogoSize } from '@/types';
 
 interface CustomThemeEditorProps {
   colors: BrandKitColors;
   logoUrl: string | null;
+  logoSize?: LogoSize;
   onColorsChange: (colors: BrandKitColors) => void;
   onLogoChange: (file: File) => Promise<void>;
   onLogoRemove: () => void;
+  onLogoSizeChange?: (size: LogoSize) => void;
   isUploadingLogo?: boolean;
   copy: {
     colorsTitle: string;
@@ -26,6 +29,10 @@ interface CustomThemeEditorProps {
     logoUpload: string;
     logoUploadHint: string;
     logoRemove: string;
+    logoSizeLabel: string;
+    logoSizeSmall: string;
+    logoSizeMedium: string;
+    logoSizeLarge: string;
   };
 }
 
@@ -34,17 +41,27 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 /**
  * Editor for custom theme colors and logo upload
  */
+const LOGO_SIZES: LogoSize[] = ['small', 'medium', 'large'];
+
 export function CustomThemeEditor({
   colors,
   logoUrl,
+  logoSize = 'medium',
   onColorsChange,
   onLogoChange,
   onLogoRemove,
+  onLogoSizeChange,
   isUploadingLogo = false,
   copy,
 }: CustomThemeEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
+
+  const sizeLabels: Record<LogoSize, string> = {
+    small: copy.logoSizeSmall,
+    medium: copy.logoSizeMedium,
+    large: copy.logoSizeLarge,
+  };
 
   const handleColorChange = (key: keyof BrandKitColors, value: string) => {
     onColorsChange({
@@ -133,21 +150,46 @@ export function CustomThemeEditor({
         />
 
         {logoUrl ? (
-          <div className="relative w-fit">
-            <img
-              src={logoUrl}
-              alt="Logo"
-              className="h-16 w-auto max-w-[200px] object-contain rounded-lg border"
-            />
-            <Button
-              variant="destructive"
-              size="icon"
-              className="absolute -top-2 -right-2 h-6 w-6"
-              onClick={onLogoRemove}
-              disabled={isUploadingLogo}
-            >
-              <X className="w-3 h-3" />
-            </Button>
+          <div className="space-y-4">
+            {/* Logo preview */}
+            <div className="relative w-fit">
+              <img
+                src={logoUrl}
+                alt="Logo"
+                className="h-16 w-auto max-w-[200px] object-contain rounded-lg border"
+              />
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6"
+                onClick={onLogoRemove}
+                disabled={isUploadingLogo}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+
+            {/* Logo size selector */}
+            <div className="space-y-2">
+              <span className="text-sm text-muted-foreground">{copy.logoSizeLabel}</span>
+              <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
+                {LOGO_SIZES.map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => onLogoSizeChange?.(size)}
+                    className={cn(
+                      'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                      logoSize === size
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {sizeLabels[size]}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <button

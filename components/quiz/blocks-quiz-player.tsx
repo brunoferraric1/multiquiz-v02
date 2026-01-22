@@ -9,7 +9,7 @@
  */
 
 import { useMemo, useState, useEffect, useRef, type CSSProperties } from 'react';
-import type { BrandKitColors, Quiz, QuizDraft, VisualBuilderData, FieldResponse } from '@/types';
+import type { BrandKitColors, Quiz, QuizDraft, VisualBuilderData, FieldResponse, LogoSize } from '@/types';
 import type { Block, OptionsConfig, FieldsConfig, FieldItem, PriceConfig, FieldType } from '@/types/blocks';
 import { QuizBlocksRenderer } from './quiz-blocks-renderer';
 import { AnalyticsService } from '@/lib/services/analytics-service';
@@ -34,6 +34,7 @@ interface BlocksQuizPlayerProps {
   onExit?: () => void;
   brandKitColors?: BrandKitColors | null;
   brandKitLogoUrl?: string | null;
+  brandKitLogoSize?: LogoSize;
   layout?: 'full' | 'embedded';
   className?: string;
   initialSelectedOptions?: SelectionState;
@@ -46,12 +47,29 @@ type FieldValuesState = Record<string, Record<string, string>>;
 const DEFAULT_PURPLE = '#4F46E5';
 type BrandKitStyle = CSSProperties & Record<`--${string}`, string>;
 
+// Logo size CSS classes mapped by size and layout
+const LOGO_SIZE_CLASSES: Record<LogoSize, { full: string; embedded: string }> = {
+  small: {
+    full: 'h-10 sm:h-12 max-w-[160px]',
+    embedded: 'h-8 max-w-[140px]',
+  },
+  medium: {
+    full: 'h-14 sm:h-16 max-w-[200px]',
+    embedded: 'h-12 max-w-[180px]',
+  },
+  large: {
+    full: 'h-16 sm:h-20 max-w-[240px]',
+    embedded: 'h-16 max-w-[220px]',
+  },
+};
+
 export function BlocksQuizPlayer({
   quiz,
   mode = 'live',
   onExit,
   brandKitColors,
   brandKitLogoUrl,
+  brandKitLogoSize = 'medium',
   layout = 'full',
   className,
   initialSelectedOptions,
@@ -468,7 +486,7 @@ export function BlocksQuizPlayer({
             <img
               src={brandKitLogoUrl as string}
               alt="Logo da marca"
-              className="h-14 w-auto max-w-[200px] object-contain sm:h-16"
+              className={cn('w-auto object-contain', LOGO_SIZE_CLASSES[brandKitLogoSize].full)}
             />
           </button>
         </div>
@@ -488,7 +506,7 @@ export function BlocksQuizPlayer({
               <img
                 src={brandKitLogoUrl as string}
                 alt="Logo da marca"
-                className="h-12 w-auto max-w-[180px] object-contain"
+                className={cn('w-auto object-contain', LOGO_SIZE_CLASSES[brandKitLogoSize].embedded)}
               />
             </button>
           </div>

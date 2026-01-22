@@ -94,9 +94,12 @@ export const BrandKitColorsSchema = z.object({
   accent: z.string(),
 });
 
+export const LogoSizeSchema = z.enum(['small', 'medium', 'large']);
+
 export const BrandKitSchema = z.object({
   name: z.string().optional(),
   logoUrl: z.string().nullable().optional(),
+  logoSize: LogoSizeSchema.optional(),
   colors: BrandKitColorsSchema,
 });
 
@@ -173,9 +176,12 @@ export type BrandKitColors = {
   accent: string;
 };
 
+export type LogoSize = 'small' | 'medium' | 'large';
+
 export type BrandKit = {
   name?: string;
   logoUrl?: string | null;
+  logoSize?: LogoSize;
   colors: BrandKitColors;
   updatedAt?: number;
 };

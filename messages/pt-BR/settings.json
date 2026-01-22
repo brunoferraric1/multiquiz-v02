@@ -54,7 +54,11 @@
     "title": "LOGO",
     "upload": "Clique para fazer upload",
     "uploadHint": "PNG, JPG ou SVG (máx. 2MB)",
-    "remove": "Remover logo"
+    "remove": "Remover logo",
+    "sizeLabel": "Tamanho do logo",
+    "sizeSmall": "Pequeno",
+    "sizeMedium": "Médio",
+    "sizeLarge": "Grande"
   },
   "preview": {
     "title": "PREVIEW",

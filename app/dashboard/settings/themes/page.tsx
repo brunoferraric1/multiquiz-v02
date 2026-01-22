@@ -20,7 +20,7 @@ import { CustomThemeEditor } from '@/components/dashboard/settings/custom-theme-
 import { ThemePreview } from '@/components/dashboard/settings/theme-preview'
 import { UpgradeModal } from '@/components/upgrade-modal'
 import { toast } from 'sonner'
-import type { PresetThemeId, UserThemeSettings, BrandKitColors } from '@/types'
+import type { PresetThemeId, UserThemeSettings, BrandKitColors, LogoSize } from '@/types'
 
 export default function ThemesSettingsPage() {
   const { user, loading: authLoading } = useAuth()
@@ -42,6 +42,7 @@ export default function ThemesSettingsPage() {
     DEFAULT_CUSTOM_COLORS
   )
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoSize, setLogoSize] = useState<LogoSize>('medium')
 
   // Derived state
   const isSubscriptionReady = !authLoading && !subscriptionLoading
@@ -68,6 +69,7 @@ export default function ThemesSettingsPage() {
           if (settings.mode === 'custom' && settings.customBrandKit) {
             setCustomColors(settings.customBrandKit.colors)
             setLogoUrl(settings.customBrandKit.logoUrl ?? null)
+            setLogoSize(settings.customBrandKit.logoSize ?? 'medium')
           }
         }
       } catch (err) {
@@ -144,6 +146,7 @@ export default function ThemesSettingsPage() {
             ? {
                 colors: customColors,
                 logoUrl: logoUrl,
+                logoSize: logoSize,
               }
             : undefined,
       }
@@ -220,9 +223,11 @@ export default function ThemesSettingsPage() {
               <CustomThemeEditor
                 colors={customColors}
                 logoUrl={logoUrl}
+                logoSize={logoSize}
                 onColorsChange={setCustomColors}
                 onLogoChange={handleLogoUpload}
                 onLogoRemove={handleLogoRemove}
+                onLogoSizeChange={setLogoSize}
                 isUploadingLogo={isUploadingLogo}
                 copy={{
                   colorsTitle: copy.colors.title,
@@ -236,6 +241,10 @@ export default function ThemesSettingsPage() {
                   logoUpload: copy.logo.upload,
                   logoUploadHint: copy.logo.uploadHint,
                   logoRemove: copy.logo.remove,
+                  logoSizeLabel: copy.logo.sizeLabel,
+                  logoSizeSmall: copy.logo.sizeSmall,
+                  logoSizeMedium: copy.logo.sizeMedium,
+                  logoSizeLarge: copy.logo.sizeLarge,
                 }}
               />
             )}
@@ -265,6 +274,7 @@ export default function ThemesSettingsPage() {
               <ThemePreview
                 colors={effectiveColors}
                 logoUrl={mode === 'custom' ? logoUrl : null}
+                logoSize={mode === 'custom' ? logoSize : undefined}
                 copy={{
                   title: copy.preview.title,
                   questionLabel: copy.preview.questionLabel,
