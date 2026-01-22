@@ -121,7 +121,8 @@
     "selectStep": "Selecciona una etapa para ver la vista previa",
     "addOutcome": "Agrega un resultado para comenzar",
     "selectOutcome": "Selecciona un resultado para ver la vista previa",
-    "back": "Volver"
+    "back": "Volver",
+    "warning": "Modo Preview — Esta es una vista previa del borrador"
   },
   "itemActions": {
     "drag": "Arrastrar {{title}}",

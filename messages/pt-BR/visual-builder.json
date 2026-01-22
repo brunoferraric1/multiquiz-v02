@@ -121,7 +121,8 @@
     "selectStep": "Selecione uma etapa para ver o preview",
     "addOutcome": "Adicione um resultado para começar",
     "selectOutcome": "Selecione um resultado para ver o preview",
-    "back": "Voltar"
+    "back": "Voltar",
+    "warning": "Modo Preview — Esta é uma pré-visualização do rascunho"
   },
   "itemActions": {
     "drag": "Arrastar {{title}}",

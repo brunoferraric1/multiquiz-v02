@@ -13,14 +13,16 @@ import {
 } from '@/store/visual-builder-store'
 import { useVisualBuilderAutoSave } from '@/lib/hooks/use-visual-builder-auto-save'
 import { QuizService } from '@/lib/services/quiz-service'
+import { getBrandKit } from '@/lib/services/brand-kit-service'
 import { ProtectedRoute } from '@/components/protected-route'
 import { ConnectedVisualBuilder } from '@/components/visual-builder'
 import { PublishSuccessModal } from '@/components/builder/publish-success-modal'
+import { PreviewOverlay } from '@/components/preview-overlay'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLocale, useMessages } from '@/lib/i18n/context'
 import { localizePathname } from '@/lib/i18n/paths'
-import type { Quiz, QuizDraft } from '@/types'
+import type { BrandKitColors, Quiz, QuizDraft } from '@/types'
 
 /**
  * Create default visual builder data for a new quiz
@@ -48,6 +50,10 @@ function VisualBuilderEditor() {
   const [isPublished, setIsPublished] = useState(false)
   const [showPublishModal, setShowPublishModal] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [previewQuiz, setPreviewQuiz] = useState<Quiz | null>(null)
+  const [brandKitColors, setBrandKitColors] = useState<BrandKitColors | null>(null)
+  const [brandKitLogoUrl, setBrandKitLogoUrl] = useState<string | null>(null)
   const quizRef = useRef<QuizDraft | null>(null)
   const checkedRef = useRef(false)
   const savingStartedAtRef = useRef<number | null>(null)
@@ -283,6 +289,33 @@ function VisualBuilderEditor() {
     }
   }, [isSaving, startSavingStatus])
 
+  // Fetch brand kit when quiz uses custom branding
+  useEffect(() => {
+    if (!user?.uid || !quizRef.current || quizRef.current.brandKitMode !== 'custom') {
+      setBrandKitColors(null)
+      setBrandKitLogoUrl(null)
+      return
+    }
+
+    let isActive = true
+    getBrandKit(user.uid)
+      .then((kit) => {
+        if (!isActive) return
+        setBrandKitColors(kit?.colors ?? null)
+        setBrandKitLogoUrl(kit?.logoUrl ?? null)
+      })
+      .catch((error) => {
+        if (!isActive) return
+        console.error('[VisualBuilder] Failed to load brand kit for preview', error)
+        setBrandKitColors(null)
+        setBrandKitLogoUrl(null)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [user?.uid, isInitialized])
+
   // Handler: Back to dashboard
   const handleBack = useCallback(async () => {
     if (isSavingForBack) return
@@ -303,7 +336,7 @@ function VisualBuilderEditor() {
   // Handler: Preview quiz
   const handlePreview = useCallback(async () => {
     console.log('[VisualBuilder] handlePreview called', { id, isSavingForPreview })
-    if (!id || isSavingForPreview) return
+    if (!id || !user?.uid || isSavingForPreview) return
 
     try {
       setIsSavingForPreview(true)
@@ -312,9 +345,14 @@ function VisualBuilderEditor() {
       // Force save before preview to ensure latest changes are visible
       await forceSave()
       showSavedStatus()
-      console.log('[VisualBuilder] handlePreview - save complete, opening preview')
-      // Open quiz preview in new tab
-      window.open(localizePathname(`/quiz/${id}?preview=true`, locale), '_blank')
+      console.log('[VisualBuilder] handlePreview - save complete, loading quiz for preview')
+
+      // Load the saved draft for preview
+      const savedQuiz = await QuizService.getQuizById(id as string, user.uid, 'draft')
+      if (savedQuiz) {
+        setPreviewQuiz(savedQuiz)
+        setIsPreviewOpen(true)
+      }
     } catch (err) {
       console.error('[VisualBuilder] Error saving before preview:', err)
       clearSaveStatusTimeouts()
@@ -324,7 +362,7 @@ function VisualBuilderEditor() {
     } finally {
       setIsSavingForPreview(false)
     }
-  }, [clearSaveStatusTimeouts, copy.toast.previewSaveError, forceSave, id, isSavingForPreview, locale, showSavedStatus, startSavingStatus])
+  }, [clearSaveStatusTimeouts, copy.toast.previewSaveError, forceSave, id, isSavingForPreview, showSavedStatus, startSavingStatus, user?.uid])
 
   // Handler: Publish quiz
   const handlePublish = useCallback(async () => {
@@ -404,6 +442,14 @@ function VisualBuilderEditor() {
         open={showPublishModal}
         onOpenChange={setShowPublishModal}
         quizId={id as string}
+      />
+      <PreviewOverlay
+        open={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        quiz={previewQuiz}
+        brandKitColors={brandKitColors}
+        brandKitLogoUrl={brandKitLogoUrl}
+        warningText={copy.preview.warning}
       />
     </>
   )

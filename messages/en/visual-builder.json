@@ -121,7 +121,8 @@
     "selectStep": "Select a step to see the preview",
     "addOutcome": "Add a result to get started",
     "selectOutcome": "Select a result to see the preview",
-    "back": "Back"
+    "back": "Back",
+    "warning": "Preview Mode — This is a preview of the draft"
   },
   "itemActions": {
     "drag": "Drag {{title}}",
