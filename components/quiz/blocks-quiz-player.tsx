@@ -16,6 +16,16 @@ import { AnalyticsService } from '@/lib/services/analytics-service';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { quizToVisualBuilder } from '@/lib/utils/visual-builder-converters';
 import { ArrowLeft } from 'lucide-react';
+import {
+  getReadableTextColor,
+  getCardBorder,
+  getMutedForeground,
+  getInputBackground,
+  getInputBorder,
+  getCardHoverBackground,
+  getCardHoverBorder,
+  mixColors,
+} from '@/lib/utils/color';
 
 interface BlocksQuizPlayerProps {
   quiz: QuizDraft | Quiz;
@@ -29,92 +39,7 @@ type SelectionState = Record<string, string[]>;
 type FieldValuesState = Record<string, Record<string, string>>;
 
 const DEFAULT_PURPLE = '#4F46E5';
-const DARK_TEXT = '#0f172a';
-const LIGHT_TEXT = '#f8fafc';
 type BrandKitStyle = CSSProperties & Record<`--${string}`, string>;
-const WHITE_HEX = '#ffffff';
-const BLACK_HEX = '#000000';
-
-// Color utility functions (copied from quiz-player.tsx)
-const hexToRgb = (value: string) => {
-  const normalized = value.trim().replace('#', '');
-  if (normalized.length !== 6) return null;
-  const r = Number.parseInt(normalized.slice(0, 2), 16);
-  const g = Number.parseInt(normalized.slice(2, 4), 16);
-  const b = Number.parseInt(normalized.slice(4, 6), 16);
-  if ([r, g, b].some((channel) => Number.isNaN(channel))) return null;
-  return { r, g, b };
-};
-
-const relativeLuminance = (value: string) => {
-  const rgb = hexToRgb(value);
-  if (!rgb) return 0;
-  const transform = (channel: number) => {
-    const normalized = channel / 255;
-    return normalized <= 0.03928
-      ? normalized / 12.92
-      : Math.pow((normalized + 0.055) / 1.055, 2.4);
-  };
-  const r = transform(rgb.r);
-  const g = transform(rgb.g);
-  const b = transform(rgb.b);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-};
-
-const getReadableTextColor = (value: string) => {
-  return relativeLuminance(value) > 0.6 ? DARK_TEXT : LIGHT_TEXT;
-};
-
-const clampChannel = (value: number) => Math.max(0, Math.min(255, Math.round(value)));
-
-const rgbToHex = (r: number, g: number, b: number) => {
-  const toHex = (channel: number) => clampChannel(channel).toString(16).padStart(2, '0');
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-};
-
-const mixColors = (base: string, target: string, amount: number) => {
-  const baseRgb = hexToRgb(base);
-  const targetRgb = hexToRgb(target);
-  if (!baseRgb || !targetRgb) return base;
-  const mix = (from: number, to: number) => from + (to - from) * amount;
-  return rgbToHex(
-    mix(baseRgb.r, targetRgb.r),
-    mix(baseRgb.g, targetRgb.g),
-    mix(baseRgb.b, targetRgb.b)
-  );
-};
-
-const getInputBackground = (cardColor: string) => {
-  const cardLum = relativeLuminance(cardColor);
-  return cardLum < 0.5
-    ? mixColors(cardColor, WHITE_HEX, 0.08)
-    : mixColors(cardColor, BLACK_HEX, 0.04);
-};
-
-const getInputBorder = (inputColor: string, inputForeground: string) => {
-  return mixColors(inputColor, inputForeground, 0.1);
-};
-
-const getCardBorder = (cardColor: string) => {
-  const cardLum = relativeLuminance(cardColor);
-  const target = cardLum < 0.5 ? WHITE_HEX : BLACK_HEX;
-  const amount = cardLum < 0.5 ? 0.12 : 0.08;
-  return mixColors(cardColor, target, amount);
-};
-
-const getCardHoverBackground = (cardColor: string) => {
-  const cardLum = relativeLuminance(cardColor);
-  const target = cardLum < 0.5 ? WHITE_HEX : BLACK_HEX;
-  const amount = cardLum < 0.5 ? 0.14 : 0.08;
-  return mixColors(cardColor, target, amount);
-};
-
-const getCardHoverBorder = (cardColor: string) => {
-  const cardLum = relativeLuminance(cardColor);
-  const target = cardLum < 0.5 ? WHITE_HEX : BLACK_HEX;
-  const amount = cardLum < 0.5 ? 0.22 : 0.16;
-  return mixColors(cardColor, target, amount);
-};
 
 export function BlocksQuizPlayer({
   quiz,
@@ -153,11 +78,7 @@ export function BlocksQuizPlayer({
     const cardBorder = getCardBorder(cardColor);
     const cardHover = getCardHoverBackground(cardColor);
     const cardHoverBorder = getCardHoverBorder(cardColor);
-    const mutedForeground = mixColors(
-      getReadableTextColor(backgroundColor),
-      backgroundColor,
-      0.45
-    );
+    const mutedForeground = getMutedForeground(backgroundColor);
 
     const style: BrandKitStyle = {
       '--color-primary': primary,
