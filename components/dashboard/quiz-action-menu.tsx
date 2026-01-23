@@ -137,13 +137,11 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                 return;
             }
             setMobileMenuOpen(false);
-            // Invalidate cache to update UI first
+            // Show the success modal immediately
+            setShowPublishModal(true);
+            // Invalidate cache to update UI (background)
             queryClient.invalidateQueries({ queryKey: ['quiz', quiz.id] });
             queryClient.invalidateQueries({ queryKey: ['quizzes', user.uid] });
-            // Wait 750ms so user can see the card status change, then show drawer
-            setTimeout(() => {
-                setShowPublishModal(true);
-            }, 750);
         } catch (error) {
             console.error('Publish failed', error);
             toast.error(dashboard.toast.publishError);

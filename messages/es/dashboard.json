@@ -41,7 +41,7 @@
     }
   },
   "quizCard": {
-    "published": "Publicado",
+    "published": "Activo",
     "draft": "Borrador",
     "responses": "respuestas",
     "leads": "leads",

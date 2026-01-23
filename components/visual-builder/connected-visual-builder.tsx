@@ -20,6 +20,7 @@ import type { BrandKitColors } from '@/types'
 
 interface ConnectedVisualBuilderProps {
   quizName?: string
+  quizId?: string
   onBack?: () => void
   onPreview?: () => void
   onPublish?: () => void
@@ -41,6 +42,7 @@ interface ConnectedVisualBuilderProps {
  */
 export function ConnectedVisualBuilder({
   quizName = 'Meu Quiz',
+  quizId,
   onBack,
   onPreview,
   onPublish,
@@ -98,6 +100,7 @@ export function ConnectedVisualBuilder({
       {/* HEADER */}
       <BuilderHeaderNav
         quizName={computedQuizTitle}
+        quizId={quizId}
         onBack={onBack}
         onPublish={onPublish}
         isPublishing={isPublishing}

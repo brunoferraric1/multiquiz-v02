@@ -551,6 +551,7 @@ function VisualBuilderEditor() {
     <>
       <ConnectedVisualBuilder
         quizName={quizTitle}
+        quizId={id as string}
         onBack={handleBack}
         onPreview={handlePreview}
         onPublish={handlePublish}
