@@ -30,12 +30,9 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
         router.push(localizePathname(`/visual-builder/${quiz.id}`, locale));
     };
 
-    // Add cache-busting param to prevent showing stale cached images
-    const coverImageUrl = quiz.coverImageUrl
-        ? `${quiz.coverImageUrl}${quiz.coverImageUrl.includes('?') ? '&' : '?'}v=${quiz.updatedAt}`
-        : null;
-    const introMediaPreviewUrl = extractIntroMediaPreviewFromVisualBuilderData(quiz.visualBuilderData);
-    const previewImageUrl = coverImageUrl ?? introMediaPreviewUrl;
+    // Extract preview image dynamically from visual builder data
+    // This ensures we always show the current state (with fallback to first media in any step)
+    const previewImageUrl = extractIntroMediaPreviewFromVisualBuilderData(quiz.visualBuilderData);
 
     return (
         <div

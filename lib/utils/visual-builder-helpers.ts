@@ -35,16 +35,13 @@ export function extractDescriptionFromSteps(steps: VisualBuilderStep[]): string 
 }
 
 /**
- * Extract cover image URL from intro step media block
+ * Extract cover image URL from steps for the quiz document
+ * Uses the same fallback logic as extractIntroMediaPreviewFromSteps
+ * to keep the stored coverImageUrl in sync with what's displayed
  */
 export function extractCoverImageFromSteps(steps: VisualBuilderStep[]): string | undefined {
-  const introStep = steps.find((s) => s.type === 'intro')
-  if (!introStep) return undefined
-
-  const mediaBlock = introStep.blocks.find((b) => b.type === 'media' && b.enabled)
-  const config = mediaBlock?.config as MediaConfig | undefined
-
-  return config?.type === 'image' ? config.url : undefined
+  // Use the same logic as the preview extraction to keep them in sync
+  return extractIntroMediaPreviewFromSteps(steps)
 }
 
 function getVideoThumbnail(url: string): string | undefined {
@@ -64,23 +61,44 @@ function getVideoThumbnail(url: string): string | undefined {
 }
 
 /**
- * Extract preview media URL from intro step (image or video thumbnail)
+ * Extract media preview URL from a media config
  * For videos: prioritizes custom videoThumbnail over auto-extracted thumbnail
+ */
+function getMediaPreviewUrl(config: MediaConfig | undefined): string | undefined {
+  if (!config?.url) return undefined
+  if (config.type === 'image') return config.url
+  if (config.type === 'video') {
+    return config.videoThumbnail || getVideoThumbnail(config.url)
+  }
+  return undefined
+}
+
+/**
+ * Extract preview media URL from steps for dashboard cards
+ * Priority:
+ * 1. Intro step media (image or video with thumbnail)
+ * 2. First media found in any other step (fallback)
  */
 export function extractIntroMediaPreviewFromSteps(
   steps: VisualBuilderStep[]
 ): string | undefined {
+  // First, try to get media from intro step
   const introStep = steps.find((s) => s.type === 'intro')
-  if (!introStep) return undefined
+  if (introStep) {
+    const mediaBlock = introStep.blocks.find((b) => b.type === 'media' && b.enabled)
+    const config = mediaBlock?.config as MediaConfig | undefined
+    const previewUrl = getMediaPreviewUrl(config)
+    if (previewUrl) return previewUrl
+  }
 
-  const mediaBlock = introStep.blocks.find((b) => b.type === 'media' && b.enabled)
-  const config = mediaBlock?.config as MediaConfig | undefined
+  // Fallback: find first media in any other step (excluding intro and result)
+  for (const step of steps) {
+    if (step.type === 'intro' || step.type === 'result') continue
 
-  if (!config?.url) return undefined
-  if (config.type === 'image') return config.url
-  if (config.type === 'video') {
-    // Use custom thumbnail if available, otherwise extract from video URL
-    return config.videoThumbnail || getVideoThumbnail(config.url)
+    const mediaBlock = step.blocks.find((b) => b.type === 'media' && b.enabled)
+    const config = mediaBlock?.config as MediaConfig | undefined
+    const previewUrl = getMediaPreviewUrl(config)
+    if (previewUrl) return previewUrl
   }
 
   return undefined
