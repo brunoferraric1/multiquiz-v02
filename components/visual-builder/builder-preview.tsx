@@ -146,7 +146,7 @@ export function BuilderPreview({
       {/* Preview container - applies theme background */}
       <div
         data-testid="preview-container"
-        className="flex-1 flex flex-col items-center justify-center p-4 pb-14 overflow-hidden"
+        className="flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-14 overflow-hidden"
         style={themeStyle ? { backgroundColor: 'var(--color-background)', ...themeStyle } : undefined}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
