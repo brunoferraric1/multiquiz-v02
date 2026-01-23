@@ -65,7 +65,7 @@ export function QuizBlocksRenderer({
   }
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn('space-y-6', className)}>
       {enabledBlocks.map((block) => (
         <BlockRenderer
           key={block.id}
