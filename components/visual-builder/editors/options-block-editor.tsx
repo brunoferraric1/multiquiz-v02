@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -54,6 +55,8 @@ interface SortableOptionItemProps {
   onCreateOutcome?: () => void
   getOutcomeDisplayName: (outcome: Outcome, index: number) => string
   optionsCopy: OptionsCopy
+  autoFocus?: boolean
+  onAutoFocused?: () => void
 }
 
 function SortableOptionItem({
@@ -65,7 +68,10 @@ function SortableOptionItem({
   onCreateOutcome,
   getOutcomeDisplayName,
   optionsCopy,
+  autoFocus,
+  onAutoFocused,
 }: SortableOptionItemProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
   const {
     attributes,
     listeners,
@@ -79,6 +85,14 @@ function SortableOptionItem({
     transform: CSS.Transform.toString(transform),
     transition,
   }
+
+  // Auto-focus the input when this is a newly added option
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      inputRef.current.focus()
+      onAutoFocused?.()
+    }
+  }, [autoFocus, onAutoFocused])
 
   return (
     <div
@@ -100,6 +114,7 @@ function SortableOptionItem({
         </button>
         <div className="flex-1">
           <Input
+            ref={inputRef}
             value={option.text}
             onChange={(e) => onUpdate({ text: e.target.value })}
             placeholder={optionsCopy.optionPlaceholder.replace('{{index}}', String(index + 1))}
@@ -169,6 +184,7 @@ export function OptionsBlockEditor({
 }: OptionsBlockEditorProps) {
   const messages = useMessages()
   const optionsCopy = messages.visualBuilder.optionsEditor
+  const [newlyAddedOptionId, setNewlyAddedOptionId] = useState<string | null>(null)
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -185,6 +201,7 @@ export function OptionsBlockEditor({
     onChange({
       items: [...(config.items || []), newOption],
     })
+    setNewlyAddedOptionId(newOption.id)
   }
 
   const handleUpdateOption = (optionId: string, updates: Partial<OptionItem>) => {
@@ -263,6 +280,8 @@ export function OptionsBlockEditor({
                   onCreateOutcome={onCreateOutcome}
                   getOutcomeDisplayName={getOutcomeDisplayName}
                   optionsCopy={optionsCopy}
+                  autoFocus={option.id === newlyAddedOptionId}
+                  onAutoFocused={() => setNewlyAddedOptionId(null)}
                 />
               ))}
             </div>
