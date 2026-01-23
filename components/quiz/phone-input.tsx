@@ -1,17 +1,14 @@
 'use client';
 
-import { useState, useMemo, forwardRef } from 'react';
-import PhoneInputWithCountry from 'react-phone-number-input';
+import { useState, useMemo } from 'react';
 import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
 import type { Country } from 'react-phone-number-input';
 import en from 'react-phone-number-input/locale/en';
-import 'react-phone-number-input/style.css';
 import { cn } from '@/lib/utils';
 import { ChevronDown, Search } from 'lucide-react';
 
 // Format Brazilian phone number as (00) 00000-0000
 function formatBrazilianNumber(value: string): string {
-  // Remove all non-digits
   const digits = value.replace(/\D/g, '');
 
   if (digits.length === 0) return '';
@@ -19,48 +16,6 @@ function formatBrazilianNumber(value: string): string {
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
 }
-
-// Custom input component for Brazilian formatting
-const BrazilianPhoneInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { country?: Country }>(
-  ({ country, value, onChange, ...props }, ref) => {
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (country === 'BR') {
-        // For Brazil, format the input
-        const rawValue = e.target.value.replace(/\D/g, '');
-        // Limit to 11 digits (2 DDD + 9 number)
-        const limitedValue = rawValue.slice(0, 11);
-        const formatted = formatBrazilianNumber(limitedValue);
-
-        // Create a synthetic event with the raw digits for the library
-        const syntheticEvent = {
-          ...e,
-          target: {
-            ...e.target,
-            value: limitedValue,
-          },
-        };
-        onChange?.(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
-      } else {
-        onChange?.(e);
-      }
-    };
-
-    // Display formatted value for Brazil
-    const displayValue = country === 'BR' && typeof value === 'string'
-      ? formatBrazilianNumber(value.replace(/\D/g, ''))
-      : value;
-
-    return (
-      <input
-        ref={ref}
-        {...props}
-        value={displayValue}
-        onChange={handleChange}
-      />
-    );
-  }
-);
-BrazilianPhoneInput.displayName = 'BrazilianPhoneInput';
 
 interface PhoneInputProps {
   value: string;
@@ -141,7 +96,7 @@ function CountrySelect({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          'flex items-center gap-2 px-3 py-3 rounded-lg border transition-colors',
+          'flex items-center gap-2 px-3 h-[50px] rounded-lg border transition-colors',
           'bg-[var(--quiz-input-bg,hsl(var(--input)))]',
           'border-[var(--quiz-input-border,hsl(var(--border)))]',
           'hover:border-[var(--quiz-input-foreground,hsl(var(--foreground)))]/30',
@@ -234,52 +189,110 @@ export function PhoneInput({
 }: PhoneInputProps) {
   const [country, setCountry] = useState<Country>(defaultCountry);
 
-  const handleCountryChange = (newCountry: Country) => {
-    setCountry(newCountry);
+  const countryCode = getCountryCallingCode(country);
+
+  // Extract national number from E.164 value for display
+  const getNationalNumber = (e164Value: string): string => {
+    if (!e164Value) return '';
+    // Remove + and country code
+    const withoutPlus = e164Value.replace(/^\+/, '');
+    const code = countryCode;
+    if (withoutPlus.startsWith(code)) {
+      return withoutPlus.slice(code.length);
+    }
+    return withoutPlus;
   };
 
-  // Custom input component with country context
-  const InputComponent = useMemo(() => {
-    return forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-      (props, ref) => <BrazilianPhoneInput ref={ref} {...props} country={country} />
-    );
-  }, [country]);
-  InputComponent.displayName = 'InputComponent';
+  const nationalNumber = getNationalNumber(value);
+
+  // Format display value for Brazil
+  const displayValue = country === 'BR' && nationalNumber
+    ? formatBrazilianNumber(nationalNumber)
+    : nationalNumber;
+
+  // Handle input change with Brazilian formatting
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Get only digits from input
+    const raw = e.target.value.replace(/\D/g, '');
+
+    if (country === 'BR') {
+      // Limit to 11 digits for Brazil (2 DDD + 9 number)
+      const limited = raw.slice(0, 11);
+      onChange(limited ? `+${countryCode}${limited}` : '');
+    } else {
+      // Limit to reasonable max (15 digits is E.164 max minus country code)
+      const limited = raw.slice(0, 15);
+      onChange(limited ? `+${countryCode}${limited}` : '');
+    }
+  };
+
+  const handleCountryChange = (newCountry: Country) => {
+    setCountry(newCountry);
+    onChange('');
+  };
+
+  // Get placeholder based on country
+  const getPlaceholder = () => {
+    if (placeholder) return placeholder;
+    if (country === 'BR') return '(00) 00000-0000';
+    return undefined;
+  };
+
+  // Build options for country select
+  const countryOptions = useMemo(() => {
+    return getCountries().map((c) => ({
+      value: c,
+      label: en[c] || c,
+    }));
+  }, []);
 
   return (
-    <div
-      className={cn(
-        'phone-input-wrapper',
-        '[&_.PhoneInput]:flex [&_.PhoneInput]:gap-2',
-        // Flag styling
-        '[&_.PhoneInputCountryIcon]:w-6 [&_.PhoneInputCountryIcon]:h-4',
-        '[&_.PhoneInputCountryIcon--border]:shadow-none [&_.PhoneInputCountryIcon--border]:bg-transparent',
-        // Input styling
-        '[&_.PhoneInputInput]:flex-1 [&_.PhoneInputInput]:px-4 [&_.PhoneInputInput]:py-3 [&_.PhoneInputInput]:rounded-lg [&_.PhoneInputInput]:border',
-        '[&_.PhoneInputInput]:bg-[var(--quiz-input-bg,hsl(var(--input)))]',
-        '[&_.PhoneInputInput]:border-[var(--quiz-input-border,hsl(var(--border)))]',
-        '[&_.PhoneInputInput]:text-[var(--quiz-input-foreground,hsl(var(--foreground)))]',
-        '[&_.PhoneInputInput]:placeholder:text-[var(--quiz-input-placeholder,hsl(var(--muted-foreground)))]',
-        '[&_.PhoneInputInput]:focus:outline-none [&_.PhoneInputInput]:focus:ring-2 [&_.PhoneInputInput]:focus:ring-ring',
-        // Input with error
-        hasError && '[&_.PhoneInputInput]:border-destructive [&_.PhoneInputInput]:focus:ring-destructive/50',
-      )}
-    >
-      <PhoneInputWithCountry
-        id={id}
-        international
-        countryCallingCodeEditable={false}
-        defaultCountry={defaultCountry}
-        country={country}
-        onCountryChange={handleCountryChange}
-        value={value}
-        onChange={(val) => onChange(val || '')}
-        onBlur={onBlur}
-        placeholder={placeholder || (country === 'BR' ? '(00) 00000-0000' : undefined)}
-        limitMaxLength
-        countrySelectComponent={CountrySelect}
-        inputComponent={InputComponent}
+    <div className="flex gap-2">
+      {/* Country selector */}
+      <CountrySelect
+        value={country}
+        onChange={handleCountryChange}
+        options={countryOptions}
+        iconComponent={({ country: c }) => (
+          <img
+            src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${c}.svg`}
+            alt={c}
+            className="w-6 h-4 object-cover rounded-sm"
+          />
+        )}
       />
+
+      {/* Phone input with country code prefix */}
+      <div
+        className={cn(
+          'flex-1 flex items-center gap-1 px-4 h-[50px] rounded-lg border transition-colors',
+          'bg-[var(--quiz-input-bg,hsl(var(--input)))]',
+          hasError
+            ? 'border-destructive focus-within:ring-2 focus-within:ring-destructive/50'
+            : 'border-[var(--quiz-input-border,hsl(var(--border)))] focus-within:ring-2 focus-within:ring-ring',
+        )}
+      >
+        {/* Country code (non-editable) */}
+        <span className="text-[var(--quiz-input-foreground,hsl(var(--foreground)))] shrink-0">
+          +{countryCode}
+        </span>
+
+        {/* Input field */}
+        <input
+          id={id}
+          type="tel"
+          inputMode="numeric"
+          value={displayValue}
+          onChange={handleInputChange}
+          onBlur={onBlur}
+          placeholder={getPlaceholder()}
+          className={cn(
+            'flex-1 bg-transparent border-none outline-none',
+            'text-[var(--quiz-input-foreground,hsl(var(--foreground)))]',
+            'placeholder:text-[var(--quiz-input-placeholder,hsl(var(--muted-foreground)))]',
+          )}
+        />
+      </div>
     </div>
   );
 }
