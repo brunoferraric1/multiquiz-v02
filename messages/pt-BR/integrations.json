@@ -41,6 +41,7 @@
     "copyError": "Erro ao copiar",
     "secretGenerated": "Novo segredo gerado",
     "testSuccess": "Webhook de teste enviado com sucesso!",
-    "testError": "Falha ao enviar webhook de teste"
+    "testError": "Falha ao enviar webhook de teste",
+    "authError": "Erro de autenticação"
   }
 }

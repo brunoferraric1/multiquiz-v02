@@ -28,6 +28,7 @@ export default function IntegrationsSettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   // Webhook config state
   const [enabled, setEnabled] = useState(false)
@@ -61,6 +62,10 @@ export default function IntegrationsSettingsPage() {
             setUrl(config.url)
             setSecret(config.secret)
             setOriginalConfig(config)
+            // Auto-expand if webhook is enabled
+            if (config.enabled) {
+              setIsExpanded(true)
+            }
           } else {
             // Generate a new secret for new users
             const newSecret = generateWebhookSecret()
@@ -93,6 +98,21 @@ export default function IntegrationsSettingsPage() {
 
     setHasChanges(changed)
   }, [enabled, url, secret, originalConfig])
+
+  // Reset test result after 3 seconds on success
+  useEffect(() => {
+    if (testResult === 'success') {
+      const timer = setTimeout(() => {
+        setTestResult(null)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [testResult])
+
+  // Reset test result when URL changes
+  useEffect(() => {
+    setTestResult(null)
+  }, [url])
 
   // Handle save
   const handleSave = async () => {
@@ -214,11 +234,20 @@ export default function IntegrationsSettingsPage() {
     toast.success(copy.toast.secretGenerated)
   }
 
-  // Handle toggle - this controls the accordion expansion
+  // Handle toggle - expand when enabling
   const handleToggle = (checked: boolean) => {
     setEnabled(checked)
+    // Auto-expand when enabling
+    if (checked) {
+      setIsExpanded(true)
+    }
     // Reset test result when toggling
     setTestResult(null)
+  }
+
+  // Handle accordion expand/collapse
+  const handleExpandToggle = () => {
+    setIsExpanded(!isExpanded)
   }
 
   // Breadcrumb items
@@ -253,8 +282,11 @@ export default function IntegrationsSettingsPage() {
       <div className="space-y-4">
         {/* CRM Webhook Integration */}
         <div className="rounded-lg border bg-card overflow-hidden">
-          {/* Header - always visible */}
-          <div className="flex items-center gap-4 p-4">
+          {/* Header - always visible, clickable to expand/collapse */}
+          <div
+            className="flex items-center gap-4 p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={handleExpandToggle}
+          >
             {/* Icon */}
             <div className={cn(
               'flex items-center justify-center w-10 h-10 rounded-lg shrink-0',
@@ -266,10 +298,7 @@ export default function IntegrationsSettingsPage() {
             {/* Text content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className={cn(
-                  'font-medium',
-                  enabled ? 'text-foreground' : 'text-foreground'
-                )}>
+                <span className="font-medium text-foreground">
                   {copy.webhook.title}
                 </span>
                 {/* Show "Active" badge only when webhook is saved, enabled, and has URL */}
@@ -289,10 +318,11 @@ export default function IntegrationsSettingsPage() {
               <Switch
                 checked={enabled}
                 onCheckedChange={handleToggle}
+                onClick={(e) => e.stopPropagation()}
               />
               <ChevronDown className={cn(
                 'h-5 w-5 text-muted-foreground transition-transform duration-200',
-                enabled && 'rotate-180'
+                isExpanded && 'rotate-180'
               )} />
             </div>
           </div>
@@ -300,7 +330,7 @@ export default function IntegrationsSettingsPage() {
           {/* Expanded content - accordion */}
           <div className={cn(
             'grid transition-all duration-200 ease-in-out',
-            enabled ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+            isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
           )}>
             <div className="overflow-hidden">
               <div className="border-t px-4 pb-4 pt-4 space-y-4">

@@ -41,6 +41,7 @@
     "copyError": "Failed to copy",
     "secretGenerated": "New secret generated",
     "testSuccess": "Test webhook sent successfully!",
-    "testError": "Failed to send test webhook"
+    "testError": "Failed to send test webhook",
+    "authError": "Authentication error"
   }
 }
