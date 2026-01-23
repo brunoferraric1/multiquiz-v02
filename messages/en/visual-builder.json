@@ -17,7 +17,8 @@
     "aria": {
       "back": "Back",
       "preview": "Preview"
-    }
+    },
+    "backLabel": "Back"
   },
   "addStep": {
     "title": "Add step",

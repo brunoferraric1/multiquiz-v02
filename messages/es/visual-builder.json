@@ -17,7 +17,8 @@
     "aria": {
       "back": "Volver",
       "preview": "Vista previa"
-    }
+    },
+    "backLabel": "Volver"
   },
   "addStep": {
     "title": "Agregar etapa",

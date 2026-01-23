@@ -1,13 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, within } from '@/test/test-utils'
+import { render, screen } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
-import { BuilderHeaderNav, HeaderTab } from '../builder-header-nav'
+import { BuilderHeaderNav } from '../builder-header-nav'
 
 describe('BuilderHeaderNav', () => {
   const defaultProps = {
     quizName: 'Test Quiz',
-    activeTab: 'editar' as HeaderTab,
-    onTabChange: vi.fn(),
     onBack: vi.fn(),
     onPublish: vi.fn(),
   }
@@ -23,60 +21,25 @@ describe('BuilderHeaderNav', () => {
       expect(screen.getByText('My Custom Quiz')).toBeInTheDocument()
     })
 
-    it('renders two tabs (Editar and Assistente)', () => {
-      render(<BuilderHeaderNav {...defaultProps} />)
-
-      const tablist = screen.getByRole('tablist')
-      const tabs = within(tablist).getAllByRole('tab')
-
-      expect(tabs).toHaveLength(2)
-    })
-
     it('renders back and publish buttons', () => {
       render(<BuilderHeaderNav {...defaultProps} />)
 
       expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument()
     })
-  })
 
-  describe('Tab Selection', () => {
-    it('marks the active tab as selected', () => {
-      render(<BuilderHeaderNav {...defaultProps} activeTab="assistente" />)
-
-      const tabs = screen.getAllByRole('tab')
-      const assistenteTab = tabs.find(tab => tab.textContent?.includes('Assistente'))
-
-      expect(assistenteTab).toHaveAttribute('aria-selected', 'true')
+    it('displays draft badge when not published', () => {
+      render(<BuilderHeaderNav {...defaultProps} isPublished={false} />)
+      expect(screen.getByText(/rascunho/i)).toBeInTheDocument()
     })
 
-    it('marks non-active tabs as not selected', () => {
-      render(<BuilderHeaderNav {...defaultProps} activeTab="editar" />)
-
-      const tabs = screen.getAllByRole('tab')
-      const nonActiveTabs = tabs.filter(tab => !tab.textContent?.includes('Editar'))
-
-      nonActiveTabs.forEach(tab => {
-        expect(tab).toHaveAttribute('aria-selected', 'false')
-      })
+    it('displays published badge when published', () => {
+      render(<BuilderHeaderNav {...defaultProps} isPublished={true} />)
+      expect(screen.getByText(/publicado/i)).toBeInTheDocument()
     })
   })
 
   describe('Interactions', () => {
-    it('calls onTabChange when clicking a tab', async () => {
-      const onTabChange = vi.fn()
-      const user = userEvent.setup()
-
-      render(<BuilderHeaderNav {...defaultProps} onTabChange={onTabChange} />)
-
-      const tabs = screen.getAllByRole('tab')
-      const assistenteTab = tabs.find(tab => tab.textContent?.includes('Assistente'))
-
-      await user.click(assistenteTab!)
-
-      expect(onTabChange).toHaveBeenCalledWith('assistente')
-    })
-
     it('calls onBack when clicking back button', async () => {
       const onBack = vi.fn()
       const user = userEvent.setup()
@@ -97,6 +60,23 @@ describe('BuilderHeaderNav', () => {
       await user.click(screen.getByRole('button', { name: /publicar/i }))
 
       expect(onPublish).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('Publish Button States', () => {
+    it('shows Publicar text when not published', () => {
+      render(<BuilderHeaderNav {...defaultProps} isPublished={false} />)
+      expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument()
+    })
+
+    it('shows Atualizar text when published', () => {
+      render(<BuilderHeaderNav {...defaultProps} isPublished={true} />)
+      expect(screen.getByRole('button', { name: /atualizar/i })).toBeInTheDocument()
+    })
+
+    it('disables publish button when publishing', () => {
+      render(<BuilderHeaderNav {...defaultProps} isPublishing={true} />)
+      expect(screen.getByRole('button', { name: /publicando/i })).toBeDisabled()
     })
   })
 

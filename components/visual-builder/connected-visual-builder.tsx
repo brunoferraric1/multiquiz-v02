@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useVisualBuilderStore, createOutcome } from '@/store/visual-builder-store'
-import { BuilderHeaderNav, HeaderTab } from './builder-header-nav'
+import { BuilderHeaderNav } from './builder-header-nav'
 import { BuilderPreview } from './builder-preview'
 import { ConnectedPropertiesPanel } from './connected-properties-panel'
 import { AddStepSheet } from './add-step-sheet'
@@ -54,7 +54,6 @@ export function ConnectedVisualBuilder({
   const messages = useMessages()
   const copy = messages.visualBuilder
   // Local UI state
-  const [activeTab, setActiveTab] = useState<HeaderTab>('editar')
   const [device, setDevice] = useState<'mobile' | 'desktop'>('mobile')
 
   // Read state from store
@@ -70,6 +69,14 @@ export function ConnectedVisualBuilder({
   // Find intro step
   const introStep = steps.find((s) => s.type === 'intro')
   const isIntroActive = activeStepId === introStep?.id
+
+  // Compute quiz title from intro step header block (for instant updates)
+  const computedQuizTitle = (() => {
+    if (!introStep) return quizName
+    const headerBlock = introStep.blocks?.find((b) => b.type === 'header')
+    const headerTitle = headerBlock ? (headerBlock.config as HeaderConfig).title : undefined
+    return headerTitle || quizName
+  })()
 
   // Handlers
   const handleAddStep = () => {
@@ -88,9 +95,7 @@ export function ConnectedVisualBuilder({
     >
       {/* HEADER */}
       <BuilderHeaderNav
-        quizName={quizName}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
+        quizName={computedQuizTitle}
         onBack={onBack}
         onPublish={onPublish}
         isPublishing={isPublishing}

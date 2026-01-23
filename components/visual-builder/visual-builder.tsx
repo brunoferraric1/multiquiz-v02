@@ -1,13 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { BuilderHeaderNav, HeaderTab } from './builder-header-nav'
+import { BuilderHeaderNav } from './builder-header-nav'
 import { BuilderSidebar, Step, Outcome } from './builder-sidebar'
 import { BuilderPreview } from './builder-preview'
 import { BuilderProperties } from './builder-properties'
 import { useMessages } from '@/lib/i18n/context'
 
-export type { HeaderTab } from './builder-header-nav'
 export type { Step, Outcome, StepType } from './builder-sidebar'
 
 interface VisualBuilderProps {
@@ -16,7 +15,6 @@ interface VisualBuilderProps {
   outcomes?: Outcome[]
   activeStepId?: string
   selectedOutcomeId?: string
-  onTabChange?: (tab: HeaderTab) => void
   onBack?: () => void
   onPreview?: () => void
   onPublish?: () => void
@@ -24,6 +22,7 @@ interface VisualBuilderProps {
   onOutcomeSelect?: (outcomeId: string) => void
   onAddStep?: () => void
   onAddOutcome?: () => void
+  isPublished?: boolean
 }
 
 export function VisualBuilder({
@@ -32,7 +31,6 @@ export function VisualBuilder({
   outcomes = [],
   activeStepId,
   selectedOutcomeId,
-  onTabChange,
   onBack,
   onPreview,
   onPublish,
@@ -40,16 +38,11 @@ export function VisualBuilder({
   onOutcomeSelect,
   onAddStep,
   onAddOutcome,
+  isPublished = false,
 }: VisualBuilderProps) {
   const messages = useMessages()
   const copy = messages.visualBuilder
-  const [activeTab, setActiveTab] = useState<HeaderTab>('editar')
   const [device, setDevice] = useState<'mobile' | 'desktop'>('mobile')
-
-  const handleTabChange = (tab: HeaderTab) => {
-    setActiveTab(tab)
-    onTabChange?.(tab)
-  }
 
   // Get the active step title for properties panel
   const activeStep = steps.find(s => s.id === activeStepId)
@@ -61,10 +54,9 @@ export function VisualBuilder({
       {/* HEADER */}
       <BuilderHeaderNav
         quizName={resolvedQuizName}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
         onBack={onBack}
         onPublish={onPublish}
+        isPublished={isPublished}
       />
 
       {/* MAIN CONTENT - Three column layout */}
