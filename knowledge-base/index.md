@@ -19,6 +19,10 @@
 
 ## Funcionalidades
 
+| Funcionalidade | Descrição |
+|----------------|-----------|
+| [Integração Webhook CRM](features/integracao-webhook-crm.md) | Envie leads automaticamente para seu CRM |
+
 *Em breve: Quiz Builder, Sessões ao Vivo, Analytics, Personalização de Marca*
 
 ---
@@ -51,7 +55,8 @@ O MultiQuiz é uma plataforma para criar e compartilhar quizzes interativos com 
 - Análise de resultados e relatórios
 - Personalização de marca e aparência
 - Geração de conteúdo assistida por IA
+- Integração com CRMs via webhook
 
 ---
 
-*Última atualização: 2026-01-17*
+*Última atualização: 2026-01-23*
