@@ -1,7 +1,7 @@
 'use client'
 
 import { useMessages } from '@/lib/i18n/context'
-import { ArrowLeft, Globe, Loader2 } from 'lucide-react'
+import { ArrowLeft, Globe, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
@@ -15,6 +15,7 @@ interface BuilderHeaderNavProps {
   onPublish?: () => void
   isPublishing?: boolean
   isPublished?: boolean
+  hasUnpublishedChanges?: boolean
   isBackSaving?: boolean
 }
 
@@ -24,18 +25,27 @@ export function BuilderHeaderNav({
   onPublish,
   isPublishing = false,
   isPublished = false,
+  hasUnpublishedChanges = false,
   isBackSaving = false,
 }: BuilderHeaderNavProps) {
   const messages = useMessages()
   const header = messages.visualBuilder.header
   const dashboard = messages.dashboard
 
-  // Determine button text based on publish state
+  // Determine button text and state based on publish status
+  // 1. Publishing in progress -> "Publicando..." (disabled)
+  // 2. Not published -> "Publicar" (enabled)
+  // 3. Published + has changes -> "Atualizar" (enabled)
+  // 4. Published + no changes -> "Publicado" (disabled)
+  const isPublishedWithNoChanges = isPublished && !hasUnpublishedChanges
   const publishButtonText = isPublishing
     ? header.actions.publishing
-    : isPublished
-      ? header.actions.update
-      : header.actions.publish
+    : !isPublished
+      ? header.actions.publish
+      : hasUnpublishedChanges
+        ? header.actions.update
+        : header.actions.published
+  const isPublishDisabled = isPublishing || isPublishedWithNoChanges
 
   return (
     <header className="h-14 bg-card border-b flex items-center px-4 shrink-0">
@@ -77,10 +87,13 @@ export function BuilderHeaderNav({
           size="sm"
           onClick={onPublish}
           aria-label={publishButtonText}
-          disabled={isPublishing}
+          disabled={isPublishDisabled}
+          variant={isPublishedWithNoChanges ? 'secondary' : 'default'}
         >
           {isPublishing ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : isPublishedWithNoChanges ? (
+            <Check className="w-4 h-4 mr-2" />
           ) : (
             <Globe className="w-4 h-4 mr-2" />
           )}

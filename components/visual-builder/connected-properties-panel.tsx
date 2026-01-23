@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useId } from 'react'
-import { useVisualBuilderStore, createOutcome } from '@/store/visual-builder-store'
+import { useVisualBuilderStore, createOutcome, createBlock } from '@/store/visual-builder-store'
 import {
   DndContext,
   closestCenter,
@@ -172,6 +172,8 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
   // Get actions from store
   const setSelectedBlockId = useVisualBuilderStore((state) => state.setSelectedBlockId)
+  const addBlock = useVisualBuilderStore((state) => state.addBlock)
+  const addOutcomeBlock = useVisualBuilderStore((state) => state.addOutcomeBlock)
   const updateBlock = useVisualBuilderStore((state) => state.updateBlock)
   const deleteBlock = useVisualBuilderStore((state) => state.deleteBlock)
   const deleteStep = useVisualBuilderStore((state) => state.deleteStep)
@@ -210,12 +212,51 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
   // Handlers for block operations
   const handleUpdateBlock = (config: Partial<Block['config']>) => {
-    if (!selectedBlockId) return
+    if (!selectedBlockId || !selectedBlock) return
+
+    const nextSelectionType = (config as OptionsConfig | PriceConfig).selectionType
+    const isSelectableBlock = selectedBlock.type === 'options' || selectedBlock.type === 'price'
+    const previousSelectionType =
+      selectedBlock.type === 'price'
+        ? ((selectedBlock.config as PriceConfig).selectionType ?? 'single')
+        : (selectedBlock.config as OptionsConfig).selectionType
+    const shouldAutoAttachCta =
+      isSelectableBlock &&
+      nextSelectionType === 'multiple' &&
+      previousSelectionType !== 'multiple' &&
+      blockIndex >= 0
+
+    const addAutoButton = () => {
+      const action = selectedBlock.type === 'price' ? 'selected_price' : 'next_step'
+      const hasMatchingButton = currentBlocks.some((block) => {
+        if (block.type !== 'button') return false
+        return (block.config as ButtonConfig).action === action
+      })
+
+      if (hasMatchingButton) return
+
+      const buttonBlock = createBlock('button')
+      const buttonConfig = buttonBlock.config as ButtonConfig
+      buttonConfig.text = copy.defaults.buttonContinue ?? buttonConfig.text ?? 'Continuar'
+      buttonConfig.action = action
+
+      if (isResultStep && selectedOutcomeId) {
+        addOutcomeBlock(selectedOutcomeId, buttonBlock, blockIndex + 1)
+      } else if (activeStepId) {
+        addBlock(activeStepId, buttonBlock, blockIndex + 1)
+      }
+
+      setSelectedBlockId(selectedBlockId)
+    }
 
     if (isResultStep && selectedOutcomeId) {
       updateOutcomeBlock(selectedOutcomeId, selectedBlockId, config)
     } else if (activeStepId) {
       updateBlock(activeStepId, selectedBlockId, config)
+    }
+
+    if (shouldAutoAttachCta) {
+      addAutoButton()
     }
   }
 

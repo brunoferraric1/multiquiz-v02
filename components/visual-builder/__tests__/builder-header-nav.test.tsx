@@ -35,7 +35,10 @@ describe('BuilderHeaderNav', () => {
 
     it('displays published badge when published', () => {
       render(<BuilderHeaderNav {...defaultProps} isPublished={true} />)
-      expect(screen.getByText(/publicado/i)).toBeInTheDocument()
+      // The badge is a div element, not a button
+      const badges = screen.getAllByText(/publicado/i)
+      const badge = badges.find(el => el.tagName.toLowerCase() !== 'button')
+      expect(badge).toBeInTheDocument()
     })
   })
 
@@ -67,11 +70,23 @@ describe('BuilderHeaderNav', () => {
     it('shows Publicar text when not published', () => {
       render(<BuilderHeaderNav {...defaultProps} isPublished={false} />)
       expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /publicar/i })).toBeEnabled()
     })
 
-    it('shows Atualizar text when published', () => {
-      render(<BuilderHeaderNav {...defaultProps} isPublished={true} />)
+    it('shows Atualizar text when published with unpublished changes', () => {
+      render(<BuilderHeaderNav {...defaultProps} isPublished={true} hasUnpublishedChanges={true} />)
       expect(screen.getByRole('button', { name: /atualizar/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /atualizar/i })).toBeEnabled()
+    })
+
+    it('shows Publicado text when published without changes', () => {
+      render(<BuilderHeaderNav {...defaultProps} isPublished={true} hasUnpublishedChanges={false} />)
+      expect(screen.getByRole('button', { name: /publicado/i })).toBeInTheDocument()
+    })
+
+    it('disables button when published without changes', () => {
+      render(<BuilderHeaderNav {...defaultProps} isPublished={true} hasUnpublishedChanges={false} />)
+      expect(screen.getByRole('button', { name: /publicado/i })).toBeDisabled()
     })
 
     it('disables publish button when publishing', () => {

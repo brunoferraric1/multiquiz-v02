@@ -25,6 +25,7 @@ interface ConnectedVisualBuilderProps {
   onPublish?: () => void
   isPublishing?: boolean
   isPublished?: boolean
+  hasUnpublishedChanges?: boolean
   isPreviewing?: boolean
   isBackSaving?: boolean
   saveStatus?: 'idle' | 'saving' | 'saved'
@@ -45,6 +46,7 @@ export function ConnectedVisualBuilder({
   onPublish,
   isPublishing = false,
   isPublished = false,
+  hasUnpublishedChanges = false,
   isPreviewing = false,
   isBackSaving = false,
   saveStatus = 'idle',
@@ -100,6 +102,7 @@ export function ConnectedVisualBuilder({
         onPublish={onPublish}
         isPublishing={isPublishing}
         isPublished={isPublished}
+        hasUnpublishedChanges={hasUnpublishedChanges}
         isBackSaving={isBackSaving}
       />
 
