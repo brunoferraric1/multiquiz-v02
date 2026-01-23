@@ -128,13 +128,24 @@ export async function saveThemeSettings(
   if (!db || !userId) return;
 
   const userRef = doc(db, USERS_COLLECTION, userId);
+
+  // Sanitize customBrandKit to ensure no undefined values (Firebase doesn't accept undefined)
+  const sanitizedCustomBrandKit = settings.customBrandKit
+    ? {
+        name: settings.customBrandKit.name ?? null,
+        colors: settings.customBrandKit.colors,
+        logoUrl: settings.customBrandKit.logoUrl ?? null,
+        logoSize: settings.customBrandKit.logoSize ?? null,
+      }
+    : null;
+
   await setDoc(
     userRef,
     {
       themeSettings: {
         mode: settings.mode,
         presetId: settings.presetId ?? null,
-        customBrandKit: settings.customBrandKit ?? null,
+        customBrandKit: sanitizedCustomBrandKit,
         updatedAt: serverTimestamp(),
       },
     },
