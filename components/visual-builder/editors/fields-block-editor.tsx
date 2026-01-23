@@ -61,6 +61,7 @@ interface SortableFieldItemProps {
   fieldsCopy: FieldsCopy
   fieldTypeLabels: Record<FieldType, string>
   defaultPlaceholders: Record<FieldType, string>
+  defaultLabels: Partial<Record<FieldType, string>>
 }
 
 function SortableFieldItem({
@@ -73,6 +74,7 @@ function SortableFieldItem({
   fieldsCopy,
   fieldTypeLabels,
   defaultPlaceholders,
+  defaultLabels,
 }: SortableFieldItemProps) {
   const {
     attributes,
@@ -148,7 +150,12 @@ function SortableFieldItem({
               value={field.type}
               onValueChange={(type: FieldType) => {
                 // When changing type, clear custom placeholder so default is used
-                onUpdate({ type, placeholder: undefined })
+                // Auto-fill label for phone/email if current label is empty
+                const updates: Partial<FieldItem> = { type, placeholder: undefined }
+                if (defaultLabels[type] && !field.label) {
+                  updates.label = defaultLabels[type]
+                }
+                onUpdate(updates)
               }}
             >
               <SelectTrigger id={`field-type-${field.id}`}>
@@ -188,40 +195,42 @@ function SortableFieldItem({
             />
           </div>
 
-          {/* Custom placeholder toggle */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor={`field-custom-placeholder-${field.id}`}>
-                {fieldsCopy.customPlaceholder}
-              </Label>
-              <Switch
-                id={`field-custom-placeholder-${field.id}`}
-                checked={hasCustomPlaceholder}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    // Enable custom: set to current default
-                    onUpdate({ placeholder: defaultPlaceholders[field.type] })
-                  } else {
-                    // Disable custom: clear placeholder to use default
-                    onUpdate({ placeholder: undefined })
-                  }
-                }}
-              />
+          {/* Custom placeholder toggle - hidden for phone/email which have standardized formats */}
+          {field.type !== 'phone' && field.type !== 'email' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor={`field-custom-placeholder-${field.id}`}>
+                  {fieldsCopy.customPlaceholder}
+                </Label>
+                <Switch
+                  id={`field-custom-placeholder-${field.id}`}
+                  checked={hasCustomPlaceholder}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      // Enable custom: set to current default
+                      onUpdate({ placeholder: defaultPlaceholders[field.type] })
+                    } else {
+                      // Disable custom: clear placeholder to use default
+                      onUpdate({ placeholder: undefined })
+                    }
+                  }}
+                />
+              </div>
+              {hasCustomPlaceholder && (
+                <Input
+                  id={`field-placeholder-${field.id}`}
+                  value={field.placeholder || ''}
+                  onChange={(e) => onUpdate({ placeholder: e.target.value })}
+                  placeholder={defaultPlaceholders[field.type]}
+                />
+              )}
+              {!hasCustomPlaceholder && (
+                <p className="text-xs text-muted-foreground">
+                  {fieldsCopy.defaultPlaceholder.replace('{{value}}', effectivePlaceholder ?? '')}
+                </p>
+              )}
             </div>
-            {hasCustomPlaceholder && (
-              <Input
-                id={`field-placeholder-${field.id}`}
-                value={field.placeholder || ''}
-                onChange={(e) => onUpdate({ placeholder: e.target.value })}
-                placeholder={defaultPlaceholders[field.type]}
-              />
-            )}
-            {!hasCustomPlaceholder && (
-              <p className="text-xs text-muted-foreground">
-                {fieldsCopy.defaultPlaceholder.replace('{{value}}', effectivePlaceholder ?? '')}
-              </p>
-            )}
-          </div>
+          )}
         </div>
       )}
     </div>
@@ -244,6 +253,11 @@ export function FieldsBlockEditor({ config, onChange }: FieldsBlockEditorProps) 
     phone: fieldsCopy.placeholders.phone,
     number: fieldsCopy.placeholders.number,
     textarea: fieldsCopy.placeholders.textarea,
+  }
+  // Default labels for phone and email - auto-fill when user selects these types
+  const defaultLabels: Partial<Record<FieldType, string>> = {
+    phone: fieldsCopy.types.phone,
+    email: fieldsCopy.types.email,
   }
   const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null)
 
@@ -330,6 +344,7 @@ export function FieldsBlockEditor({ config, onChange }: FieldsBlockEditorProps) 
                 fieldsCopy={fieldsCopy}
                 fieldTypeLabels={fieldTypeLabels}
                 defaultPlaceholders={defaultPlaceholders}
+                defaultLabels={defaultLabels}
               />
             ))}
 
