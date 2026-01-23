@@ -8,6 +8,7 @@ import type { Quiz } from '@/types';
 import { useLocale, useMessages } from '@/lib/i18n/context';
 import { getDateLocale } from '@/lib/i18n/date-locale';
 import { localizePathname } from '@/lib/i18n/paths';
+import { extractIntroMediaPreviewFromVisualBuilderData } from '@/lib/utils/visual-builder-helpers';
 import { Badge } from '@/components/ui/badge';
 import { QuizActionMenu } from './quiz-action-menu';
 
@@ -33,6 +34,8 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
     const coverImageUrl = quiz.coverImageUrl
         ? `${quiz.coverImageUrl}${quiz.coverImageUrl.includes('?') ? '&' : '?'}v=${quiz.updatedAt}`
         : null;
+    const introMediaPreviewUrl = extractIntroMediaPreviewFromVisualBuilderData(quiz.visualBuilderData);
+    const previewImageUrl = coverImageUrl ?? introMediaPreviewUrl;
 
     return (
         <div
@@ -44,7 +47,7 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
             >
                 {/* Thumbnail */}
                 <div className="h-12 w-12 rounded-md bg-muted flex-shrink-0 overflow-hidden relative">
-                    {coverImageUrl && !imageError ? (
+                    {previewImageUrl && !imageError ? (
                         <>
                             {imageLoading && (
                                 <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
@@ -52,7 +55,7 @@ export function QuizListItem({ quiz, onDelete, isDeleting }: QuizListItemProps) 
                                 </div>
                             )}
                             <img
-                                src={coverImageUrl}
+                                src={previewImageUrl}
                                 alt={quiz.title}
                                 className={`h-full w-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'
                                     }`}

@@ -47,6 +47,64 @@ export function extractCoverImageFromSteps(steps: VisualBuilderStep[]): string |
   return config?.type === 'image' ? config.url : undefined
 }
 
+function getVideoThumbnail(url: string): string | undefined {
+  const youtubePatterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+  ]
+
+  for (const pattern of youtubePatterns) {
+    const match = url.match(pattern)
+    if (match) {
+      return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`
+    }
+  }
+
+  return undefined
+}
+
+/**
+ * Extract preview media URL from intro step (image or video thumbnail)
+ */
+export function extractIntroMediaPreviewFromSteps(
+  steps: VisualBuilderStep[]
+): string | undefined {
+  const introStep = steps.find((s) => s.type === 'intro')
+  if (!introStep) return undefined
+
+  const mediaBlock = introStep.blocks.find((b) => b.type === 'media' && b.enabled)
+  const config = mediaBlock?.config as MediaConfig | undefined
+
+  if (!config?.url) return undefined
+  if (config.type === 'image') return config.url
+  if (config.type === 'video') return getVideoThumbnail(config.url)
+
+  return undefined
+}
+
+/**
+ * Extract preview media URL from visualBuilderData (image or video thumbnail)
+ */
+export function extractIntroMediaPreviewFromVisualBuilderData(
+  visualBuilderData: VisualBuilderData | string | null | undefined
+): string | undefined {
+  if (!visualBuilderData) return undefined
+
+  let parsedData: VisualBuilderData | undefined
+  if (typeof visualBuilderData === 'string') {
+    try {
+      parsedData = JSON.parse(visualBuilderData) as VisualBuilderData
+    } catch {
+      return undefined
+    }
+  } else {
+    parsedData = visualBuilderData
+  }
+
+  if (!parsedData?.steps || !Array.isArray(parsedData.steps)) return undefined
+  return extractIntroMediaPreviewFromSteps(parsedData.steps)
+}
+
 /**
  * Get question metadata from steps (for reports funnel)
  * Returns question IDs and labels for use in analytics

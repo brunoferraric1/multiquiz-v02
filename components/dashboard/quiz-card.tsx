@@ -6,6 +6,7 @@ import { Globe, Lock, Pencil } from 'lucide-react';
 import type { Quiz } from '@/types';
 import { useLocale, useMessages } from '@/lib/i18n/context';
 import { localizePathname } from '@/lib/i18n/paths';
+import { extractIntroMediaPreviewFromVisualBuilderData } from '@/lib/utils/visual-builder-helpers';
 import {
   Card,
   CardContent,
@@ -40,13 +41,15 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
   const coverImageUrl = quiz.coverImageUrl
     ? `${quiz.coverImageUrl}${quiz.coverImageUrl.includes('?') ? '&' : '?'}v=${quiz.updatedAt}`
     : null;
+  const introMediaPreviewUrl = extractIntroMediaPreviewFromVisualBuilderData(quiz.visualBuilderData);
+  const previewImageUrl = coverImageUrl ?? introMediaPreviewUrl;
 
   return (
     <Card onClick={handleEdit} className="flex flex-col h-full group cursor-pointer hover:shadow-lg transition-shadow">
       <CardHeader className="p-0">
         {/* Cover Image */}
         <div className="h-32 bg-muted relative shrink-0 overflow-hidden rounded-t-lg">
-          {coverImageUrl && !imageError ? (
+          {previewImageUrl && !imageError ? (
             <>
               {/* Skeleton loader */}
               {imageLoading && (
@@ -55,7 +58,7 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
                 </div>
               )}
               <img
-                src={coverImageUrl}
+                src={previewImageUrl}
                 alt={quiz.title}
                 className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'
                   }`}
