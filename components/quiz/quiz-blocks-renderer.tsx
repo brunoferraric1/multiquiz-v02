@@ -23,6 +23,9 @@ import {
 } from '@/types/blocks';
 import { cn } from '@/lib/utils';
 import { Check, AlertTriangle, AlertCircle, Info, ArrowRight, Square, CheckSquare, Play, Video } from 'lucide-react';
+import { isValidPhoneNumber } from 'react-phone-number-input';
+import { PhoneInput, getDefaultCountryFromLocale } from './phone-input';
+import { useLocale } from '@/lib/i18n/context';
 import { Button } from '@/components/ui/button';
 import { FormattedText } from './formatted-text';
 
@@ -42,6 +45,7 @@ interface QuizBlocksRendererProps {
   // For fields block
   fieldValues?: Record<string, string>;
   onFieldChange?: (fieldId: string, value: string) => void;
+  showFieldErrors?: boolean;
   // Styling
   className?: string;
 }
@@ -55,6 +59,7 @@ export function QuizBlocksRenderer({
   onButtonClick,
   fieldValues = {},
   onFieldChange,
+  showFieldErrors = false,
   className,
 }: QuizBlocksRendererProps) {
   // Filter to only enabled blocks
@@ -77,6 +82,7 @@ export function QuizBlocksRenderer({
           onButtonClick={onButtonClick}
           fieldValues={fieldValues}
           onFieldChange={onFieldChange}
+          showFieldErrors={showFieldErrors}
         />
       ))}
     </div>
@@ -92,6 +98,7 @@ interface BlockRendererProps {
   onButtonClick?: () => void;
   fieldValues?: Record<string, string>;
   onFieldChange?: (fieldId: string, value: string) => void;
+  showFieldErrors?: boolean;
 }
 
 function BlockRenderer({
@@ -103,6 +110,7 @@ function BlockRenderer({
   onButtonClick,
   fieldValues = {},
   onFieldChange,
+  showFieldErrors = false,
 }: BlockRendererProps) {
   switch (block.type) {
     case 'header':
@@ -131,6 +139,7 @@ function BlockRenderer({
           config={block.config as FieldsConfig}
           values={fieldValues}
           onChange={onFieldChange}
+          showAllErrors={showFieldErrors}
         />
       );
     case 'price':
@@ -553,64 +562,163 @@ function OptionsBlock({
   );
 }
 
+// Validation helpers - exported for use in blocks-quiz-player
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function validateField(type: string, value: string, required: boolean = false): string | null {
+  // Check required first
+  if (required && !value.trim()) {
+    return 'required';
+  }
+
+  // Skip format validation if empty and not required
+  if (!value.trim()) return null;
+
+  // Type-specific validation
+  if (type === 'email' && !EMAIL_REGEX.test(value)) {
+    return 'invalid_email';
+  }
+
+  // Use library's international phone validation
+  if (type === 'phone' && !isValidPhoneNumber(value)) {
+    return 'invalid_phone';
+  }
+
+  return null;
+}
+
+const FIELD_ERROR_MESSAGES: Record<string, Record<string, string>> = {
+  required: {
+    'pt-BR': 'Este campo é obrigatório',
+    'en': 'This field is required',
+    'es': 'Este campo es obligatorio',
+  },
+  invalid_email: {
+    'pt-BR': 'Digite um e-mail válido',
+    'en': 'Enter a valid email',
+    'es': 'Ingrese un correo electrónico válido',
+  },
+  invalid_phone: {
+    'pt-BR': 'Digite um número de telefone válido',
+    'en': 'Enter a valid phone number',
+    'es': 'Ingrese un número de teléfono válido',
+  },
+};
+
+function getErrorMessage(errorKey: string): string {
+  // Try to detect locale from navigator, fallback to pt-BR
+  const locale = typeof navigator !== 'undefined'
+    ? (navigator.language.startsWith('en') ? 'en' : navigator.language.startsWith('es') ? 'es' : 'pt-BR')
+    : 'pt-BR';
+  return FIELD_ERROR_MESSAGES[errorKey]?.[locale] || FIELD_ERROR_MESSAGES[errorKey]?.['pt-BR'] || '';
+}
+
+
 function FieldsBlock({
   config,
   values,
   onChange,
+  showAllErrors = false,
 }: {
   config: FieldsConfig;
   values: Record<string, string>;
   onChange?: (fieldId: string, value: string) => void;
+  showAllErrors?: boolean;
 }) {
   const { items } = config;
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Get app locale for phone input default country
+  let locale = 'pt-BR';
+  try {
+    locale = useLocale();
+  } catch {
+    // Fallback if not in LocaleProvider context (e.g., theme preview)
+  }
+  const defaultCountry = getDefaultCountryFromLocale(locale);
 
   if (!items || items.length === 0) return null;
 
+  const handleBlur = (fieldId: string) => {
+    setTouched((prev) => ({ ...prev, [fieldId]: true }));
+  };
+
+  const handleChange = (fieldId: string, value: string) => {
+    onChange?.(fieldId, value);
+  };
+
   return (
     <div className="space-y-4">
-      {items.map((field) => (
-        <div key={field.id} className="space-y-2">
-          <label htmlFor={field.id} className="text-sm font-medium text-foreground">
-            {field.label}
-            {field.required && <span className="text-destructive ml-1">*</span>}
-          </label>
-          {field.type === 'textarea' ? (
-            <textarea
-              id={field.id}
-              value={values[field.id] || ''}
-              onChange={(e) => onChange?.(field.id, e.target.value)}
-              placeholder={field.placeholder}
-              className={cn(
-                'w-full px-4 py-3 rounded-lg border',
-                'bg-[var(--quiz-input-bg,hsl(var(--input)))]',
-                'border-[var(--quiz-input-border,hsl(var(--border)))]',
-                'text-[var(--quiz-input-foreground,hsl(var(--foreground)))]',
-                'placeholder:text-[var(--quiz-input-placeholder,hsl(var(--muted-foreground)))]',
-                'focus:outline-none focus:ring-2 focus:ring-ring',
-                'min-h-[100px] resize-y'
-              )}
-              required={field.required}
-            />
-          ) : (
-            <input
-              id={field.id}
-              type={field.type === 'phone' ? 'tel' : field.type}
-              value={values[field.id] || ''}
-              onChange={(e) => onChange?.(field.id, e.target.value)}
-              placeholder={field.placeholder}
-              className={cn(
-                'w-full px-4 py-3 rounded-lg border',
-                'bg-[var(--quiz-input-bg,hsl(var(--input)))]',
-                'border-[var(--quiz-input-border,hsl(var(--border)))]',
-                'text-[var(--quiz-input-foreground,hsl(var(--foreground)))]',
-                'placeholder:text-[var(--quiz-input-placeholder,hsl(var(--muted-foreground)))]',
-                'focus:outline-none focus:ring-2 focus:ring-ring'
-              )}
-              required={field.required}
-            />
-          )}
-        </div>
-      ))}
+      {items.map((field) => {
+        const value = values[field.id] || '';
+        const shouldShowError = touched[field.id] || showAllErrors;
+        const error = shouldShowError ? validateField(field.type, value, field.required) : null;
+        const hasError = !!error;
+
+        return (
+          <div key={field.id} className="space-y-1.5">
+            <label htmlFor={field.id} className="text-sm font-medium text-foreground">
+              {field.label}
+              {field.required && <span className="text-destructive ml-1">*</span>}
+            </label>
+            {field.type === 'textarea' ? (
+              <textarea
+                id={field.id}
+                value={value}
+                onChange={(e) => handleChange(field.id, e.target.value)}
+                onBlur={() => handleBlur(field.id)}
+                placeholder={field.placeholder}
+                className={cn(
+                  'w-full px-4 py-3 rounded-lg border transition-colors',
+                  'bg-[var(--quiz-input-bg,hsl(var(--input)))]',
+                  'text-[var(--quiz-input-foreground,hsl(var(--foreground)))]',
+                  'placeholder:text-[var(--quiz-input-placeholder,hsl(var(--muted-foreground)))]',
+                  'focus:outline-none focus:ring-2 focus:ring-ring',
+                  'min-h-[100px] resize-y',
+                  hasError
+                    ? 'border-destructive focus:ring-destructive/50'
+                    : 'border-[var(--quiz-input-border,hsl(var(--border)))]'
+                )}
+              />
+            ) : field.type === 'phone' ? (
+              <PhoneInput
+                id={field.id}
+                value={value}
+                onChange={(val) => handleChange(field.id, val)}
+                onBlur={() => handleBlur(field.id)}
+                placeholder={field.placeholder}
+                defaultCountry={defaultCountry}
+                hasError={hasError}
+              />
+            ) : (
+              <input
+                id={field.id}
+                type={field.type === 'email' ? 'email' : 'text'}
+                inputMode={field.type === 'email' ? 'email' : 'text'}
+                value={value}
+                onChange={(e) => handleChange(field.id, e.target.value)}
+                onBlur={() => handleBlur(field.id)}
+                placeholder={field.placeholder}
+                className={cn(
+                  'w-full px-4 py-3 rounded-lg border transition-colors',
+                  'bg-[var(--quiz-input-bg,hsl(var(--input)))]',
+                  'text-[var(--quiz-input-foreground,hsl(var(--foreground)))]',
+                  'placeholder:text-[var(--quiz-input-placeholder,hsl(var(--muted-foreground)))]',
+                  'focus:outline-none focus:ring-2 focus:ring-ring',
+                  hasError
+                    ? 'border-destructive focus:ring-destructive/50'
+                    : 'border-[var(--quiz-input-border,hsl(var(--border)))]'
+                )}
+              />
+            )}
+            {hasError && (
+              <p className="text-xs text-destructive mt-1">
+                {getErrorMessage(error)}
+              </p>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -11,7 +11,7 @@
 import { useMemo, useState, useEffect, useRef, type CSSProperties } from 'react';
 import type { BrandKitColors, Quiz, QuizDraft, VisualBuilderData, FieldResponse, LogoSize } from '@/types';
 import type { Block, OptionsConfig, FieldsConfig, FieldItem, PriceConfig, FieldType } from '@/types/blocks';
-import { QuizBlocksRenderer } from './quiz-blocks-renderer';
+import { QuizBlocksRenderer, validateField } from './quiz-blocks-renderer';
 import { AnalyticsService } from '@/lib/services/analytics-service';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { quizToVisualBuilder } from '@/lib/utils/visual-builder-converters';
@@ -162,6 +162,7 @@ export function BlocksQuizPlayer({
   const [selectedPrices, setSelectedPrices] = useState<SelectionState>({});
   const [fieldValues, setFieldValues] = useState<FieldValuesState>({});
   const [resultOutcomeId, setResultOutcomeId] = useState<string | null>(null);
+  const [showFieldErrors, setShowFieldErrors] = useState(false);
 
   const currentStep = steps[currentStepIndex];
 
@@ -274,20 +275,26 @@ export function BlocksQuizPlayer({
   const handleButtonClick = () => {
     if (!currentStep) return;
 
-    // Validate required fields in current step before advancing
+    // Validate fields in current step before advancing
     const fieldsBlock = currentStep.blocks.find((b) => b.type === 'fields' && b.enabled);
     const fieldsConfig = fieldsBlock?.config as FieldsConfig | undefined;
     const stepFields = currentFieldValues;
 
-    // Check required fields
-    const missingRequired = fieldsConfig?.items?.some((field: FieldItem) => {
-      return field.required && !stepFields[field.id]?.trim();
+    // Check all field validations (required + format)
+    const hasValidationErrors = fieldsConfig?.items?.some((field: FieldItem) => {
+      const value = stepFields[field.id] || '';
+      const error = validateField(field.type, value, field.required);
+      return error !== null;
     });
 
-    if (missingRequired) {
-      // TODO: Show validation error - for now just don't advance
+    if (hasValidationErrors) {
+      // Show all validation errors
+      setShowFieldErrors(true);
       return;
     }
+
+    // Reset error display for next step
+    setShowFieldErrors(false);
 
     // Collect field data from current step if any
     if (mode === 'live' && attemptId && fieldsConfig?.items?.length) {
@@ -537,6 +544,7 @@ export function BlocksQuizPlayer({
           onButtonClick={handleButtonClick}
           fieldValues={currentFieldValues}
           onFieldChange={handleFieldChange}
+          showFieldErrors={showFieldErrors}
         />
 
       </div>
