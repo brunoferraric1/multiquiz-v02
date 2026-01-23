@@ -9,6 +9,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      keyframes: {
+        'bounce-subtle': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-4px)' },
+        },
+      },
+      animation: {
+        'bounce-subtle': 'bounce-subtle 0.4s ease-in-out',
+      },
       colors: {
         draft: {
           DEFAULT: 'hsl(24, 95%, 85%)',

@@ -92,5 +92,24 @@
     "copyLink": "Copiar Link",
     "linkCopied": "Link copiado!",
     "close": "Fechar"
+  },
+  "createQuizModal": {
+    "title": "Crie seu novo Quiz",
+    "subtitle": "Crie quizzes personalizados que você pode salvar e reutilizar.",
+    "methods": {
+      "ai": {
+        "title": "Assistente IA",
+        "description": "Crie seu quiz com ajuda da IA"
+      },
+      "blank": {
+        "title": "Quiz em Branco",
+        "description": "Comece do zero e crie seu quiz personalizado"
+      },
+      "templates": {
+        "title": "Templates",
+        "description": "Escolha entre nossos modelos prontos"
+      }
+    },
+    "comingSoon": "Em breve"
   }
 }

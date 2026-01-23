@@ -92,5 +92,24 @@
     "copyLink": "Copy Link",
     "linkCopied": "Link Copied!",
     "close": "Close"
+  },
+  "createQuizModal": {
+    "title": "Create Your New Quiz",
+    "subtitle": "Create custom quizzes that you can save and reuse.",
+    "methods": {
+      "ai": {
+        "title": "AI Assistant",
+        "description": "Create your quiz with AI assistance"
+      },
+      "blank": {
+        "title": "Blank Quiz",
+        "description": "Start from scratch and create your custom quiz"
+      },
+      "templates": {
+        "title": "Templates",
+        "description": "Choose from our ready-made templates"
+      }
+    },
+    "comingSoon": "Coming soon"
   }
 }

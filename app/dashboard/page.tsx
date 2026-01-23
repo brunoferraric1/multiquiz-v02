@@ -9,6 +9,7 @@ import { useUserQuizzesQuery, useDeleteQuizMutation } from '@/lib/hooks/use-quiz
 import { useLocale, useMessages } from '@/lib/i18n/context';
 import { localizePathname } from '@/lib/i18n/paths';
 
+import { CreateQuizModal } from '@/components/dashboard/create-quiz-modal';
 import { QuizCard } from '@/components/dashboard/quiz-card';
 import { QuizListItem } from '@/components/dashboard/quiz-list-item';
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,7 @@ function DashboardContent() {
   const deleteQuizMutation = useDeleteQuizMutation();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isRedirectingUpgrade, setIsRedirectingUpgrade] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const hasProcessedUpgrade = useRef(false);
   const hasProcessedCheckout = useRef(false);
   const locale = useLocale();
@@ -178,9 +180,12 @@ function DashboardContent() {
   };
 
   const handleNewQuiz = () => {
-    // Generate a new quiz ID and navigate to visual builder
-    const newQuizId = crypto.randomUUID();
-    router.push(localizePathname(`/visual-builder/${newQuizId}`, locale));
+    setIsCreateModalOpen(true);
+  };
+
+  const handleQuizCreated = (quizId: string) => {
+    setIsCreateModalOpen(false);
+    router.push(localizePathname(`/visual-builder/${quizId}`, locale));
   };
 
   // Show skeleton during initial load OR when refetching to prevent stale image flicker
@@ -274,6 +279,12 @@ function DashboardContent() {
           </div>
         )}
       </main>
+
+      <CreateQuizModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onQuizCreated={handleQuizCreated}
+      />
     </div>
   );
 }
