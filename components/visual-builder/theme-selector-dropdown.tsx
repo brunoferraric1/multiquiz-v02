@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ChevronDown, Check, Lock, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/use-auth'
@@ -65,31 +65,39 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
     onThemeChange?.(effectiveColors)
   }, [effectiveColors, onThemeChange])
 
-  // Load existing settings
-  useEffect(() => {
+  // Load settings from Firestore
+  const loadSettings = useCallback(async () => {
     if (!user?.uid) return
 
-    const loadSettings = async () => {
-      try {
-        const settings = await getThemeSettings(user.uid)
+    try {
+      const settings = await getThemeSettings(user.uid)
 
-        if (settings) {
-          setMode(settings.mode)
-          if (settings.mode === 'preset' && settings.presetId) {
-            setPresetId(settings.presetId)
-          }
-          if (settings.mode === 'custom' && settings.customBrandKit) {
-            setCustomColors(settings.customBrandKit.colors)
-            // TODO: Load custom name when we add that feature
-          }
+      if (settings) {
+        setMode(settings.mode)
+        if (settings.mode === 'preset' && settings.presetId) {
+          setPresetId(settings.presetId)
         }
-      } catch (err) {
-        console.error('Error loading theme settings:', err)
+        if (settings.mode === 'custom' && settings.customBrandKit) {
+          setCustomColors(settings.customBrandKit.colors)
+          // TODO: Load custom name when we add that feature
+        }
       }
+    } catch (err) {
+      console.error('Error loading theme settings:', err)
     }
-
-    loadSettings()
   }, [user?.uid])
+
+  // Load existing settings on mount
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
+  // Also reload when popover opens to ensure fresh data after navigation
+  useEffect(() => {
+    if (isOpen) {
+      loadSettings()
+    }
+  }, [isOpen, loadSettings])
 
   // Handle preset theme selection
   const handlePresetSelect = async (id: PresetThemeId) => {

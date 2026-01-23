@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Lock } from 'lucide-react';
+import { Loader2, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 
 // Column definition for dynamic table
@@ -35,7 +35,6 @@ type LeadsTableProps = {
 const MAX_LOCKED_ROWS_DISPLAY = 20;
 const ESTIMATED_ROW_HEIGHT = 53;
 const MIN_SECTION_HEIGHT = 384;
-const SKELETON_ROW_COUNT = 6;
 
 // Get responsive width class for a column type
 const getColumnWidth = (type: DataColumn['type']): string => {
@@ -67,7 +66,6 @@ export function LeadsTable({
         ? Math.min(lockedCount, MAX_LOCKED_ROWS_DISPLAY)
         : 0;
     const placeholderRows = Array.from({ length: displayLockedRows });
-    const skeletonRows = Array.from({ length: SKELETON_ROW_COUNT });
     const spacerHeight = Math.max(0, MIN_SECTION_HEIGHT - displayLockedRows * ESTIMATED_ROW_HEIGHT);
     const visibleDataLabel = dataLabel(visibleCount);
     const totalDataLabel = dataLabel(totalCount);
@@ -112,19 +110,19 @@ export function LeadsTable({
                             ))}
                         </TableRow>
                     </TableHeader>
-                    <TableBody className={loading ? 'animate-pulse' : undefined}>
+                    <TableBody>
                         {loading ? (
-                            <>
-                                {skeletonRows.map((_, index) => (
-                                    <TableRow key={`skeleton-${index}`} className="hover:bg-transparent">
-                                        {columns.map((column) => (
-                                            <TableCell key={column.id} className={`py-4 ${getColumnWidth(column.type)}`}>
-                                                <div className="h-3 w-full max-w-[12rem] rounded bg-muted/60" />
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </>
+                            <TableRow className="hover:bg-transparent">
+                                <TableCell colSpan={columns.length} className="p-0">
+                                    <div
+                                        className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
+                                        style={{ height: `${MIN_SECTION_HEIGHT}px` }}
+                                    >
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Carregando dados...
+                                    </div>
+                                </TableCell>
+                            </TableRow>
                         ) : rows.length === 0 && displayLockedRows === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className="h-24 text-center">

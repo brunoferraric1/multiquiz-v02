@@ -71,6 +71,88 @@ type ReportsGateProps = {
     children: ReactNode;
 };
 
+const ReportsDetailSkeleton = () => {
+    const statSkeletons = Array.from({ length: 4 }, (_, index) => index);
+
+    return (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-12" aria-live="polite" aria-busy="true">
+            <span className="sr-only">Carregando relatório...</span>
+            <div className="mb-4">
+                <Skeleton className="h-8 w-24" />
+            </div>
+            <div className="mb-3">
+                <Skeleton className="h-6 w-28 rounded-full" />
+            </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                <div className="space-y-2">
+                    <Skeleton className="h-10 w-72" />
+                    <Skeleton className="h-4 w-56" />
+                </div>
+                <div className="flex gap-2">
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-10 w-36" />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {statSkeletons.map((item) => (
+                    <Card key={`stat-${item}`}>
+                        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-4 w-4 rounded-full" />
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <Skeleton className="h-8 w-16" />
+                            <Skeleton className="h-3 w-32" />
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <Card>
+                    <CardHeader className="space-y-3">
+                        <Skeleton className="h-5 w-48" />
+                        <Skeleton className="h-4 w-64" />
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                        <Skeleton className="h-full w-full" />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="space-y-3">
+                        <Skeleton className="h-5 w-56" />
+                        <Skeleton className="h-4 w-64" />
+                    </CardHeader>
+                    <CardContent className="h-[400px]">
+                        <Skeleton className="h-full w-full" />
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="mt-10 space-y-4">
+                <div className="space-y-2">
+                    <Skeleton className="h-8 w-44" />
+                    <Skeleton className="h-4 w-64" />
+                </div>
+                <Card>
+                    <CardHeader className="pb-4">
+                        <div className="flex flex-col md:flex-row gap-4 md:items-center">
+                            <div className="flex-1">
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                            <Skeleton className="h-10 w-32" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-[320px] w-full" />
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+};
+
 const ReportsGate = ({ show, onUpgradeClick, children }: ReportsGateProps) => {
     if (!show) return <>{children}</>;
 
@@ -110,6 +192,13 @@ const getFunnelTooltipLabel = (label: string) => {
     if (/^P\d+/i.test(label)) return `pergunta ${label.replace(/\D/g, '')}`;
     return label.toLowerCase();
 };
+
+const MetricLoading = ({ label }: { label: string }) => (
+    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>{label}</span>
+    </div>
+);
 
 const FunnelTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
     if (!active || !payload?.length) return null;
@@ -387,7 +476,7 @@ export default function QuizReportPage() {
     }, [user, quizId, isProUser]);
 
     if (loading) {
-        return <div className="p-8">Carregando dados...</div>;
+        return <ReportsDetailSkeleton />;
     }
 
     if (!quiz) {
@@ -605,6 +694,7 @@ export default function QuizReportPage() {
 
     const dataTitle = 'Dados coletados';
     const displayLockedCount = hasProAccess ? lockedDataCount : 10;
+    const showChartsLoading = isProUser && attemptsLoading;
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-12">
@@ -670,14 +760,14 @@ export default function QuizReportPage() {
                                     <span className="sr-only">Disponível no Pro</span>
                                 </span>
                             ) : attemptsLoading ? (
-                                <Skeleton className="h-8 w-12" />
+                                <MetricLoading label="Atualizando..." />
                             ) : (
                                 totalStarts
                             )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {!isProUser ? '? iniciaram o quiz' : attemptsLoading ? (
-                                <Skeleton className="h-3 w-24" />
+                                'Carregando métricas...'
                             ) : (
                                 `${startRate}% iniciaram o quiz`
                             )}
@@ -697,14 +787,14 @@ export default function QuizReportPage() {
                                     <span className="sr-only">Disponível no Pro</span>
                                 </span>
                             ) : attemptsLoading ? (
-                                <Skeleton className="h-8 w-12" />
+                                <MetricLoading label="Atualizando..." />
                             ) : (
                                 totalCompletions
                             )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {!isProUser ? '? concluíram o quiz' : attemptsLoading ? (
-                                <Skeleton className="h-3 w-28" />
+                                'Carregando métricas...'
                             ) : (
                                 `${completionRate}% concluíram o quiz`
                             )}
@@ -724,7 +814,7 @@ export default function QuizReportPage() {
                                     <span className="sr-only">Disponível no Pro</span>
                                 </span>
                             ) : attemptsLoading ? (
-                                <Skeleton className="h-8 w-12" />
+                                <MetricLoading label="Atualizando..." />
                             ) : (
                                 totalCollectedData
                             )}
@@ -750,27 +840,34 @@ export default function QuizReportPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={funnelData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                                    <XAxis type="number" hide />
-                                    <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
-                                    <Tooltip cursor={{ fill: 'transparent' }} content={<FunnelTooltip />} />
-                                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                                        <LabelList 
-                                            dataKey="value" 
-                                            position="insideRight" 
-                                            fill="#fff" 
-                                            fontSize={12} 
-                                            fontWeight="bold"
-                                            offset={10}
-                                        />
-                                        {funnelData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
+                            {showChartsLoading ? (
+                                <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Carregando funil...
+                                </div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={funnelData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                                        <XAxis type="number" hide />
+                                        <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
+                                        <Tooltip cursor={{ fill: 'transparent' }} content={<FunnelTooltip />} />
+                                        <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                                            <LabelList 
+                                                dataKey="value" 
+                                                position="insideRight" 
+                                                fill="#fff" 
+                                                fontSize={12} 
+                                                fontWeight="bold"
+                                                offset={10}
+                                            />
+                                            {funnelData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -781,7 +878,12 @@ export default function QuizReportPage() {
                             <CardDescription>Quais resultados os usuários estão obtendo</CardDescription>
                         </CardHeader>
                         <CardContent className="h-[400px]">
-                            {resultData.length > 0 ? (
+                            {showChartsLoading ? (
+                                <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Carregando resultados...
+                                </div>
+                            ) : resultData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
                                         <Pie
