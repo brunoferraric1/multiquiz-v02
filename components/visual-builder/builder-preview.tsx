@@ -3,7 +3,7 @@
 import { useState, useMemo, ReactNode, type CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
-import { Smartphone, Monitor, Save, Check, Loader2, Play, AlertTriangle, Undo2 } from 'lucide-react'
+import { Smartphone, Monitor, Loader2, Play, AlertTriangle, Undo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeSelectorDropdown } from './theme-selector-dropdown'
 import type { BrandKitColors } from '@/types'
@@ -21,7 +21,6 @@ interface BuilderPreviewProps {
   onDeviceChange?: (device: DeviceType) => void
   children?: ReactNode
   onClick?: () => void
-  saveStatus?: 'idle' | 'saving' | 'saved'
   onPreview?: () => void
   isPreviewing?: boolean
   themeColors?: BrandKitColors | null
@@ -40,7 +39,6 @@ export function BuilderPreview({
   onDeviceChange,
   children,
   onClick,
-  saveStatus = 'idle',
   onPreview,
   isPreviewing = false,
   themeColors,
@@ -54,9 +52,6 @@ export function BuilderPreview({
   const [internalDevice, setInternalDevice] = useState<DeviceType>('mobile')
 
   const device = controlledDevice ?? internalDevice
-  const isSaving = saveStatus === 'saving'
-  const isSaved = saveStatus === 'saved'
-  const statusLabel = isSaving ? 'Salvando...' : isSaved ? 'Salvo' : 'Auto save'
 
   const handleDeviceChange = (newDevice: DeviceType) => {
     setInternalDevice(newDevice)
@@ -92,28 +87,8 @@ export function BuilderPreview({
       data-testid="center-preview"
       className="flex-1 flex flex-col bg-muted/50 overflow-hidden relative"
     >
-      {/* Unpublished changes banner - above toolbar */}
-      {hasUnpublishedChanges && (
-        <div className="absolute top-0 left-0 right-0 z-20 bg-orange-100 px-4 h-12 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 text-orange-900 text-sm">
-            <AlertTriangle className="w-4 h-4 text-orange-500" />
-            <span>{headerCopy.unpublishedChanges}</span>
-          </div>
-          <button
-            onClick={onUndoChanges}
-            className="flex items-center gap-1.5 text-sm text-orange-700 hover:text-orange-900 font-medium transition-colors"
-          >
-            <Undo2 className="w-4 h-4" />
-            {headerCopy.undoChanges}
-          </button>
-        </div>
-      )}
-
       {/* Top toolbar */}
-      <div className={cn(
-        "absolute left-4 right-4 z-10 flex items-center justify-between",
-        hasUnpublishedChanges ? "top-14" : "top-4"
-      )}>
+      <div className="absolute left-4 right-4 top-4 z-10 flex items-center justify-between">
         {/* Device toggle */}
         <div className="flex items-center gap-1 bg-card rounded-lg shadow-md p-1">
           <button
@@ -171,8 +146,8 @@ export function BuilderPreview({
       <div
         data-testid="preview-container"
         className={cn(
-          "flex-1 flex flex-col items-center justify-center px-4 pb-14 overflow-hidden",
-          hasUnpublishedChanges ? "pt-24" : "pt-16"
+          "flex-1 flex flex-col items-center justify-center px-4 pt-16 overflow-hidden transition-[padding] duration-300",
+          hasUnpublishedChanges ? "pb-16" : "pb-8"
         )}
         style={themeStyle ? { backgroundColor: 'var(--color-background)', ...themeStyle } : undefined}
         onClick={(e) => {
@@ -203,16 +178,24 @@ export function BuilderPreview({
           )}
         </div>
       </div>
-      {/* Save status indicator */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 text-xs text-muted-foreground pointer-events-none z-10">
-        {isSaving ? (
-          <Loader2 className="w-3 h-3 animate-spin" />
-        ) : isSaved ? (
-          <Check className="w-3 h-3 text-green-500" />
-        ) : (
-          <Save className="w-3 h-3" />
+      {/* Unpublished changes banner - bottom with slide animation */}
+      <div
+        className={cn(
+          "absolute bottom-0 left-0 right-0 z-20 bg-orange-100 px-4 h-12 flex items-center justify-between transition-transform duration-300 ease-out",
+          hasUnpublishedChanges ? "translate-y-0" : "translate-y-full"
         )}
-        <span className="text-muted-foreground">{statusLabel}</span>
+      >
+        <div className="flex items-center gap-2.5 text-orange-900 text-sm">
+          <AlertTriangle className="w-4 h-4 text-orange-500" />
+          <span>{headerCopy.unpublishedChanges}</span>
+        </div>
+        <button
+          onClick={onUndoChanges}
+          className="flex items-center gap-1.5 text-sm text-orange-700 hover:text-orange-900 font-medium transition-colors"
+        >
+          <Undo2 className="w-4 h-4" />
+          {headerCopy.undoChanges}
+        </button>
       </div>
     </main>
   )

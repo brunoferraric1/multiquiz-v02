@@ -29,7 +29,6 @@ interface ConnectedVisualBuilderProps {
   hasUnpublishedChanges?: boolean
   isPreviewing?: boolean
   isBackSaving?: boolean
-  saveStatus?: 'idle' | 'saving' | 'saved'
   themeColors?: BrandKitColors | null
   onThemeChange?: (colors: BrandKitColors) => void
 }
@@ -51,7 +50,6 @@ export function ConnectedVisualBuilder({
   hasUnpublishedChanges = false,
   isPreviewing = false,
   isBackSaving = false,
-  saveStatus = 'idle',
   themeColors,
   onThemeChange,
 }: ConnectedVisualBuilderProps) {
@@ -212,7 +210,6 @@ export function ConnectedVisualBuilder({
           device={device}
           onDeviceChange={setDevice}
           onClick={() => setSelectedBlockId(undefined)}
-          saveStatus={saveStatus}
           onPreview={onPreview}
           isPreviewing={isPreviewing}
           themeColors={themeColors}

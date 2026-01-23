@@ -537,7 +537,6 @@ function VisualBuilderEditor() {
         hasUnpublishedChanges={hasUnpublishedChanges}
         isPreviewing={isSavingForPreview}
         isBackSaving={isSavingForBack}
-        saveStatus={saveStatus}
         themeColors={brandKitColors}
         onThemeChange={setBrandKitColors}
       />
