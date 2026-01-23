@@ -169,4 +169,22 @@ export class AnalyticsService {
             return [];
         }
     }
+
+    /**
+     * Calculate accurate stats for a quiz from attempts (excludes owner attempts)
+     */
+    static async calculateQuizStats(quizId: string, ownerId: string): Promise<{ starts: number; completions: number }> {
+        try {
+            const attempts = await this.getQuizAttempts(quizId);
+            const validAttempts = attempts.filter(a => !a.isOwnerAttempt && a.userId !== ownerId);
+
+            return {
+                starts: validAttempts.length,
+                completions: validAttempts.filter(a => a.status === 'completed').length,
+            };
+        } catch (error) {
+            console.error('Error calculating quiz stats:', error);
+            return { starts: 0, completions: 0 };
+        }
+    }
 }

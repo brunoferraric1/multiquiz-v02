@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { QuizService } from '@/lib/services/quiz-service';
-import { getThemeSettings, resolveThemeColors, resolveThemeLogo } from '@/lib/services/brand-kit-service';
+import { resolveThemeColors, resolveThemeLogo } from '@/lib/services/brand-kit-service';
 import { BlocksQuizPlayer } from '@/components/quiz/blocks-quiz-player';
-import type { BrandKitColors, Quiz } from '@/types';
+import type { BrandKitColors, Quiz, UserThemeSettings } from '@/types';
 
 export default function PublicQuizPage() {
   const params = useParams();
@@ -76,7 +76,7 @@ export default function PublicQuizPage() {
     }
   }, [quizId, isPreviewMode]);
 
-  // Load user's theme settings
+  // Load user's theme settings via API (bypasses client-side Firestore permissions)
   useEffect(() => {
     if (!quiz?.ownerId) {
       setBrandKitColors(null);
@@ -85,20 +85,32 @@ export default function PublicQuizPage() {
     }
 
     let isActive = true;
-    getThemeSettings(quiz.ownerId)
-      .then((settings) => {
+
+    async function fetchTheme() {
+      try {
+        const response = await fetch(`/api/theme/${quiz!.ownerId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch theme');
+        }
+
+        const data = await response.json();
+        const settings = data.themeSettings as UserThemeSettings | null;
+
         if (!isActive) return;
-        // Always resolve colors (uses default preset if no settings)
+
+        // Resolve colors and logo from theme settings
         setBrandKitColors(resolveThemeColors(settings));
         setBrandKitLogoUrl(resolveThemeLogo(settings));
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!isActive) return;
         console.error('[PublicQuiz] Error loading theme settings:', err);
         // On error, use default theme colors
         setBrandKitColors(resolveThemeColors(null));
         setBrandKitLogoUrl(null);
-      });
+      }
+    }
+
+    fetchTheme();
 
     return () => {
       isActive = false;

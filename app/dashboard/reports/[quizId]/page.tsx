@@ -18,7 +18,8 @@ import { Input } from '@/components/ui/input';
 import { LeadsTable, type DataColumn, type DataRow } from '@/components/dashboard/leads-table';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { PreviewOverlay } from '@/components/preview-overlay';
-import { ArrowLeft, CheckCircle2, Download, Edit3, Eye, Globe, Lock, Mail, Play, Search } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Download, Edit3, Eye, Globe, Lock, Loader2, Mail, Play, Search } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import {
     BarChart,
@@ -219,6 +220,7 @@ export default function QuizReportPage() {
     const [brandKitLogoUrl, setBrandKitLogoUrl] = useState<string | null>(null);
     const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
     const [loading, setLoading] = useState(true);
+    const [attemptsLoading, setAttemptsLoading] = useState(true);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [collectedData, setCollectedData] = useState<CollectedDataPreview[]>([]);
     const [totalDataCount, setTotalDataCount] = useState(0);
@@ -284,9 +286,11 @@ export default function QuizReportPage() {
 
             if (!isProUser) {
                 setAttempts([]);
+                setAttemptsLoading(false);
                 return;
             }
 
+            setAttemptsLoading(true);
             try {
                 const token = await auth?.currentUser?.getIdToken();
                 if (!token) {
@@ -308,11 +312,34 @@ export default function QuizReportPage() {
                 setAttempts(reportAttempts);
             } catch (error) {
                 console.error('Failed to fetch report data', error);
+            } finally {
+                setAttemptsLoading(false);
             }
         }
 
         fetchReports();
     }, [user, quizId, isProUser]);
+
+    // Sync stats from actual attempts to quiz document (fixes historical data mismatch)
+    useEffect(() => {
+        if (!quiz || !isProUser || attemptsLoading || attempts.length === 0) return;
+
+        // Calculate valid attempts (excluding owner)
+        const validAttempts = attempts.filter(attempt =>
+            !attempt.isOwnerAttempt && attempt.userId !== quiz.ownerId
+        );
+
+        const starts = validAttempts.length;
+        const completions = validAttempts.filter(a => a.status === 'completed').length;
+
+        // Sync to quiz document if different from stored stats
+        const currentStarts = quiz.stats?.starts ?? 0;
+        const currentCompletions = quiz.stats?.completions ?? 0;
+
+        if (currentStarts !== starts || currentCompletions !== completions) {
+            QuizService.syncStats(quizId, { starts, completions });
+        }
+    }, [quiz, quizId, attempts, attemptsLoading, isProUser]);
 
     useEffect(() => {
         async function fetchCollectedData() {
@@ -637,17 +664,23 @@ export default function QuizReportPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold h-9 flex items-center">
-                            {isProUser ? (
-                                totalStarts
-                            ) : (
+                            {!isProUser ? (
                                 <span className="inline-flex items-center justify-center">
                                     <Lock className="h-6 w-6 text-muted-foreground" />
                                     <span className="sr-only">Disponível no Pro</span>
                                 </span>
+                            ) : attemptsLoading ? (
+                                <Skeleton className="h-8 w-12" />
+                            ) : (
+                                totalStarts
                             )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {isProUser ? `${startRate}% iniciaram o quiz` : '? iniciaram o quiz'}
+                            {!isProUser ? '? iniciaram o quiz' : attemptsLoading ? (
+                                <Skeleton className="h-3 w-24" />
+                            ) : (
+                                `${startRate}% iniciaram o quiz`
+                            )}
                         </p>
                     </CardContent>
                 </Card>
@@ -658,17 +691,23 @@ export default function QuizReportPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold h-9 flex items-center">
-                            {isProUser ? (
-                                totalCompletions
-                            ) : (
+                            {!isProUser ? (
                                 <span className="inline-flex items-center justify-center">
                                     <Lock className="h-6 w-6 text-muted-foreground" />
                                     <span className="sr-only">Disponível no Pro</span>
                                 </span>
+                            ) : attemptsLoading ? (
+                                <Skeleton className="h-8 w-12" />
+                            ) : (
+                                totalCompletions
                             )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {isProUser ? `${completionRate}% concluíram o quiz` : '? concluíram o quiz'}
+                            {!isProUser ? '? concluíram o quiz' : attemptsLoading ? (
+                                <Skeleton className="h-3 w-28" />
+                            ) : (
+                                `${completionRate}% concluíram o quiz`
+                            )}
                         </p>
                     </CardContent>
                 </Card>
@@ -679,13 +718,15 @@ export default function QuizReportPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold h-9 flex items-center">
-                            {isProUser ? (
-                                totalCollectedData
-                            ) : (
+                            {!isProUser ? (
                                 <span className="inline-flex items-center justify-center">
                                     <Lock className="h-6 w-6 text-muted-foreground" />
                                     <span className="sr-only">Disponível no Pro</span>
                                 </span>
+                            ) : attemptsLoading ? (
+                                <Skeleton className="h-8 w-12" />
+                            ) : (
+                                totalCollectedData
                             )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">Respostas com dados informados</p>

@@ -720,4 +720,34 @@ export class QuizService {
       // Don't throw - stats update shouldn't break the app
     }
   }
+
+  /**
+   * Sync quiz stats from actual counts (used to fix historical data)
+   * Only updates starts and completions - views are tracked separately
+   */
+  static async syncStats(
+    quizId: string,
+    counts: { starts: number; completions: number }
+  ): Promise<void> {
+    try {
+      const quizRef = doc(db, QUIZZES_COLLECTION, quizId);
+      const quiz = await getDoc(quizRef);
+
+      if (!quiz.exists()) {
+        throw new Error('Quiz not found');
+      }
+
+      const currentStats = quiz.data().stats || { views: 0, starts: 0, completions: 0 };
+
+      // Only update if the counts differ
+      if (currentStats.starts !== counts.starts || currentStats.completions !== counts.completions) {
+        await updateDoc(quizRef, {
+          'stats.starts': counts.starts,
+          'stats.completions': counts.completions,
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing quiz stats:', error);
+    }
+  }
 }

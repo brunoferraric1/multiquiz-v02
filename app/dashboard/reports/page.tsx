@@ -4,12 +4,19 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import { QuizService } from '@/lib/services/quiz-service';
+import { AnalyticsService } from '@/lib/services/analytics-service';
 import type { Quiz } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart3, Eye, Play, CheckCircle2, Globe, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+type QuizStats = {
+    starts: number;
+    completions: number;
+};
 
 export default function ReportsPage() {
     const { user } = useAuth();
@@ -18,6 +25,8 @@ export default function ReportsPage() {
     const isProUser = isPro(subscription);
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
     const [loading, setLoading] = useState(true);
+    const [statsLoading, setStatsLoading] = useState(true);
+    const [accurateStats, setAccurateStats] = useState<Record<string, QuizStats>>({});
 
     useEffect(() => {
         async function fetchQuizzes() {
@@ -34,6 +43,59 @@ export default function ReportsPage() {
 
         fetchQuizzes();
     }, [user]);
+
+    // Fetch accurate stats from attempts for Pro users
+    useEffect(() => {
+        async function fetchAccurateStats() {
+            if (!user || !isProUser || quizzes.length === 0) {
+                setStatsLoading(false);
+                return;
+            }
+
+            setStatsLoading(true);
+            try {
+                const statsMap: Record<string, QuizStats> = {};
+
+                // Fetch stats for all quizzes in parallel
+                await Promise.all(
+                    quizzes.map(async (quiz) => {
+                        const stats = await AnalyticsService.calculateQuizStats(quiz.id, quiz.ownerId);
+                        statsMap[quiz.id] = stats;
+
+                        // Sync stats to quiz document if they differ
+                        const currentStarts = quiz.stats?.starts ?? 0;
+                        const currentCompletions = quiz.stats?.completions ?? 0;
+                        if (currentStarts !== stats.starts || currentCompletions !== stats.completions) {
+                            QuizService.syncStats(quiz.id, stats);
+                        }
+                    })
+                );
+
+                setAccurateStats(statsMap);
+            } catch (error) {
+                console.error('Failed to fetch accurate stats', error);
+            } finally {
+                setStatsLoading(false);
+            }
+        }
+
+        fetchAccurateStats();
+    }, [user, isProUser, quizzes]);
+
+    // Helper to get stats for a quiz - uses accurate stats if available, falls back to stored stats
+    const getStarts = (quiz: Quiz): number => {
+        if (isProUser && accurateStats[quiz.id]) {
+            return accurateStats[quiz.id].starts;
+        }
+        return quiz.stats?.starts || 0;
+    };
+
+    const getCompletions = (quiz: Quiz): number => {
+        if (isProUser && accurateStats[quiz.id]) {
+            return accurateStats[quiz.id].completions;
+        }
+        return quiz.stats?.completions || 0;
+    };
 
     if (loading) {
         return <div className="p-8">Carregando relatórios...</div>;
@@ -89,13 +151,15 @@ export default function ReportsPage() {
                                     <div className="flex flex-col items-center text-center p-2 bg-muted/50 rounded-lg">
                                         <Play className="h-4 w-4 mb-1 text-blue-500" />
                                         <div className="text-lg font-bold h-7 flex items-center justify-center">
-                                            {isProUser ? (
-                                                quiz.stats?.starts || 0
-                                            ) : (
+                                            {!isProUser ? (
                                                 <>
                                                     <Lock className="h-4 w-4 text-muted-foreground" />
                                                     <span className="sr-only">Disponível no Pro</span>
                                                 </>
+                                            ) : statsLoading ? (
+                                                <Skeleton className="h-5 w-6" />
+                                            ) : (
+                                                getStarts(quiz)
                                             )}
                                         </div>
                                         <span className="text-xs text-muted-foreground">Inícios totais</span>
@@ -103,13 +167,15 @@ export default function ReportsPage() {
                                     <div className="flex flex-col items-center text-center p-2 bg-muted/50 rounded-lg">
                                         <CheckCircle2 className="h-4 w-4 mb-1 text-green-500" />
                                         <div className="text-lg font-bold h-7 flex items-center justify-center">
-                                            {isProUser ? (
-                                                quiz.stats?.completions || 0
-                                            ) : (
+                                            {!isProUser ? (
                                                 <>
                                                     <Lock className="h-4 w-4 text-muted-foreground" />
                                                     <span className="sr-only">Disponível no Pro</span>
                                                 </>
+                                            ) : statsLoading ? (
+                                                <Skeleton className="h-5 w-6" />
+                                            ) : (
+                                                getCompletions(quiz)
                                             )}
                                         </div>
                                         <span className="text-xs text-muted-foreground">Conclusões</span>

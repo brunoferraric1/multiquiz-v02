@@ -428,6 +428,7 @@ export function BlocksQuizPlayer({
       AnalyticsService.updateAttempt(attemptId, {
         status: 'completed',
         resultOutcomeId: winningOutcomeId,
+        quizId: quiz.id, // Pass quizId to ensure stats are updated even if attempt doc fetch fails
       });
     }
   };

@@ -20,12 +20,15 @@ import {
   OptionsConfig,
   FieldsConfig,
   PriceConfig,
+  FieldType,
 } from '@/types/blocks';
 import { cn } from '@/lib/utils';
 import { Check, AlertTriangle, AlertCircle, Info, ArrowRight, Square, CheckSquare, Play, Video } from 'lucide-react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { PhoneInput, getDefaultCountryFromLocale } from './phone-input';
 import { useLocale } from '@/lib/i18n/context';
+import { getMessages } from '@/lib/i18n/messages';
+import type { Locale } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { FormattedText } from './formatted-text';
 
@@ -629,13 +632,15 @@ function FieldsBlock({
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   // Get app locale for phone input default country
-  let locale = 'pt-BR';
+  let locale: Locale = 'pt-BR';
   try {
     locale = useLocale();
   } catch {
     // Fallback if not in LocaleProvider context (e.g., theme preview)
   }
   const defaultCountry = getDefaultCountryFromLocale(locale);
+  const defaultPlaceholders: Record<FieldType, string> =
+    getMessages(locale).visualBuilder.fieldsEditor.placeholders;
 
   if (!items || items.length === 0) return null;
 
@@ -654,6 +659,7 @@ function FieldsBlock({
         const shouldShowError = touched[field.id] || showAllErrors;
         const error = shouldShowError ? validateField(field.type, value, field.required) : null;
         const hasError = !!error;
+        const placeholder = field.placeholder?.trim() ? field.placeholder : defaultPlaceholders[field.type];
 
         return (
           <div key={field.id} className="space-y-1.5">
@@ -667,7 +673,7 @@ function FieldsBlock({
                 value={value}
                 onChange={(e) => handleChange(field.id, e.target.value)}
                 onBlur={() => handleBlur(field.id)}
-                placeholder={field.placeholder}
+                placeholder={placeholder}
                 className={cn(
                   'w-full px-4 py-3 rounded-lg border transition-colors',
                   'bg-[var(--quiz-input-bg,hsl(var(--input)))]',
@@ -686,7 +692,7 @@ function FieldsBlock({
                 value={value}
                 onChange={(val) => handleChange(field.id, val)}
                 onBlur={() => handleBlur(field.id)}
-                placeholder={field.placeholder}
+                placeholder={placeholder}
                 defaultCountry={defaultCountry}
                 hasError={hasError}
               />
@@ -698,7 +704,7 @@ function FieldsBlock({
                 value={value}
                 onChange={(e) => handleChange(field.id, e.target.value)}
                 onBlur={() => handleBlur(field.id)}
-                placeholder={field.placeholder}
+                placeholder={placeholder}
                 className={cn(
                   'w-full px-4 py-3 rounded-lg border transition-colors',
                   'bg-[var(--quiz-input-bg,hsl(var(--input)))]',
