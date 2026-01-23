@@ -84,7 +84,11 @@
   },
   "publishSuccess": {
     "title": "Quiz Published!",
+    "updateTitle": "Quiz Updated!",
+    "loadingTitle": "Publishing your quiz...",
+    "loadingDescription": "We're saving the changes and preparing the link.",
     "description": "Your quiz is live and ready to collect responses. Share the link below with your audience.",
+    "preparingLink": "Preparing link...",
     "copyLink": "Copy Link",
     "linkCopied": "Link Copied!",
     "close": "Close"

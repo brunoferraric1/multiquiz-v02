@@ -19,7 +19,10 @@
       "back": "Voltar",
       "preview": "Preview"
     },
-    "backLabel": "Voltar"
+    "backLabel": "Voltar",
+    "unpublishedChanges": "Você tem alterações não publicadas",
+    "publishNow": "Publicar agora",
+    "undoChanges": "Desfazer"
   },
   "addStep": {
     "title": "Adicionar etapa",

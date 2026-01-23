@@ -36,9 +36,11 @@ function VisualBuilderEditor() {
   const messages = useMessages()
   const copy = messages.visualBuilder
 
-  // Visual builder store actions
+  // Visual builder store state and actions
   const initialize = useVisualBuilderStore((state) => state.initialize)
   const reset = useVisualBuilderStore((state) => state.reset)
+  const storeSteps = useVisualBuilderStore((state) => state.steps)
+  const storeOutcomes = useVisualBuilderStore((state) => state.outcomes)
 
   // Local state
   const [isPublishing, setIsPublishing] = useState(false)
@@ -50,6 +52,7 @@ function VisualBuilderEditor() {
   const [isPublished, setIsPublished] = useState(false)
   const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
   const [showPublishModal, setShowPublishModal] = useState(false)
+  const [publishWasUpdate, setPublishWasUpdate] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [previewQuiz, setPreviewQuiz] = useState<Quiz | null>(null)
@@ -59,6 +62,7 @@ function VisualBuilderEditor() {
   const checkedRef = useRef(false)
   const justPublishedRef = useRef(false)
   const isPublishedRef = useRef(false)
+  const publishedSnapshotRef = useRef<string | null>(null)
   const savingStartedAtRef = useRef<number | null>(null)
   const savingDelayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savedResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -143,6 +147,8 @@ function VisualBuilderEditor() {
                 steps: publishedVBData.steps,
                 outcomes: publishedVBData.outcomes,
               })
+              // Store the published snapshot for future comparisons
+              publishedSnapshotRef.current = publishedSnapshot
               setHasUnpublishedChanges(currentSnapshot !== publishedSnapshot)
               console.log('[VisualBuilder] Has unpublished changes:', currentSnapshot !== publishedSnapshot)
             } catch {
@@ -322,6 +328,29 @@ function VisualBuilderEditor() {
     }
   }, [isSaving, startSavingStatus])
 
+  // Detect unpublished changes immediately when store state changes
+  useEffect(() => {
+    // Only check if quiz is published and initialized
+    if (!isPublished || !publishedSnapshotRef.current || !isInitialized) return
+
+    // Skip right after publishing (snapshot is being updated)
+    if (justPublishedRef.current) {
+      justPublishedRef.current = false
+      return
+    }
+
+    const currentSnapshot = JSON.stringify({
+      steps: storeSteps,
+      outcomes: storeOutcomes,
+    })
+
+    const hasChanges = currentSnapshot !== publishedSnapshotRef.current
+    if (hasChanges !== hasUnpublishedChanges) {
+      setHasUnpublishedChanges(hasChanges)
+      console.log('[VisualBuilder] Change detection:', { hasChanges, currentLength: currentSnapshot.length, publishedLength: publishedSnapshotRef.current.length })
+    }
+  }, [storeSteps, storeOutcomes, isPublished, isInitialized, hasUnpublishedChanges])
+
   // Fetch user's theme settings for preview
   useEffect(() => {
     if (!user?.uid) {
@@ -403,6 +432,9 @@ function VisualBuilderEditor() {
   const handlePublish = useCallback(async () => {
     if (!id || !user?.uid || isPublishing) return
 
+    // Capture if this is an update before state changes
+    const wasUpdate = isPublishedRef.current
+
     try {
       setIsPublishing(true)
 
@@ -423,6 +455,13 @@ function VisualBuilderEditor() {
       setHasUnpublishedChanges(false)
       justPublishedRef.current = true // Prevents the next auto-save from marking as changed
 
+      // Store current state as the new published snapshot for change detection
+      const currentState = useVisualBuilderStore.getState()
+      publishedSnapshotRef.current = JSON.stringify({
+        steps: currentState.steps,
+        outcomes: currentState.outcomes,
+      })
+
       // Also update ref for consistency
       if (quizRef.current) {
         quizRef.current = {
@@ -437,6 +476,7 @@ function VisualBuilderEditor() {
       queryClient.invalidateQueries({ queryKey: ['quizzes', user.uid] })
 
       // Show success modal with quiz URL
+      setPublishWasUpdate(wasUpdate)
       setShowPublishModal(true)
     } catch (err) {
       console.error('[VisualBuilder] Publish error:', err)
@@ -445,6 +485,27 @@ function VisualBuilderEditor() {
       setIsPublishing(false)
     }
   }, [copy.toast.limitPublish, copy.toast.publishError, forceSave, id, isPublishing, queryClient, user?.uid])
+
+  // Handler: Undo changes (restore to published state)
+  const handleUndoChanges = useCallback(() => {
+    if (!publishedSnapshotRef.current) return
+
+    try {
+      const publishedData = JSON.parse(publishedSnapshotRef.current)
+      const { setSteps, setOutcomes } = useVisualBuilderStore.getState()
+
+      // Restore the published state
+      setSteps(publishedData.steps)
+      setOutcomes(publishedData.outcomes)
+
+      // Reset the unpublished changes flag
+      setHasUnpublishedChanges(false)
+
+      console.log('[VisualBuilder] Reverted to published state')
+    } catch (err) {
+      console.error('[VisualBuilder] Failed to undo changes:', err)
+    }
+  }, [])
 
   // Loading state - show while checking quiz OR before initialization
   if (isCheckingQuiz || !isInitialized) {
@@ -470,6 +531,7 @@ function VisualBuilderEditor() {
         onBack={handleBack}
         onPreview={handlePreview}
         onPublish={handlePublish}
+        onUndoChanges={handleUndoChanges}
         isPublishing={isPublishing}
         isPublished={isPublished}
         hasUnpublishedChanges={hasUnpublishedChanges}
@@ -483,6 +545,7 @@ function VisualBuilderEditor() {
         open={showPublishModal}
         onOpenChange={setShowPublishModal}
         quizId={id as string}
+        isUpdate={publishWasUpdate}
       />
       <PreviewOverlay
         open={isPreviewOpen}

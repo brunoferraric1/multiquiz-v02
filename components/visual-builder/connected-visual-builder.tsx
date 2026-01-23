@@ -23,6 +23,7 @@ interface ConnectedVisualBuilderProps {
   onBack?: () => void
   onPreview?: () => void
   onPublish?: () => void
+  onUndoChanges?: () => void
   isPublishing?: boolean
   isPublished?: boolean
   hasUnpublishedChanges?: boolean
@@ -44,6 +45,7 @@ export function ConnectedVisualBuilder({
   onBack,
   onPreview,
   onPublish,
+  onUndoChanges,
   isPublishing = false,
   isPublished = false,
   hasUnpublishedChanges = false,
@@ -215,6 +217,8 @@ export function ConnectedVisualBuilder({
           isPreviewing={isPreviewing}
           themeColors={themeColors}
           onThemeChange={onThemeChange}
+          hasUnpublishedChanges={isPublished && hasUnpublishedChanges}
+          onUndoChanges={onUndoChanges}
         >
           <StepPreview />
         </BuilderPreview>

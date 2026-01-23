@@ -84,7 +84,11 @@
   },
   "publishSuccess": {
     "title": "Quiz Publicado!",
+    "updateTitle": "Quiz Atualizado!",
+    "loadingTitle": "Publicando seu quiz...",
+    "loadingDescription": "Estamos salvando as alterações e preparando o link.",
     "description": "Seu quiz está no ar e pronto para receber respostas. Compartilhe o link abaixo com sua audiência.",
+    "preparingLink": "Preparando link...",
     "copyLink": "Copiar Link",
     "linkCopied": "Link copiado!",
     "close": "Fechar"

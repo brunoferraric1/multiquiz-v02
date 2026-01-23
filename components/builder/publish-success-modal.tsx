@@ -12,12 +12,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { copyToClipboard } from '@/lib/copy-to-clipboard';
+import { useMessages } from '@/lib/i18n/context';
 
 interface PublishSuccessModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   quizId: string;
   loading?: boolean;
+  isUpdate?: boolean;
 }
 
 export function PublishSuccessModal({
@@ -25,7 +27,10 @@ export function PublishSuccessModal({
   onOpenChange,
   quizId,
   loading = false,
+  isUpdate = false,
 }: PublishSuccessModalProps) {
+  const messages = useMessages();
+  const copy = messages.dashboard.publishSuccess;
   const [copied, setCopied] = useState(false);
 
   // Generate the quiz URL - uses current domain + /quiz/[id] route
@@ -56,12 +61,10 @@ export function PublishSuccessModal({
             <Globe className="w-8 h-8 text-green-600 dark:text-green-500" />
           </div>
           <DialogTitle className="text-2xl">
-            {loading ? 'Publicando seu quiz...' : 'Quiz Publicado!'}
+            {loading ? copy.loadingTitle : isUpdate ? copy.updateTitle : copy.title}
           </DialogTitle>
           <DialogDescription className="text-base text-muted-foreground">
-            {loading
-              ? 'Estamos salvando as alterações e preparando o link.'
-              : 'Seu quiz está no ar e pronto para receber respostas. Compartilhe o link abaixo com sua audiência.'}
+            {loading ? copy.loadingDescription : copy.description}
           </DialogDescription>
         </DialogHeader>
 
@@ -70,7 +73,7 @@ export function PublishSuccessModal({
             {loading ? (
               <div className="flex flex-1 items-center gap-2 rounded-2xl border border-border/60 bg-muted px-4 py-3 text-sm text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin text-foreground/70" />
-                Preparando link...
+                {copy.preparingLink}
               </div>
             ) : (
               <Input
@@ -85,7 +88,7 @@ export function PublishSuccessModal({
           {loading ? (
             <Button className="w-full gap-2" size="lg" disabled>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Preparando link...
+              {copy.preparingLink}
             </Button>
           ) : (
             <Button
@@ -96,12 +99,12 @@ export function PublishSuccessModal({
               {copied ? (
                 <>
                   <Check size={20} />
-                  Link Copiado!
+                  {copy.linkCopied}
                 </>
               ) : (
                 <>
                   <Copy size={20} />
-                  Copiar Link
+                  {copy.copyLink}
                 </>
               )}
             </Button>
@@ -112,7 +115,7 @@ export function PublishSuccessModal({
             onClick={() => onOpenChange(false)}
             className="w-full"
           >
-            Fechar
+            {copy.close}
           </Button>
         </div>
       </DialogContent>

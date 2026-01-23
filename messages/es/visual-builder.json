@@ -19,7 +19,10 @@
       "back": "Volver",
       "preview": "Vista previa"
     },
-    "backLabel": "Volver"
+    "backLabel": "Volver",
+    "unpublishedChanges": "Tienes cambios sin publicar",
+    "publishNow": "Publicar ahora",
+    "undoChanges": "Deshacer"
   },
   "addStep": {
     "title": "Agregar etapa",

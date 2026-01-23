@@ -125,7 +125,7 @@ describe('ConnectedPropertiesPanel', () => {
       expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument()
     })
 
-    it('shows block controls in block editor view', () => {
+    it('shows block action buttons in block editor header', () => {
       const steps = useVisualBuilderStore.getState().steps
       const introStep = steps.find(s => s.type === 'intro')
       const firstBlock = introStep?.blocks[0]
@@ -136,7 +136,9 @@ describe('ConnectedPropertiesPanel', () => {
 
       render(<ConnectedPropertiesPanel />)
 
-      expect(screen.getByTestId('block-controls')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /subir/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /descer/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /excluir bloco/i })).toBeInTheDocument()
     })
 
     it('clicking back button returns to step view', async () => {

@@ -29,7 +29,6 @@ import {
   ButtonBlockEditor,
   BannerBlockEditor,
   ListBlockEditor,
-  BlockControls,
 } from './editors'
 import {
   Block,
@@ -47,6 +46,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import { SectionTitle } from '@/components/ui/section-title'
+import { Button } from '@/components/ui/button'
 import { useMessages } from '@/lib/i18n/context'
 import {
   Heading1,
@@ -59,6 +59,8 @@ import {
   AlertTriangle,
   ListChecks,
   Trash2,
+  ChevronUp,
+  ChevronDown,
   GripVertical,
   BarChart3,
   ArrowLeft,
@@ -394,27 +396,64 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
 
   // If a block is selected, show block editor
   if (selectedBlock) {
+    const controls = copy.blockControls
+    const blockTypeName = copy.blockTypes[selectedBlock.type]
+    const deleteAria = controls.deleteBlockAria.replace('{{name}}', blockTypeName)
+    const iconButtonClasses = cn(
+      'h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted',
+      'cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]'
+    )
+
     return (
       <BuilderProperties
-        title={copy.blockTypes[selectedBlock.type]}
+        title={blockTypeName}
         showBack
         onBack={handleBack}
+        actions={
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleMoveBlock('up')}
+                disabled={blockIndex <= 0}
+                className={iconButtonClasses}
+                aria-label={controls.moveUp}
+              >
+                <ChevronUp className="w-4 h-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleMoveBlock('down')}
+                disabled={blockIndex >= currentBlocks.length - 1}
+                className={iconButtonClasses}
+                aria-label={controls.moveDown}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleDeleteBlock}
+              className={cn(
+                iconButtonClasses,
+                'text-destructive hover:text-destructive hover:bg-destructive/10'
+              )}
+              aria-label={deleteAria}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        }
         className={className}
       >
         {/* Block editor */}
         {renderBlockEditor(selectedBlock)}
-
-        <Separator className="my-6" />
-
-        {/* Block controls */}
-        <BlockControls
-          onMoveUp={() => handleMoveBlock('up')}
-          onMoveDown={() => handleMoveBlock('down')}
-          onDelete={handleDeleteBlock}
-          canMoveUp={blockIndex > 0}
-          canMoveDown={blockIndex < currentBlocks.length - 1}
-          blockTypeName={copy.blockTypes[selectedBlock.type]}
-        />
       </BuilderProperties>
     )
   }

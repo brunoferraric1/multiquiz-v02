@@ -3,7 +3,7 @@
 import { useState, useMemo, ReactNode, type CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
-import { Smartphone, Monitor, Save, Check, Loader2, Play } from 'lucide-react'
+import { Smartphone, Monitor, Save, Check, Loader2, Play, AlertTriangle, Undo2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeSelectorDropdown } from './theme-selector-dropdown'
 import type { BrandKitColors } from '@/types'
@@ -26,6 +26,8 @@ interface BuilderPreviewProps {
   isPreviewing?: boolean
   themeColors?: BrandKitColors | null
   onThemeChange?: (colors: BrandKitColors) => void
+  hasUnpublishedChanges?: boolean
+  onUndoChanges?: () => void
 }
 
 const DEVICE_WIDTHS: Record<DeviceType, number> = {
@@ -43,6 +45,8 @@ export function BuilderPreview({
   isPreviewing = false,
   themeColors,
   onThemeChange,
+  hasUnpublishedChanges = false,
+  onUndoChanges,
 }: BuilderPreviewProps) {
   const messages = useMessages()
   const previewCopy = messages.visualBuilder.preview
@@ -88,8 +92,28 @@ export function BuilderPreview({
       data-testid="center-preview"
       className="flex-1 flex flex-col bg-muted/50 overflow-hidden relative"
     >
+      {/* Unpublished changes banner - above toolbar */}
+      {hasUnpublishedChanges && (
+        <div className="absolute top-0 left-0 right-0 z-20 bg-orange-100 px-4 h-12 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 text-orange-900 text-sm">
+            <AlertTriangle className="w-4 h-4 text-orange-500" />
+            <span>{headerCopy.unpublishedChanges}</span>
+          </div>
+          <button
+            onClick={onUndoChanges}
+            className="flex items-center gap-1.5 text-sm text-orange-700 hover:text-orange-900 font-medium transition-colors"
+          >
+            <Undo2 className="w-4 h-4" />
+            {headerCopy.undoChanges}
+          </button>
+        </div>
+      )}
+
       {/* Top toolbar */}
-      <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
+      <div className={cn(
+        "absolute left-4 right-4 z-10 flex items-center justify-between",
+        hasUnpublishedChanges ? "top-14" : "top-4"
+      )}>
         {/* Device toggle */}
         <div className="flex items-center gap-1 bg-card rounded-lg shadow-md p-1">
           <button
@@ -146,7 +170,10 @@ export function BuilderPreview({
       {/* Preview container - applies theme background */}
       <div
         data-testid="preview-container"
-        className="flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-14 overflow-hidden"
+        className={cn(
+          "flex-1 flex flex-col items-center justify-center px-4 pb-14 overflow-hidden",
+          hasUnpublishedChanges ? "pt-24" : "pt-16"
+        )}
         style={themeStyle ? { backgroundColor: 'var(--color-background)', ...themeStyle } : undefined}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
@@ -176,6 +203,7 @@ export function BuilderPreview({
           )}
         </div>
       </div>
+      {/* Save status indicator */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 text-xs text-muted-foreground pointer-events-none z-10">
         {isSaving ? (
           <Loader2 className="w-3 h-3 animate-spin" />
