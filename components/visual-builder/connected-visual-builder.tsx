@@ -214,7 +214,7 @@ export function ConnectedVisualBuilder({
           isPreviewing={isPreviewing}
           themeColors={themeColors}
           onThemeChange={onThemeChange}
-          hasUnpublishedChanges={isPublished && hasUnpublishedChanges}
+          hasUnpublishedChanges={hasUnpublishedChanges}
           onUndoChanges={onUndoChanges}
         >
           <StepPreview />

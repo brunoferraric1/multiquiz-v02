@@ -62,6 +62,7 @@ function VisualBuilderEditor() {
   const checkedRef = useRef(false)
   const justPublishedRef = useRef(false)
   const isPublishedRef = useRef(false)
+  const needsRepublishRef = useRef(false) // True if published but missing publishedVersion data
   const publishedSnapshotRef = useRef<string | null>(null)
   const savingStartedAtRef = useRef<number | null>(null)
   const savingDelayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -137,23 +138,35 @@ function VisualBuilderEditor() {
           isPublishedRef.current = existingQuiz.isPublished || false
 
           // Check if there are unpublished changes by comparing draft with published version
-          if (existingQuiz.isPublished && existingQuiz.publishedVersion?.visualBuilderData) {
-            try {
-              const publishedVBData = typeof existingQuiz.publishedVersion.visualBuilderData === 'string'
-                ? JSON.parse(existingQuiz.publishedVersion.visualBuilderData)
-                : existingQuiz.publishedVersion.visualBuilderData
-              const currentSnapshot = JSON.stringify(vbData)
-              const publishedSnapshot = JSON.stringify({
-                steps: publishedVBData.steps,
-                outcomes: publishedVBData.outcomes,
-              })
-              // Store the published snapshot for future comparisons
-              publishedSnapshotRef.current = publishedSnapshot
-              setHasUnpublishedChanges(currentSnapshot !== publishedSnapshot)
-              console.log('[VisualBuilder] Has unpublished changes:', currentSnapshot !== publishedSnapshot)
-            } catch {
-              // If comparison fails, assume no changes
-              setHasUnpublishedChanges(false)
+          if (existingQuiz.isPublished) {
+            const currentSnapshot = JSON.stringify(vbData)
+
+            if (existingQuiz.publishedVersion?.visualBuilderData) {
+              try {
+                const publishedVBData = typeof existingQuiz.publishedVersion.visualBuilderData === 'string'
+                  ? JSON.parse(existingQuiz.publishedVersion.visualBuilderData)
+                  : existingQuiz.publishedVersion.visualBuilderData
+                const publishedSnapshot = JSON.stringify({
+                  steps: publishedVBData.steps,
+                  outcomes: publishedVBData.outcomes,
+                })
+                // Store the published snapshot for future comparisons
+                publishedSnapshotRef.current = publishedSnapshot
+                setHasUnpublishedChanges(currentSnapshot !== publishedSnapshot)
+                console.log('[VisualBuilder] Has unpublished changes:', currentSnapshot !== publishedSnapshot)
+              } catch {
+                // If comparison fails, use current state as baseline
+                publishedSnapshotRef.current = currentSnapshot
+                setHasUnpublishedChanges(false)
+                console.log('[VisualBuilder] Using current state as published baseline (parse error)')
+              }
+            } else {
+              // Quiz is published but no publishedVersion data - this is a data inconsistency
+              // Show the banner to encourage republishing, which will fix the data
+              publishedSnapshotRef.current = currentSnapshot
+              needsRepublishRef.current = true
+              setHasUnpublishedChanges(true)
+              console.log('[VisualBuilder] No publishedVersion data - showing banner to encourage republish')
             }
           }
         } else {
@@ -298,16 +311,6 @@ function VisualBuilderEditor() {
         // Invalidate query so it fetches the saved quiz
         queryClient.invalidateQueries({ queryKey: ['quiz', id] })
       }
-      // Track unpublished changes: if quiz is published and we just saved (but didn't just publish)
-      // Use ref to get the latest value (avoids stale closure issue)
-      if (isPublishedRef.current && !justPublishedRef.current) {
-        setHasUnpublishedChanges(true)
-        console.log('[VisualBuilder] Marked as having unpublished changes')
-      }
-      // Reset the justPublished flag after the first save post-publish
-      if (justPublishedRef.current) {
-        justPublishedRef.current = false
-      }
     },
     onSaveError: (err) => {
       console.error('[VisualBuilder] Auto-save error:', err)
@@ -331,10 +334,14 @@ function VisualBuilderEditor() {
   // Detect unpublished changes immediately when store state changes
   useEffect(() => {
     // Only check if quiz is published and initialized
-    if (!isPublished || !publishedSnapshotRef.current || !isInitialized) return
+    if (!isPublished || !publishedSnapshotRef.current || !isInitialized) {
+      console.log('[VisualBuilder] Change detection skipped:', { isPublished, hasSnapshot: !!publishedSnapshotRef.current, isInitialized })
+      return
+    }
 
     // Skip right after publishing (snapshot is being updated)
     if (justPublishedRef.current) {
+      console.log('[VisualBuilder] Change detection skipped: just published')
       justPublishedRef.current = false
       return
     }
@@ -345,9 +352,24 @@ function VisualBuilderEditor() {
     })
 
     const hasChanges = currentSnapshot !== publishedSnapshotRef.current
+
+    // For legacy quizzes without publishedVersion data, always show the banner
+    // until the user republishes (which will fix the data)
+    if (needsRepublishRef.current && !hasChanges) {
+      console.log('[VisualBuilder] Change detection: keeping banner for legacy quiz')
+      return
+    }
+
+    console.log('[VisualBuilder] Change detection:', {
+      hasChanges,
+      hasUnpublishedChanges,
+      currentLength: currentSnapshot.length,
+      publishedLength: publishedSnapshotRef.current.length
+    })
+
     if (hasChanges !== hasUnpublishedChanges) {
+      console.log('[VisualBuilder] Updating hasUnpublishedChanges to:', hasChanges)
       setHasUnpublishedChanges(hasChanges)
-      console.log('[VisualBuilder] Change detection:', { hasChanges, currentLength: currentSnapshot.length, publishedLength: publishedSnapshotRef.current.length })
     }
   }, [storeSteps, storeOutcomes, isPublished, isInitialized, hasUnpublishedChanges])
 
@@ -454,6 +476,7 @@ function VisualBuilderEditor() {
       isPublishedRef.current = true // Keep ref in sync for callbacks
       setHasUnpublishedChanges(false)
       justPublishedRef.current = true // Prevents the next auto-save from marking as changed
+      needsRepublishRef.current = false // Clear the legacy quiz flag after republishing
 
       // Store current state as the new published snapshot for change detection
       const currentState = useVisualBuilderStore.getState()
