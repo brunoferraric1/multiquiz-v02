@@ -12,7 +12,8 @@
       "previewing": "Opening...",
       "publish": "Publish",
       "publishing": "Publishing...",
-      "update": "Update"
+      "update": "Update",
+      "published": "Published"
     },
     "aria": {
       "back": "Back",
@@ -178,6 +179,8 @@
     "selectionTitle": "Selection type",
     "single": "Single",
     "multiple": "Multiple",
+    "singleSelectHint": "Single selection advances automatically after a choice.",
+    "multiSelectHint": "With multiple selection, a continue button is added automatically.",
     "optionsTitle": "Answer options",
     "addOption": "Add option",
     "outcomeLabel": "Result",
@@ -216,6 +219,11 @@
     }
   },
   "priceEditor": {
+    "selectionTitle": "Selection type",
+    "single": "Single",
+    "multiple": "Multiple",
+    "singleSelectHint": "Single selection needs a button to continue or redirect.",
+    "multiSelectHint": "With multiple selection, a continue button is added automatically.",
     "title": "Price options",
     "addPrice": "Add price",
     "dragPrice": "Drag price {{index}}",

@@ -26,7 +26,7 @@ import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import { SectionTitle } from '@/components/ui/section-title'
 import { OptionsConfig, OptionItem } from '@/types/blocks'
 import type { Outcome } from '@/store/visual-builder-store'
-import { Trash2, GripVertical, ArrowRight, Plus } from 'lucide-react'
+import { Trash2, GripVertical, ArrowRight, Plus, Lightbulb } from 'lucide-react'
 import { useMessages } from '@/lib/i18n/context'
 import type { Messages } from '@/lib/i18n/messages'
 import {
@@ -252,6 +252,14 @@ export function OptionsBlockEditor({
           onChange={(selectionType) => onChange({ selectionType })}
           aria-label={optionsCopy.selectionTitle}
         />
+        <div className="mt-2 flex items-start gap-2 rounded-lg border border-border/60 bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+          <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            {config.selectionType === 'multiple'
+              ? optionsCopy.multiSelectHint
+              : optionsCopy.singleSelectHint}
+          </span>
+        </div>
       </div>
 
       {/* Options list */}

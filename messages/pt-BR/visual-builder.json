@@ -12,7 +12,8 @@
       "previewing": "Abrindo...",
       "publish": "Publicar",
       "publishing": "Publicando...",
-      "update": "Atualizar"
+      "update": "Atualizar",
+      "published": "Publicado"
     },
     "aria": {
       "back": "Voltar",
@@ -178,6 +179,8 @@
     "selectionTitle": "Tipo de seleção",
     "single": "Única",
     "multiple": "Múltipla",
+    "singleSelectHint": "Seleção única avança automaticamente após a escolha.",
+    "multiSelectHint": "Ao usar seleção múltipla, um botão de continuar é adicionado automaticamente.",
     "optionsTitle": "Opções de resposta",
     "addOption": "Adicionar opção",
     "outcomeLabel": "Resultado",
@@ -216,6 +219,11 @@
     }
   },
   "priceEditor": {
+    "selectionTitle": "Tipo de seleção",
+    "single": "Única",
+    "multiple": "Múltipla",
+    "singleSelectHint": "Seleção única pede um botão para continuar ou redirecionar.",
+    "multiSelectHint": "Ao usar seleção múltipla, um botão de continuar é adicionado automaticamente.",
     "title": "Opções de preço",
     "addPrice": "Adicionar preço",
     "dragPrice": "Arrastar preço {{index}}",

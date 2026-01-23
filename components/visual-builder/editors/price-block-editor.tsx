@@ -24,8 +24,9 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
 import { SectionTitle } from '@/components/ui/section-title'
+import { ToggleGroup } from '@/components/ui/toggle-group'
 import { PriceConfig, PriceItem } from '@/types/blocks'
-import { Trash2, GripVertical, ChevronDown, ChevronUp, Star } from 'lucide-react'
+import { Trash2, GripVertical, ChevronDown, ChevronUp, Star, Lightbulb } from 'lucide-react'
 import { useMessages } from '@/lib/i18n/context'
 import type { Messages } from '@/lib/i18n/messages'
 
@@ -239,6 +240,7 @@ export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
   const messages = useMessages()
   const priceCopy = messages.visualBuilder.priceEditor
   const [expandedPriceId, setExpandedPriceId] = useState<string | null>(null)
+  const selectionType = config.selectionType ?? 'single'
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -295,6 +297,27 @@ export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
 
   return (
     <div className="space-y-4" data-testid="price-block-editor">
+      <div>
+        <SectionTitle>{priceCopy.selectionTitle}</SectionTitle>
+        <ToggleGroup
+          options={[
+            { value: 'single', label: priceCopy.single },
+            { value: 'multiple', label: priceCopy.multiple },
+          ]}
+          value={selectionType}
+          onChange={(nextSelectionType) => onChange({ selectionType: nextSelectionType })}
+          aria-label={priceCopy.selectionTitle}
+        />
+        <div className="mt-2 flex items-start gap-2 rounded-lg border border-border/60 bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+          <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            {selectionType === 'multiple'
+              ? priceCopy.multiSelectHint
+              : priceCopy.singleSelectHint}
+          </span>
+        </div>
+      </div>
+
       {/* Price items list */}
       <div>
         <SectionTitle>{priceCopy.title}</SectionTitle>
