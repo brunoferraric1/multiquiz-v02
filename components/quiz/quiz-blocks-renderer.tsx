@@ -233,10 +233,12 @@ function getVideoThumbnail(url: string): string | null {
 /**
  * Clean video player with minimal UI
  * Shows static thumbnail first, then embeds video iframe when clicked
+ * Priority: customThumbnail > auto-generated thumbnail > placeholder
  */
-function VideoPlayer({ url }: { url: string }) {
+function VideoPlayer({ url, customThumbnail }: { url: string; customThumbnail?: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const thumbnailUrl = getVideoThumbnail(url);
+  const autoThumbnailUrl = getVideoThumbnail(url);
+  const thumbnailUrl = customThumbnail || autoThumbnailUrl;
   const youtubeId = getYouTubeVideoId(url);
   const vimeoId = getVimeoVideoId(url);
 
@@ -311,7 +313,7 @@ function VideoPlayer({ url }: { url: string }) {
 }
 
 function MediaBlock({ config }: { config: MediaConfig }) {
-  const { type, url, alt, orientation } = config;
+  const { type, url, alt, orientation, videoThumbnail } = config;
   const imageOrientation = orientation ?? 'horizontal';
   const imageWrapperClass = cn(
     'rounded-xl overflow-hidden border border-border/50',
@@ -326,7 +328,7 @@ function MediaBlock({ config }: { config: MediaConfig }) {
   if (type === 'video') {
     return (
       <div className="w-full">
-        <VideoPlayer url={url} />
+        <VideoPlayer url={url} customThumbnail={videoThumbnail} />
       </div>
     );
   }

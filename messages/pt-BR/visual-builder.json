@@ -175,8 +175,11 @@
     "drop": "Arraste e solte sua imagem aqui",
     "upload": "Fazer upload",
     "videoUrlLabel": "URL do vídeo",
-    "videoUrlPlaceholder": "https://youtube.com/watch?v=...",
-    "previewAlt": "Preview"
+    "videoUrlPlaceholder": "YouTube, Vimeo, Vturb...",
+    "previewAlt": "Preview",
+    "thumbnailSection": "Thumbnail do vídeo",
+    "thumbnailHint": "Adicione uma imagem de capa para vídeos do Vimeo, Vturb ou outras plataformas que não geram thumbnail automático.",
+    "thumbnailDrop": "Arraste a imagem de capa aqui"
   },
   "optionsEditor": {
     "selectionTitle": "Tipo de seleção",

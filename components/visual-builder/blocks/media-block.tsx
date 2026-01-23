@@ -39,14 +39,17 @@ function getVideoThumbnail(url: string): string | null {
 /**
  * Static video thumbnail preview for the visual builder
  * Shows thumbnail + play icon, clicking selects the block (not plays video)
+ * Priority: customThumbnail > auto-generated thumbnail > placeholder
  */
-function VideoThumbnailPreview({ url, alt }: { url: string; alt: string }) {
-  const thumbnailUrl = getVideoThumbnail(url)
+function VideoThumbnailPreview({ url, alt, customThumbnail }: { url: string; alt: string; customThumbnail?: string }) {
+  const autoThumbnailUrl = getVideoThumbnail(url)
+  const thumbnailUrl = customThumbnail || autoThumbnailUrl
 
   return (
-    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
+    <div key={url} className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
       {thumbnailUrl ? (
         <img
+          key={thumbnailUrl}
           src={thumbnailUrl}
           alt={alt}
           className="w-full h-full object-cover"
@@ -100,9 +103,15 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
   }
 
   if (type === 'video') {
+    const videoThumbnail = (config as MediaConfig).videoThumbnail
     return (
       <div className={cn('p-4', !enabled && 'opacity-50')}>
-        <VideoThumbnailPreview url={url} alt={mediaCopy.previewAlt} />
+        <VideoThumbnailPreview
+          key={`${url}-${videoThumbnail || ''}`}
+          url={url}
+          alt={mediaCopy.previewAlt}
+          customThumbnail={videoThumbnail}
+        />
       </div>
     )
   }
@@ -111,6 +120,7 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
     <div className={cn('p-4', !enabled && 'opacity-50')}>
       <div className={imageWrapperClass}>
         <img
+          key={url}
           src={url}
           alt={alt || mediaCopy.image}
           className="w-full h-full object-cover"

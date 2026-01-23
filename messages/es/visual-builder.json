@@ -175,8 +175,11 @@
     "drop": "Arrastra y suelta tu imagen aquí",
     "upload": "Subir",
     "videoUrlLabel": "URL del video",
-    "videoUrlPlaceholder": "https://youtube.com/watch?v=...",
-    "previewAlt": "Vista previa"
+    "videoUrlPlaceholder": "YouTube, Vimeo, Vturb...",
+    "previewAlt": "Vista previa",
+    "thumbnailSection": "Miniatura del video",
+    "thumbnailHint": "Agrega una imagen de portada para videos de Vimeo, Vturb u otras plataformas que no generan miniaturas automáticas.",
+    "thumbnailDrop": "Arrastra la imagen de portada aquí"
   },
   "optionsEditor": {
     "selectionTitle": "Tipo de selección",

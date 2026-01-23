@@ -175,3 +175,13 @@ export function getBlockMediaPath(quizId: string, stepId: string, blockId: strin
 export function getOutcomeBlockMediaPath(quizId: string, outcomeId: string, blockId: string): string {
     return `quizzes/${quizId}/outcome-blocks/${outcomeId}/${blockId}`;
 }
+
+/**
+ * Generate storage path for visual builder video thumbnail
+ * @param quizId - The quiz ID
+ * @param containerId - The step or outcome ID containing the block
+ * @param blockId - The block ID
+ */
+export function getVideoThumbnailPath(quizId: string, containerId: string, blockId: string): string {
+    return `quizzes/${quizId}/thumbnails/${containerId}/${blockId}`;
+}

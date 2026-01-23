@@ -34,6 +34,7 @@ export interface MediaConfig {
   url?: string
   alt?: string
   orientation?: 'horizontal' | 'vertical'
+  videoThumbnail?: string // Custom thumbnail for videos (used when auto-thumbnail is unavailable)
 }
 
 // Option item for options block

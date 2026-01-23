@@ -175,8 +175,11 @@
     "drop": "Drag and drop your image here",
     "upload": "Upload",
     "videoUrlLabel": "Video URL",
-    "videoUrlPlaceholder": "https://youtube.com/watch?v=...",
-    "previewAlt": "Preview"
+    "videoUrlPlaceholder": "YouTube, Vimeo, Vturb...",
+    "previewAlt": "Preview",
+    "thumbnailSection": "Video thumbnail",
+    "thumbnailHint": "Add a cover image for videos from Vimeo, Vturb, or other platforms that don't generate automatic thumbnails.",
+    "thumbnailDrop": "Drag the cover image here"
   },
   "optionsEditor": {
     "selectionTitle": "Selection type",

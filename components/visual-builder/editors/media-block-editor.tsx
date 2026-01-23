@@ -8,7 +8,7 @@ import { ToggleGroup } from '@/components/ui/toggle-group'
 import { SectionTitle } from '@/components/ui/section-title'
 import { MediaConfig } from '@/types/blocks'
 import { cn } from '@/lib/utils'
-import { Image, Video, ImageIcon, UploadCloud, Trash2, RectangleHorizontal, RectangleVertical } from 'lucide-react'
+import { Image, Video, ImageIcon, UploadCloud, Trash2, RectangleHorizontal, RectangleVertical, Film } from 'lucide-react'
 import { useMessages } from '@/lib/i18n/context'
 
 interface MediaBlockEditorProps {
@@ -20,6 +20,7 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
   const messages = useMessages()
   const mediaCopy = messages.visualBuilder.mediaEditor
   const inputRef = useRef<HTMLInputElement>(null)
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
   const imageOrientation = config.orientation ?? 'horizontal'
 
   const handleFileSelect = (files: FileList | null) => {
@@ -56,6 +57,35 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
     onChange({ url: '' })
     if (inputRef.current) {
       inputRef.current.value = ''
+    }
+  }
+
+  // Thumbnail upload handlers for video
+  const handleThumbnailSelect = (files: FileList | null) => {
+    const file = files && files.length > 0 ? files[0] : null
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string
+        onChange({ videoThumbnail: dataUrl })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleThumbnailButtonClick = () => {
+    thumbnailInputRef.current?.click()
+  }
+
+  const handleThumbnailDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    handleThumbnailSelect(event.dataTransfer.files)
+  }
+
+  const handleRemoveThumbnail = () => {
+    onChange({ videoThumbnail: '' })
+    if (thumbnailInputRef.current) {
+      thumbnailInputRef.current.value = ''
     }
   }
 
@@ -195,15 +225,98 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
 
       {/* Video URL input */}
       {config.type === 'video' && (
-        <div className="space-y-2">
-          <Label htmlFor="media-url">{mediaCopy.videoUrlLabel}</Label>
-          <Input
-            id="media-url"
-            type="url"
-            value={config.url || ''}
-            onChange={(e) => onChange({ url: e.target.value })}
-            placeholder={mediaCopy.videoUrlPlaceholder}
-          />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="media-url">{mediaCopy.videoUrlLabel}</Label>
+            <Input
+              id="media-url"
+              type="url"
+              value={config.url || ''}
+              onChange={(e) => onChange({ url: e.target.value })}
+              placeholder={mediaCopy.videoUrlPlaceholder}
+            />
+          </div>
+
+          {/* Custom thumbnail upload */}
+          <div className="space-y-2">
+            <SectionTitle>{mediaCopy.thumbnailSection}</SectionTitle>
+            <p className="text-xs text-muted-foreground">
+              {mediaCopy.thumbnailHint}
+            </p>
+
+            {config.videoThumbnail ? (
+              <div className="space-y-2">
+                {/* Thumbnail preview */}
+                <div className="relative aspect-video w-full rounded-lg overflow-hidden border border-border">
+                  <img
+                    src={config.videoThumbnail}
+                    alt={mediaCopy.previewAlt}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Play icon overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                      <Film className="w-4 h-4 text-gray-900" />
+                    </div>
+                  </div>
+                  <div className="absolute top-2 right-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleThumbnailButtonClick}
+                      className="h-8 w-8 rounded-full bg-background/90 text-foreground shadow-sm border border-border/50 flex items-center justify-center hover:bg-background transition-colors"
+                      aria-label={mediaCopy.replace}
+                    >
+                      <UploadCloud className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveThumbnail}
+                      className="h-8 w-8 rounded-full bg-background/90 text-destructive shadow-sm border border-border/50 flex items-center justify-center hover:bg-background transition-colors"
+                      aria-label={mediaCopy.remove}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 cursor-[var(--cursor-interactive)] hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors"
+                onClick={handleThumbnailButtonClick}
+                onDrop={handleThumbnailDrop}
+                onDragOver={(e) => e.preventDefault()}
+                onDragEnter={(e) => e.preventDefault()}
+                data-testid="thumbnail-upload-area"
+              >
+                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground text-center">
+                  {mediaCopy.thumbnailDrop}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleThumbnailButtonClick()
+                  }}
+                >
+                  <UploadCloud className="mr-1.5 h-3.5 w-3.5" />
+                  {mediaCopy.upload}
+                </Button>
+              </div>
+            )}
+
+            <input
+              ref={thumbnailInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleThumbnailSelect(e.target.files)}
+              data-testid="thumbnail-file-input"
+            />
+          </div>
         </div>
       )}
     </div>

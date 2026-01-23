@@ -15,6 +15,7 @@ import {
   migrateBase64ToStorage,
   getBlockMediaPath,
   getOutcomeBlockMediaPath,
+  getVideoThumbnailPath,
 } from '@/lib/services/storage-service'
 import type { QuizDraft } from '@/types'
 import type { Block, MediaConfig } from '@/types/blocks'
@@ -34,34 +35,40 @@ async function migrateBlockImages(
   for (const block of blocks) {
     if (block.type === 'media') {
       const config = block.config as MediaConfig
+      let newConfig = { ...config }
+      let needsUpdate = false
+
+      // Migrate main URL if it's base64
       if (isBase64DataUrl(config.url)) {
         try {
-          // Upload to Firebase Storage and get URL
           const storagePath = getPath(quizId, containerId, block.id)
           const downloadUrl = await migrateBase64ToStorage(config.url!, storagePath)
           console.log('[VBAutoSave] Migrated block image to Storage:', block.id)
-
-          migratedBlocks.push({
-            ...block,
-            config: {
-              ...config,
-              url: downloadUrl,
-            },
-          })
+          newConfig.url = downloadUrl
+          needsUpdate = true
         } catch (err) {
           console.error('[VBAutoSave] Failed to migrate block image:', block.id, err)
-          // Keep the block but clear the base64 URL (too large for Firestore)
-          migratedBlocks.push({
-            ...block,
-            config: {
-              ...config,
-              url: '',
-            },
-          })
+          newConfig.url = ''
+          needsUpdate = true
         }
-      } else {
-        migratedBlocks.push(block)
       }
+
+      // Migrate video thumbnail if it's base64
+      if (isBase64DataUrl(config.videoThumbnail)) {
+        try {
+          const thumbnailPath = getVideoThumbnailPath(quizId, containerId, block.id)
+          const downloadUrl = await migrateBase64ToStorage(config.videoThumbnail!, thumbnailPath)
+          console.log('[VBAutoSave] Migrated video thumbnail to Storage:', block.id)
+          newConfig.videoThumbnail = downloadUrl
+          needsUpdate = true
+        } catch (err) {
+          console.error('[VBAutoSave] Failed to migrate video thumbnail:', block.id, err)
+          newConfig.videoThumbnail = ''
+          needsUpdate = true
+        }
+      }
+
+      migratedBlocks.push(needsUpdate ? { ...block, config: newConfig } : block)
     } else {
       migratedBlocks.push(block)
     }

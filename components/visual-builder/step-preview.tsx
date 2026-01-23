@@ -48,6 +48,7 @@ export function StepPreview() {
   )
 
   // Determine which blocks to show
+  // Note: We depend on activeStep.blocks directly to ensure re-renders when blocks change
   const blocks = useMemo(() => {
     if (!activeStep) return []
 
@@ -58,7 +59,7 @@ export function StepPreview() {
 
     // For other steps, show step blocks
     return activeStep.blocks || []
-  }, [activeStep, selectedOutcome])
+  }, [activeStep, activeStep?.blocks, selectedOutcome, selectedOutcome?.blocks])
 
   // Calculate progress percentage
   const progressPercentage = useMemo(() => {

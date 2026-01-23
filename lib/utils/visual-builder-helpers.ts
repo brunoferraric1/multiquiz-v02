@@ -65,6 +65,7 @@ function getVideoThumbnail(url: string): string | undefined {
 
 /**
  * Extract preview media URL from intro step (image or video thumbnail)
+ * For videos: prioritizes custom videoThumbnail over auto-extracted thumbnail
  */
 export function extractIntroMediaPreviewFromSteps(
   steps: VisualBuilderStep[]
@@ -77,7 +78,10 @@ export function extractIntroMediaPreviewFromSteps(
 
   if (!config?.url) return undefined
   if (config.type === 'image') return config.url
-  if (config.type === 'video') return getVideoThumbnail(config.url)
+  if (config.type === 'video') {
+    // Use custom thumbnail if available, otherwise extract from video URL
+    return config.videoThumbnail || getVideoThumbnail(config.url)
+  }
 
   return undefined
 }
