@@ -12,6 +12,10 @@
       "title": "Temas",
       "description": "Personaliza colores y logo para tus quizzes"
     },
+    "integrations": {
+      "title": "Integraciones",
+      "description": "Conecta con CRMs y herramientas de automatización"
+    },
     "customUrl": {
       "title": "URL personalizada",
       "description": "Configura tu dominio personalizado",

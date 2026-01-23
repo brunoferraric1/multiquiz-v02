@@ -116,6 +116,13 @@ export class AnalyticsService {
 
             if (updates.status === 'completed' && targetQuizId && !isOwnerAttempt) {
                 await QuizService.incrementStat(targetQuizId, 'completions');
+
+                // Fire webhook asynchronously (don't await)
+                fetch('/api/webhooks/deliver', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ attemptId, quizId: targetQuizId }),
+                }).catch(err => console.warn('[Analytics] Webhook delivery request failed:', err));
             }
 
         } catch (error) {

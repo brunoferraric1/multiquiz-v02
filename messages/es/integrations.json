@@ -1,0 +1,46 @@
+{
+  "page": {
+    "title": "Integraciones",
+    "subtitle": "Conecta MultiQuiz con tus herramientas de CRM y automatización"
+  },
+  "breadcrumb": {
+    "settings": "Configuración",
+    "integrations": "Integraciones"
+  },
+  "webhook": {
+    "title": "Webhook CRM",
+    "description": "Envía automáticamente los datos de leads a tu CRM cuando se completa un quiz",
+    "activeBadge": "Activo",
+    "urlLabel": "URL del webhook",
+    "urlHint": "Endpoint HTTPS que recibirá los datos del quiz (POST)",
+    "secretLabel": "Secreto de verificación",
+    "secretHint": "Usa este secreto para verificar la autenticidad de las solicitudes (HMAC-SHA256)",
+    "copyButton": "Copiar",
+    "regenerateButton": "Generar nuevo",
+    "testButton": "Enviar prueba",
+    "testing": "Probando...",
+    "testSuccess": "Éxito",
+    "testError": "Falló"
+  },
+  "whatsapp": {
+    "title": "WhatsApp",
+    "description": "Recibe notificaciones de nuevos leads directamente en WhatsApp",
+    "soonBadge": "Próximamente"
+  },
+  "actions": {
+    "save": "Guardar",
+    "saving": "Guardando..."
+  },
+  "toast": {
+    "loadError": "Error al cargar configuración",
+    "saveSuccess": "¡Configuración guardada con éxito!",
+    "saveError": "Error al guardar configuración",
+    "urlRequired": "La URL del webhook es obligatoria",
+    "invalidUrl": "URL inválida",
+    "copied": "Copiado al portapapeles",
+    "copyError": "Error al copiar",
+    "secretGenerated": "Nuevo secreto generado",
+    "testSuccess": "¡Webhook de prueba enviado con éxito!",
+    "testError": "Error al enviar webhook de prueba"
+  }
+}

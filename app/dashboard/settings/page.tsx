@@ -1,6 +1,6 @@
 'use client'
 
-import { Palette, Link2 } from 'lucide-react'
+import { Palette, Link2, Webhook } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { useMessages, useLocale } from '@/lib/i18n/context'
 import { localizePathname } from '@/lib/i18n/paths'
@@ -40,6 +40,14 @@ export default function SettingsPage() {
           title={copy.sections.themes.title}
           description={copy.sections.themes.description}
           href={localizePathname('/dashboard/settings/themes', locale)}
+        />
+
+        {/* Integrations section */}
+        <SettingsSectionCard
+          icon={<Webhook className="h-5 w-5" />}
+          title={copy.sections.integrations.title}
+          description={copy.sections.integrations.description}
+          href={localizePathname('/dashboard/settings/integrations', locale)}
         />
 
         {/* Custom URL section (coming soon) */}

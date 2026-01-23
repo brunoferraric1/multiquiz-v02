@@ -1,0 +1,46 @@
+{
+  "page": {
+    "title": "Integrations",
+    "subtitle": "Connect MultiQuiz with your CRM and automation tools"
+  },
+  "breadcrumb": {
+    "settings": "Settings",
+    "integrations": "Integrations"
+  },
+  "webhook": {
+    "title": "CRM Webhook",
+    "description": "Automatically send lead data to your CRM when a quiz is completed",
+    "activeBadge": "Active",
+    "urlLabel": "Webhook URL",
+    "urlHint": "HTTPS endpoint that will receive quiz data (POST)",
+    "secretLabel": "Verification secret",
+    "secretHint": "Use this secret to verify request authenticity (HMAC-SHA256)",
+    "copyButton": "Copy",
+    "regenerateButton": "Generate new",
+    "testButton": "Send test",
+    "testing": "Testing...",
+    "testSuccess": "Success",
+    "testError": "Failed"
+  },
+  "whatsapp": {
+    "title": "WhatsApp",
+    "description": "Receive new lead notifications directly on WhatsApp",
+    "soonBadge": "Coming soon"
+  },
+  "actions": {
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "toast": {
+    "loadError": "Failed to load settings",
+    "saveSuccess": "Settings saved successfully!",
+    "saveError": "Failed to save settings",
+    "urlRequired": "Webhook URL is required",
+    "invalidUrl": "Invalid URL",
+    "copied": "Copied to clipboard",
+    "copyError": "Failed to copy",
+    "secretGenerated": "New secret generated",
+    "testSuccess": "Test webhook sent successfully!",
+    "testError": "Failed to send test webhook"
+  }
+}

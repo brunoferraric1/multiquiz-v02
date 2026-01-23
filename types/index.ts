@@ -340,3 +340,40 @@ export type AuthUser = {
   displayName: string | null;
   photoURL?: string | null;
 };
+
+// Webhook Configuration
+export const WebhookConfigSchema = z.object({
+  enabled: z.boolean(),
+  url: z.string().url(),
+  secret: z.string(), // Auto-generated, for HMAC signing
+});
+
+export type WebhookConfig = z.infer<typeof WebhookConfigSchema>;
+
+// User Settings (account-level settings)
+export const UserSettingsSchema = z.object({
+  webhookConfig: WebhookConfigSchema.optional(),
+  // Future: other account-level settings
+});
+
+export type UserSettings = z.infer<typeof UserSettingsSchema>;
+
+// Webhook Payload Types
+export type WebhookPayload = {
+  event: 'quiz.completed';
+  timestamp: string;
+  quiz: {
+    id: string;
+    title: string;
+  };
+  lead: Record<string, string>; // Dynamic fields: email, phone, name, custom fields
+  result: {
+    outcomeId: string;
+    outcomeName: string;
+    outcomeTitle: string;
+  } | null;
+  answers: {
+    question: string;
+    selected: string[];
+  }[];
+};
