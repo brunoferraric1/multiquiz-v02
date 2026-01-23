@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ChevronDown, Check, Lock, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/use-auth'
@@ -65,39 +65,74 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
     onThemeChange?.(effectiveColors)
   }, [effectiveColors, onThemeChange])
 
-  // Load settings from Firestore
-  const loadSettings = useCallback(async () => {
+  // Load existing settings on mount and when user changes
+  useEffect(() => {
     if (!user?.uid) return
 
-    try {
-      const settings = await getThemeSettings(user.uid)
+    let isActive = true
 
-      if (settings) {
-        setMode(settings.mode)
-        if (settings.mode === 'preset' && settings.presetId) {
-          setPresetId(settings.presetId)
+    const loadSettings = async () => {
+      try {
+        const settings = await getThemeSettings(user.uid)
+
+        if (!isActive) return
+
+        if (settings) {
+          setMode(settings.mode)
+          if (settings.mode === 'preset' && settings.presetId) {
+            setPresetId(settings.presetId)
+          }
+          if (settings.mode === 'custom' && settings.customBrandKit) {
+            setCustomColors(settings.customBrandKit.colors)
+            // TODO: Load custom name when we add that feature
+          }
         }
-        if (settings.mode === 'custom' && settings.customBrandKit) {
-          setCustomColors(settings.customBrandKit.colors)
-          // TODO: Load custom name when we add that feature
-        }
+      } catch (err) {
+        console.error('Error loading theme settings:', err)
       }
-    } catch (err) {
-      console.error('Error loading theme settings:', err)
+    }
+
+    loadSettings()
+
+    return () => {
+      isActive = false
     }
   }, [user?.uid])
 
-  // Load existing settings on mount
+  // Reload when popover opens to ensure fresh data after navigation
   useEffect(() => {
-    loadSettings()
-  }, [loadSettings])
+    if (!isOpen || !user?.uid) return
 
-  // Also reload when popover opens to ensure fresh data after navigation
-  useEffect(() => {
-    if (isOpen) {
-      loadSettings()
+    // Skip if we've already loaded recently (within the same session)
+    // This effect catches the case where component state was preserved but data is stale
+    let isActive = true
+
+    const reloadSettings = async () => {
+      try {
+        const settings = await getThemeSettings(user.uid)
+
+        if (!isActive) return
+
+        if (settings) {
+          setMode(settings.mode)
+          if (settings.mode === 'preset' && settings.presetId) {
+            setPresetId(settings.presetId)
+          }
+          if (settings.mode === 'custom' && settings.customBrandKit) {
+            setCustomColors(settings.customBrandKit.colors)
+          }
+        }
+      } catch (err) {
+        console.error('Error reloading theme settings:', err)
+      }
     }
-  }, [isOpen, loadSettings])
+
+    reloadSettings()
+
+    return () => {
+      isActive = false
+    }
+  }, [isOpen, user?.uid])
 
   // Handle preset theme selection
   const handlePresetSelect = async (id: PresetThemeId) => {
@@ -120,7 +155,9 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
   }
 
   // Handle custom theme selection
-  const handleCustomSelect = () => {
+  const handleCustomSelect = async () => {
+    if (!user?.uid) return
+
     if (!isProUser) {
       setIsOpen(false)
       setShowUpgradeModal(true)
@@ -129,6 +166,16 @@ export function ThemeSelectorDropdown({ onThemeChange }: ThemeSelectorDropdownPr
     // If user is Pro and has custom theme, select it
     setMode('custom')
     setIsOpen(false)
+
+    // Auto-save
+    try {
+      const settings: UserThemeSettings = {
+        mode: 'custom',
+      }
+      await saveThemeSettings(user.uid, settings)
+    } catch (err) {
+      console.error('Error saving custom theme:', err)
+    }
   }
 
   // Theme options

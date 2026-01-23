@@ -24,6 +24,22 @@
     "gridShort": "Grid",
     "listShort": "Lista"
   },
+  "reportsList": {
+    "title": "Relatórios de Performance",
+    "subtitle": "Acompanhe o desempenho de seus quizzes e otimize suas conversões.",
+    "toggleLabel": "Exibir rascunhos com dados coletados",
+    "emptyPublished": "Nenhum quiz publicado ainda.",
+    "emptyWithDrafts": "Nenhum quiz publicado ou com dados coletados ainda.",
+    "createFirstQuiz": "Criar meu primeiro Quiz",
+    "loading": "Carregando relatórios...",
+    "proOnly": "Disponível no Pro",
+    "viewDetails": "Ver Detalhes",
+    "stats": {
+      "views": "Visitas totais",
+      "starts": "Inícios totais",
+      "completions": "Conclusões"
+    }
+  },
   "quizCard": {
     "published": "Publicado",
     "draft": "Rascunho",

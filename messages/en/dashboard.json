@@ -24,6 +24,22 @@
     "gridShort": "Grid",
     "listShort": "List"
   },
+  "reportsList": {
+    "title": "Performance Reports",
+    "subtitle": "Track how your quizzes perform and improve conversions.",
+    "toggleLabel": "Display drafts with collected data",
+    "emptyPublished": "No published quizzes yet.",
+    "emptyWithDrafts": "No published quizzes or collected data yet.",
+    "createFirstQuiz": "Create my first quiz",
+    "loading": "Loading reports...",
+    "proOnly": "Available on Pro",
+    "viewDetails": "View Details",
+    "stats": {
+      "views": "Total visits",
+      "starts": "Total starts",
+      "completions": "Completions"
+    }
+  },
   "quizCard": {
     "published": "Published",
     "draft": "Draft",
