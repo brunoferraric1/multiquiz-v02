@@ -3,6 +3,8 @@ import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp, getAdminDb } from '@/lib/firebase-admin';
 import { WebhookConfigSchema } from '@/types';
 
+export const runtime = 'nodejs';
+
 /**
  * GET /api/user/settings
  * Returns the user's webhook configuration

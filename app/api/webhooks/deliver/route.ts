@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendQuizCompletedWebhook } from '@/lib/services/webhook-service';
 
+export const runtime = 'nodejs';
+
 /**
  * POST /api/webhooks/deliver
  * Triggers webhook delivery for a completed quiz attempt

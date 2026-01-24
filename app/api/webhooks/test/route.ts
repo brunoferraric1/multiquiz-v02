@@ -3,6 +3,8 @@ import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 import { sendTestWebhook } from '@/lib/services/webhook-service';
 
+export const runtime = 'nodejs';
+
 /**
  * POST /api/webhooks/test
  * Sends a test webhook to verify configuration
