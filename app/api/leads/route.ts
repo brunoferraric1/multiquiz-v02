@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
-import { getAdminApp, getAdminDb, getUserSubscription } from '@/lib/firebase-admin';
+import { getAdminAuth, getAdminDb, getUserSubscription } from '@/lib/firebase-admin';
 
 type FieldResponse = {
   fieldId: string;
@@ -55,8 +54,7 @@ export async function GET(request: Request) {
   const token = authHeader.replace('Bearer ', '').trim();
   let userId = '';
   try {
-    const adminApp = getAdminApp();
-    const auth = getAuth(adminApp);
+    const auth = getAdminAuth();
     const decoded = await auth.verifyIdToken(token);
     userId = decoded.uid;
   } catch (error) {

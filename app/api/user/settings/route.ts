@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
-import { getAdminApp, getAdminDb } from '@/lib/firebase-admin';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { WebhookConfigSchema } from '@/types';
 
 export const runtime = 'nodejs';
@@ -19,8 +18,7 @@ export async function GET(request: NextRequest) {
   let userId = '';
 
   try {
-    const adminApp = getAdminApp();
-    const auth = getAuth(adminApp);
+    const auth = getAdminAuth();
     const decoded = await auth.verifyIdToken(token);
     userId = decoded.uid;
   } catch (error) {
@@ -63,8 +61,7 @@ export async function PUT(request: NextRequest) {
   let userId = '';
 
   try {
-    const adminApp = getAdminApp();
-    const auth = getAuth(adminApp);
+    const auth = getAdminAuth();
     const decoded = await auth.verifyIdToken(token);
     userId = decoded.uid;
   } catch (error) {

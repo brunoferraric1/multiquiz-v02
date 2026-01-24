@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
-import { getAdminApp } from '@/lib/firebase-admin';
+import { getAdminAuth } from '@/lib/firebase-admin';
 import { sendTestWebhook } from '@/lib/services/webhook-service';
 
 export const runtime = 'nodejs';
@@ -24,8 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const adminApp = getAdminApp();
-    const auth = getAuth(adminApp);
+    const auth = getAdminAuth();
     await auth.verifyIdToken(token);
   } catch (error) {
     console.error('[Webhook Test API] Failed to verify token:', error);

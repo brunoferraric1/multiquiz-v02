@@ -1,9 +1,36 @@
-import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
-import type { ServiceAccount } from 'firebase-admin/app';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
+/**
+ * Firebase Admin SDK - using dynamic require() to bypass Turbopack bundling issues.
+ *
+ * Turbopack mangles external package names (e.g., 'firebase-admin-a14c8a5423a75469')
+ * which causes module resolution to fail at runtime. Using require() loads the
+ * module directly from node_modules, bypassing the bundler entirely.
+ */
+
+// Type-only imports for TypeScript (these are stripped at build time)
+import type { App, ServiceAccount } from 'firebase-admin/app';
+import type { Firestore } from 'firebase-admin/firestore';
+import type { Auth } from 'firebase-admin/auth';
 
 let adminApp: App | undefined;
 let adminDb: Firestore | undefined;
+let adminAuth: Auth | undefined;
+
+// Lazy-load firebase-admin modules to bypass bundler
+function getFirebaseAdmin() {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const adminAppModule = require('firebase-admin/app');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const adminFirestore = require('firebase-admin/firestore');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const adminAuthModule = require('firebase-admin/auth');
+    return {
+        initializeApp: adminAppModule.initializeApp as typeof import('firebase-admin/app').initializeApp,
+        getApps: adminAppModule.getApps as typeof import('firebase-admin/app').getApps,
+        cert: adminAppModule.cert as typeof import('firebase-admin/app').cert,
+        getFirestore: adminFirestore.getFirestore as typeof import('firebase-admin/firestore').getFirestore,
+        getAuth: adminAuthModule.getAuth as typeof import('firebase-admin/auth').getAuth,
+    };
+}
 
 const parseServiceAccount = (raw: string): ServiceAccount => {
     let current = raw;
@@ -44,6 +71,8 @@ export function getAdminApp(): App {
         return adminApp;
     }
 
+    const { initializeApp, getApps, cert } = getFirebaseAdmin();
+
     const parseAndInit = (raw: string): App => {
         const serviceAccount = parseServiceAccount(raw);
 
@@ -70,18 +99,18 @@ export function getAdminApp(): App {
     }
 
     // Parse service account from environment variable
-    // IMPORTANT: On Vercel, we need to check the runtime environment
-    // because the next.config.ts env mapping only works at build time for client code.
-    // Server-side code reads process.env directly at runtime.
-    const isPreviewEnv = process.env.VERCEL_ENV === 'preview';
+    // For Firebase Hosting, check FIREBASE_CONFIG for project detection
+    const isStaging = process.env.GCLOUD_PROJECT?.includes('staging')
+        || process.env.FIREBASE_CONFIG?.includes('staging')
+        || process.env.VERCEL_ENV === 'preview';
 
     let serviceAccountJson: string | undefined;
 
-    if (isPreviewEnv) {
-        // On preview/staging, prefer staging key first
+    if (isStaging) {
+        // On staging, prefer staging key first
         serviceAccountJson = process.env.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY
             || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-        console.log('[Firebase Admin] Preview environment detected, using staging key preference');
+        console.log('[Firebase Admin] Staging environment detected');
     } else {
         // On production or local, prefer production key first
         serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
@@ -90,7 +119,8 @@ export function getAdminApp(): App {
 
     if (!serviceAccountJson) {
         console.error('[Firebase Admin] No service account key found');
-        console.error('[Firebase Admin] VERCEL_ENV:', process.env.VERCEL_ENV);
+        console.error('[Firebase Admin] GCLOUD_PROJECT:', process.env.GCLOUD_PROJECT);
+        console.error('[Firebase Admin] FIREBASE_CONFIG:', process.env.FIREBASE_CONFIG?.substring(0, 50));
         console.error('[Firebase Admin] FIREBASE_SERVICE_ACCOUNT_KEY set:', !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
         console.error('[Firebase Admin] STAGING_FIREBASE_SERVICE_ACCOUNT_KEY set:', !!process.env.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY);
         throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set');
@@ -117,9 +147,21 @@ export function getAdminDb(): Firestore {
         return adminDb;
     }
 
+    const { getFirestore } = getFirebaseAdmin();
     const app = getAdminApp();
     adminDb = getFirestore(app);
     return adminDb;
+}
+
+export function getAdminAuth(): Auth {
+    if (adminAuth) {
+        return adminAuth;
+    }
+
+    const { getAuth } = getFirebaseAdmin();
+    const app = getAdminApp();
+    adminAuth = getAuth(app);
+    return adminAuth;
 }
 
 // User subscription data type
