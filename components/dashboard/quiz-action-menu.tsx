@@ -11,6 +11,7 @@ import {
     LineChart,
     Globe,
     GlobeLock,
+    Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -372,11 +373,15 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                         <DialogDescription>
                             {dashboard.unpublishDialog.description}
                         </DialogDescription>
-                        <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md mt-2">
+                    </DialogHeader>
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+                        <div className="shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                            <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <p className="text-sm text-blue-700 dark:text-blue-300 pt-1">
                             {dashboard.unpublishDialog.dataNotice}
                         </p>
-                        <p className="text-sm font-medium text-foreground">{quiz.title}</p>
-                    </DialogHeader>
+                    </div>
                     <DialogFooter>
                         <Button
                             variant="outline"

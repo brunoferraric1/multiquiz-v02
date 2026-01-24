@@ -4,6 +4,7 @@ const withStaging = (primary?: string, staging?: string) =>
   staging || primary;
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['firebase-admin'],
   env: {
     // Firebase (client)
     NEXT_PUBLIC_FIREBASE_API_KEY: withStaging(
