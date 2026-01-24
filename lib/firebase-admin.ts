@@ -1,8 +1,42 @@
-import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, App, ServiceAccount } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 let adminApp: App | undefined;
 let adminDb: Firestore | undefined;
+
+const parseServiceAccount = (raw: string): ServiceAccount => {
+    let current = raw;
+    const seen = new Set<string>();
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+        const trimmed = current.trim();
+        if (!trimmed || seen.has(trimmed)) break;
+        seen.add(trimmed);
+
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (typeof parsed === 'string') {
+                current = parsed;
+                continue;
+            }
+            return parsed as ServiceAccount;
+        } catch {
+            // Continue with other parsing strategies.
+        }
+
+        if (
+            (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+            (trimmed.startsWith("'") && trimmed.endsWith("'"))
+        ) {
+            current = trimmed.slice(1, -1);
+            continue;
+        }
+
+        current = Buffer.from(trimmed, 'base64').toString('utf-8');
+    }
+
+    throw new Error('Failed to parse Firebase service account JSON');
+};
 
 export function getAdminApp(): App {
     if (adminApp) {
@@ -10,7 +44,7 @@ export function getAdminApp(): App {
     }
 
     const parseAndInit = (raw: string): App => {
-        const serviceAccount = JSON.parse(raw);
+        const serviceAccount = parseServiceAccount(raw);
 
         console.log('[Firebase Admin] Parsed project_id:', serviceAccount.project_id);
 
@@ -44,35 +78,19 @@ export function getAdminApp(): App {
         throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set');
     }
 
-    // Try to decode base64 if it doesn't look like JSON (starts with {)
-    if (!serviceAccountJson.trim().startsWith('{')) {
-        try {
-            const buffer = Buffer.from(serviceAccountJson, 'base64');
-            serviceAccountJson = buffer.toString('utf-8');
-            console.log('[Firebase Admin] Detected Base64 key, decoded successfully');
-        } catch (e) {
-            console.warn('[Firebase Admin] Failed to decode potential Base64 key', e);
-        }
-    }
-
     console.log('[Firebase Admin] Key length:', serviceAccountJson.length);
     console.log('[Firebase Admin] First 20 chars:', serviceAccountJson.substring(0, 20));
 
     try {
         return parseAndInit(serviceAccountJson);
     } catch (error) {
-        console.warn('[Firebase Admin] JSON parse failed, attempting base64 decode fallback');
-        try {
-            const decoded = Buffer.from(serviceAccountJson, 'base64').toString('utf-8');
-            console.log('[Firebase Admin] Base64 decoded length:', decoded.length);
-            return parseAndInit(decoded);
-        } catch (decodeError) {
-            const errorMsg = error instanceof Error ? error.message : String(error);
-            const decodeMsg = decodeError instanceof Error ? decodeError.message : String(decodeError);
-            console.error('[Firebase Admin] Parse/init error:', errorMsg);
-            console.error('[Firebase Admin] Base64 decode error:', decodeMsg);
-            throw new Error(`Failed to initialize Firebase Admin: ${errorMsg}. Decode error: ${decodeMsg}. Key length: ${serviceAccountJson.length}`);
-        }
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error('[Firebase Admin] Parse/init error:', errorMsg);
+        throw new Error(
+            'Failed to initialize Firebase Admin: ' +
+            `${errorMsg}. ` +
+            'Ensure FIREBASE_SERVICE_ACCOUNT_KEY or STAGING_FIREBASE_SERVICE_ACCOUNT_KEY is set.'
+        );
     }
 }
 
