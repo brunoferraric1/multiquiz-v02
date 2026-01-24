@@ -4,6 +4,8 @@ const withStaging = (primary?: string, staging?: string) =>
   staging || primary;
 
 const nextConfig: NextConfig = {
+  // Empty turbopack config allows both Turbopack (dev) and webpack (prod) to coexist
+  turbopack: {},
   serverExternalPackages: [
     'firebase-admin',
     'firebase-admin/app',

@@ -297,17 +297,9 @@ export default function IntegrationsSettingsPage() {
 
             {/* Text content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground">
-                  {copy.webhook.title}
-                </span>
-                {/* Show "Active" badge only when webhook is saved, enabled, and has URL */}
-                {originalConfig?.enabled && originalConfig?.url && (
-                  <Badge variant="default" className="text-xs bg-green-500/20 text-green-500 hover:bg-green-500/20">
-                    {copy.webhook.activeBadge}
-                  </Badge>
-                )}
-              </div>
+              <h3 className="text-base font-semibold text-foreground">
+                {copy.webhook.title}
+              </h3>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {copy.webhook.description}
               </p>
@@ -460,9 +452,9 @@ export default function IntegrationsSettingsPage() {
             {/* Text content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-muted-foreground">
+                <h3 className="text-base font-semibold text-muted-foreground">
                   {copy.whatsapp.title}
-                </span>
+                </h3>
                 <Badge variant="secondary" className="text-xs">
                   {copy.whatsapp.soonBadge}
                 </Badge>
