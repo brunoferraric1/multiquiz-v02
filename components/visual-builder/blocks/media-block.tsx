@@ -75,7 +75,7 @@ function VideoThumbnailPreview({ url, alt, customThumbnail }: { url: string; alt
 export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
   const messages = useMessages()
   const mediaCopy = messages.visualBuilder.mediaEditor
-  const { type, url, alt, orientation } = config as MediaConfig
+  const { type, url, alt, orientation, focalPoint } = config as MediaConfig
   const imageOrientation = orientation ?? 'horizontal'
   const imageWrapperClass = cn(
     'relative rounded-lg overflow-hidden bg-muted',
@@ -83,6 +83,9 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
       ? 'aspect-[3/4] w-full max-w-[var(--media-portrait-max-width)] mx-auto'
       : 'aspect-video w-full'
   )
+  const objectPosition = focalPoint
+    ? `${focalPoint.x}% ${focalPoint.y}%`
+    : 'center'
 
   if (!url) {
     // Placeholder state - no background to allow parent hover effects to show
@@ -124,6 +127,7 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
           src={url}
           alt={alt || mediaCopy.image}
           className="w-full h-full object-cover"
+          style={{ objectPosition }}
         />
       </div>
     </div>

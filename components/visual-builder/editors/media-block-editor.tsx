@@ -1,15 +1,23 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ToggleGroup } from '@/components/ui/toggle-group'
 import { SectionTitle } from '@/components/ui/section-title'
-import { MediaConfig } from '@/types/blocks'
+import { FocalPointSelector } from '@/components/ui/focal-point-selector'
+import { MediaConfig, FocalPoint } from '@/types/blocks'
 import { cn } from '@/lib/utils'
-import { Image, Video, ImageIcon, UploadCloud, Trash2, RectangleHorizontal, RectangleVertical, Film } from 'lucide-react'
+import { Image, Video, ImageIcon, UploadCloud, Trash2, RectangleHorizontal, RectangleVertical, Film, Focus } from 'lucide-react'
 import { useMessages } from '@/lib/i18n/context'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 interface MediaBlockEditorProps {
   config: MediaConfig
@@ -22,6 +30,22 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const thumbnailInputRef = useRef<HTMLInputElement>(null)
   const imageOrientation = config.orientation ?? 'horizontal'
+
+  // Focal point dialog state
+  const [focalPointDialogOpen, setFocalPointDialogOpen] = useState(false)
+  const [tempFocalPoint, setTempFocalPoint] = useState<FocalPoint>(
+    config.focalPoint ?? { x: 50, y: 50 }
+  )
+
+  const handleOpenFocalPointDialog = () => {
+    setTempFocalPoint(config.focalPoint ?? { x: 50, y: 50 })
+    setFocalPointDialogOpen(true)
+  }
+
+  const handleSaveFocalPoint = () => {
+    onChange({ focalPoint: tempFocalPoint })
+    setFocalPointDialogOpen(false)
+  }
 
   const handleFileSelect = (files: FileList | null) => {
     const file = files && files.length > 0 ? files[0] : null
@@ -125,8 +149,21 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
                   src={config.url}
                   alt={mediaCopy.previewAlt}
                   className="w-full h-full object-cover"
+                  style={{
+                    objectPosition: config.focalPoint
+                      ? `${config.focalPoint.x}% ${config.focalPoint.y}%`
+                      : 'center',
+                  }}
                 />
                 <div className="absolute top-2 right-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenFocalPointDialog}
+                    className="h-8 w-8 rounded-full bg-background/90 text-foreground shadow-sm border border-border/50 flex items-center justify-center hover:bg-background transition-colors"
+                    aria-label={mediaCopy.focalPointSet}
+                  >
+                    <Focus className="h-4 w-4" />
+                  </button>
                   <button
                     type="button"
                     onClick={handleButtonClick}
@@ -319,6 +356,39 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
           </div>
         </div>
       )}
+
+      {/* Focal Point Dialog */}
+      <Dialog open={focalPointDialogOpen} onOpenChange={setFocalPointDialogOpen}>
+        <DialogContent className="sm:max-w-2xl overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>{mediaCopy.focalPoint}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {mediaCopy.focalPointHint}
+            </p>
+            {config.url && (
+              <FocalPointSelector
+                imageUrl={config.url}
+                focalPoint={tempFocalPoint}
+                onChange={setTempFocalPoint}
+                className="w-full h-[50vh] bg-muted/50 rounded-lg"
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setFocalPointDialogOpen(false)}
+            >
+              {messages.common?.buttons?.cancel || 'Cancel'}
+            </Button>
+            <Button onClick={handleSaveFocalPoint}>
+              {messages.common?.buttons?.save || 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -28,6 +28,12 @@ export interface TextConfig {
   content: string
 }
 
+// Focal point for image positioning (0-100 percentage)
+export interface FocalPoint {
+  x: number // 0-100, percentage from left
+  y: number // 0-100, percentage from top
+}
+
 // Media block configuration
 export interface MediaConfig {
   type: 'image' | 'video'
@@ -35,6 +41,7 @@ export interface MediaConfig {
   alt?: string
   orientation?: 'horizontal' | 'vertical'
   videoThumbnail?: string // Custom thumbnail for videos (used when auto-thumbnail is unavailable)
+  focalPoint?: FocalPoint // Focal point for image cropping/positioning
 }
 
 // Option item for options block

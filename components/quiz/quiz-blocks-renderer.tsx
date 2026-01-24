@@ -313,7 +313,7 @@ function VideoPlayer({ url, customThumbnail }: { url: string; customThumbnail?: 
 }
 
 function MediaBlock({ config }: { config: MediaConfig }) {
-  const { type, url, alt, orientation, videoThumbnail } = config;
+  const { type, url, alt, orientation, videoThumbnail, focalPoint } = config;
   const imageOrientation = orientation ?? 'horizontal';
   const imageWrapperClass = cn(
     'rounded-xl overflow-hidden border border-border/50',
@@ -322,6 +322,9 @@ function MediaBlock({ config }: { config: MediaConfig }) {
       : 'w-full'
   );
   const imageAspectClass = imageOrientation === 'vertical' ? 'aspect-[3/4]' : 'aspect-video';
+  const objectPosition = focalPoint
+    ? `${focalPoint.x}% ${focalPoint.y}%`
+    : 'center';
 
   if (!url) return null;
 
@@ -337,7 +340,12 @@ function MediaBlock({ config }: { config: MediaConfig }) {
   return (
     <div className={imageWrapperClass}>
       <div className={imageAspectClass}>
-        <img src={url} alt={alt || ''} className="w-full h-full object-cover" />
+        <img
+          src={url}
+          alt={alt || ''}
+          className="w-full h-full object-cover"
+          style={{ objectPosition }}
+        />
       </div>
     </div>
   );
