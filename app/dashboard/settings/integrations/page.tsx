@@ -352,36 +352,50 @@ export default function IntegrationsSettingsPage() {
                 {/* Secret input */}
                 <div className="space-y-2">
                   <Label htmlFor="webhook-secret">{copy.webhook.secretLabel}</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="webhook-secret"
-                      type="text"
-                      value={secret}
-                      readOnly
-                      className="font-mono text-sm"
-                    />
+                  {secret ? (
+                    <>
+                      <div className="flex gap-2">
+                        <Input
+                          id="webhook-secret"
+                          type="text"
+                          value={secret}
+                          readOnly
+                          className="font-mono text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={handleCopySecret}
+                          title={copy.webhook.copyButton}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={handleRegenerateSecret}
+                          title={copy.webhook.regenerateButton}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {copy.webhook.secretHint}
+                      </p>
+                    </>
+                  ) : (
                     <Button
                       type="button"
                       variant="outline"
-                      size="icon"
-                      onClick={handleCopySecret}
-                      title={copy.webhook.copyButton}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
                       onClick={handleRegenerateSecret}
-                      title={copy.webhook.regenerateButton}
+                      className="w-full justify-center gap-2"
                     >
                       <RefreshCw className="h-4 w-4" />
+                      {copy.webhook.generateButton}
                     </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {copy.webhook.secretHint}
-                  </p>
+                  )}
                 </div>
 
                 {/* Action buttons */}
