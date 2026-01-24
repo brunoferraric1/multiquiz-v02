@@ -4,7 +4,25 @@ const withStaging = (primary?: string, staging?: string) =>
   staging || primary;
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: [
+    'firebase-admin',
+    'firebase-admin/app',
+    'firebase-admin/auth',
+    'firebase-admin/firestore',
+  ],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Ensure firebase-admin is not bundled
+      config.externals = config.externals || [];
+      config.externals.push({
+        'firebase-admin': 'commonjs firebase-admin',
+        'firebase-admin/app': 'commonjs firebase-admin/app',
+        'firebase-admin/auth': 'commonjs firebase-admin/auth',
+        'firebase-admin/firestore': 'commonjs firebase-admin/firestore',
+      });
+    }
+    return config;
+  },
   env: {
     // Firebase (client)
     NEXT_PUBLIC_FIREBASE_API_KEY: withStaging(
