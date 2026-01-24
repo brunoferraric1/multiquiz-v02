@@ -52,7 +52,9 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
     const [isDeletingInternal, setIsDeletingInternal] = useState(false);
+    const [isUnpublishing, setIsUnpublishing] = useState(false);
     const [copied, setCopied] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
@@ -150,19 +152,24 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
         }
     };
 
-    const handleUnpublish = async () => {
-        if (!user || !quiz.id || isPublishing) return;
-        setIsPublishing(true);
+    const handleUnpublishClick = () => {
+        setMobileMenuOpen(false);
+        setShowUnpublishDialog(true);
+    };
+
+    const handleUnpublishConfirm = async () => {
+        if (!user || !quiz.id || isUnpublishing) return;
+        setIsUnpublishing(true);
         try {
             await QuizService.unpublishQuiz(quiz.id, user.uid);
-            setMobileMenuOpen(false);
+            setShowUnpublishDialog(false);
             // Invalidate cache to update UI
             queryClient.invalidateQueries({ queryKey: ['quiz', quiz.id] });
             queryClient.invalidateQueries({ queryKey: ['quizzes', user.uid] });
         } catch (error) {
             console.error('Unpublish failed', error);
         } finally {
-            setIsPublishing(false);
+            setIsUnpublishing(false);
         }
     };
 
@@ -188,14 +195,11 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                         <div className="h-px bg-border my-2" />
                         {quiz.isPublished ? (
                             <button
-                                onClick={handleUnpublish}
-                                disabled={isPublishing}
-                                className={`${itemClass} text-orange-500 ${isPublishing ? 'opacity-50' : ''}`}
+                                onClick={handleUnpublishClick}
+                                className={`${itemClass} text-orange-500`}
                             >
                                 <GlobeLock size={iconSize} />
-                                <span>
-                                    {isPublishing ? dashboard.quizActions.unpublishing : dashboard.quizActions.unpublish}
-                                </span>
+                                <span>{dashboard.quizActions.unpublish}</span>
                             </button>
                         ) : (
                             <button
@@ -245,12 +249,11 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
 
                         {quiz.isPublished ? (
                             <DropdownMenuItem
-                                onClick={handleUnpublish}
-                                disabled={isPublishing}
+                                onClick={handleUnpublishClick}
                                 className="text-orange-600 focus:text-orange-700 focus:bg-orange-100"
                             >
                                 <GlobeLock className="mr-2 h-4 w-4" />
-                                {isPublishing ? dashboard.quizActions.unpublishing : dashboard.quizActions.unpublish}
+                                {dashboard.quizActions.unpublish}
                             </DropdownMenuItem>
                         ) : (
                             <DropdownMenuItem
@@ -357,6 +360,38 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                             disabled={isDeleting || isDeletingInternal}
                         >
                             {isDeletingInternal ? dashboard.deleteDialog.confirming : common.buttons.delete}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showUnpublishDialog} onOpenChange={setShowUnpublishDialog}>
+                <DialogContent onClick={(e) => e.stopPropagation()}>
+                    <DialogHeader>
+                        <DialogTitle>{dashboard.unpublishDialog.title}</DialogTitle>
+                        <DialogDescription>
+                            {dashboard.unpublishDialog.description}
+                        </DialogDescription>
+                        <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md mt-2">
+                            {dashboard.unpublishDialog.dataNotice}
+                        </p>
+                        <p className="text-sm font-medium text-foreground">{quiz.title}</p>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowUnpublishDialog(false)}
+                            disabled={isUnpublishing}
+                        >
+                            {common.buttons.cancel}
+                        </Button>
+                        <Button
+                            variant="default"
+                            onClick={handleUnpublishConfirm}
+                            disabled={isUnpublishing}
+                            className="bg-orange-600 hover:bg-orange-700"
+                        >
+                            {isUnpublishing ? dashboard.unpublishDialog.confirming : dashboard.unpublishDialog.confirm}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -66,6 +66,14 @@
     "confirm": "Eliminar",
     "confirming": "Eliminando..."
   },
+  "unpublishDialog": {
+    "title": "¿Despublicar quiz?",
+    "description": "El quiz dejará de estar accesible públicamente y el enlace dejará de funcionar.",
+    "dataNotice": "Tus datos recopilados (leads y respuestas) se mantendrán.",
+    "cancel": "Cancelar",
+    "confirm": "Despublicar",
+    "confirming": "Despublicando..."
+  },
   "empty": {
     "title": "Aún no hay quizzes",
     "description": "Inicia una conversación con nuestra IA para crear tu primer quiz.",
