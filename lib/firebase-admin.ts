@@ -70,14 +70,29 @@ export function getAdminApp(): App {
     }
 
     // Parse service account from environment variable
-    let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    // IMPORTANT: On Vercel, we need to check the runtime environment
+    // because the next.config.ts env mapping only works at build time for client code.
+    // Server-side code reads process.env directly at runtime.
+    const isPreviewEnv = process.env.VERCEL_ENV === 'preview';
 
-    if (!serviceAccountJson) {
-        serviceAccountJson = process.env.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY;
+    let serviceAccountJson: string | undefined;
+
+    if (isPreviewEnv) {
+        // On preview/staging, prefer staging key first
+        serviceAccountJson = process.env.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY
+            || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+        console.log('[Firebase Admin] Preview environment detected, using staging key preference');
+    } else {
+        // On production or local, prefer production key first
+        serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
+            || process.env.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY;
     }
 
     if (!serviceAccountJson) {
-        console.error('[Firebase Admin] FIREBASE_SERVICE_ACCOUNT_KEY is not set');
+        console.error('[Firebase Admin] No service account key found');
+        console.error('[Firebase Admin] VERCEL_ENV:', process.env.VERCEL_ENV);
+        console.error('[Firebase Admin] FIREBASE_SERVICE_ACCOUNT_KEY set:', !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        console.error('[Firebase Admin] STAGING_FIREBASE_SERVICE_ACCOUNT_KEY set:', !!process.env.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY);
         throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set');
     }
 
