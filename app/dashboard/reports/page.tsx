@@ -6,7 +6,8 @@ import { useSubscription, isPro } from '@/lib/services/subscription-service';
 import { QuizService } from '@/lib/services/quiz-service';
 import { AnalyticsService } from '@/lib/services/analytics-service';
 import type { Quiz } from '@/types';
-import { useMessages } from '@/lib/i18n/context';
+import { useMessages, useLocale } from '@/lib/i18n/context';
+import { localizePathname } from '@/lib/i18n/paths';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ type QuizStats = {
 export default function ReportsPage() {
     const { user } = useAuth();
     const router = useRouter();
+    const locale = useLocale();
     const messages = useMessages();
     const dashboard = messages.dashboard;
     const reportsCopy = dashboard.reportsList;
@@ -143,13 +145,14 @@ export default function ReportsPage() {
             {visibleQuizzes.length === 0 ? (
                 <Card className="text-center py-12">
                     <CardContent>
-                        <p className="text-muted-foreground mb-4">
-                            {showDraftsWithData
-                                ? reportsCopy.emptyWithDrafts
-                                : reportsCopy.emptyPublished}
+                        <p className="text-lg font-medium mb-2">
+                            {reportsCopy.emptyTitle}
                         </p>
-                        <Button onClick={() => router.push('/builder')}>
-                            {reportsCopy.createFirstQuiz}
+                        <p className="text-muted-foreground mb-4">
+                            {reportsCopy.emptyDescription}
+                        </p>
+                        <Button onClick={() => router.push(localizePathname('/dashboard', locale))}>
+                            {reportsCopy.goToQuizzes}
                         </Button>
                     </CardContent>
                 </Card>
