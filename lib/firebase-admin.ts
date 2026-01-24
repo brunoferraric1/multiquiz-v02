@@ -133,20 +133,6 @@ export function getAdminApp(): FirebaseApp {
 
     const { initializeApp, getApps, cert } = getFirebaseAdmin();
 
-    const parseAndInit = (raw: string): FirebaseApp => {
-        const serviceAccount = parseServiceAccount(raw);
-
-        const projectId = serviceAccount.projectId ?? serviceAccount.project_id;
-        console.log('[Firebase Admin] Parsed project_id:', projectId);
-
-        adminApp = initializeApp({
-            credential: cert(serviceAccount),
-        });
-
-        console.log('[Firebase Admin] Successfully initialized');
-        return adminApp;
-    };
-
     const existingApps = getApps();
     if (existingApps.length > 0) {
         adminApp = existingApps[0];
@@ -157,8 +143,25 @@ export function getAdminApp(): FirebaseApp {
         return adminApp;
     }
 
-    // Parse service account from environment variable
-    // For Firebase Hosting, check FIREBASE_CONFIG for project detection
+    // Check if running on Google Cloud (Cloud Run, Cloud Functions, etc.)
+    // In this case, use Application Default Credentials (ADC) - no key needed!
+    const isOnGoogleCloud = !!(process.env.K_SERVICE || process.env.FUNCTION_TARGET);
+    const projectId = process.env.GCLOUD_PROJECT || process.env.FIREBASE_PROJECT_ID;
+
+    if (isOnGoogleCloud && projectId) {
+        console.log('[Firebase Admin] Running on Google Cloud, using ADC');
+        console.log('[Firebase Admin] Project ID:', projectId);
+
+        // Initialize without credentials - ADC will be used automatically
+        adminApp = initializeApp({
+            projectId,
+        });
+
+        console.log('[Firebase Admin] Successfully initialized with ADC');
+        return adminApp;
+    }
+
+    // For local development or other platforms, use service account key
     const isStaging = process.env.GCLOUD_PROJECT?.includes('staging')
         || process.env.FIREBASE_CONFIG?.includes('staging')
         || process.env.VERCEL_ENV === 'preview';
@@ -166,12 +169,10 @@ export function getAdminApp(): FirebaseApp {
     let serviceAccountJson: string | undefined;
 
     if (isStaging) {
-        // On staging, prefer staging key first
         serviceAccountJson = process.env.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY
             || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
         console.log('[Firebase Admin] Staging environment detected');
     } else {
-        // On production or local, prefer production key first
         serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
             || process.env.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY;
     }
@@ -179,26 +180,21 @@ export function getAdminApp(): FirebaseApp {
     if (!serviceAccountJson) {
         console.error('[Firebase Admin] No service account key found');
         console.error('[Firebase Admin] GCLOUD_PROJECT:', process.env.GCLOUD_PROJECT);
-        console.error('[Firebase Admin] FIREBASE_CONFIG:', process.env.FIREBASE_CONFIG?.substring(0, 50));
-        console.error('[Firebase Admin] FIREBASE_SERVICE_ACCOUNT_KEY set:', !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-        console.error('[Firebase Admin] STAGING_FIREBASE_SERVICE_ACCOUNT_KEY set:', !!process.env.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY);
+        console.error('[Firebase Admin] K_SERVICE:', process.env.K_SERVICE);
+        console.error('[Firebase Admin] FUNCTION_TARGET:', process.env.FUNCTION_TARGET);
         throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set');
     }
 
-    console.log('[Firebase Admin] Key length:', serviceAccountJson.length);
-    console.log('[Firebase Admin] First 20 chars:', serviceAccountJson.substring(0, 20));
+    const serviceAccount = parseServiceAccount(serviceAccountJson);
+    const parsedProjectId = serviceAccount.projectId ?? serviceAccount.project_id;
+    console.log('[Firebase Admin] Parsed project_id:', parsedProjectId);
 
-    try {
-        return parseAndInit(serviceAccountJson);
-    } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        console.error('[Firebase Admin] Parse/init error:', errorMsg);
-        throw new Error(
-            'Failed to initialize Firebase Admin: ' +
-            `${errorMsg}. ` +
-            'Ensure FIREBASE_SERVICE_ACCOUNT_KEY or STAGING_FIREBASE_SERVICE_ACCOUNT_KEY is set.'
-        );
-    }
+    adminApp = initializeApp({
+        credential: cert(serviceAccount),
+    });
+
+    console.log('[Firebase Admin] Successfully initialized with service account');
+    return adminApp;
 }
 
 export function getAdminDb(): FirebaseFirestore {
