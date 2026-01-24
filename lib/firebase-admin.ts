@@ -46,7 +46,9 @@ export function getAdminApp(): App {
     const parseAndInit = (raw: string): App => {
         const serviceAccount = parseServiceAccount(raw);
 
-        console.log('[Firebase Admin] Parsed project_id:', serviceAccount.project_id);
+        const projectId = (serviceAccount as ServiceAccount).projectId
+            ?? (serviceAccount as { project_id?: string }).project_id;
+        console.log('[Firebase Admin] Parsed project_id:', projectId);
 
         adminApp = initializeApp({
             credential: cert(serviceAccount),
