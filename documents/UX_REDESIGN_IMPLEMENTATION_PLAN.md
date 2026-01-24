@@ -287,11 +287,11 @@ Every button, label, and message will work in three languages:
 **Goal:** Auto-save, preview, and publish working end-to-end
 
 **Tasks:**
-- [ ] Update auto-save for visual builder (integrate with new data model)
-- [ ] Update quiz loading flow (load existing quiz into visual builder)
-- [ ] Complete publish flow (draft → live with explicit publish action)
-- [ ] Keep publish/update/unpublish behavior identical to production (draft/live separation)
-- [ ] Preview button in header opens quiz in new tab
+- [x] Update auto-save for visual builder (integrate with new data model)
+- [x] Update quiz loading flow (load existing quiz into visual builder)
+- [x] Complete publish flow (draft → live with explicit publish action)
+- [x] Keep publish/update/unpublish behavior identical to production (draft/live separation)
+- [x] Preview button in header opens quiz in a full screen modal
 
 **Success:** Can create, edit, save, preview, and publish a quiz with the new visual builder
 
@@ -303,17 +303,15 @@ Every button, label, and message will work in three languages:
 **Goal:** Complete the top navigation experience (Tema, Configuração, Relatórios)
 
 **Tasks:**
-- [ ] **Tema tab** - Theme customization experience
+- [x] **Tema tab** - Theme customization experience
   - Color palette selection
   - Logo upload
-  - Font selection (if applicable)
   - Preview theme changes in real-time
 - [ ] **Configuração tab** - Quiz settings
-  - Quiz name and URL slug
-  - SEO settings (title, description)
-  - Analytics integration
-  - Share settings
-- [ ] **Relatórios tab** - Link to reports
+  - [x] Quiz name and URL slug
+  - [x] SEO settings (title, description)
+  - [ ] Pixel (facebookk) integration
+- [x] **Relatórios tab** - Link to reports
   - Link to `/dashboard/[quizId]/report` (reuse existing reports page)
   - Show basic stats preview if available
 
@@ -403,6 +401,8 @@ Every button, label, and message will work in three languages:
    - **Templates** (coming soon) - Pre-built structures
 3. User picks "Blank Quiz" → enters name + slug
 4. Redirects to visual builder
+5. If user clicks on Templates, after an "internal" navigation inside the modal, we display a grid of 3x3 template options, with space for an icon + description
+
 
 **Tasks:**
 - [ ] "Create quiz" modal with creation method picker
