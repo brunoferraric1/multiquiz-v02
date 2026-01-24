@@ -17,6 +17,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { quizToVisualBuilder } from '@/lib/utils/visual-builder-converters';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useMessages } from '@/lib/i18n/context';
 import {
   getReadableTextColor,
   getCardBorder,
@@ -75,6 +76,8 @@ export function BlocksQuizPlayer({
   initialSelectedOptions,
   hideBranding = false,
 }: BlocksQuizPlayerProps) {
+  const messages = useMessages();
+
   // Get blocks data (prefer stored, fallback to reconstruction for legacy quizzes)
   const visualBuilderData = useMemo((): VisualBuilderData => {
     if (quiz.visualBuilderData) {
@@ -564,9 +567,9 @@ export function BlocksQuizPlayer({
               target="_blank"
               rel="noreferrer"
               className="group flex flex-col items-center gap-1 text-xs font-medium text-foreground/60 transition-colors hover:text-foreground sm:flex-row sm:gap-2 cursor-[var(--cursor-interactive)]"
-              aria-label="Made with MultiQuiz"
+              aria-label={messages.common.branding.madeWithMultiQuiz}
             >
-              <span className="opacity-70 transition-opacity group-hover:opacity-100">Made with</span>
+              <span className="opacity-70 transition-opacity group-hover:opacity-100">{messages.common.branding.madeWith}</span>
               <span className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
                 <img
                   src="/multiquiz-logo.svg"
@@ -578,7 +581,7 @@ export function BlocksQuizPlayer({
             </a>
           ) : (
             <div className="group flex flex-col items-center gap-1 text-xs font-medium text-foreground/60 sm:flex-row sm:gap-2">
-              <span className="opacity-70 transition-opacity group-hover:opacity-100">Made with</span>
+              <span className="opacity-70 transition-opacity group-hover:opacity-100">{messages.common.branding.madeWith}</span>
               <span className="flex items-center gap-1 opacity-70 transition-opacity group-hover:opacity-100">
                 <img
                   src="/multiquiz-logo.svg"

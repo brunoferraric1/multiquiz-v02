@@ -35,5 +35,9 @@
     "openMenu": "Abrir menu",
     "closeMenu": "Fechar menu",
     "back": "Voltar"
+  },
+  "branding": {
+    "madeWith": "Feito com",
+    "madeWithMultiQuiz": "Feito com MultiQuiz"
   }
 }

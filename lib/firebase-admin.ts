@@ -1,38 +1,98 @@
 /**
- * Firebase Admin SDK - using dynamic require() to bypass Turbopack bundling issues.
+ * Firebase Admin SDK - using eval('require') to completely bypass Turbopack bundling.
  *
- * Turbopack mangles external package names (e.g., 'firebase-admin-a14c8a5423a75469')
- * which causes module resolution to fail at runtime. Using require() loads the
- * module directly from node_modules, bypassing the bundler entirely.
+ * Turbopack mangles external package names even when using require().
+ * We use eval() and avoid ALL string literals that reference the package.
  */
 
-// Type-only imports for TypeScript (these are stripped at build time)
-import type { App, ServiceAccount } from 'firebase-admin/app';
-import type { Firestore } from 'firebase-admin/firestore';
-import type { Auth } from 'firebase-admin/auth';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-let adminApp: App | undefined;
-let adminDb: Firestore | undefined;
-let adminAuth: Auth | undefined;
+// Define types locally to avoid importing from the package
+interface FirebaseApp {
+    name: string;
+    options?: { projectId?: string };
+}
 
-// Lazy-load firebase-admin modules to bypass bundler
+interface DocumentData {
+    [field: string]: any;
+}
+
+interface DocumentSnapshot<T = DocumentData> {
+    id: string;
+    exists: boolean;
+    data: () => T | undefined;
+}
+
+interface QueryDocumentSnapshot<T = DocumentData> {
+    id: string;
+    data: () => T;
+}
+
+interface QuerySnapshot<T = DocumentData> {
+    docs: QueryDocumentSnapshot<T>[];
+    empty: boolean;
+}
+
+interface DocumentReference<T = DocumentData> {
+    get: () => Promise<DocumentSnapshot<T>>;
+    set: (data: Partial<T>, options?: { merge?: boolean }) => Promise<any>;
+}
+
+interface Query<T = DocumentData> {
+    where: (field: string, op: string, value: any) => Query<T>;
+    orderBy: (field: string, direction?: 'asc' | 'desc') => Query<T>;
+    limit: (n: number) => Query<T>;
+    get: () => Promise<QuerySnapshot<T>>;
+}
+
+interface CollectionReference<T = DocumentData> extends Query<T> {
+    doc: (id: string) => DocumentReference<T>;
+}
+
+interface FirebaseFirestore {
+    collection: (path: string) => CollectionReference;
+}
+
+interface FirebaseAuth {
+    verifyIdToken: (token: string) => Promise<{ uid: string }>;
+}
+
+interface FirebaseServiceAccount {
+    projectId?: string;
+    project_id?: string;
+    clientEmail?: string;
+    privateKey?: string;
+}
+
+let adminApp: FirebaseApp | undefined;
+let adminDb: FirebaseFirestore | undefined;
+let adminAuth: FirebaseAuth | undefined;
+
+// Build package names at runtime to completely hide from static analysis
+const PKG_BASE = ['fire', 'base', '-', 'admin'].join('');
+const PKG_APP = PKG_BASE + '/app';
+const PKG_FIRESTORE = PKG_BASE + '/firestore';
+const PKG_AUTH = PKG_BASE + '/auth';
+
+// Use eval to hide require from bundler
+// eslint-disable-next-line @typescript-eslint/no-implied-eval, no-eval
+const dynamicRequire = eval('require') as NodeRequire;
+
+// Lazy-load modules
 function getFirebaseAdmin() {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const adminAppModule = require('firebase-admin/app');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const adminFirestore = require('firebase-admin/firestore');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const adminAuthModule = require('firebase-admin/auth');
+    const adminAppModule = dynamicRequire(PKG_APP);
+    const adminFirestore = dynamicRequire(PKG_FIRESTORE);
+    const adminAuthModule = dynamicRequire(PKG_AUTH);
     return {
-        initializeApp: adminAppModule.initializeApp as typeof import('firebase-admin/app').initializeApp,
-        getApps: adminAppModule.getApps as typeof import('firebase-admin/app').getApps,
-        cert: adminAppModule.cert as typeof import('firebase-admin/app').cert,
-        getFirestore: adminFirestore.getFirestore as typeof import('firebase-admin/firestore').getFirestore,
-        getAuth: adminAuthModule.getAuth as typeof import('firebase-admin/auth').getAuth,
+        initializeApp: adminAppModule.initializeApp as (config: any) => FirebaseApp,
+        getApps: adminAppModule.getApps as () => FirebaseApp[],
+        cert: adminAppModule.cert as (account: FirebaseServiceAccount) => any,
+        getFirestore: adminFirestore.getFirestore as (app: FirebaseApp) => FirebaseFirestore,
+        getAuth: adminAuthModule.getAuth as (app: FirebaseApp) => FirebaseAuth,
     };
 }
 
-const parseServiceAccount = (raw: string): ServiceAccount => {
+const parseServiceAccount = (raw: string): FirebaseServiceAccount => {
     let current = raw;
     const seen = new Set<string>();
 
@@ -47,7 +107,7 @@ const parseServiceAccount = (raw: string): ServiceAccount => {
                 current = parsed;
                 continue;
             }
-            return parsed as ServiceAccount;
+            return parsed as FirebaseServiceAccount;
         } catch {
             // Continue with other parsing strategies.
         }
@@ -66,18 +126,17 @@ const parseServiceAccount = (raw: string): ServiceAccount => {
     throw new Error('Failed to parse Firebase service account JSON');
 };
 
-export function getAdminApp(): App {
+export function getAdminApp(): FirebaseApp {
     if (adminApp) {
         return adminApp;
     }
 
     const { initializeApp, getApps, cert } = getFirebaseAdmin();
 
-    const parseAndInit = (raw: string): App => {
+    const parseAndInit = (raw: string): FirebaseApp => {
         const serviceAccount = parseServiceAccount(raw);
 
-        const projectId = (serviceAccount as ServiceAccount).projectId
-            ?? (serviceAccount as { project_id?: string }).project_id;
+        const projectId = serviceAccount.projectId ?? serviceAccount.project_id;
         console.log('[Firebase Admin] Parsed project_id:', projectId);
 
         adminApp = initializeApp({
@@ -142,7 +201,7 @@ export function getAdminApp(): App {
     }
 }
 
-export function getAdminDb(): Firestore {
+export function getAdminDb(): FirebaseFirestore {
     if (adminDb) {
         return adminDb;
     }
@@ -153,7 +212,7 @@ export function getAdminDb(): Firestore {
     return adminDb;
 }
 
-export function getAdminAuth(): Auth {
+export function getAdminAuth(): FirebaseAuth {
     if (adminAuth) {
         return adminAuth;
     }
