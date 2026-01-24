@@ -50,12 +50,18 @@ export interface OptionItem {
   text: string
   emoji?: string
   outcomeId?: string
+  imageUrl?: string // Optional image for the option
 }
+
+// Layout types for options display
+export type OptionsLayout = 'vertical' | 'horizontal' | 'grid'
 
 // Options block configuration
 export interface OptionsConfig {
   items: OptionItem[]
   selectionType: 'single' | 'multiple'
+  showImages?: boolean // Toggle to enable image upload per option
+  layout?: OptionsLayout // Layout: vertical (default), horizontal, or grid
 }
 
 // Field types for form fields
