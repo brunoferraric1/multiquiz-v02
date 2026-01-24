@@ -1,4 +1,5 @@
-import { initializeApp, getApps, cert, App, ServiceAccount } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
+import type { ServiceAccount } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 let adminApp: App | undefined;
