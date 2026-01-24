@@ -59,4 +59,4 @@ O MultiQuiz é uma plataforma para criar e compartilhar quizzes interativos com 
 
 ---
 
-*Última atualização: 2026-01-23*
+*Última atualização: 2026-01-24*

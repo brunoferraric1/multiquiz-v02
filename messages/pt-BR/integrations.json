@@ -44,5 +44,11 @@
     "testSuccess": "Webhook de teste enviado com sucesso!",
     "testError": "Falha ao enviar webhook de teste",
     "authError": "Erro de autenticação"
+  },
+  "testSuccessPanel": {
+    "title": "Teste enviado com sucesso!",
+    "description": "Um lead de teste foi enviado para o seu CRM. Verifique se os dados chegaram corretamente.",
+    "leadsHint": "Quando usuários reais completarem seus quizzes, os leads aparecerão na",
+    "leadsLink": "página de Leads"
   }
 }

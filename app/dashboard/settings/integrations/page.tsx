@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Copy, RefreshCw, Loader2, Send, CheckCircle2, AlertCircle, Webhook, MessageCircle, ChevronDown } from 'lucide-react'
+import { Copy, RefreshCw, Loader2, Send, CheckCircle2, AlertCircle, Webhook, MessageCircle, ChevronDown, ExternalLink } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { auth } from '@/lib/firebase'
 import { useMessages, useLocale } from '@/lib/i18n/context'
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { PageBreadcrumb } from '@/components/ui/page-breadcrumb'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { WebhookConfig } from '@/types'
@@ -436,6 +437,33 @@ export default function IntegrationsSettingsPage() {
                     )}
                   </Button>
                 </div>
+
+                {/* Success panel - shows after successful test */}
+                {testResult === 'success' && (
+                  <div className="mt-4 p-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-500 mt-0.5 shrink-0" />
+                      <div className="space-y-1">
+                        <p className="font-medium text-green-800 dark:text-green-200">
+                          {copy.testSuccessPanel?.title}
+                        </p>
+                        <p className="text-sm text-green-700 dark:text-green-300">
+                          {copy.testSuccessPanel?.description}
+                        </p>
+                        <p className="text-sm text-green-600 dark:text-green-400 pt-1">
+                          {copy.testSuccessPanel?.leadsHint}{' '}
+                          <Link
+                            href={localizePathname('/dashboard/leads', locale)}
+                            className="inline-flex items-center gap-1 font-medium underline underline-offset-2 hover:text-green-800 dark:hover:text-green-200"
+                          >
+                            {copy.testSuccessPanel?.leadsLink}
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

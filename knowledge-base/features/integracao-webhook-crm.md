@@ -1,7 +1,7 @@
 ---
 title: Integração Webhook CRM
 category: features
-last_updated: 2026-01-23
+last_updated: 2026-01-24
 status: ativo
 ---
 
@@ -68,11 +68,11 @@ R: O quiz funciona normalmente para o usuário. Os dados ficam salvos no MultiQu
 R: Atualmente suportamos um destino por conta. Para múltiplos destinos, use uma ferramenta intermediária como Zapier ou Make.
 
 **P: O teste deu erro. O que fazer?**
-R: Verifique se a URL está correta e se o seu CRM está configurado para receber webhooks. Consulte a documentação do seu CRM sobre como configurar endpoints de webhook.
+R: Verifique se a URL está correta e acessível pela internet. URLs locais (como `localhost` ou `127.0.0.1`) não funcionam — o MultiQuiz precisa conseguir acessar o destino pela internet. Consulte a documentação do seu CRM sobre como configurar endpoints de webhook.
 
 **P: Como meu CRM sabe que o webhook é realmente do MultiQuiz?**
 R: Use o Segredo de verificação para validar a assinatura que enviamos no cabeçalho de cada requisição. Isso garante que ninguém está enviando dados falsos.
 
 ---
 
-*Última atualização: 23/01/2026*
+*Última atualização: 24/01/2026*

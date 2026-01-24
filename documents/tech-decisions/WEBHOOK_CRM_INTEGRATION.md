@@ -283,8 +283,24 @@ Plus settings.json updated with integrations section link.
 
 ---
 
+## Deployment Considerations
+
+The webhook API routes (`/api/webhooks/*`, `/api/user/settings`) require Firebase Admin SDK for authentication. See **[FIREBASE_ADMIN_SDK_CONFIGURATION.md](./FIREBASE_ADMIN_SDK_CONFIGURATION.md)** for:
+
+- Turbopack bundling workaround
+- Application Default Credentials (ADC) on Cloud Run
+- Staging vs production environment detection
+
+**Key points:**
+- On Cloud Run (Firebase Hosting), no service account key is needed - ADC is used automatically
+- Locally, `FIREBASE_SERVICE_ACCOUNT_KEY` must be set in `.env.local`
+- The test webhook feature requires a publicly accessible URL (localhost won't work from Cloud Run)
+
+---
+
 ## Related Files
 
+- `lib/firebase-admin.ts` - Firebase Admin SDK initialization (see FIREBASE_ADMIN_SDK_CONFIGURATION.md)
 - `lib/services/webhook-service.ts` - Core webhook logic
 - `lib/services/user-settings-service.ts` - User settings CRUD
 - `app/api/webhooks/deliver/route.ts` - Async delivery endpoint
