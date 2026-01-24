@@ -36,6 +36,10 @@ export function getAdminApp(): App {
     let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
     if (!serviceAccountJson) {
+        serviceAccountJson = process.env.STAGING_FIREBASE_SERVICE_ACCOUNT_KEY;
+    }
+
+    if (!serviceAccountJson) {
         console.error('[Firebase Admin] FIREBASE_SERVICE_ACCOUNT_KEY is not set');
         throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set');
     }
