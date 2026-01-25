@@ -297,13 +297,15 @@ export function OptionsBlockEditor({
         </DndContext>
 
         {/* Add new option button */}
-        <GhostAddButton
-          size="compact"
-          onClick={handleAddOption}
-          data-testid="add-option-button"
-        >
-          {optionsCopy.addOption}
-        </GhostAddButton>
+        <div className="mt-2">
+          <GhostAddButton
+            size="compact"
+            onClick={handleAddOption}
+            data-testid="add-option-button"
+          >
+            {optionsCopy.addOption}
+          </GhostAddButton>
+        </div>
       </div>
     </div>
   )

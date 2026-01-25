@@ -16,9 +16,10 @@ import {
   getBlockMediaPath,
   getOutcomeBlockMediaPath,
   getVideoThumbnailPath,
+  getOptionImagePath,
 } from '@/lib/services/storage-service'
 import type { QuizDraft } from '@/types'
-import type { Block, MediaConfig } from '@/types/blocks'
+import type { Block, MediaConfig, OptionsConfig, OptionItem } from '@/types/blocks'
 
 /**
  * Migrate base64 images in blocks to Firebase Storage
@@ -69,6 +70,40 @@ async function migrateBlockImages(
       }
 
       migratedBlocks.push(needsUpdate ? { ...block, config: newConfig } : block)
+    } else if (block.type === 'options') {
+      // Migrate option images if any are base64
+      const config = block.config as OptionsConfig
+      if (!config.showImages || !config.items?.length) {
+        migratedBlocks.push(block)
+        continue
+      }
+
+      let needsUpdate = false
+      const migratedItems: OptionItem[] = []
+
+      for (const item of config.items) {
+        if (isBase64DataUrl(item.imageUrl)) {
+          try {
+            const storagePath = getOptionImagePath(quizId, containerId, block.id, item.id)
+            const downloadUrl = await migrateBase64ToStorage(item.imageUrl!, storagePath)
+            console.log('[VBAutoSave] Migrated option image to Storage:', item.id)
+            migratedItems.push({ ...item, imageUrl: downloadUrl })
+            needsUpdate = true
+          } catch (err) {
+            console.error('[VBAutoSave] Failed to migrate option image:', item.id, err)
+            migratedItems.push({ ...item, imageUrl: undefined })
+            needsUpdate = true
+          }
+        } else {
+          migratedItems.push(item)
+        }
+      }
+
+      if (needsUpdate) {
+        migratedBlocks.push({ ...block, config: { ...config, items: migratedItems } })
+      } else {
+        migratedBlocks.push(block)
+      }
     } else {
       migratedBlocks.push(block)
     }

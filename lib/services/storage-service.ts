@@ -185,3 +185,14 @@ export function getOutcomeBlockMediaPath(quizId: string, outcomeId: string, bloc
 export function getVideoThumbnailPath(quizId: string, containerId: string, blockId: string): string {
     return `quizzes/${quizId}/thumbnails/${containerId}/${blockId}`;
 }
+
+/**
+ * Generate storage path for option image in an options block
+ * @param quizId - The quiz ID
+ * @param containerId - The step or outcome ID containing the block
+ * @param blockId - The options block ID
+ * @param optionId - The option item ID
+ */
+export function getOptionImagePath(quizId: string, containerId: string, blockId: string, optionId: string): string {
+    return `quizzes/${quizId}/options/${containerId}/${blockId}/${optionId}`;
+}

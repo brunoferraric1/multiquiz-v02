@@ -535,15 +535,76 @@ function OptionsBlock({
   onSelect?: (optionId: string) => void;
   selectedIds: string[];
 }) {
-  const { items, selectionType } = config;
+  const { items, selectionType, layout = 'vertical', showImages } = config;
   const isMultiple = selectionType === 'multiple';
+  const isImageOnTop = layout === 'horizontal' || layout === 'grid';
 
   if (!items || items.length === 0) return null;
 
+  // Determine grid classes based on layout and item count
+  const getGridClasses = () => {
+    if (layout === 'vertical') {
+      return 'flex flex-col gap-2';
+    }
+    if (layout === 'horizontal') {
+      const itemCount = items.length;
+      if (itemCount === 2) return 'grid grid-cols-2 gap-3';
+      if (itemCount === 3) return 'grid grid-cols-2 sm:grid-cols-3 gap-3';
+      return 'grid grid-cols-2 gap-3';
+    }
+    if (layout === 'grid') {
+      const itemCount = items.length;
+      if (itemCount <= 4) return 'grid grid-cols-2 gap-3';
+      return 'grid grid-cols-2 sm:grid-cols-3 gap-3';
+    }
+    return 'flex flex-col gap-2';
+  };
+
   return (
-    <div className="space-y-2">
+    <div className={getGridClasses()}>
       {items.map((item) => {
         const isSelected = selectedIds.includes(item.id);
+        const hasImage = showImages && item.imageUrl;
+
+        // Card layout for horizontal/grid with image on top
+        if (isImageOnTop && hasImage) {
+          return (
+            <button
+              key={item.id}
+              onClick={() => onSelect?.(item.id)}
+              className={cn(
+                'flex flex-col rounded-xl overflow-hidden border-2 text-left transition-all',
+                'hover:border-primary hover:ring-1 hover:ring-primary',
+                isSelected
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                  : 'border-border bg-card'
+              )}
+            >
+              {/* Image on top */}
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+                <img
+                  src={item.imageUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Content below */}
+              <div className="flex items-center gap-3 p-4">
+                {isMultiple ? (
+                  isSelected ? (
+                    <CheckSquare className="w-5 h-5 text-primary shrink-0" />
+                  ) : (
+                    <Square className="w-5 h-5 text-muted-foreground shrink-0" />
+                  )
+                ) : null}
+                {item.emoji && <span className="text-xl">{item.emoji}</span>}
+                <span className="font-medium">{item.text}</span>
+              </div>
+            </button>
+          );
+        }
+
+        // Default vertical layout (or horizontal/grid without image)
         return (
           <button
             key={item.id}
@@ -565,6 +626,16 @@ function OptionsBlock({
                   <Square className="w-5 h-5 text-muted-foreground shrink-0" />
                 )
               ) : null}
+              {/* Inline image for vertical layout - positioned after checkbox */}
+              {hasImage && !isImageOnTop && (
+                <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
+                  <img
+                    src={item.imageUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
               {item.emoji && <span className="text-xl">{item.emoji}</span>}
               <span className="font-medium">{item.text}</span>
             </div>

@@ -18,12 +18,28 @@ import { QuizService } from './quiz-service';
 
 const ATTEMPTS_COLLECTION = 'quiz_attempts';
 
+/**
+ * Generate a UUID - uses crypto.randomUUID when available, fallback for non-secure contexts
+ */
+function generateUUID(): string {
+    // crypto.randomUUID is only available in secure contexts (HTTPS or localhost)
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    // Fallback for non-secure contexts (e.g., accessing via network IP over HTTP)
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 export class AnalyticsService {
     /**
      * Create a new quiz attempt when a user starts a quiz
      */
     static async createAttempt(quizId: string, userId?: string, isOwnerAttempt: boolean = false): Promise<string> {
-        const attemptId = crypto.randomUUID();
+        const attemptId = generateUUID();
         const now = Date.now();
 
         const attempt: QuizAttempt = {
