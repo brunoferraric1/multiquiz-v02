@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ConnectedVisualBuilder } from '@/components/visual-builder'
+import { MobileGate } from '@/components/visual-builder/mobile-gate'
 import {
   useVisualBuilderStore,
   Step,
@@ -22,6 +23,11 @@ export default function VisualBuilderPage() {
   const locale = useLocale()
   const messages = useMessages()
   const copy = messages.visualBuilder
+
+  // Back handler for mobile gate
+  const handleMobileBack = useCallback(() => {
+    router.push(localizePathname('/dashboard', locale))
+  }, [locale, router])
 
   // Initialize store with demo data on mount (client-side only)
   useEffect(() => {
@@ -81,12 +87,14 @@ export default function VisualBuilderPage() {
   // Show loading state until store is initialized
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">{copy.loading.loadingQuiz}</p>
+      <MobileGate onBack={handleMobileBack}>
+        <div className="min-h-screen flex items-center justify-center bg-muted">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">{copy.loading.loadingQuiz}</p>
+          </div>
         </div>
-      </div>
+      </MobileGate>
     )
   }
 
@@ -109,11 +117,13 @@ export default function VisualBuilderPage() {
   }
 
   return (
-    <ConnectedVisualBuilder
-      quizName={copy.quiz.defaultName}
-      onBack={() => router.push(localizePathname('/dashboard', locale))}
-      onPreview={handlePreview}
-      onPublish={handlePublish}
-    />
+    <MobileGate onBack={handleMobileBack}>
+      <ConnectedVisualBuilder
+        quizName={copy.quiz.defaultName}
+        onBack={handleMobileBack}
+        onPreview={handlePreview}
+        onPublish={handlePublish}
+      />
+    </MobileGate>
   )
 }

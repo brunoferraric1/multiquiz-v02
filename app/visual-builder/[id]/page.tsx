@@ -16,6 +16,7 @@ import { QuizService } from '@/lib/services/quiz-service'
 import { getThemeSettings, resolveThemeColors, resolveThemeLogo } from '@/lib/services/brand-kit-service'
 import { ProtectedRoute } from '@/components/protected-route'
 import { ConnectedVisualBuilder } from '@/components/visual-builder'
+import { MobileGate } from '@/components/visual-builder/mobile-gate'
 import { PublishSuccessModal } from '@/components/builder/publish-success-modal'
 import { PreviewOverlay } from '@/components/preview-overlay'
 import { Loader2 } from 'lucide-react'
@@ -530,17 +531,24 @@ function VisualBuilderEditor() {
     }
   }, [])
 
+  // Simple back handler for mobile gate (works even during loading)
+  const handleMobileBack = useCallback(() => {
+    router.push(localizePathname('/dashboard', locale))
+  }, [locale, router])
+
   // Loading state - show while checking quiz OR before initialization
   if (isCheckingQuiz || !isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">
-            {isNewQuiz ? copy.loading.creatingQuiz : copy.loading.loadingQuiz}
-          </p>
+      <MobileGate onBack={handleMobileBack}>
+        <div className="min-h-screen flex items-center justify-center bg-muted">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              {isNewQuiz ? copy.loading.creatingQuiz : copy.loading.loadingQuiz}
+            </p>
+          </div>
         </div>
-      </div>
+      </MobileGate>
     )
   }
 
@@ -548,7 +556,7 @@ function VisualBuilderEditor() {
   const quizTitle = quizRef.current?.title || copy.quiz.defaultTitle
 
   return (
-    <>
+    <MobileGate onBack={handleMobileBack}>
       <ConnectedVisualBuilder
         quizName={quizTitle}
         quizId={id as string}
@@ -578,7 +586,7 @@ function VisualBuilderEditor() {
         brandKitLogoUrl={brandKitLogoUrl}
         warningText={copy.preview.warning}
       />
-    </>
+    </MobileGate>
   )
 }
 

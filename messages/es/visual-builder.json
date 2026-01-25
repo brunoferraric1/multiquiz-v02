@@ -346,5 +346,10 @@
     "creatingQuiz": "Creando nuevo quiz...",
     "loadingQuiz": "Cargando quiz..."
   },
-  "duplicateSuffix": "(copia)"
+  "duplicateSuffix": "(copia)",
+  "mobileGate": {
+    "title": "Usa el escritorio para editar",
+    "description": "El editor de quiz está diseñado para pantallas más grandes. Accede desde tu computadora para la mejor experiencia.",
+    "backButton": "Volver al dashboard"
+  }
 }

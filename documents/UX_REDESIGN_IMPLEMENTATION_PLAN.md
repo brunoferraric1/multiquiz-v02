@@ -424,7 +424,7 @@ Every button, label, and message will work in three languages:
 Before building the full mobile experience, we'll first block mobile access to the quiz editor with a friendly message: "Para usar o editor de quiz, use um desktop". Other simpler pages/screens (dashboard, settings, etc.) can remain mobile-accessible.
 
 **Tasks:**
-- [ ] **Phase 1: Desktop-only gate** - Block mobile access to visual builder with friendly message
+- [x] **Phase 1: Desktop-only gate** - Block mobile access to visual builder with friendly message
 - [ ] Build collapsible step rail (icons when collapsed)
 - [ ] Build expandable sidebar (70% overlay when expanded)
 - [ ] Build bottom drawer for block editing
