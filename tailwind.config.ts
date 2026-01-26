@@ -14,9 +14,20 @@ const config: Config = {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-4px)' },
         },
+        'loading-bar': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(250%)' },
+        },
+        'loading-circle': {
+          '0%': { strokeDashoffset: '125.6' },
+          '50%': { strokeDashoffset: '31.4' },
+          '100%': { strokeDashoffset: '125.6' },
+        },
       },
       animation: {
         'bounce-subtle': 'bounce-subtle 0.4s ease-in-out',
+        'loading-bar': 'loading-bar 1.5s ease-in-out infinite',
+        'loading-circle': 'loading-circle 1.5s ease-in-out infinite',
       },
       colors: {
         draft: {

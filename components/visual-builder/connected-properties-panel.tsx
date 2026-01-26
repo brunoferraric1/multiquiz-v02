@@ -29,6 +29,7 @@ import {
   ButtonBlockEditor,
   BannerBlockEditor,
   ListBlockEditor,
+  LoadingBlockEditor,
 } from './editors'
 import {
   Block,
@@ -42,6 +43,7 @@ import {
   ButtonConfig,
   BannerConfig,
   ListConfig,
+  LoadingConfig,
 } from '@/types/blocks'
 import { Separator } from '@/components/ui/separator'
 import { GhostAddButton } from '@/components/ui/ghost-add-button'
@@ -58,6 +60,7 @@ import {
   MousePointer,
   AlertTriangle,
   ListChecks,
+  Loader2,
   Trash2,
   ChevronUp,
   ChevronDown,
@@ -78,6 +81,7 @@ const blockTypeIcons: Record<BlockType, React.ReactNode> = {
   button: <MousePointer className="w-4 h-4" />,
   banner: <AlertTriangle className="w-4 h-4" />,
   list: <ListChecks className="w-4 h-4" />,
+  loading: <Loader2 className="w-4 h-4" />,
 }
 
 // Sortable block item for the sidebar list
@@ -386,6 +390,13 @@ export function ConnectedPropertiesPanel({ className }: ConnectedPropertiesPanel
         return (
           <ListBlockEditor
             config={block.config as ListConfig}
+            onChange={handleUpdateBlock}
+          />
+        )
+      case 'loading':
+        return (
+          <LoadingBlockEditor
+            config={block.config as LoadingConfig}
             onChange={handleUpdateBlock}
           />
         )

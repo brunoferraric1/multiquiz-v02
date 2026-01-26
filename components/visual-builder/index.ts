@@ -5,7 +5,7 @@ export { BuilderSidebar } from './builder-sidebar'
 export { ConnectedBuilderSidebar } from './connected-builder-sidebar'
 export { BuilderPreview } from './builder-preview'
 export { BuilderProperties } from './builder-properties'
-export { AddStepSheet } from './add-step-sheet'
+export { AddStepDialog } from './add-step-dialog'
 export { SortableStepsList } from './sortable-steps-list'
 
 // Types

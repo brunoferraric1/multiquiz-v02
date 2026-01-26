@@ -5,8 +5,8 @@ import { useVisualBuilderStore, createOutcome } from '@/store/visual-builder-sto
 import { BuilderHeaderNav } from './builder-header-nav'
 import { BuilderPreview } from './builder-preview'
 import { ConnectedPropertiesPanel } from './connected-properties-panel'
-import { AddStepSheet } from './add-step-sheet'
-import { AddBlockSheet } from './add-block-sheet'
+import { AddStepDialog } from './add-step-dialog'
+import { AddBlockDialog } from './add-block-dialog'
 import { SortableStepsList } from './sortable-steps-list'
 import { SortableOutcomesList } from './sortable-outcomes-list'
 import { StepPreview } from './step-preview'
@@ -227,11 +227,11 @@ export function ConnectedVisualBuilder({
         <ConnectedPropertiesPanel className="hidden md:flex" />
       </div>
 
-      {/* Add Step Sheet */}
-      <AddStepSheet />
+      {/* Add Step Dialog */}
+      <AddStepDialog />
 
-      {/* Add Block Sheet */}
-      <AddBlockSheet />
+      {/* Add Block Dialog */}
+      <AddBlockDialog />
     </div>
   )
 }

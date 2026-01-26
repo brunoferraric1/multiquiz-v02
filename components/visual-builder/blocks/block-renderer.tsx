@@ -11,6 +11,7 @@ import {
   ButtonConfig,
   BannerConfig,
   ListConfig,
+  LoadingConfig,
 } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { Pencil, Trash2, GripVertical } from 'lucide-react'
@@ -24,6 +25,7 @@ import { PriceBlockPreview } from './price-block'
 import { ButtonBlockPreview } from './button-block'
 import { BannerBlockPreview } from './banner-block'
 import { ListBlockPreview } from './list-block'
+import { LoadingBlockPreview } from './loading-block'
 
 interface BlockRendererProps {
   block: Block
@@ -77,6 +79,8 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
         return <BannerBlockPreview config={block.config as BannerConfig} enabled={block.enabled} />
       case 'list':
         return <ListBlockPreview config={block.config as ListConfig} enabled={block.enabled} />
+      case 'loading':
+        return <LoadingBlockPreview config={block.config as LoadingConfig} enabled={block.enabled} />
       default:
         return <div className="p-4 text-muted-foreground">Unknown block type</div>
     }

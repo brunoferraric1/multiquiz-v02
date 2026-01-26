@@ -40,6 +40,32 @@
         "label": "Promotion",
         "description": "Add an offer or promotional content"
       }
+    },
+    "templates": {
+      "blank": {
+        "label": "Blank page",
+        "description": "Start from scratch"
+      },
+      "intro": {
+        "label": "Intro",
+        "description": "Welcome screen with media and CTA"
+      },
+      "question": {
+        "label": "Question",
+        "description": "Question with answer options"
+      },
+      "promo": {
+        "label": "Promotion",
+        "description": "Offer with banner, benefits, and CTA"
+      },
+      "lead-gen": {
+        "label": "Data capture",
+        "description": "Form to collect information"
+      },
+      "loading": {
+        "label": "Loading",
+        "description": "Analysis screen before results"
+      }
     }
   },
   "addBlock": {
@@ -47,6 +73,11 @@
     "description": "Choose the type of block you want to add.",
     "tooltip": {
       "onlyOnePerPage": "Only one per page"
+    },
+    "categories": {
+      "content": "Content",
+      "interaction": "Interaction",
+      "action": "Action"
     }
   },
   "blockTypes": {
@@ -58,7 +89,8 @@
     "price": "Price",
     "button": "Button",
     "banner": "Banner",
-    "list": "List"
+    "list": "List",
+    "loading": "Loading"
   },
   "blockDescriptions": {
     "header": "Title and description",
@@ -69,7 +101,8 @@
     "price": "Price display",
     "button": "Action button",
     "banner": "Highlight banner",
-    "list": "List of items"
+    "list": "List of items",
+    "loading": "Loading indicator"
   },
   "defaults": {
     "introTitle": "Welcome!",
@@ -309,6 +342,16 @@
     "removeItem": "Remove item {{index}}",
     "dragItem": "Drag item {{index}}",
     "hint": "Tip: Use emojis like ✓, •, ★ to customize bullets"
+  },
+  "loadingEditor": {
+    "textLabel": "Loading text",
+    "textPlaceholder": "e.g., Analyzing your answers...",
+    "styleTitle": "Indicator style",
+    "styleBar": "Bar",
+    "styleCircle": "Circle",
+    "durationLabel": "Duration (seconds)",
+    "durationHint": "Display time before advancing",
+    "defaultText": "Analyzing your answers..."
   },
   "stepSettings": {
     "description": "Configure the navigation options for this step.",

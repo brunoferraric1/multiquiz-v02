@@ -16,6 +16,7 @@ export type BlockType =
   | 'button'
   | 'banner'
   | 'list'
+  | 'loading'
 
 // Header block configuration
 export interface HeaderConfig {
@@ -133,6 +134,16 @@ export interface ListConfig {
   items: ListItem[]
 }
 
+// Loading indicator style
+export type LoadingStyle = 'bar' | 'circle'
+
+// Loading block configuration
+export interface LoadingConfig {
+  text: string
+  style: LoadingStyle
+  duration?: number // Duration in seconds (default: 3)
+}
+
 // Union type for all block configurations
 export type BlockConfig =
   | HeaderConfig
@@ -144,6 +155,7 @@ export type BlockConfig =
   | ButtonConfig
   | BannerConfig
   | ListConfig
+  | LoadingConfig
 
 // Block interface
 export interface Block {
@@ -218,6 +230,12 @@ export function getDefaultBlockConfig(type: BlockType): BlockConfig {
           },
         ],
       } as ListConfig
+    case 'loading':
+      return {
+        text: 'Analisando suas respostas...',
+        style: 'bar',
+        duration: 3,
+      } as LoadingConfig
   }
 }
 

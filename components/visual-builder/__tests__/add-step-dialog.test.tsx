@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, within } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
 import { useVisualBuilderStore, Step } from '@/store/visual-builder-store'
-import { AddStepSheet } from '../add-step-sheet'
+import { AddStepDialog } from '../add-step-dialog'
 
 // Test data
 const testSteps: Step[] = [
@@ -11,7 +11,7 @@ const testSteps: Step[] = [
   { id: 'result', type: 'result', label: 'Resultado', isFixed: true, blocks: [] },
 ]
 
-describe('AddStepSheet', () => {
+describe('AddStepDialog', () => {
   beforeEach(() => {
     useVisualBuilderStore.getState().reset()
   })
@@ -21,52 +21,39 @@ describe('AddStepSheet', () => {
       const store = useVisualBuilderStore.getState()
       store.setAddStepSheetOpen(true)
 
-      render(<AddStepSheet />)
+      render(<AddStepDialog />)
 
       expect(screen.getByRole('dialog')).toBeInTheDocument()
     })
 
     it('does not render when isAddStepSheetOpen is false', () => {
-      render(<AddStepSheet />)
+      render(<AddStepDialog />)
 
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
 
-    it('renders step type options', () => {
+    it('renders step template options', () => {
       const store = useVisualBuilderStore.getState()
       store.setAddStepSheetOpen(true)
 
-      render(<AddStepSheet />)
+      render(<AddStepDialog />)
 
+      // Template options: blank, question, promo, lead-gen (no intro - it's fixed)
+      expect(screen.getByRole('button', { name: /página em branco/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /pergunta/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /captura/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /promo/i })).toBeInTheDocument()
-    })
-
-    it('does not show intro or result as options', () => {
-      const store = useVisualBuilderStore.getState()
-      store.setAddStepSheetOpen(true)
-
-      render(<AddStepSheet />)
-
-      // Use getAllByRole to check all buttons
-      const buttons = screen.getAllByRole('button')
-      const buttonTexts = buttons.map(b => b.textContent?.toLowerCase())
-
-      // Should not have intro or result/resultado as options
-      expect(buttonTexts).not.toContain('intro')
-      expect(buttonTexts.filter(t => t?.includes('resultado'))).toHaveLength(0)
+      expect(screen.getByRole('button', { name: /promoção/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /captura de dados/i })).toBeInTheDocument()
     })
   })
 
-  describe('Step Type Selection', () => {
-    it('adds a question step when clicking Pergunta', async () => {
+  describe('Step Template Selection', () => {
+    it('adds a question step when clicking Pergunta template', async () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
       store.setAddStepSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddStepSheet />)
+      render(<AddStepDialog />)
 
       await user.click(screen.getByRole('button', { name: /pergunta/i }))
 
@@ -79,19 +66,19 @@ describe('AddStepSheet', () => {
       const newStep = steps.find(s => s.id !== 'intro' && s.id !== 'q1' && s.id !== 'result')
       expect(newStep?.type).toBe('question')
 
-      // Sheet should be closed
+      // Dialog should be closed
       expect(isAddStepSheetOpen).toBe(false)
     })
 
-    it('adds a lead-gen step when clicking Captura', async () => {
+    it('adds a lead-gen step when clicking Captura template', async () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
       store.setAddStepSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddStepSheet />)
+      render(<AddStepDialog />)
 
-      await user.click(screen.getByRole('button', { name: /captura/i }))
+      await user.click(screen.getByRole('button', { name: /captura de dados/i }))
 
       const { steps } = useVisualBuilderStore.getState()
       const newStep = steps.find(s => s.type === 'lead-gen')
@@ -99,19 +86,36 @@ describe('AddStepSheet', () => {
       expect(newStep?.label).toContain('Captura')
     })
 
-    it('adds a promo step when clicking Promoção', async () => {
+    it('adds a promo step when clicking Promoção template', async () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
       store.setAddStepSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddStepSheet />)
+      render(<AddStepDialog />)
 
-      await user.click(screen.getByRole('button', { name: /promo/i }))
+      await user.click(screen.getByRole('button', { name: /promoção/i }))
 
       const { steps } = useVisualBuilderStore.getState()
       const newStep = steps.find(s => s.type === 'promo')
       expect(newStep).toBeDefined()
+    })
+
+    it('adds a blank question step when clicking Página em branco', async () => {
+      const store = useVisualBuilderStore.getState()
+      store.setSteps(testSteps)
+      store.setAddStepSheetOpen(true)
+      const user = userEvent.setup()
+
+      render(<AddStepDialog />)
+
+      await user.click(screen.getByRole('button', { name: /página em branco/i }))
+
+      const { steps } = useVisualBuilderStore.getState()
+      const newStep = steps.find(s => s.id !== 'intro' && s.id !== 'q1' && s.id !== 'result')
+      expect(newStep?.type).toBe('question')
+      // Should have minimal blocks (header + options)
+      expect(newStep?.blocks.length).toBe(2)
     })
 
     it('inserts new step before result step', async () => {
@@ -120,7 +124,7 @@ describe('AddStepSheet', () => {
       store.setAddStepSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddStepSheet />)
+      render(<AddStepDialog />)
 
       await user.click(screen.getByRole('button', { name: /pergunta/i }))
 
@@ -137,7 +141,7 @@ describe('AddStepSheet', () => {
       store.setAddStepSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddStepSheet />)
+      render(<AddStepDialog />)
 
       await user.click(screen.getByRole('button', { name: /pergunta/i }))
 
@@ -148,16 +152,16 @@ describe('AddStepSheet', () => {
     })
   })
 
-  describe('Sheet Controls', () => {
-    it('closes sheet when clicking close button', async () => {
+  describe('Dialog Controls', () => {
+    it('closes dialog when clicking close button', async () => {
       const store = useVisualBuilderStore.getState()
       store.setAddStepSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddStepSheet />)
+      render(<AddStepDialog />)
 
       // Find and click the close button (X icon)
-      const closeButton = screen.getByRole('button', { name: /fechar/i })
+      const closeButton = screen.getByRole('button', { name: /close/i })
       await user.click(closeButton)
 
       expect(useVisualBuilderStore.getState().isAddStepSheetOpen).toBe(false)
@@ -171,7 +175,7 @@ describe('AddStepSheet', () => {
       store.setAddStepSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddStepSheet />)
+      render(<AddStepDialog />)
 
       await user.click(screen.getByRole('button', { name: /pergunta/i }))
 

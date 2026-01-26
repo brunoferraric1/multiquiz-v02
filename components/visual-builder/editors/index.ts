@@ -8,6 +8,7 @@ export { PriceBlockEditor } from './price-block-editor'
 export { ButtonBlockEditor } from './button-block-editor'
 export { BannerBlockEditor } from './banner-block-editor'
 export { ListBlockEditor } from './list-block-editor'
+export { LoadingBlockEditor } from './loading-block-editor'
 
 // Controls and settings
 export { BlockControls } from './block-controls'

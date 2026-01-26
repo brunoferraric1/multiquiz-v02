@@ -7,7 +7,7 @@
  * It handles both display-only blocks and interactive blocks (options, fields).
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
   Block,
@@ -20,6 +20,7 @@ import {
   OptionsConfig,
   FieldsConfig,
   PriceConfig,
+  LoadingConfig,
   FieldType,
 } from '@/types/blocks';
 import { cn } from '@/lib/utils';
@@ -49,6 +50,8 @@ interface QuizBlocksRendererProps {
   fieldValues?: Record<string, string>;
   onFieldChange?: (fieldId: string, value: string) => void;
   showFieldErrors?: boolean;
+  // For loading block - called when loading animation completes
+  onLoadingComplete?: () => void;
   // Styling
   className?: string;
 }
@@ -63,6 +66,7 @@ export function QuizBlocksRenderer({
   fieldValues = {},
   onFieldChange,
   showFieldErrors = false,
+  onLoadingComplete,
   className,
 }: QuizBlocksRendererProps) {
   // Filter to only enabled blocks
@@ -86,6 +90,7 @@ export function QuizBlocksRenderer({
           fieldValues={fieldValues}
           onFieldChange={onFieldChange}
           showFieldErrors={showFieldErrors}
+          onLoadingComplete={onLoadingComplete}
         />
       ))}
     </div>
@@ -102,6 +107,7 @@ interface BlockRendererProps {
   fieldValues?: Record<string, string>;
   onFieldChange?: (fieldId: string, value: string) => void;
   showFieldErrors?: boolean;
+  onLoadingComplete?: () => void;
 }
 
 function BlockRenderer({
@@ -114,6 +120,7 @@ function BlockRenderer({
   fieldValues = {},
   onFieldChange,
   showFieldErrors = false,
+  onLoadingComplete,
 }: BlockRendererProps) {
   switch (block.type) {
     case 'header':
@@ -153,6 +160,8 @@ function BlockRenderer({
           selectedIds={selectedPriceIds}
         />
       );
+    case 'loading':
+      return <LoadingBlock config={block.config as LoadingConfig} onComplete={onLoadingComplete} />;
     default:
       return null;
   }
@@ -697,6 +706,126 @@ function getErrorMessage(errorKey: string): string {
   return FIELD_ERROR_MESSAGES[errorKey]?.[locale] || FIELD_ERROR_MESSAGES[errorKey]?.['pt-BR'] || '';
 }
 
+
+function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplete?: () => void }) {
+  const { text, style, duration = 3 } = config;
+  const [progress, setProgress] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
+  const hasCalledComplete = useRef(false);
+  const startTimeRef = useRef<number>(Date.now());
+
+  // Animation duration in milliseconds
+  const durationMs = duration * 1000;
+  // Extra delay after completion before advancing (to show the checkmark)
+  const completionDelay = 600;
+  // Update interval for smoother animation
+  const updateInterval = 50;
+
+  useEffect(() => {
+    // Reset start time when component mounts
+    startTimeRef.current = Date.now();
+
+    const intervalId = setInterval(() => {
+      const elapsed = Date.now() - startTimeRef.current;
+      const newProgress = Math.min((elapsed / durationMs) * 100, 100);
+
+      setProgress(newProgress);
+
+      if (newProgress >= 100) {
+        clearInterval(intervalId);
+        setIsComplete(true);
+
+        // Auto-advance after showing the checkmark
+        if (onComplete && !hasCalledComplete.current) {
+          hasCalledComplete.current = true;
+          setTimeout(() => {
+            onComplete();
+          }, completionDelay);
+        }
+      }
+    }, updateInterval);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [durationMs, onComplete]);
+
+  // Circle progress calculations
+  const circumference = 2 * Math.PI * 20; // r=20
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-6 py-8">
+      {/* Loading indicator */}
+      {style === 'bar' ? (
+        <div className="w-full max-w-xs">
+          {isComplete ? (
+            // Completion state - green checkmark
+            <div className="flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center animate-in zoom-in-50 duration-300">
+                <Check className="w-6 h-6 text-white" strokeWidth={3} />
+              </div>
+            </div>
+          ) : (
+            // Progress bar
+            <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full transition-[width] duration-100 ease-linear"
+                style={{
+                  width: `${Math.max(progress, 2)}%`,
+                  backgroundColor: 'hsl(var(--primary))',
+                }}
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="relative w-16 h-16">
+          {isComplete ? (
+            // Completion state - green checkmark
+            <div className="w-full h-full rounded-full bg-green-500 flex items-center justify-center animate-in zoom-in-50 duration-300">
+              <Check className="w-8 h-8 text-white" strokeWidth={3} />
+            </div>
+          ) : (
+            // Circle progress
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 48 48">
+              <circle
+                cx="24"
+                cy="24"
+                r="20"
+                fill="none"
+                stroke="hsl(var(--muted))"
+                strokeWidth="4"
+              />
+              <circle
+                cx="24"
+                cy="24"
+                r="20"
+                fill="none"
+                stroke="hsl(var(--primary))"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                style={{ transition: 'stroke-dashoffset 100ms linear' }}
+              />
+            </svg>
+          )}
+        </div>
+      )}
+
+      {/* Text - changes when complete */}
+      {text && (
+        <p className={cn(
+          "text-base font-medium text-center transition-colors duration-300",
+          isComplete ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+        )}>
+          {text}
+        </p>
+      )}
+    </div>
+  );
+}
 
 function FieldsBlock({
   config,

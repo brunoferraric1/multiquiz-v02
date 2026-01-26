@@ -175,6 +175,108 @@ export const getDefaultOutcomeBlocks = (copy?: VisualBuilderCopy): Block[] => {
   ]
 }
 
+// Step templates type
+export type StepTemplate = 'blank' | 'intro' | 'question' | 'promo' | 'lead-gen' | 'loading'
+
+/**
+ * Get blocks for a specific template type
+ * Used when creating steps from the AddStepDialog with template selection
+ */
+export const getBlocksForTemplate = (template: StepTemplate, copy?: VisualBuilderCopy): Block[] => {
+  const defaults = copy?.defaults
+  const listEditor = copy?.listEditor
+
+  const introTitle = defaults?.introTitle ?? 'Bem-vindo!'
+  const introDescription = defaults?.introDescription ?? 'Descubra o resultado ideal para você.'
+  const buttonStart = defaults?.buttonStart ?? 'Começar'
+  const buttonUse = defaults?.buttonUse ?? 'Aproveitar'
+  const promoTitle = defaults?.promoTitle ?? 'Oferta especial'
+  const listItem = defaults?.listItem ?? 'Item da lista'
+  const emojiPlaceholder = listEditor?.emojiPlaceholder ?? '✓'
+
+  switch (template) {
+    case 'blank':
+      // Blank page: Header (empty) + Options (empty)
+      return [
+        { ...createBlock('header'), config: { title: '', description: '' } },
+        { ...createBlock('options'), config: { items: [], selectionType: 'single' } },
+      ]
+
+    case 'intro':
+      // Intro: Media (image, enabled) + Header + Button
+      return [
+        { ...createBlock('media'), enabled: true, config: { type: 'image', url: '', orientation: 'horizontal' } },
+        { ...createBlock('header'), config: { title: introTitle, description: introDescription } },
+        { ...createBlock('button'), config: { text: buttonStart, action: 'next_step' } },
+      ]
+
+    case 'question':
+      // Question: Header + Options (uses existing getDefaultBlocksForStepType)
+      return getDefaultBlocksForStepType('question', copy)
+
+    case 'promo':
+      // Promo: Banner + Media (video) + Header + Text + List + Button (no Price)
+      return [
+        { ...createBlock('banner'), config: { urgency: 'info', text: '', emoji: '' } },
+        { ...createBlock('media'), enabled: true, config: { type: 'video', url: '', orientation: 'horizontal' } },
+        { ...createBlock('header'), config: { title: promoTitle, description: '' } },
+        { ...createBlock('text'), config: { content: '' } },
+        { ...createBlock('list'), config: { items: [
+          { id: generateId(), text: `${listItem} 1`, emoji: emojiPlaceholder },
+          { id: generateId(), text: `${listItem} 2`, emoji: emojiPlaceholder },
+          { id: generateId(), text: `${listItem} 3`, emoji: emojiPlaceholder },
+        ] } },
+        { ...createBlock('button'), config: { text: buttonUse, action: 'url' } },
+      ]
+
+    case 'lead-gen':
+      // Lead-gen: uses existing getDefaultBlocksForStepType
+      return getDefaultBlocksForStepType('lead-gen', copy)
+
+    case 'loading':
+      // Loading: Just a loading block with text
+      const loadingText = copy?.loadingEditor?.defaultText || 'Analisando suas respostas...'
+      return [
+        { ...createBlock('loading'), config: { text: loadingText, style: 'bar', duration: 3 } },
+      ]
+
+    default:
+      return []
+  }
+}
+
+/**
+ * Create a step from a template
+ */
+export const createStepFromTemplate = (
+  template: StepTemplate,
+  type: StepType,
+  steps: Step[],
+  copy?: VisualBuilderCopy
+): Step => {
+  // Loading template has special handling
+  if (template === 'loading') {
+    const loadingLabel = copy?.addStep?.templates?.loading?.label ?? 'Carregamento'
+    return {
+      id: generateId(),
+      type,
+      label: loadingLabel,
+      isFixed: false,
+      blocks: getBlocksForTemplate(template, copy),
+      settings: { showProgress: false, allowBack: false },
+    }
+  }
+
+  return {
+    id: generateId(),
+    type,
+    label: getDefaultStepLabel(type, steps, copy),
+    isFixed: false,
+    blocks: getBlocksForTemplate(template, copy),
+    settings: { showProgress: true, allowBack: true },
+  }
+}
+
 // Static initial blocks with deterministic IDs (for SSR hydration safety)
 const INITIAL_INTRO_BLOCKS: Block[] = [
   {

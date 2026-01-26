@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
 import { useVisualBuilderStore, Step, Outcome } from '@/store/visual-builder-store'
-import { AddBlockSheet } from '../add-block-sheet'
+import { AddBlockDialog } from '../add-block-dialog'
 
 const testSteps: Step[] = [
   {
@@ -25,7 +25,7 @@ const testOutcomes: Outcome[] = [
   { id: 'outcome-1', name: 'Outcome A', blocks: [] },
 ]
 
-describe('AddBlockSheet', () => {
+describe('AddBlockDialog', () => {
   beforeEach(() => {
     useVisualBuilderStore.getState().reset()
   })
@@ -36,7 +36,7 @@ describe('AddBlockSheet', () => {
       store.setSteps(testSteps)
       store.setAddBlockSheetOpen(true)
 
-      render(<AddBlockSheet />)
+      render(<AddBlockDialog />)
 
       expect(screen.getByRole('dialog')).toBeInTheDocument()
       expect(screen.getByText('Adicionar bloco')).toBeInTheDocument()
@@ -47,19 +47,19 @@ describe('AddBlockSheet', () => {
       store.setSteps(testSteps)
       store.setAddBlockSheetOpen(false)
 
-      render(<AddBlockSheet />)
+      render(<AddBlockDialog />)
 
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
   })
 
   describe('Block type options', () => {
-    it('shows all 9 block type options', () => {
+    it('shows all 9 block type options in categories', () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
       store.setAddBlockSheetOpen(true)
 
-      render(<AddBlockSheet />)
+      render(<AddBlockDialog />)
 
       expect(screen.getByRole('button', { name: /cabeçalho/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /texto/i })).toBeInTheDocument()
@@ -71,6 +71,18 @@ describe('AddBlockSheet', () => {
       expect(screen.getByRole('button', { name: /banner/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /lista/i })).toBeInTheDocument()
     })
+
+    it('shows category sections', () => {
+      const store = useVisualBuilderStore.getState()
+      store.setSteps(testSteps)
+      store.setAddBlockSheetOpen(true)
+
+      render(<AddBlockDialog />)
+
+      expect(screen.getByText('Conteúdo')).toBeInTheDocument()
+      expect(screen.getByText('Interação')).toBeInTheDocument()
+      expect(screen.getByText('Ação')).toBeInTheDocument()
+    })
   })
 
   describe('Adding blocks to steps', () => {
@@ -81,7 +93,7 @@ describe('AddBlockSheet', () => {
       store.setAddBlockSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddBlockSheet />)
+      render(<AddBlockDialog />)
 
       await user.click(screen.getByRole('button', { name: /texto/i }))
 
@@ -100,7 +112,7 @@ describe('AddBlockSheet', () => {
       store.setAddBlockSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddBlockSheet />)
+      render(<AddBlockDialog />)
 
       await user.click(screen.getByRole('button', { name: /cabeçalho/i }))
 
@@ -120,7 +132,7 @@ describe('AddBlockSheet', () => {
       store.setAddBlockSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddBlockSheet />)
+      render(<AddBlockDialog />)
 
       await user.click(screen.getByRole('button', { name: /banner/i }))
 
@@ -133,7 +145,7 @@ describe('AddBlockSheet', () => {
     })
   })
 
-  describe('Closing the sheet', () => {
+  describe('Closing the dialog', () => {
     it('closes after selecting a block type', async () => {
       const store = useVisualBuilderStore.getState()
       store.setSteps(testSteps)
@@ -141,9 +153,9 @@ describe('AddBlockSheet', () => {
       store.setAddBlockSheetOpen(true)
       const user = userEvent.setup()
 
-      render(<AddBlockSheet />)
+      render(<AddBlockDialog />)
 
-      // Selecting a block type should close the sheet
+      // Selecting a block type should close the dialog
       await user.click(screen.getByRole('button', { name: /texto/i }))
 
       expect(useVisualBuilderStore.getState().isAddBlockSheetOpen).toBe(false)

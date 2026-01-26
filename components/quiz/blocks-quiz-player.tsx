@@ -549,6 +549,7 @@ export function BlocksQuizPlayer({
           fieldValues={currentFieldValues}
           onFieldChange={handleFieldChange}
           showFieldErrors={showFieldErrors}
+          onLoadingComplete={goToNextStep}
         />
 
       </div>

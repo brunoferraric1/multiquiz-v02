@@ -40,6 +40,32 @@
         "label": "Promoção",
         "description": "Adicione uma oferta ou conteúdo promocional"
       }
+    },
+    "templates": {
+      "blank": {
+        "label": "Página em branco",
+        "description": "Comece do zero"
+      },
+      "intro": {
+        "label": "Intro",
+        "description": "Tela de boas-vindas com mídia e CTA"
+      },
+      "question": {
+        "label": "Pergunta",
+        "description": "Pergunta com opções de resposta"
+      },
+      "promo": {
+        "label": "Promoção",
+        "description": "Oferta com banner, benefícios e CTA"
+      },
+      "lead-gen": {
+        "label": "Captura de dados",
+        "description": "Formulário para coletar informações"
+      },
+      "loading": {
+        "label": "Carregamento",
+        "description": "Tela de análise antes do resultado"
+      }
     }
   },
   "addBlock": {
@@ -47,6 +73,11 @@
     "description": "Escolha o tipo de bloco que deseja adicionar.",
     "tooltip": {
       "onlyOnePerPage": "Apenas um por página"
+    },
+    "categories": {
+      "content": "Conteúdo",
+      "interaction": "Interação",
+      "action": "Ação"
     }
   },
   "blockTypes": {
@@ -58,7 +89,8 @@
     "price": "Preço",
     "button": "Botão",
     "banner": "Banner",
-    "list": "Lista"
+    "list": "Lista",
+    "loading": "Carregamento"
   },
   "blockDescriptions": {
     "header": "Título e descrição",
@@ -69,7 +101,8 @@
     "price": "Exibição de preço",
     "button": "Botão de ação",
     "banner": "Banner de destaque",
-    "list": "Lista de itens"
+    "list": "Lista de itens",
+    "loading": "Indicador de carregamento"
   },
   "defaults": {
     "introTitle": "Bem-vindo!",
@@ -309,6 +342,16 @@
     "removeItem": "Remover item {{index}}",
     "dragItem": "Arrastar item {{index}}",
     "hint": "Dica: Use emojis como ✓, •, ★ para personalizar os marcadores"
+  },
+  "loadingEditor": {
+    "textLabel": "Texto de carregamento",
+    "textPlaceholder": "Ex: Analisando suas respostas...",
+    "styleTitle": "Estilo do indicador",
+    "styleBar": "Barra",
+    "styleCircle": "Círculo",
+    "durationLabel": "Duração (segundos)",
+    "durationHint": "Tempo de exibição antes de avançar",
+    "defaultText": "Analisando suas respostas..."
   },
   "stepSettings": {
     "description": "Configure as opções de navegação desta etapa.",
