@@ -93,6 +93,7 @@ export function BannerBlockPreview({ config, enabled, isEditing, onEdit }: Banne
     <div
       className={cn('p-4', !enabled && 'opacity-50')}
       onClick={isEditing ? (e) => e.stopPropagation() : undefined}
+      onKeyDown={isEditing ? (e) => e.stopPropagation() : undefined}
     >
       <div className={cn('flex items-center justify-center gap-3 rounded-lg border p-3', style.bg, style.border)}>
         {renderIcon()}

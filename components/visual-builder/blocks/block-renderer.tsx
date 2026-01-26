@@ -114,11 +114,13 @@ export function BlockRenderer({ block, isSelected, isEditing, onClick, onDoubleC
             ? 'ring-2 ring-primary border-primary/30'
             : 'border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/20'
         )}
-        onClick={onClick}
+        onClick={isEditing ? undefined : onClick}
         onDoubleClick={handleDoubleClick}
         role="button"
-        tabIndex={0}
+        tabIndex={isEditing ? -1 : 0}
         onKeyDown={(e) => {
+          // Don't intercept keyboard when editing
+          if (isEditing) return
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
             onClick?.()
@@ -189,11 +191,13 @@ export function BlockRenderer({ block, isSelected, isEditing, onClick, onDoubleC
             ? 'border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/20'
             : 'border-transparent hover:border-muted-foreground/50 hover:bg-muted/20'
       )}
-      onClick={onClick}
+      onClick={isEditing ? undefined : onClick}
       onDoubleClick={handleDoubleClick}
       role="button"
-      tabIndex={0}
+      tabIndex={isEditing ? -1 : 0}
       onKeyDown={(e) => {
+        // Don't intercept keyboard when editing
+        if (isEditing) return
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
           onClick?.()

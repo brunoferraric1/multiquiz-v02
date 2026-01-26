@@ -71,6 +71,7 @@ export function ButtonBlockPreview({ config, enabled, isEditing, onEdit }: Butto
     <div
       className={cn('p-4', !enabled && 'opacity-50')}
       onClick={isEditing ? (e) => e.stopPropagation() : undefined}
+      onKeyDown={isEditing ? (e) => e.stopPropagation() : undefined}
     >
       <button
         type="button"

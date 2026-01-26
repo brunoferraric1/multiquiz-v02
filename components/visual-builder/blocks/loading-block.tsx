@@ -64,6 +64,7 @@ export function LoadingBlockPreview({ config, enabled, isEditing, onEdit }: Load
     <div
       className={cn('py-8 px-6', !enabled && 'opacity-50')}
       onClick={isEditing ? (e) => e.stopPropagation() : undefined}
+      onKeyDown={isEditing ? (e) => e.stopPropagation() : undefined}
     >
       <div className="flex flex-col items-center justify-center gap-5 text-center">
         {/* Loading indicator - static at ~50% for preview */}

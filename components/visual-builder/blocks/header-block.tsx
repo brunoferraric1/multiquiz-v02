@@ -71,6 +71,7 @@ export function HeaderBlockPreview({ config, enabled, isEditing, onEdit }: Heade
       <div
         className={cn('p-4 text-center', !enabled && 'opacity-50')}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <input
           ref={titleInputRef}
@@ -81,7 +82,7 @@ export function HeaderBlockPreview({ config, enabled, isEditing, onEdit }: Heade
           onKeyDown={handleKeyDown}
           placeholder={headerCopy.titlePlaceholder}
           className={cn(
-            'w-full text-xl font-semibold text-center bg-transparent border-none outline-none',
+            'w-full py-1 text-xl font-semibold text-center bg-transparent border-none outline-none',
             'focus:ring-0 placeholder:text-muted-foreground/50',
             localTitle ? 'text-foreground' : 'text-muted-foreground/50'
           )}
@@ -94,7 +95,7 @@ export function HeaderBlockPreview({ config, enabled, isEditing, onEdit }: Heade
           onKeyDown={handleKeyDown}
           placeholder={headerCopy.descriptionPlaceholder}
           className={cn(
-            'w-full mt-1 text-sm text-center bg-transparent border-none outline-none',
+            'w-full py-1 mt-1 text-sm text-center bg-transparent border-none outline-none',
             'focus:ring-0 placeholder:text-muted-foreground/50',
             localDescription ? 'text-muted-foreground' : 'text-muted-foreground/50'
           )}
