@@ -27,20 +27,18 @@ function PriceCard({
 }: PriceCardProps) {
   const hasHighlight = price.showHighlight && !!price.highlightText
   const hasOriginalPrice = price.showOriginalPrice && !!price.originalPrice
-  const hasRedirectUrl = !!price.redirectUrl
+  const hasRedirectUrl = !!price.redirectUrl?.trim()
 
   return (
     <div
       className={cn(
         'relative rounded-xl overflow-hidden',
         'bg-card border border-border/50',
-        'shadow-sm transition-all duration-200 ease-out',
-        hasRedirectUrl && [
-          'hover:shadow-md',
-          'hover:scale-[1.01] hover:border-primary/30',
-          'cursor-[var(--cursor-interactive)]',
-        ],
-        hasHighlight && 'ring-2 ring-primary'
+        'shadow-sm',
+        hasHighlight && 'ring-2 ring-primary',
+        hasRedirectUrl
+          ? 'hover:shadow-md hover:scale-[1.01] hover:border-primary/30 cursor-[var(--cursor-interactive)] transition-all duration-200 ease-out'
+          : 'pointer-events-none'
       )}
     >
       {/* Highlight banner */}
@@ -79,7 +77,7 @@ function PriceCard({
           {hasOriginalPrice && (
             <p className="text-sm">
               <span className="text-muted-foreground">de </span>
-              <span className="line-through text-red-600/80 dark:text-red-300/60">{price.originalPrice}</span>
+              <span className="line-through text-red-700/70 dark:text-rose-300/50">{price.originalPrice}</span>
               <span className="text-muted-foreground"> por:</span>
             </p>
           )}

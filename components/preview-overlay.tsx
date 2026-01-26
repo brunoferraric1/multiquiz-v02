@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Monitor, Smartphone, X } from 'lucide-react'
+import { Monitor, RotateCcw, Smartphone, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BlocksQuizPlayer } from '@/components/quiz/blocks-quiz-player'
 import { cn } from '@/lib/utils'
@@ -32,6 +32,9 @@ type PreviewOverlayProps = {
   brandKitColors?: BrandKitColors | null
   brandKitLogoUrl?: string | null
   warningText?: string
+  initialStepIndex?: number
+  initialOutcomeId?: string | null
+  restartLabel?: string
 }
 
 /**
@@ -54,8 +57,43 @@ export function PreviewOverlay({
   brandKitColors,
   brandKitLogoUrl,
   warningText,
+  initialStepIndex = 0,
+  initialOutcomeId = null,
+  restartLabel = 'Recomeçar',
 }: PreviewOverlayProps) {
   const [device, setDevice] = useState<'mobile' | 'desktop'>('desktop')
+  // Key to force remount BlocksQuizPlayer when restarting
+  const [playerKey, setPlayerKey] = useState(0)
+  // Track if we're showing from beginning (after restart) vs initial step
+  const [startFromBeginning, setStartFromBeginning] = useState(false)
+
+  const handleRestart = useCallback(() => {
+    setStartFromBeginning(true)
+    setPlayerKey((k) => k + 1)
+  }, [])
+
+  // Reset state when overlay opens
+  useEffect(() => {
+    if (open) {
+      setStartFromBeginning(false)
+      setPlayerKey((k) => k + 1)
+    }
+  }, [open])
+
+  // ESC key handler
+  useEffect(() => {
+    if (!open) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
+
   const closeButtonStyle =
     quiz?.brandKitMode === 'custom' && brandKitColors?.primary
       ? {
@@ -64,6 +102,11 @@ export function PreviewOverlay({
         }
       : undefined
   const controlsOffsetClass = warningText ? 'top-14 sm:top-16' : 'top-4'
+
+  // Use 0 if restarted, otherwise use the initial step index
+  const effectiveStepIndex = startFromBeginning ? 0 : initialStepIndex
+  // Clear outcome if restarted, otherwise use initial outcome for result step preview
+  const effectiveOutcomeId = startFromBeginning ? null : initialOutcomeId
 
   return (
     <AnimatePresence>
@@ -87,34 +130,45 @@ export function PreviewOverlay({
                 controlsOffsetClass
               )}
             >
-              <div className="flex items-center gap-1 rounded-lg bg-card p-1 shadow-md">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 rounded-lg bg-card p-1 shadow-md">
+                  <button
+                    type="button"
+                    onClick={() => setDevice('mobile')}
+                    aria-label="Visualização mobile"
+                    aria-pressed={device === 'mobile'}
+                    className={cn(
+                      'rounded-md px-2 py-1.5 transition-all',
+                      device === 'mobile'
+                        ? 'bg-primary/15 text-primary'
+                        : 'text-muted-foreground hover:bg-muted/60'
+                    )}
+                  >
+                    <Smartphone className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDevice('desktop')}
+                    aria-label="Visualização desktop"
+                    aria-pressed={device === 'desktop'}
+                    className={cn(
+                      'rounded-md px-2 py-1.5 transition-all',
+                      device === 'desktop'
+                        ? 'bg-primary/15 text-primary'
+                        : 'text-muted-foreground hover:bg-muted/60'
+                    )}
+                  >
+                    <Monitor className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setDevice('mobile')}
-                  aria-label="Visualização mobile"
-                  aria-pressed={device === 'mobile'}
-                  className={cn(
-                    'rounded-md px-2 py-1.5 transition-all',
-                    device === 'mobile'
-                      ? 'bg-primary/15 text-primary'
-                      : 'text-muted-foreground hover:bg-muted/60'
-                  )}
+                  onClick={handleRestart}
+                  className="flex items-center gap-1.5 rounded-lg bg-card px-3 py-1.5 text-sm text-muted-foreground shadow-md transition-colors hover:bg-muted/60 hover:text-foreground"
                 >
-                  <Smartphone className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDevice('desktop')}
-                  aria-label="Visualização desktop"
-                  aria-pressed={device === 'desktop'}
-                  className={cn(
-                    'rounded-md px-2 py-1.5 transition-all',
-                    device === 'desktop'
-                      ? 'bg-primary/15 text-primary'
-                      : 'text-muted-foreground hover:bg-muted/60'
-                  )}
-                >
-                  <Monitor className="h-3.5 w-3.5" />
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{restartLabel}</span>
                 </button>
               </div>
 
@@ -153,12 +207,15 @@ export function PreviewOverlay({
                     <div className="flex-1 overflow-hidden rounded-[calc(var(--radius-lg)*2)] bg-background">
                       <div className="h-full overflow-y-auto">
                         <BlocksQuizPlayer
+                          key={playerKey}
                           quiz={quiz}
                           mode="preview"
                           onExit={onClose}
                           brandKitColors={brandKitColors}
                           brandKitLogoUrl={brandKitLogoUrl}
                           layout="embedded"
+                          initialStepIndex={effectiveStepIndex}
+                          initialOutcomeId={effectiveOutcomeId}
                         />
                       </div>
                     </div>
@@ -166,11 +223,14 @@ export function PreviewOverlay({
                 </div>
               ) : (
                 <BlocksQuizPlayer
+                  key={playerKey}
                   quiz={quiz}
                   mode="preview"
                   onExit={onClose}
                   brandKitColors={brandKitColors}
                   brandKitLogoUrl={brandKitLogoUrl}
+                  initialStepIndex={effectiveStepIndex}
+                  initialOutcomeId={effectiveOutcomeId}
                 />
               )}
             </main>

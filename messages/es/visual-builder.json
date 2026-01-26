@@ -160,7 +160,8 @@
     "addOutcome": "Agrega un resultado para comenzar",
     "selectOutcome": "Selecciona un resultado para ver la vista previa",
     "back": "Volver",
-    "warning": "Modo Preview — Esta es una vista previa del borrador"
+    "warning": "Modo Preview — Esta es una vista previa del borrador",
+    "restart": "Reiniciar"
   },
   "itemActions": {
     "drag": "Arrastrar {{title}}",

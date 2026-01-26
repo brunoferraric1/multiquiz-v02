@@ -40,6 +40,8 @@ interface BlocksQuizPlayerProps {
   className?: string;
   initialSelectedOptions?: SelectionState;
   hideBranding?: boolean;
+  initialStepIndex?: number;
+  initialOutcomeId?: string | null;
 }
 
 type SelectionState = Record<string, string[]>;
@@ -75,6 +77,8 @@ export function BlocksQuizPlayer({
   className,
   initialSelectedOptions,
   hideBranding = false,
+  initialStepIndex = 0,
+  initialOutcomeId = null,
 }: BlocksQuizPlayerProps) {
   const messages = useMessages();
 
@@ -158,13 +162,13 @@ export function BlocksQuizPlayer({
   }, [mode, quiz.id, user, attemptId, quiz.ownerId, authLoading]);
 
   // State machine
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(initialStepIndex);
   const [selectedOptions, setSelectedOptions] = useState<SelectionState>(
     initialSelectedOptions ?? {}
   );
   const [selectedPrices, setSelectedPrices] = useState<SelectionState>({});
   const [fieldValues, setFieldValues] = useState<FieldValuesState>({});
-  const [resultOutcomeId, setResultOutcomeId] = useState<string | null>(null);
+  const [resultOutcomeId, setResultOutcomeId] = useState<string | null>(initialOutcomeId);
   const [showFieldErrors, setShowFieldErrors] = useState(false);
 
   const currentStep = steps[currentStepIndex];

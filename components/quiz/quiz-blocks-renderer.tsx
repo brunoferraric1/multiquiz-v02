@@ -491,7 +491,7 @@ function PriceBlock({
                 {hasOriginalPrice && (
                   <p className="text-sm">
                     <span className="text-muted-foreground">de </span>
-                    <span className="line-through text-red-600/80 dark:text-red-300/60">{price.originalPrice}</span>
+                    <span className="line-through text-red-700/70 dark:text-rose-300/50">{price.originalPrice}</span>
                     <span className="text-muted-foreground"> por:</span>
                   </p>
                 )}

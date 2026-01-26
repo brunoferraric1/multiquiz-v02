@@ -160,7 +160,8 @@
     "addOutcome": "Add a result to get started",
     "selectOutcome": "Select a result to see the preview",
     "back": "Back",
-    "warning": "Preview Mode — This is a preview of the draft"
+    "warning": "Preview Mode — This is a preview of the draft",
+    "restart": "Start over"
   },
   "itemActions": {
     "drag": "Drag {{title}}",

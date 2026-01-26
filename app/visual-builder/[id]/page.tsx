@@ -42,6 +42,8 @@ function VisualBuilderEditor() {
   const reset = useVisualBuilderStore((state) => state.reset)
   const storeSteps = useVisualBuilderStore((state) => state.steps)
   const storeOutcomes = useVisualBuilderStore((state) => state.outcomes)
+  const activeStepId = useVisualBuilderStore((state) => state.activeStepId)
+  const selectedOutcomeId = useVisualBuilderStore((state) => state.selectedOutcomeId)
 
   // Local state
   const [isPublishing, setIsPublishing] = useState(false)
@@ -585,6 +587,13 @@ function VisualBuilderEditor() {
         brandKitColors={brandKitColors}
         brandKitLogoUrl={brandKitLogoUrl}
         warningText={copy.preview.warning}
+        initialStepIndex={
+          activeStepId
+            ? Math.max(0, storeSteps.findIndex((s) => s.id === activeStepId))
+            : 0
+        }
+        initialOutcomeId={selectedOutcomeId}
+        restartLabel={copy.preview.restart}
       />
     </MobileGate>
   )
