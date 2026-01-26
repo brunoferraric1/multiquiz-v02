@@ -39,6 +39,7 @@ export interface VisualBuilderState {
   activeStepId: string | undefined
   selectedOutcomeId: string | undefined
   selectedBlockId: string | undefined
+  editingBlockId: string | undefined // Block currently in inline edit mode
   isAddStepSheetOpen: boolean
   isAddBlockSheetOpen: boolean
   blockInsertionIndex: number | undefined
@@ -70,6 +71,7 @@ export interface VisualBuilderState {
 
   // Actions - Block selection
   setSelectedBlockId: (blockId: string | undefined) => void
+  setEditingBlockId: (blockId: string | undefined) => void
 
   // Actions - Step settings
   updateStepSettings: (stepId: string, settings: Partial<StepSettings>) => void
@@ -326,6 +328,7 @@ const initialState = {
   activeStepId: 'intro' as string | undefined,
   selectedOutcomeId: undefined as string | undefined,
   selectedBlockId: undefined as string | undefined,
+  editingBlockId: undefined as string | undefined,
   isAddStepSheetOpen: false,
   isAddBlockSheetOpen: false,
   blockInsertionIndex: undefined as number | undefined,
@@ -507,15 +510,15 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
 
           // If selecting a non-result step, clear outcome selection and block selection
           if (step && step.type !== 'result') {
-            return { activeStepId: stepId, selectedOutcomeId: undefined, selectedBlockId: undefined }
+            return { activeStepId: stepId, selectedOutcomeId: undefined, selectedBlockId: undefined, editingBlockId: undefined }
           }
 
           // If selecting result step and no outcome selected, select first outcome
           if (step?.type === 'result' && !state.selectedOutcomeId && state.outcomes.length > 0) {
-            return { activeStepId: stepId, selectedOutcomeId: state.outcomes[0].id, selectedBlockId: undefined }
+            return { activeStepId: stepId, selectedOutcomeId: state.outcomes[0].id, selectedBlockId: undefined, editingBlockId: undefined }
           }
 
-          return { activeStepId: stepId, selectedBlockId: undefined }
+          return { activeStepId: stepId, selectedBlockId: undefined, editingBlockId: undefined }
         }),
 
       // Block management (for steps)
@@ -727,7 +730,8 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
         }),
 
       // Block selection
-      setSelectedBlockId: (blockId) => set({ selectedBlockId: blockId }),
+      setSelectedBlockId: (blockId) => set({ selectedBlockId: blockId, editingBlockId: undefined }),
+      setEditingBlockId: (blockId) => set({ editingBlockId: blockId }),
 
       // Step settings
       updateStepSettings: (stepId, settings) =>
@@ -870,6 +874,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           activeStepId: data.steps.length > 0 ? data.steps[0].id : undefined,
           selectedOutcomeId: undefined,
           selectedBlockId: undefined,
+          editingBlockId: undefined,
         }),
 
       reset: () => set(initialState),

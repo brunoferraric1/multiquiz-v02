@@ -30,7 +30,10 @@ import { LoadingBlockPreview } from './loading-block'
 interface BlockRendererProps {
   block: Block
   isSelected?: boolean
+  isEditing?: boolean
   onClick?: () => void
+  onDoubleClick?: () => void
+  onEdit?: (config: Partial<Block['config']>) => void
   onDelete?: () => void
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>
   isDragging?: boolean
@@ -42,11 +45,14 @@ interface BlockRendererProps {
  * This component acts as a switch to render the appropriate block preview
  * based on the block type. It handles selection state and click events.
  */
-export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandleProps, isDragging }: BlockRendererProps) {
+export function BlockRenderer({ block, isSelected, isEditing, onClick, onDoubleClick, onEdit, onDelete, dragHandleProps, isDragging }: BlockRendererProps) {
   const messages = useMessages()
   const copy = messages.visualBuilder
   // Check if media block has no content (show placeholder styling)
   const isEmptyMedia = block.type === 'media' && !(block.config as MediaConfig).url
+
+  // Block types that support inline editing
+  const supportsInlineEdit = ['header', 'button', 'banner', 'loading'].includes(block.type)
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -58,11 +64,18 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
     onClick?.()
   }
 
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (supportsInlineEdit && onDoubleClick) {
+      onDoubleClick()
+    }
+  }
+
   // Render the appropriate block component based on type
   const renderBlockContent = () => {
     switch (block.type) {
       case 'header':
-        return <HeaderBlockPreview config={block.config as HeaderConfig} enabled={block.enabled} />
+        return <HeaderBlockPreview config={block.config as HeaderConfig} enabled={block.enabled} isEditing={isEditing} onEdit={onEdit} />
       case 'text':
         return <TextBlockPreview config={block.config as TextConfig} enabled={block.enabled} />
       case 'media':
@@ -74,13 +87,13 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
       case 'price':
         return <PriceBlockPreview config={block.config as PriceConfig} enabled={block.enabled} />
       case 'button':
-        return <ButtonBlockPreview config={block.config as ButtonConfig} enabled={block.enabled} />
+        return <ButtonBlockPreview config={block.config as ButtonConfig} enabled={block.enabled} isEditing={isEditing} onEdit={onEdit} />
       case 'banner':
-        return <BannerBlockPreview config={block.config as BannerConfig} enabled={block.enabled} />
+        return <BannerBlockPreview config={block.config as BannerConfig} enabled={block.enabled} isEditing={isEditing} onEdit={onEdit} />
       case 'list':
         return <ListBlockPreview config={block.config as ListConfig} enabled={block.enabled} />
       case 'loading':
-        return <LoadingBlockPreview config={block.config as LoadingConfig} enabled={block.enabled} />
+        return <LoadingBlockPreview config={block.config as LoadingConfig} enabled={block.enabled} isEditing={isEditing} onEdit={onEdit} />
       default:
         return <div className="p-4 text-muted-foreground">Unknown block type</div>
     }
@@ -102,6 +115,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
             : 'border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/20'
         )}
         onClick={onClick}
+        onDoubleClick={handleDoubleClick}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
@@ -176,6 +190,7 @@ export function BlockRenderer({ block, isSelected, onClick, onDelete, dragHandle
             : 'border-transparent hover:border-muted-foreground/50 hover:bg-muted/20'
       )}
       onClick={onClick}
+      onDoubleClick={handleDoubleClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {

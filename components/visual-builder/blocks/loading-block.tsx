@@ -1,12 +1,15 @@
 'use client'
 
-import { LoadingConfig } from '@/types/blocks'
+import { useRef, useEffect, useState } from 'react'
+import { LoadingConfig, Block } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
 
 interface LoadingBlockPreviewProps {
   config: LoadingConfig
   enabled: boolean
+  isEditing?: boolean
+  onEdit?: (config: Partial<Block['config']>) => void
 }
 
 /**
@@ -14,16 +17,54 @@ interface LoadingBlockPreviewProps {
  *
  * Shows either a progress bar or circular progress with customizable text.
  * This is a static preview - animation only happens in live quiz/preview mode.
+ * Supports inline editing of the loading text when isEditing is true.
  */
-export function LoadingBlockPreview({ config, enabled }: LoadingBlockPreviewProps) {
+export function LoadingBlockPreview({ config, enabled, isEditing, onEdit }: LoadingBlockPreviewProps) {
   const messages = useMessages()
   const loadingCopy = messages.visualBuilder.loadingEditor
   const { text, style } = config
 
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [localText, setLocalText] = useState(text || '')
+
   const displayText = text || loadingCopy?.textPlaceholder || 'Analisando...'
 
+  // Sync local state when config changes from external source
+  useEffect(() => {
+    setLocalText(text || '')
+  }, [text])
+
+  // Auto-focus input when entering edit mode
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isEditing])
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalText(e.target.value)
+  }
+
+  const handleSave = () => {
+    onEdit?.({ text: localText })
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSave()
+    }
+    if (e.key === 'Escape') {
+      setLocalText(text || '')
+    }
+  }
+
   return (
-    <div className={cn('py-8 px-6', !enabled && 'opacity-50')}>
+    <div
+      className={cn('py-8 px-6', !enabled && 'opacity-50')}
+      onClick={isEditing ? (e) => e.stopPropagation() : undefined}
+    >
       <div className="flex flex-col items-center justify-center gap-5 text-center">
         {/* Loading indicator - static at ~50% for preview */}
         {style === 'bar' ? (
@@ -32,8 +73,21 @@ export function LoadingBlockPreview({ config, enabled }: LoadingBlockPreviewProp
           <CircleIndicator />
         )}
 
-        {/* Text */}
-        <p className="text-base text-muted-foreground font-medium">{displayText}</p>
+        {/* Text - editable or static */}
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={localText}
+            onChange={handleTextChange}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            placeholder={loadingCopy?.textPlaceholder || 'Analisando...'}
+            className="text-base text-muted-foreground font-medium text-center bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted-foreground/50 w-full"
+          />
+        ) : (
+          <p className="text-base text-muted-foreground font-medium">{displayText}</p>
+        )}
       </div>
     </div>
   )

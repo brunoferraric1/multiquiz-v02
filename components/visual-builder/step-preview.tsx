@@ -2,6 +2,7 @@
 
 import { useVisualBuilderStore } from '@/store/visual-builder-store'
 import { BlockList } from './blocks'
+import { Block } from '@/types/blocks'
 import { useMemo } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useMessages } from '@/lib/i18n/context'
@@ -24,11 +25,15 @@ export function StepPreview() {
   const activeStepId = useVisualBuilderStore((state) => state.activeStepId)
   const selectedOutcomeId = useVisualBuilderStore((state) => state.selectedOutcomeId)
   const selectedBlockId = useVisualBuilderStore((state) => state.selectedBlockId)
+  const editingBlockId = useVisualBuilderStore((state) => state.editingBlockId)
 
   // Get actions from store
   const setSelectedBlockId = useVisualBuilderStore((state) => state.setSelectedBlockId)
+  const setEditingBlockId = useVisualBuilderStore((state) => state.setEditingBlockId)
   const addBlock = useVisualBuilderStore((state) => state.addBlock)
   const addOutcomeBlock = useVisualBuilderStore((state) => state.addOutcomeBlock)
+  const updateBlock = useVisualBuilderStore((state) => state.updateBlock)
+  const updateOutcomeBlock = useVisualBuilderStore((state) => state.updateOutcomeBlock)
   const deleteBlock = useVisualBuilderStore((state) => state.deleteBlock)
   const deleteOutcomeBlock = useVisualBuilderStore((state) => state.deleteOutcomeBlock)
   const setAddBlockSheetOpen = useVisualBuilderStore((state) => state.setAddBlockSheetOpen)
@@ -79,6 +84,27 @@ export function StepPreview() {
   // Handle block selection
   const handleBlockSelect = (blockId: string) => {
     setSelectedBlockId(blockId)
+  }
+
+  // Handle double-click to enter inline edit mode
+  const handleBlockDoubleClick = (blockId: string) => {
+    // First select the block, then enter edit mode
+    setSelectedBlockId(blockId)
+    setEditingBlockId(blockId)
+  }
+
+  // Handle inline edit - update block config
+  const handleBlockEdit = (blockId: string, config: Partial<Block['config']>) => {
+    if (!activeStep) return
+
+    if (activeStep.type === 'result' && selectedOutcomeId) {
+      updateOutcomeBlock(selectedOutcomeId, blockId, config)
+    } else if (activeStepId) {
+      updateBlock(activeStepId, blockId, config)
+    }
+
+    // Exit edit mode after saving
+    setEditingBlockId(undefined)
   }
 
   // Handle block insertion
@@ -164,7 +190,10 @@ export function StepPreview() {
         <BlockList
           blocks={blocks}
           selectedBlockId={selectedBlockId}
+          editingBlockId={editingBlockId}
           onBlockSelect={handleBlockSelect}
+          onBlockDoubleClick={handleBlockDoubleClick}
+          onBlockEdit={handleBlockEdit}
           onDeleteBlock={handleDeleteBlock}
           onInsertBlock={handleInsertBlock}
           onReorderBlocks={handleReorderBlocks}

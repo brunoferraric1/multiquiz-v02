@@ -27,7 +27,10 @@ import { CSS } from '@dnd-kit/utilities'
 interface BlockListProps {
   blocks: Block[]
   selectedBlockId?: string
+  editingBlockId?: string
   onBlockSelect?: (blockId: string) => void
+  onBlockDoubleClick?: (blockId: string) => void
+  onBlockEdit?: (blockId: string, config: Partial<Block['config']>) => void
   onDeleteBlock?: (blockId: string) => void
   onInsertBlock?: (index: number) => void
   onReorderBlocks?: (fromIndex: number, toIndex: number) => void
@@ -38,7 +41,10 @@ interface SortableBlockProps {
   block: Block
   index: number
   isSelected: boolean
+  isEditing: boolean
   onBlockSelect?: (blockId: string) => void
+  onBlockDoubleClick?: (blockId: string) => void
+  onBlockEdit?: (blockId: string, config: Partial<Block['config']>) => void
   onDeleteBlock?: (blockId: string) => void
   onInsertBlock?: (index: number) => void
 }
@@ -47,7 +53,10 @@ function SortableBlock({
   block,
   index,
   isSelected,
+  isEditing,
   onBlockSelect,
+  onBlockDoubleClick,
+  onBlockEdit,
   onDeleteBlock,
   onInsertBlock,
 }: SortableBlockProps) {
@@ -65,14 +74,20 @@ function SortableBlock({
     transition,
   }
 
+  // Disable drag when editing to allow text selection
+  const dragProps = isEditing ? {} : { ...attributes, ...listeners }
+
   return (
     <div ref={setNodeRef} style={style}>
       <BlockRenderer
         block={block}
         isSelected={isSelected}
+        isEditing={isEditing}
         onClick={() => onBlockSelect?.(block.id)}
+        onDoubleClick={() => onBlockDoubleClick?.(block.id)}
+        onEdit={onBlockEdit ? (config) => onBlockEdit(block.id, config) : undefined}
         onDelete={onDeleteBlock ? () => onDeleteBlock(block.id) : undefined}
-        dragHandleProps={{ ...attributes, ...listeners }}
+        dragHandleProps={dragProps}
         isDragging={isDragging}
       />
 
@@ -100,7 +115,10 @@ function SortableBlock({
 export function BlockList({
   blocks,
   selectedBlockId,
+  editingBlockId,
   onBlockSelect,
+  onBlockDoubleClick,
+  onBlockEdit,
   onDeleteBlock,
   onInsertBlock,
   onReorderBlocks,
@@ -173,7 +191,10 @@ export function BlockList({
             <BlockRenderer
               block={block}
               isSelected={selectedBlockId === block.id}
+              isEditing={editingBlockId === block.id}
               onClick={() => onBlockSelect?.(block.id)}
+              onDoubleClick={() => onBlockDoubleClick?.(block.id)}
+              onEdit={onBlockEdit ? (config) => onBlockEdit(block.id, config) : undefined}
               onDelete={onDeleteBlock ? () => onDeleteBlock(block.id) : undefined}
             />
             {onInsertBlock && (
@@ -214,7 +235,10 @@ export function BlockList({
               block={block}
               index={index}
               isSelected={selectedBlockId === block.id}
+              isEditing={editingBlockId === block.id}
               onBlockSelect={onBlockSelect}
+              onBlockDoubleClick={onBlockDoubleClick}
+              onBlockEdit={onBlockEdit}
               onDeleteBlock={onDeleteBlock}
               onInsertBlock={onInsertBlock}
             />
