@@ -239,7 +239,11 @@ function SortablePriceItem({
 export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
   const messages = useMessages()
   const priceCopy = messages.visualBuilder.priceEditor
-  const [expandedPriceId, setExpandedPriceId] = useState<string | null>(null)
+  const items = config.items || []
+  // Auto-expand first item when there's only one (newly added block)
+  const [expandedPriceId, setExpandedPriceId] = useState<string | null>(
+    items.length === 1 ? items[0].id : null
+  )
   const selectionType = config.selectionType ?? 'single'
 
   const sensors = useSensors(
@@ -292,8 +296,6 @@ export function PriceBlockEditor({ config, onChange }: PriceBlockEditorProps) {
       })
     }
   }
-
-  const items = config.items || []
 
   return (
     <div className="space-y-4" data-testid="price-block-editor">

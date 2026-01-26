@@ -489,15 +489,18 @@ function PriceBlock({
 
                 {/* Original price with "de X por:" format */}
                 {hasOriginalPrice && (
-                  <p className="text-sm text-muted-foreground">
-                    <span>de </span>
-                    <span className="line-through">{price.originalPrice}</span>
-                    <span> por:</span>
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">de </span>
+                    <span className="line-through text-red-600/80 dark:text-red-300/60">{price.originalPrice}</span>
+                    <span className="text-muted-foreground"> por:</span>
                   </p>
                 )}
 
                 {/* Main price */}
-                <p className="text-xl font-bold text-foreground">
+                <p className={cn(
+                  "text-xl font-bold",
+                  hasOriginalPrice ? "text-green-600 dark:text-green-400" : "text-foreground"
+                )}>
                   {price.value || 'R$ 0,00'}
                 </p>
 

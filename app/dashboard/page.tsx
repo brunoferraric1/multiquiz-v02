@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, LayoutGrid, List } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useUserQuizzesQuery, useDeleteQuizMutation } from '@/lib/hooks/use-quiz-queries';
 import { useLocale, useMessages } from '@/lib/i18n/context';
@@ -243,25 +244,53 @@ function DashboardContent() {
         ) : quizzes && quizzes.length > 0 ? (
           viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quizzes.map((quiz) => (
-                <QuizCard
-                  key={quiz.id}
-                  quiz={quiz}
-                  onDelete={handleDelete}
-                  isDeleting={deleteQuizMutation.isPending}
-                />
-              ))}
+              <AnimatePresence mode="popLayout">
+                {quizzes.map((quiz, index) => (
+                  <motion.div
+                    key={quiz.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{
+                      duration: 0.25,
+                      delay: index * 0.03,
+                      ease: [0.25, 0.1, 0.25, 1],
+                    }}
+                  >
+                    <QuizCard
+                      quiz={quiz}
+                      onDelete={handleDelete}
+                      isDeleting={deleteQuizMutation.isPending}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {quizzes.map((quiz) => (
-                <QuizListItem
-                  key={quiz.id}
-                  quiz={quiz}
-                  onDelete={handleDelete}
-                  isDeleting={deleteQuizMutation.isPending}
-                />
-              ))}
+              <AnimatePresence mode="popLayout">
+                {quizzes.map((quiz, index) => (
+                  <motion.div
+                    key={quiz.id}
+                    layout
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{
+                      duration: 0.2,
+                      delay: index * 0.02,
+                      ease: [0.25, 0.1, 0.25, 1],
+                    }}
+                  >
+                    <QuizListItem
+                      quiz={quiz}
+                      onDelete={handleDelete}
+                      isDeleting={deleteQuizMutation.isPending}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           )
         ) : (

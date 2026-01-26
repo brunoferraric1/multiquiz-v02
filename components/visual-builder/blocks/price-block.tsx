@@ -16,7 +16,6 @@ interface PriceCardProps {
   showSelection: boolean
   fallbackTitle: string
   fallbackValue: string
-  originalLabel: string
 }
 
 function PriceCard({
@@ -25,20 +24,22 @@ function PriceCard({
   showSelection,
   fallbackTitle,
   fallbackValue,
-  originalLabel,
 }: PriceCardProps) {
   const hasHighlight = price.showHighlight && !!price.highlightText
   const hasOriginalPrice = price.showOriginalPrice && !!price.originalPrice
+  const hasRedirectUrl = !!price.redirectUrl
 
   return (
     <div
       className={cn(
         'relative rounded-xl overflow-hidden',
         'bg-card border border-border/50',
-        'shadow-sm hover:shadow-md',
-        'hover:scale-[1.01] hover:border-primary/30',
-        'transition-all duration-200 ease-out',
-        'cursor-[var(--cursor-interactive)]',
+        'shadow-sm transition-all duration-200 ease-out',
+        hasRedirectUrl && [
+          'hover:shadow-md',
+          'hover:scale-[1.01] hover:border-primary/30',
+          'cursor-[var(--cursor-interactive)]',
+        ],
         hasHighlight && 'ring-2 ring-primary'
       )}
     >
@@ -76,14 +77,18 @@ function PriceCard({
 
           {/* Original price with "de X por:" format */}
           {hasOriginalPrice && (
-            <p className="text-sm text-muted-foreground">
-              <span>{originalLabel}: </span>
-              <span className="line-through">{price.originalPrice}</span>
+            <p className="text-sm">
+              <span className="text-muted-foreground">de </span>
+              <span className="line-through text-red-600/80 dark:text-red-300/60">{price.originalPrice}</span>
+              <span className="text-muted-foreground"> por:</span>
             </p>
           )}
 
           {/* Main price */}
-          <p className="text-xl font-bold text-foreground">
+          <p className={cn(
+            "text-xl font-bold",
+            hasOriginalPrice ? "text-green-600 dark:text-green-400" : "text-foreground"
+          )}>
             {price.value || fallbackValue}
           </p>
 
@@ -146,7 +151,6 @@ export function PriceBlockPreview({ config, enabled }: PriceBlockPreviewProps) {
             showSelection={showSelection}
             fallbackTitle={priceCopy.priceFallbackTitle.replace('{{index}}', String(index + 1))}
             fallbackValue={priceCopy.priceFallbackValue}
-            originalLabel={priceCopy.originalLabel}
           />
         ))}
       </div>

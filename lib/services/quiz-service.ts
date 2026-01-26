@@ -561,6 +561,113 @@ export class QuizService {
   }
 
   /**
+   * Duplicate a quiz, creating a new draft copy with fresh identifiers
+   */
+  static async duplicateQuiz(
+    quizId: string,
+    userId: string,
+    titleSuffix: string = '(cópia)'
+  ): Promise<string> {
+    // 1. Fetch original quiz
+    const original = await this.getQuizById(quizId, userId);
+    if (!original || original.ownerId !== userId) {
+      throw new Error('Quiz not found or unauthorized');
+    }
+
+    // 2. Deep clone visualBuilderData with new IDs
+    const clonedVBData = this.deepCloneVisualBuilderData(original.visualBuilderData);
+
+    // 3. Create new quiz draft
+    const duplicate: QuizDraft = {
+      title: `${original.title} ${titleSuffix}`.trim(),
+      description: original.description,
+      coverImageUrl: original.coverImageUrl,
+      ctaText: original.ctaText,
+      ctaUrl: original.ctaUrl,
+      primaryColor: original.primaryColor,
+      brandKitMode: original.brandKitMode,
+      leadGen: original.leadGen ? { ...original.leadGen } : undefined,
+      visualBuilderData: clonedVBData,
+      isPublished: false,
+      stats: { views: 0, starts: 0, completions: 0 },
+      conversationHistory: [],
+      publishedVersion: null,
+      publishedAt: null,
+    };
+
+    // 4. Save and return new ID (saveQuiz handles draft limit check)
+    return await this.saveQuiz(duplicate, userId, { isNewQuiz: true });
+  }
+
+  /**
+   * Deep clone visual builder data with regenerated IDs
+   */
+  private static deepCloneVisualBuilderData(
+    data: VisualBuilderData | undefined
+  ): VisualBuilderData | undefined {
+    if (!data) return undefined;
+
+    const generateId = () => crypto.randomUUID();
+
+    // Map old outcome IDs to new ones (for options that reference outcomes)
+    const outcomeIdMap = new Map<string, string>();
+
+    const clonedOutcomes = data.outcomes.map(outcome => {
+      const newId = generateId();
+      outcomeIdMap.set(outcome.id, newId);
+      return {
+        ...outcome,
+        id: newId,
+        blocks: outcome.blocks.map(block => ({
+          ...block,
+          id: generateId(),
+          config: this.deepCloneBlockConfig(block.config),
+        })),
+      };
+    });
+
+    const clonedSteps = data.steps.map(step => ({
+      ...step,
+      id: generateId(),
+      blocks: step.blocks.map(block => ({
+        ...block,
+        id: generateId(),
+        config: this.deepCloneBlockConfig(block.config, outcomeIdMap),
+      })),
+    }));
+
+    return {
+      schemaVersion: data.schemaVersion,
+      steps: clonedSteps,
+      outcomes: clonedOutcomes,
+    };
+  }
+
+  /**
+   * Deep clone block config, regenerating item IDs and remapping outcome references
+   */
+  private static deepCloneBlockConfig(
+    config: any,
+    outcomeIdMap?: Map<string, string>
+  ): any {
+    const cloned = JSON.parse(JSON.stringify(config));
+
+    // Regenerate item IDs if present
+    if (cloned.items && Array.isArray(cloned.items)) {
+      cloned.items = cloned.items.map((item: any) => ({
+        ...item,
+        id: item.id ? crypto.randomUUID() : undefined,
+        // Remap outcome references in options
+        outcomeId: outcomeIdMap && item.outcomeId
+          ? outcomeIdMap.get(item.outcomeId) || item.outcomeId
+          : item.outcomeId,
+      }));
+    }
+
+    return cloned;
+  }
+
+  /**
    * Create a snapshot of the current quiz for publishing
    * Note: Legacy questions/outcomes are no longer included - visualBuilderData is the source of truth
    */

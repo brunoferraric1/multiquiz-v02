@@ -12,6 +12,7 @@ import {
     Globe,
     GlobeLock,
     Shield,
+    Copy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,6 +60,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
     const [copied, setCopied] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
+    const [isDuplicating, setIsDuplicating] = useState(false);
     const [showPublishModal, setShowPublishModal] = useState(false);
     const [upgradeModalState, setUpgradeModalState] = useState<{
         open: boolean;
@@ -174,6 +176,33 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
         }
     };
 
+    const handleDuplicate = async () => {
+        if (!user || !quiz.id || isDuplicating) return;
+
+        setIsDuplicating(true);
+        setMobileMenuOpen(false);
+
+        try {
+            await QuizService.duplicateQuiz(
+                quiz.id,
+                user.uid,
+                dashboard.quizActions.duplicateSuffix ?? '(cópia)'
+            );
+            toast.success(dashboard.toast.duplicateSuccess);
+            // Invalidate queries to refresh the list - new quiz will appear at the top
+            queryClient.invalidateQueries({ queryKey: ['quizzes', user.uid] });
+        } catch (error: any) {
+            if (error.code === 'DRAFT_LIMIT_REACHED') {
+                setUpgradeModalState({ open: true, reason: 'draft-limit' });
+            } else {
+                console.error('Duplicate failed', error);
+                toast.error(dashboard.toast.duplicateError);
+            }
+        } finally {
+            setIsDuplicating(false);
+        }
+    };
+
     // Menu items component for reusability
     const MenuItems = ({ isMobile = false }: { isMobile?: boolean }) => {
         const itemClass = isMobile
@@ -192,6 +221,18 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                         <button onClick={handleReports} className={itemClass}>
                             <LineChart size={iconSize} />
                             <span>{dashboard.quizActions.viewReport}</span>
+                        </button>
+                        <button
+                            onClick={handleDuplicate}
+                            disabled={isDuplicating}
+                            className={`${itemClass} ${isDuplicating ? 'opacity-50' : ''}`}
+                        >
+                            <Copy size={iconSize} />
+                            <span>
+                                {isDuplicating
+                                    ? dashboard.quizActions.duplicating
+                                    : dashboard.quizActions.duplicate}
+                            </span>
                         </button>
                         <div className="h-px bg-border my-2" />
                         {quiz.isPublished ? (
@@ -244,6 +285,15 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                         <DropdownMenuItem onClick={handleReports}>
                             <LineChart className="mr-2 h-4 w-4" />
                             {dashboard.quizActions.viewReport}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={handleDuplicate}
+                            disabled={isDuplicating}
+                        >
+                            <Copy className="mr-2 h-4 w-4" />
+                            {isDuplicating
+                                ? dashboard.quizActions.duplicating
+                                : dashboard.quizActions.duplicate}
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator />

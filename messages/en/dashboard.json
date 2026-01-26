@@ -54,6 +54,8 @@
     "edit": "Edit",
     "viewReport": "View Report",
     "duplicate": "Duplicate",
+    "duplicating": "Duplicating...",
+    "duplicateSuffix": "(copy)",
     "copyLink": "Copy Link",
     "delete": "Delete",
     "linkCopied": "Link copied!",
@@ -91,7 +93,9 @@
     "subscriptionUpdateError": "Error updating your plan. Please try again.",
     "checkoutCanceled": "Checkout canceled. You can try again whenever you want.",
     "publishLimit": "Publish limit reached on the free plan.",
-    "publishError": "Error publishing quiz."
+    "publishError": "Error publishing quiz.",
+    "duplicateSuccess": "Quiz duplicated successfully!",
+    "duplicateError": "Error duplicating quiz."
   },
   "publishSuccess": {
     "title": "Quiz Published!",
