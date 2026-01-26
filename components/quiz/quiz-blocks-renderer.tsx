@@ -707,6 +707,20 @@ function getErrorMessage(errorKey: string): string {
 }
 
 
+// Completion text translations for loading block
+const LOADING_COMPLETION_TEXT: Record<string, string> = {
+  'pt-BR': 'Análise completa',
+  'en': 'Analysis complete',
+  'es': 'Análisis completo',
+};
+
+function getLoadingCompletionText(): string {
+  const locale = typeof navigator !== 'undefined'
+    ? (navigator.language.startsWith('en') ? 'en' : navigator.language.startsWith('es') ? 'es' : 'pt-BR')
+    : 'pt-BR';
+  return LOADING_COMPLETION_TEXT[locale] || LOADING_COMPLETION_TEXT['pt-BR'];
+}
+
 function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplete?: () => void }) {
   const { text, style, duration = 3 } = config;
   const [progress, setProgress] = useState(0);
@@ -721,7 +735,7 @@ function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplet
   // Animation duration in milliseconds
   const durationMs = duration * 1000;
   // Extra delay after completion before advancing (to show the checkmark)
-  const completionDelay = 600;
+  const completionDelay = 1200;
   // Update interval for smoother animation
   const updateInterval = 50;
 
@@ -762,72 +776,72 @@ function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplet
   const circumference = 2 * Math.PI * 20; // r=20
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
+  // Get completion stroke offset (full circle)
+  const completeStrokeDashoffset = 0;
+
   return (
     <div className="flex flex-col items-center justify-center gap-6 py-8">
-      {/* Loading indicator */}
+      {/* Loading indicator - stays visible at 100% when complete */}
       {style === 'bar' ? (
         <div className="w-full max-w-xs">
-          {isComplete ? (
-            // Completion state - green checkmark
-            <div className="flex items-center justify-center">
-              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center animate-in zoom-in-50 duration-300">
-                <Check className="w-6 h-6 text-white" strokeWidth={3} />
-              </div>
-            </div>
-          ) : (
-            // Progress bar
-            <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary transition-[width] duration-100 ease-linear"
-                style={{ width: `${Math.max(progress, 2)}%` }}
-              />
-            </div>
-          )}
+          <div className={cn(
+            "h-3 w-full rounded-full overflow-hidden transition-colors duration-300",
+            isComplete ? "bg-green-200 dark:bg-green-900/30" : "bg-muted"
+          )}>
+            <div
+              className={cn(
+                "h-full rounded-full transition-all duration-100 ease-linear",
+                isComplete ? "bg-green-500" : "bg-primary"
+              )}
+              style={{ width: `${Math.max(progress, 2)}%` }}
+            />
+          </div>
         </div>
       ) : (
         <div className="relative w-16 h-16">
-          {isComplete ? (
-            // Completion state - green checkmark
-            <div className="w-full h-full rounded-full bg-green-500 flex items-center justify-center animate-in zoom-in-50 duration-300">
-              <Check className="w-8 h-8 text-white" strokeWidth={3} />
-            </div>
-          ) : (
-            // Circle progress
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 48 48">
-              <circle
-                cx="24"
-                cy="24"
-                r="20"
-                fill="none"
-                className="stroke-muted"
-                strokeWidth="4"
-              />
-              <circle
-                cx="24"
-                cy="24"
-                r="20"
-                fill="none"
-                className="stroke-primary"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                style={{ transition: 'stroke-dashoffset 100ms linear' }}
-              />
-            </svg>
-          )}
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 48 48">
+            {/* Background circle */}
+            <circle
+              cx="24"
+              cy="24"
+              r="20"
+              fill="none"
+              className={cn(
+                "transition-colors duration-300",
+                isComplete ? "stroke-green-200 dark:stroke-green-900/30" : "stroke-muted"
+              )}
+              strokeWidth="4"
+            />
+            {/* Progress circle */}
+            <circle
+              cx="24"
+              cy="24"
+              r="20"
+              fill="none"
+              className={cn(
+                "transition-colors duration-300",
+                isComplete ? "stroke-green-500" : "stroke-primary"
+              )}
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={isComplete ? completeStrokeDashoffset : strokeDashoffset}
+              style={{ transition: 'stroke-dashoffset 100ms linear, stroke 300ms ease' }}
+            />
+          </svg>
         </div>
       )}
 
-      {/* Text - changes when complete */}
-      {text && (
-        <p className={cn(
-          "text-base font-medium text-center transition-colors duration-300",
-          isComplete ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
-        )}>
-          {text}
-        </p>
-      )}
+      {/* Text with checkmark when complete */}
+      <div className={cn(
+        "flex items-center justify-center gap-2 text-base font-medium text-center transition-colors duration-300",
+        isComplete ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+      )}>
+        {isComplete && (
+          <Check className="w-5 h-5 text-green-500 animate-in zoom-in-50 duration-200" strokeWidth={2.5} />
+        )}
+        <span>{isComplete ? getLoadingCompletionText() : text}</span>
+      </div>
     </div>
   );
 }

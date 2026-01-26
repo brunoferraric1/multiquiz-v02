@@ -351,7 +351,8 @@
     "styleCircle": "Círculo",
     "durationLabel": "Duração (segundos)",
     "durationHint": "Tempo de exibição antes de avançar",
-    "defaultText": "Analisando suas respostas..."
+    "defaultText": "Analisando suas respostas...",
+    "completionText": "Análise completa"
   },
   "stepSettings": {
     "description": "Configure as opções de navegação desta etapa.",
