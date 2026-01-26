@@ -712,7 +712,11 @@ function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplet
   const [progress, setProgress] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const hasCalledComplete = useRef(false);
-  const startTimeRef = useRef<number>(Date.now());
+  const startTimeRef = useRef<number | null>(null);
+  const onCompleteRef = useRef(onComplete);
+
+  // Keep onComplete ref updated without triggering effect re-run
+  onCompleteRef.current = onComplete;
 
   // Animation duration in milliseconds
   const durationMs = duration * 1000;
@@ -722,10 +726,14 @@ function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplet
   const updateInterval = 50;
 
   useEffect(() => {
-    // Reset start time when component mounts
-    startTimeRef.current = Date.now();
+    // Only set start time once on mount
+    if (startTimeRef.current === null) {
+      startTimeRef.current = Date.now();
+    }
 
     const intervalId = setInterval(() => {
+      if (startTimeRef.current === null) return;
+
       const elapsed = Date.now() - startTimeRef.current;
       const newProgress = Math.min((elapsed / durationMs) * 100, 100);
 
@@ -736,10 +744,10 @@ function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplet
         setIsComplete(true);
 
         // Auto-advance after showing the checkmark
-        if (onComplete && !hasCalledComplete.current) {
+        if (onCompleteRef.current && !hasCalledComplete.current) {
           hasCalledComplete.current = true;
           setTimeout(() => {
-            onComplete();
+            onCompleteRef.current?.();
           }, completionDelay);
         }
       }
@@ -748,7 +756,7 @@ function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplet
     return () => {
       clearInterval(intervalId);
     };
-  }, [durationMs, onComplete]);
+  }, [durationMs]); // Remove onComplete from deps to prevent re-runs
 
   // Circle progress calculations
   const circumference = 2 * Math.PI * 20; // r=20
@@ -770,11 +778,8 @@ function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplet
             // Progress bar
             <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full transition-[width] duration-100 ease-linear"
-                style={{
-                  width: `${Math.max(progress, 2)}%`,
-                  backgroundColor: 'hsl(var(--primary))',
-                }}
+                className="h-full rounded-full bg-primary transition-[width] duration-100 ease-linear"
+                style={{ width: `${Math.max(progress, 2)}%` }}
               />
             </div>
           )}
@@ -794,7 +799,7 @@ function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplet
                 cy="24"
                 r="20"
                 fill="none"
-                stroke="hsl(var(--muted))"
+                className="stroke-muted"
                 strokeWidth="4"
               />
               <circle
@@ -802,7 +807,7 @@ function LoadingBlock({ config, onComplete }: { config: LoadingConfig; onComplet
                 cy="24"
                 r="20"
                 fill="none"
-                stroke="hsl(var(--primary))"
+                className="stroke-primary"
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
