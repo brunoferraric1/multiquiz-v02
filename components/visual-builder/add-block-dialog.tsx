@@ -176,6 +176,7 @@ export function AddBlockDialog() {
                     key={type}
                     content={copy.addBlock.tooltip.onlyOnePerPage}
                     side="top"
+                    wrapperClassName="w-full"
                   >
                     <BlockTypeCard
                       icon={icon}

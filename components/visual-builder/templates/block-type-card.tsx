@@ -29,11 +29,11 @@ export function BlockTypeCard({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'group flex flex-col items-center gap-3 p-5 rounded-xl border transition-all',
+        'group flex flex-col items-center gap-3 p-5 rounded-xl border transition-all w-full',
         'bg-primary/[0.03] border-primary/10',
         'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
         disabled
-          ? 'opacity-40 cursor-not-allowed'
+          ? 'cursor-not-allowed opacity-50'
           : 'cursor-pointer hover:bg-primary/[0.08] hover:border-primary/30 hover:-translate-y-1 hover:shadow-lg'
       )}
       aria-label={label}
@@ -41,13 +41,19 @@ export function BlockTypeCard({
       <div
         className={cn(
           'flex items-center justify-center w-12 h-12 rounded-xl transition-colors',
-          'bg-muted text-muted-foreground',
-          !disabled && 'group-hover:bg-primary/20 group-hover:text-primary'
+          disabled
+            ? 'bg-muted/50 text-muted-foreground/50'
+            : 'bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary'
         )}
       >
         {icon}
       </div>
-      <span className="text-sm font-medium text-foreground">{label}</span>
+      <span className={cn(
+        'text-sm font-medium',
+        disabled ? 'text-muted-foreground' : 'text-foreground'
+      )}>
+        {label}
+      </span>
       {description && (
         <span className="text-xs text-muted-foreground text-center line-clamp-2">
           {description}
