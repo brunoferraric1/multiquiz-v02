@@ -53,24 +53,49 @@ export const stripe = {
 };
 
 // Subscription tier types
-export type SubscriptionTier = 'free' | 'pro';
+export type SubscriptionTier = 'free' | 'basic' | 'plus' | 'pro';
 
 // Tier limits configuration
 export const TIER_LIMITS = {
+    // 'free' kept for backwards compatibility, same as 'basic'
     free: {
         publishedQuizzes: 1,
-        aiMessagesPerMonth: 20,
-        draftLimit: 3,
+        leadsLimit: 10,
+        draftLimit: Infinity,
         hasReports: false,
         hasLeadsPage: false,
+        hasExternalUrls: false,
+        hasCrmIntegration: false,
         hasBranding: true, // Shows "Powered by MultiQuiz"
     },
-    pro: {
-        publishedQuizzes: Infinity,
-        aiMessagesPerMonth: Infinity,
+    basic: {
+        publishedQuizzes: 1,
+        leadsLimit: 10,
+        draftLimit: Infinity,
+        hasReports: false,
+        hasLeadsPage: false,
+        hasExternalUrls: false,
+        hasCrmIntegration: false,
+        hasBranding: true, // Shows "Powered by MultiQuiz"
+    },
+    plus: {
+        publishedQuizzes: 3,
+        leadsLimit: 3000,
         draftLimit: Infinity,
         hasReports: true,
         hasLeadsPage: true,
+        hasExternalUrls: true,
+        hasCrmIntegration: true,
+        hasBranding: false, // No branding badge
+    },
+    pro: {
+        publishedQuizzes: 10,
+        leadsLimit: 10000,
+        draftLimit: Infinity,
+        hasReports: true,
+        hasLeadsPage: true,
+        hasExternalUrls: true,
+        hasCrmIntegration: true,
         hasBranding: false, // No branding badge
     },
 } as const;
