@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { HeaderConfig, Block } from '@/types/blocks'
 import { cn } from '@/lib/utils'
 import { useMessages } from '@/lib/i18n/context'
@@ -16,14 +16,13 @@ interface HeaderBlockPreviewProps {
  * HeaderBlockPreview - Renders header block with title and description
  *
  * Supports inline editing when isEditing is true. Double-click the block
- * to enter edit mode, then type directly in the preview.
+ * to enter edit mode, then click on title or description to edit.
  */
 export function HeaderBlockPreview({ config, enabled, isEditing, onEdit }: HeaderBlockPreviewProps) {
   const messages = useMessages()
   const headerCopy = messages.visualBuilder.headerEditor
   const { title, description } = config as HeaderConfig
 
-  const titleInputRef = useRef<HTMLInputElement>(null)
   const [localTitle, setLocalTitle] = useState(title || '')
   const [localDescription, setLocalDescription] = useState(description || '')
 
@@ -32,14 +31,6 @@ export function HeaderBlockPreview({ config, enabled, isEditing, onEdit }: Heade
     setLocalTitle(title || '')
     setLocalDescription(description || '')
   }, [title, description])
-
-  // Auto-focus title input when entering edit mode
-  useEffect(() => {
-    if (isEditing && titleInputRef.current) {
-      titleInputRef.current.focus()
-      titleInputRef.current.select()
-    }
-  }, [isEditing])
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalTitle(e.target.value)
@@ -74,7 +65,6 @@ export function HeaderBlockPreview({ config, enabled, isEditing, onEdit }: Heade
         onKeyDown={(e) => e.stopPropagation()}
       >
         <input
-          ref={titleInputRef}
           type="text"
           value={localTitle}
           onChange={handleTitleChange}
@@ -82,8 +72,8 @@ export function HeaderBlockPreview({ config, enabled, isEditing, onEdit }: Heade
           onKeyDown={handleKeyDown}
           placeholder={headerCopy.titlePlaceholder}
           className={cn(
-            'w-full py-1 text-xl font-semibold text-center bg-transparent border-none outline-none',
-            'focus:ring-0 placeholder:text-muted-foreground/50',
+            'w-full py-2 text-xl font-semibold text-center bg-transparent border-none outline-none cursor-text',
+            'focus:ring-0 focus:bg-muted/30 rounded placeholder:text-muted-foreground/50',
             localTitle ? 'text-foreground' : 'text-muted-foreground/50'
           )}
         />
@@ -95,8 +85,8 @@ export function HeaderBlockPreview({ config, enabled, isEditing, onEdit }: Heade
           onKeyDown={handleKeyDown}
           placeholder={headerCopy.descriptionPlaceholder}
           className={cn(
-            'w-full py-1 mt-1 text-sm text-center bg-transparent border-none outline-none',
-            'focus:ring-0 placeholder:text-muted-foreground/50',
+            'w-full py-2 mt-1 text-sm text-center bg-transparent border-none outline-none cursor-text',
+            'focus:ring-0 focus:bg-muted/30 rounded placeholder:text-muted-foreground/50',
             localDescription ? 'text-muted-foreground' : 'text-muted-foreground/50'
           )}
         />
