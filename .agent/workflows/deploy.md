@@ -22,3 +22,20 @@ Only after the feature is verified on the staging environment, it should be merg
 - **Staging**: Uses secrets prefixed with `STAGING_` in GitHub.
 - **Production**: Uses standard secret names in GitHub.
 - **Rule**: Always verify that required secrets for new features are added to BOTH environments.
+
+### 4. Stripe Configuration
+
+**Required GitHub Secrets:**
+| Secret | Staging | Production |
+|--------|---------|------------|
+| `STRIPE_SECRET_KEY` | `STAGING_STRIPE_SECRET_KEY` (test mode) | `STRIPE_SECRET_KEY` (live mode) |
+| `STRIPE_WEBHOOK_SECRET` | `STAGING_STRIPE_WEBHOOK_SECRET` | `STRIPE_WEBHOOK_SECRET` |
+| `STRIPE_PRICE_PRO_MONTHLY` | `STAGING_STRIPE_PRICE_PRO_MONTHLY` | `STRIPE_PRICE_PRO_MONTHLY` |
+
+**Current Pricing (as of Jan 2026):**
+- Production monthly: `price_1StY4mFY0XcLgvttltJPARdB` (R$89,90/month)
+- Staging: Uses test mode prices for validation
+
+**Notes:**
+- Staging uses Stripe test mode - use card `4242 4242 4242 4242` for testing
+- Currently only monthly billing is active (no yearly discount plan)
