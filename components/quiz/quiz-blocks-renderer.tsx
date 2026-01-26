@@ -196,9 +196,10 @@ function TextBlock({ config }: { config: TextConfig }) {
   if (!content) return null;
 
   // Content from Tiptap editor is HTML, render it directly
+  // min-h ensures empty paragraphs (from double Enter) still take space
   return (
     <div
-      className="prose prose-sm dark:prose-invert max-w-none text-foreground [&_p]:my-0 [&_p]:leading-relaxed"
+      className="prose prose-sm dark:prose-invert max-w-none text-foreground [&_p]:my-0 [&_p]:min-h-[1.5em] [&_p]:leading-relaxed"
       dangerouslySetInnerHTML={{ __html: content }}
     />
   );

@@ -38,7 +38,7 @@ export function TextBlockPreview({ config, enabled }: TextBlockPreviewProps) {
   return (
     <div className={cn('p-4', !enabled && 'opacity-50')}>
       <div
-        className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1"
+        className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert [&_p]:my-0 [&_p]:min-h-[1.5em] [&_p]:leading-relaxed [&_ul]:my-1 [&_ol]:my-1"
         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
       />
     </div>
