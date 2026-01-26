@@ -150,7 +150,10 @@ export function DashboardHeader() {
             </SheetContent>
           </Sheet>
 
-          <div className="flex items-center gap-2">
+          <Link
+            href={localizePathname("/dashboard", locale)}
+            className="flex items-center gap-2"
+          >
             <Image
               src="/multiquiz-logo.svg"
               alt="MultiQuiz Logo"
@@ -161,7 +164,7 @@ export function DashboardHeader() {
             <span className="font-bold text-xl tracking-tight">
               MultiQuiz
             </span>
-          </div>
+          </Link>
         </div>
 
         <nav className="hidden md:flex flex-1 items-center justify-center gap-2 lg:gap-4 xl:gap-6">

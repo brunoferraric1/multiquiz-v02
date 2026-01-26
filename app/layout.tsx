@@ -11,8 +11,8 @@ import { LocaleProvider } from "@/lib/i18n/context";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MultiQuiz - Crie quizzes com IA",
-  description: "Crie quizzes com IA, gere leads e analise resultados.",
+  title: "MultiQuiz - Crie quizzes em minutos",
+  description: "Crie quizzes de forma extremamente fácil, gere leads e analise resultados.",
 };
 
 export default async function RootLayout({
