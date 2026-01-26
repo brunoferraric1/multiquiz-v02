@@ -64,8 +64,9 @@ export function AddStepDialog() {
       <ResponsiveDialogContent
         title={copy.title}
         description={copy.description}
+        className="md:max-w-3xl"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
           {templateConfigs.map((config) => {
             const templateCopy = getTemplateCopy(config.template)
             return (
