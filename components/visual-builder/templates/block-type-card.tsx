@@ -29,20 +29,27 @@ export function BlockTypeCard({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'flex flex-col items-center gap-2 p-4 rounded-xl border border-border bg-card transition-all',
+        'group flex flex-col items-center gap-3 p-5 rounded-xl border transition-all',
+        'bg-primary/[0.03] border-primary/10',
         'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
         disabled
           ? 'opacity-40 cursor-not-allowed'
-          : 'cursor-pointer hover:bg-muted/60 hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-md'
+          : 'cursor-pointer hover:bg-primary/[0.08] hover:border-primary/30 hover:-translate-y-1 hover:shadow-lg'
       )}
       aria-label={label}
     >
-      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted text-muted-foreground">
+      <div
+        className={cn(
+          'flex items-center justify-center w-12 h-12 rounded-xl transition-colors',
+          'bg-muted text-muted-foreground',
+          !disabled && 'group-hover:bg-primary/20 group-hover:text-primary'
+        )}
+      >
         {icon}
       </div>
-      <span className="text-xs font-medium text-foreground">{label}</span>
+      <span className="text-sm font-medium text-foreground">{label}</span>
       {description && (
-        <span className="text-[10px] text-muted-foreground text-center line-clamp-2">
+        <span className="text-xs text-muted-foreground text-center line-clamp-2">
           {description}
         </span>
       )}

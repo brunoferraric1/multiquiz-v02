@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
 import { useVisualBuilderStore, createBlock } from '@/store/visual-builder-store'
 import { BlockType, ButtonConfig, FieldsConfig, PriceConfig, ListConfig } from '@/types/blocks'
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
 } from '@/components/ui/responsive-dialog'
-import { SectionTitle } from '@/components/ui/section-title'
+import { InstantTooltip } from '@/components/ui/instant-tooltip'
 import { useMessages } from '@/lib/i18n/context'
 import {
   Type,
@@ -23,40 +22,34 @@ import {
 } from 'lucide-react'
 import { BlockTypeCard } from './templates/block-type-card'
 
-// Block type configurations organized by category
+// Block type configurations - all in a single flat list
 interface BlockConfig {
   type: BlockType
   icon: React.ReactNode
-  category: 'content' | 'interaction' | 'action'
 }
 
 const blockConfigs: BlockConfig[] = [
-  // Content
-  { type: 'header', icon: <Type className="w-5 h-5" />, category: 'content' },
-  { type: 'text', icon: <AlignLeft className="w-5 h-5" />, category: 'content' },
-  { type: 'media', icon: <Image className="w-5 h-5" />, category: 'content' },
-  { type: 'loading', icon: <Loader2 className="w-5 h-5" />, category: 'content' },
-  // Interaction
-  { type: 'options', icon: <List className="w-5 h-5" />, category: 'interaction' },
-  { type: 'fields', icon: <FormInput className="w-5 h-5" />, category: 'interaction' },
-  { type: 'price', icon: <DollarSign className="w-5 h-5" />, category: 'interaction' },
-  // Action
-  { type: 'button', icon: <MousePointerClick className="w-5 h-5" />, category: 'action' },
-  { type: 'banner', icon: <AlertCircle className="w-5 h-5" />, category: 'action' },
-  { type: 'list', icon: <ListChecks className="w-5 h-5" />, category: 'action' },
+  { type: 'header', icon: <Type className="w-5 h-5" /> },
+  { type: 'text', icon: <AlignLeft className="w-5 h-5" /> },
+  { type: 'media', icon: <Image className="w-5 h-5" /> },
+  { type: 'options', icon: <List className="w-5 h-5" /> },
+  { type: 'button', icon: <MousePointerClick className="w-5 h-5" /> },
+  { type: 'fields', icon: <FormInput className="w-5 h-5" /> },
+  { type: 'banner', icon: <AlertCircle className="w-5 h-5" /> },
+  { type: 'list', icon: <ListChecks className="w-5 h-5" /> },
+  { type: 'price', icon: <DollarSign className="w-5 h-5" /> },
+  { type: 'loading', icon: <Loader2 className="w-5 h-5" /> },
 ]
 
 /**
  * AddBlockDialog - Dialog for selecting block type to add
  *
- * Shows blocks organized by category (Content, Interaction, Action).
+ * Shows all available block types in a grid.
  * Desktop: centered modal, Mobile: bottom drawer with slide-up animation.
  */
 export function AddBlockDialog() {
   const messages = useMessages()
   const copy = messages.visualBuilder
-  // Custom tooltip state
-  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
 
   // Get state from store
   const isOpen = useVisualBuilderStore((state) => state.isAddBlockSheetOpen)
@@ -164,63 +157,25 @@ export function AddBlockDialog() {
     setAddBlockSheetOpen(false)
   }
 
-  // Group blocks by category
-  const contentBlocks = blockConfigs.filter((b) => b.category === 'content')
-  const interactionBlocks = blockConfigs.filter((b) => b.category === 'interaction')
-  const actionBlocks = blockConfigs.filter((b) => b.category === 'action')
-
-  const categoryCopy = copy.addBlock.categories as Record<string, string> | undefined
-
   return (
     <ResponsiveDialog open={isOpen} onOpenChange={setAddBlockSheetOpen}>
       <ResponsiveDialogContent
         title={copy.addBlock.title}
         description={copy.addBlock.description}
+        className="md:max-w-2xl"
       >
-        <div className="mt-4 space-y-6">
-          {/* Content category */}
-          <div>
-            <SectionTitle>{categoryCopy?.content || 'Content'}</SectionTitle>
-            <div className="grid grid-cols-3 gap-3">
-              {contentBlocks.map(({ type, icon }) => {
-                const isDisabled = isBlockTypeDisabled(type)
-                return (
-                  <div
-                    key={type}
-                    onMouseMove={(e) => {
-                      if (isDisabled) {
-                        setTooltip({ x: e.clientX, y: e.clientY })
-                      }
-                    }}
-                    onMouseLeave={() => setTooltip(null)}
-                  >
-                    <BlockTypeCard
-                      icon={icon}
-                      label={copy.blockTypes[type]}
-                      disabled={isDisabled}
-                      onClick={() => handleSelectBlockType(type)}
-                    />
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+        <div className="mt-4">
+          {/* All blocks in a single grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {blockConfigs.map(({ type, icon }) => {
+              const isDisabled = isBlockTypeDisabled(type)
 
-          {/* Interaction category */}
-          <div>
-            <SectionTitle>{categoryCopy?.interaction || 'Interaction'}</SectionTitle>
-            <div className="grid grid-cols-3 gap-3">
-              {interactionBlocks.map(({ type, icon }) => {
-                const isDisabled = isBlockTypeDisabled(type)
+              if (isDisabled) {
                 return (
-                  <div
+                  <InstantTooltip
                     key={type}
-                    onMouseMove={(e) => {
-                      if (isDisabled) {
-                        setTooltip({ x: e.clientX, y: e.clientY })
-                      }
-                    }}
-                    onMouseLeave={() => setTooltip(null)}
+                    content={copy.addBlock.tooltip.onlyOnePerPage}
+                    side="top"
                   >
                     <BlockTypeCard
                       icon={icon}
@@ -228,53 +183,22 @@ export function AddBlockDialog() {
                       disabled={isDisabled}
                       onClick={() => handleSelectBlockType(type)}
                     />
-                  </div>
+                  </InstantTooltip>
                 )
-              })}
-            </div>
-          </div>
+              }
 
-          {/* Action category */}
-          <div>
-            <SectionTitle>{categoryCopy?.action || 'Action'}</SectionTitle>
-            <div className="grid grid-cols-3 gap-3">
-              {actionBlocks.map(({ type, icon }) => {
-                const isDisabled = isBlockTypeDisabled(type)
-                return (
-                  <div
-                    key={type}
-                    onMouseMove={(e) => {
-                      if (isDisabled) {
-                        setTooltip({ x: e.clientX, y: e.clientY })
-                      }
-                    }}
-                    onMouseLeave={() => setTooltip(null)}
-                  >
-                    <BlockTypeCard
-                      icon={icon}
-                      label={copy.blockTypes[type]}
-                      disabled={isDisabled}
-                      onClick={() => handleSelectBlockType(type)}
-                    />
-                  </div>
-                )
-              })}
-            </div>
+              return (
+                <BlockTypeCard
+                  key={type}
+                  icon={icon}
+                  label={copy.blockTypes[type]}
+                  disabled={isDisabled}
+                  onClick={() => handleSelectBlockType(type)}
+                />
+              )
+            })}
           </div>
         </div>
-
-        {/* Custom cursor tooltip */}
-        {tooltip && (
-          <div
-            className="fixed z-[100] px-2 py-1 text-xs font-medium text-foreground bg-popover border border-border rounded-md shadow-md pointer-events-none"
-            style={{
-              left: tooltip.x + 12,
-              top: tooltip.y + 12,
-            }}
-          >
-            {copy.addBlock.tooltip.onlyOnePerPage}
-          </div>
-        )}
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   )
