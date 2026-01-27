@@ -86,7 +86,7 @@ export default function AccountPage() {
     const getPlanName = () => {
         if (isProUser) return 'MultiQuiz Pro';
         if (isPlusUser) return 'MultiQuiz Plus';
-        return 'Basic';
+        return 'Grátis';
     };
 
     return (

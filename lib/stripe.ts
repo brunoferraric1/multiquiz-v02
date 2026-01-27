@@ -53,22 +53,11 @@ export const stripe = {
 };
 
 // Subscription tier types
-export type SubscriptionTier = 'free' | 'basic' | 'plus' | 'pro';
+export type SubscriptionTier = 'free' | 'plus' | 'pro';
 
 // Tier limits configuration
 export const TIER_LIMITS = {
-    // 'free' kept for backwards compatibility, same as 'basic'
     free: {
-        publishedQuizzes: 1,
-        leadsLimit: 10,
-        draftLimit: Infinity,
-        hasReports: false,
-        hasLeadsPage: false,
-        hasExternalUrls: false,
-        hasCrmIntegration: false,
-        hasBranding: true, // Shows "Powered by MultiQuiz"
-    },
-    basic: {
         publishedQuizzes: 1,
         leadsLimit: 10,
         draftLimit: Infinity,
@@ -134,7 +123,7 @@ export function getTierFromPriceId(priceId: string): SubscriptionTier {
     ) {
         return 'plus';
     }
-    return 'basic';
+    return 'free';
 }
 
 // Check if user can access a feature based on tier

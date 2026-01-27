@@ -221,7 +221,7 @@ export function getAdminAuth(): FirebaseAuth {
 
 // User subscription data type
 export interface UserSubscription {
-    tier: 'free' | 'basic' | 'plus' | 'pro';
+    tier: 'free' | 'plus' | 'pro';
     status?: 'active' | 'canceled' | 'past_due' | 'trialing';
     stripeCustomerId?: string;
     stripeSubscriptionId?: string;
@@ -234,7 +234,7 @@ export interface UserSubscription {
 
 // Default subscription for new users
 export const DEFAULT_SUBSCRIPTION: UserSubscription = {
-    tier: 'basic',
+    tier: 'free',
     aiMessagesUsed: 0,
 };
 

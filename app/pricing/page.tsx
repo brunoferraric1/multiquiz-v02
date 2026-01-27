@@ -48,7 +48,7 @@ type SelectedTier = 'plus' | 'pro';
 
 type FeatureRow = {
   label: string;
-  basic: string | boolean;
+  free: string | boolean;
   plus: string | boolean;
   pro: string | boolean;
 };
@@ -86,37 +86,37 @@ const formatLimit = (value: number) =>
 const COMPARISON_ROWS: FeatureRow[] = [
   {
     label: 'Quizzes publicados',
-    basic: formatLimit(TIER_LIMITS.basic.publishedQuizzes),
+    free: formatLimit(TIER_LIMITS.free.publishedQuizzes),
     plus: formatLimit(TIER_LIMITS.plus.publishedQuizzes),
     pro: formatLimit(TIER_LIMITS.pro.publishedQuizzes),
   },
   {
     label: 'Leads coletados',
-    basic: formatLimit(TIER_LIMITS.basic.leadsLimit),
+    free: formatLimit(TIER_LIMITS.free.leadsLimit),
     plus: formatLimit(TIER_LIMITS.plus.leadsLimit),
     pro: formatLimit(TIER_LIMITS.pro.leadsLimit),
   },
   {
     label: 'Rascunhos',
-    basic: 'Ilimitado',
+    free: 'Ilimitado',
     plus: 'Ilimitado',
     pro: 'Ilimitado',
   },
   {
     label: 'Gestão e download de leads',
-    basic: TIER_LIMITS.basic.hasLeadsPage,
+    free: TIER_LIMITS.free.hasLeadsPage,
     plus: TIER_LIMITS.plus.hasLeadsPage,
     pro: TIER_LIMITS.pro.hasLeadsPage,
   },
   {
     label: 'Integração com CRM',
-    basic: TIER_LIMITS.basic.hasCrmIntegration,
+    free: TIER_LIMITS.free.hasCrmIntegration,
     plus: TIER_LIMITS.plus.hasCrmIntegration,
     pro: TIER_LIMITS.pro.hasCrmIntegration,
   },
   {
     label: 'URLs externas nos CTAs',
-    basic: TIER_LIMITS.basic.hasExternalUrls,
+    free: TIER_LIMITS.free.hasExternalUrls,
     plus: TIER_LIMITS.plus.hasExternalUrls,
     pro: TIER_LIMITS.pro.hasExternalUrls,
   },
@@ -147,14 +147,14 @@ function FeatureValue({ value, highlight }: { value: string | boolean; highlight
 }
 
 function getCurrentTierName(subscription: { tier?: SubscriptionTier } | undefined): string {
-  if (!subscription) return 'Basic';
+  if (!subscription) return 'Grátis';
   switch (subscription.tier) {
     case 'pro':
       return 'Pro';
     case 'plus':
       return 'Plus';
     default:
-      return 'Basic';
+      return 'Grátis';
   }
 }
 
@@ -236,11 +236,11 @@ function PricingContent() {
             </div>
 
             <div className="mt-10 grid gap-6 md:grid-cols-3">
-              {/* Basic Tier */}
+              {/* Free Tier */}
               <Card className="relative overflow-hidden border-border bg-card/60">
                 <CardHeader className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
-                    <Badge variant="outline">Basic</Badge>
+                    <Badge variant="outline">Grátis</Badge>
                     {!dataLoading && !hasPaidPlan && (
                       <Badge variant="secondary">Plano atual</Badge>
                     )}
@@ -287,7 +287,7 @@ function PricingContent() {
                       variant="secondary"
                       className="w-full cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]"
                     >
-                      <Link href="/dashboard">Continuar no Basic</Link>
+                      <Link href="/dashboard">Continuar no Grátis</Link>
                     </Button>
                   ) : (
                     <div className="h-10" />
@@ -441,7 +441,7 @@ function PricingContent() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Recursos</TableHead>
-                      <TableHead>Basic</TableHead>
+                      <TableHead>Grátis</TableHead>
                       <TableHead>Plus</TableHead>
                       <TableHead>Pro</TableHead>
                     </TableRow>
@@ -453,7 +453,7 @@ function PricingContent() {
                           {row.label}
                         </TableCell>
                         <TableCell>
-                          <FeatureValue value={row.basic} />
+                          <FeatureValue value={row.free} />
                         </TableCell>
                         <TableCell>
                           <FeatureValue value={row.plus} highlight />

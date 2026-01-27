@@ -11,6 +11,8 @@ status: ativo
 
 A integração Webhook CRM permite enviar automaticamente os dados dos leads capturados nos seus quizzes para o seu sistema de CRM ou qualquer ferramenta de automação. Quando alguém completa um quiz, o MultiQuiz envia instantaneamente as informações para o destino que você configurar.
 
+> **Disponível nos planos Plus e Pro.** Para usar esta funcionalidade, é necessário ter um plano pago. [Veja os planos disponíveis](planos-e-precos.md).
+
 ## Para quem serve?
 
 - **Equipes de vendas** que querem leads diretamente no CRM

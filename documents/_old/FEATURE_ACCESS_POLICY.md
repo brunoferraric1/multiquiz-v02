@@ -1,6 +1,12 @@
 # Feature Access Policy (Free vs Pro)
 
-Source of truth for how we gate features between the free and paid plans. This version folds in the newly requested limits (draft cap, question/outcome caps, lead visibility, single publish) and the current Stripe implementation.
+> **SUPERSEDED:** This document has been replaced by the new three-tier pricing structure.
+> See [PRICING_TIERS_V2.md](../tech-decisions/PRICING_TIERS_V2.md) for the current implementation.
+> This document is kept for historical reference only.
+
+---
+
+~~Source of truth for how we gate features between the free and paid plans.~~ This version folds in the newly requested limits (draft cap, question/outcome caps, lead visibility, single publish) and the current Stripe implementation.
 
 ---
 

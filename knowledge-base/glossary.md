@@ -39,6 +39,25 @@ Pessoa que demonstrou interesse respondendo um quiz. Dados podem ser exportados 
 
 ---
 
+## Planos e Assinatura
+
+**Grátis (Free)**
+Plano gratuito do MultiQuiz. Permite 1 quiz publicado e até 10 leads coletados.
+
+**Plus**
+Plano intermediário (R$89,90/mês). Permite 3 quizzes, 3.000 leads, gestão de leads e integração CRM.
+
+**Pro**
+Plano completo (R$129,90/mês). Permite 10 quizzes, 10.000 leads e todos os recursos disponíveis.
+
+**Upgrade**
+Migração de um plano para outro com mais recursos (ex: Grátis para Plus).
+
+**Gestão de Leads**
+Funcionalidade dos planos pagos que permite visualizar, filtrar e baixar os dados dos leads coletados.
+
+---
+
 ## Termos de Customização
 
 **Branding**

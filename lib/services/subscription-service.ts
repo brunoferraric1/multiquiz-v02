@@ -222,19 +222,19 @@ export function isPaidTier(subscription: UserSubscription | undefined): boolean 
 
 // Check if user has access to external URLs
 export function hasExternalUrlAccess(subscription: UserSubscription | undefined): boolean {
-    const tier = subscription?.tier || 'basic';
+    const tier = subscription?.tier || 'free';
     return TIER_LIMITS[tier].hasExternalUrls;
 }
 
 // Check if user has access to CRM integration
 export function hasCrmAccess(subscription: UserSubscription | undefined): boolean {
-    const tier = subscription?.tier || 'basic';
+    const tier = subscription?.tier || 'free';
     return TIER_LIMITS[tier].hasCrmIntegration;
 }
 
 // Get leads limit for the tier
 export function getLeadsLimit(subscription: UserSubscription | undefined): number {
-    const tier = subscription?.tier || 'basic';
+    const tier = subscription?.tier || 'free';
     return TIER_LIMITS[tier].leadsLimit;
 }
 

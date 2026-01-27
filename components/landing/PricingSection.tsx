@@ -87,7 +87,7 @@ export const PricingSection = () => {
           animate={controls}
           className="mt-12 grid max-w-sm gap-8 mx-auto lg:max-w-6xl lg:grid-cols-3"
         >
-          {/* Basic Tier */}
+          {/* Free Tier */}
           <motion.div
             custom={0}
             variants={cardVariants}
@@ -95,7 +95,7 @@ export const PricingSection = () => {
           >
             <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
               <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-muted text-muted-foreground">
-                Basic
+                Grátis
               </h3>
               <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
                 R$0

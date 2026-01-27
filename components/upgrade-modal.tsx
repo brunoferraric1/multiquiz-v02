@@ -19,7 +19,7 @@ type UpgradeReason = 'draft-limit' | 'publish-limit' | 'brand-kit' | 'pro-featur
 const copy: Record<UpgradeReason, { title: string; description: string }> = {
   'draft-limit': {
     title: 'Limite de rascunhos atingido',
-    description: 'No plano Basic você pode manter rascunhos ilimitados. Verifique seu plano atual.',
+    description: 'No plano Grátis você pode manter rascunhos ilimitados. Verifique seu plano atual.',
   },
   'publish-limit': {
     title: 'Limite de publicação atingido',
