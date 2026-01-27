@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
     try {
         step = 'parse_body';
         const body = await request.json();
-        const { userId, userEmail, priceId, billingPeriod = 'monthly' } = body;
+        const { userId, userEmail, priceId, billingPeriod = 'monthly', tier = 'plus' } = body;
 
-        console.log('[Checkout] Request body:', { userId, userEmail, billingPeriod });
+        console.log('[Checkout] Request body:', { userId, userEmail, billingPeriod, tier });
 
         if (!userId || !userEmail) {
             console.error('[Checkout] Missing userId or userEmail');
@@ -41,19 +41,20 @@ export async function POST(request: NextRequest) {
         }
 
         step = 'get_price';
-        // Get price ID from billing period if not provided
-        const selectedPriceId = priceId || (
-            billingPeriod === 'yearly'
-                ? STRIPE_PRICES.pro.yearly
-                : STRIPE_PRICES.pro.monthly
-        );
+        // Get price ID from tier and billing period if not provided
+        let selectedPriceId = priceId;
+        if (!selectedPriceId) {
+            const tierPrices = tier === 'pro' ? STRIPE_PRICES.pro : STRIPE_PRICES.plus;
+            selectedPriceId = billingPeriod === 'yearly' ? tierPrices.yearly : tierPrices.monthly;
+        }
 
-        console.log('[Checkout] Selected price ID:', selectedPriceId);
+        console.log('[Checkout] Selected price ID:', selectedPriceId, 'for tier:', tier);
 
         if (!selectedPriceId) {
+            const envVarName = tier === 'pro' ? 'STRIPE_PRICE_PRO_MONTHLY' : 'STRIPE_PRICE_PLUS_MONTHLY';
             console.error('[Checkout] Invalid price configuration - no price ID');
             return NextResponse.json(
-                { error: 'Invalid price configuration. STRIPE_PRICE_PRO_MONTHLY not set.', step },
+                { error: `Invalid price configuration. ${envVarName} not set.`, step },
                 { status: 400 }
             );
         }
@@ -146,10 +147,12 @@ export async function POST(request: NextRequest) {
             cancel_url: `${baseUrl}/dashboard?checkout=canceled`,
             metadata: {
                 firebaseUserId: userId,
+                tier: tier,
             },
             subscription_data: {
                 metadata: {
                     firebaseUserId: userId,
+                    tier: tier,
                 },
             },
             allow_promotion_codes: true,

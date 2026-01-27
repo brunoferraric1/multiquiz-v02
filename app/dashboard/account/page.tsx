@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, User, CreditCard, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useSubscription, isPro, createPortalSession } from '@/lib/services/subscription-service';
+import { useSubscription, isPro, isPlus, isPaidTier, createPortalSession } from '@/lib/services/subscription-service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,7 +48,7 @@ export default function AccountPage() {
 
         try {
             setIsLoading(true);
-            if (isPro(subscription)) {
+            if (isPaidTier(subscription)) {
                 // Manage existing subscription (Portal)
                 const url = await createPortalSession(user.uid);
                 if (url) {
@@ -57,7 +57,7 @@ export default function AccountPage() {
                     toast.error('Erro ao abrir portal de assinatura.');
                 }
             } else {
-                router.push('/pricing?period=monthly');
+                router.push('/pricing');
             }
         } catch (error) {
             console.error('Subscription action error:', error);
@@ -80,6 +80,14 @@ export default function AccountPage() {
     // Consider loading until BOTH auth and subscription are ready
     const isSubscriptionReady = !authLoading && !subscriptionLoading;
     const isProUser = isPro(subscription);
+    const isPlusUser = isPlus(subscription);
+    const hasPaidPlan = isPaidTier(subscription);
+
+    const getPlanName = () => {
+        if (isProUser) return 'MultiQuiz Pro';
+        if (isPlusUser) return 'MultiQuiz Plus';
+        return 'Basic';
+    };
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
@@ -160,7 +168,7 @@ export default function AccountPage() {
                 </Card>
 
                 {/* Subscription Section */}
-                <Card className={isSubscriptionReady && isProUser ? "border-primary/50 bg-primary/5" : ""}>
+                <Card className={isSubscriptionReady && hasPaidPlan ? "border-primary/50 bg-primary/5" : ""}>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <CreditCard className="h-5 w-5 text-primary" />
@@ -191,32 +199,32 @@ export default function AccountPage() {
                                         <div>
                                             <p className="font-medium">Plano Atual</p>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <span className={`text-lg font-bold ${isProUser ? 'text-primary' : ''}`}>
-                                                    {isProUser ? 'MultiQuiz Pro' : 'Gratuito'}
+                                                <span className={`text-lg font-bold ${hasPaidPlan ? 'text-primary' : ''}`}>
+                                                    {getPlanName()}
                                                 </span>
-                                                {isProUser && (
+                                                {hasPaidPlan && (
                                                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                                                         Ativo
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
-                                        {isProUser ? (
+                                        {hasPaidPlan ? (
                                             <Sparkles className="h-8 w-8 text-primary opacity-50" />
                                         ) : (
                                             <div className="h-8 w-8 rounded-full bg-muted" />
                                         )}
                                     </div>
 
-                                    {!isProUser && (
+                                    {!hasPaidPlan && (
                                         <div className="rounded-lg bg-muted p-4 space-y-3">
-                                            <p className="text-sm font-medium">Faça upgrade para o Pro:</p>
+                                            <p className="text-sm font-medium">Faça upgrade para um plano pago:</p>
                                             <ul className="text-sm text-muted-foreground space-y-1">
-                                                <li>• Quizzes ilimitados</li>
-                                                <li>• Geração com IA ilimitada</li>
-                                                <li>• Relatórios avançados</li>
-                                                <li>• Exportação de Leads (CSV)</li>
-                                                <li>• Remoção da marca d&apos;água</li>
+                                                <li>• Mais quizzes publicados</li>
+                                                <li>• Mais leads coletados</li>
+                                                <li>• Gestão e download de leads</li>
+                                                <li>• Integração com CRM</li>
+                                                <li>• URLs externas nos CTAs</li>
                                             </ul>
                                         </div>
                                     )}
@@ -224,7 +232,7 @@ export default function AccountPage() {
 
                                 <Button
                                     className="w-full"
-                                    variant={isProUser ? "outline" : "default"}
+                                    variant={hasPaidPlan ? "outline" : "default"}
                                     onClick={handleManageSubscription}
                                     disabled={isLoading}
                                 >
@@ -233,14 +241,14 @@ export default function AccountPage() {
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                             Processando...
                                         </>
-                                    ) : isProUser ? (
+                                    ) : hasPaidPlan ? (
                                         'Gerenciar Assinatura'
                                     ) : (
-                                        'Fazer Upgrade para Pro'
+                                        'Ver Planos'
                                     )}
                                 </Button>
 
-                                {isProUser && (
+                                {hasPaidPlan && (
                                     <p className="text-xs text-center text-muted-foreground">
                                         Gerencie formas de pagamento e faturas através do portal seguro da Stripe.
                                     </p>

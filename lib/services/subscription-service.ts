@@ -210,6 +210,34 @@ export function isPro(subscription: UserSubscription | undefined): boolean {
     return subscription?.tier === 'pro' && subscription?.status === 'active';
 }
 
+// Check if user is on Plus tier
+export function isPlus(subscription: UserSubscription | undefined): boolean {
+    return subscription?.tier === 'plus' && subscription?.status === 'active';
+}
+
+// Check if user is on a paid tier (Plus or Pro)
+export function isPaidTier(subscription: UserSubscription | undefined): boolean {
+    return (subscription?.tier === 'plus' || subscription?.tier === 'pro') && subscription?.status === 'active';
+}
+
+// Check if user has access to external URLs
+export function hasExternalUrlAccess(subscription: UserSubscription | undefined): boolean {
+    const tier = subscription?.tier || 'basic';
+    return TIER_LIMITS[tier].hasExternalUrls;
+}
+
+// Check if user has access to CRM integration
+export function hasCrmAccess(subscription: UserSubscription | undefined): boolean {
+    const tier = subscription?.tier || 'basic';
+    return TIER_LIMITS[tier].hasCrmIntegration;
+}
+
+// Get leads limit for the tier
+export function getLeadsLimit(subscription: UserSubscription | undefined): number {
+    const tier = subscription?.tier || 'basic';
+    return TIER_LIMITS[tier].leadsLimit;
+}
+
 // Check if user can publish more quizzes
 export function canPublishQuiz(
     subscription: UserSubscription | undefined,
@@ -220,36 +248,7 @@ export function canPublishQuiz(
     return currentPublishedCount < limit;
 }
 
-// Check if user can use AI (has remaining messages)
-export function canUseAI(subscription: UserSubscription | undefined): boolean {
-    const tier = subscription?.tier || 'free';
-    const limit = TIER_LIMITS[tier].aiMessagesPerMonth;
-
-    if (limit === Infinity) return true;
-
-    const used = subscription?.aiMessagesUsed || 0;
-    const resetAt = subscription?.aiMessagesResetAt || 0;
-
-    // Check if we need to reset the counter (new month)
-    const now = Date.now();
-    if (resetAt && now > resetAt) {
-        // Counter should be reset by server, but allow usage
-        return true;
-    }
-
-    return used < limit;
-}
-
-// Get remaining AI messages
-export function getRemainingAIMessages(subscription: UserSubscription | undefined): number {
-    const tier = subscription?.tier || 'free';
-    const limit = TIER_LIMITS[tier].aiMessagesPerMonth;
-
-    if (limit === Infinity) return Infinity;
-
-    const used = subscription?.aiMessagesUsed || 0;
-    return Math.max(0, limit - used);
-}
+// AI functions removed - AI features not included in initial launch
 
 // Check if user has access to reports
 export function hasReportsAccess(subscription: UserSubscription | undefined): boolean {
@@ -267,13 +266,14 @@ export function hasLeadsAccess(subscription: UserSubscription | undefined): bool
 export async function createCheckoutSession(
     userId: string,
     userEmail: string,
-    billingPeriod: 'monthly' | 'yearly' = 'monthly'
+    billingPeriod: 'monthly' | 'yearly' = 'monthly',
+    tier: 'plus' | 'pro' = 'plus'
 ): Promise<string | null> {
     try {
         const response = await fetch('/api/stripe/checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, userEmail, billingPeriod }),
+            body: JSON.stringify({ userId, userEmail, billingPeriod, tier }),
         });
 
         if (!response.ok) {

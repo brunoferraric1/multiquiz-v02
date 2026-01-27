@@ -9,24 +9,31 @@ import Link from 'next/link';
 import { Check, X, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 
-const FREE_FEATURES = [
+const BASIC_FEATURES = [
   { text: '1 quiz publicado', included: true },
   { text: 'Rascunhos ilimitados', included: true },
-  { text: '20 mensagens IA por mês', included: true },
-  { text: 'Captura de leads', included: true },
-  { text: 'Relatórios de análise completos', included: false },
-  { text: 'Relatório de Leads + download', included: false },
-  { text: 'Personalização de logo e cores', included: false },
+  { text: 'Até 10 leads coletados', included: true },
+  { text: 'Gestão e download de leads', included: false },
+  { text: 'Integração com CRM', included: false },
+  { text: 'URLs externas nos CTAs', included: false },
+];
+
+const PLUS_FEATURES = [
+  { text: 'Até 3 quizzes publicados', included: true },
+  { text: 'Rascunhos ilimitados', included: true },
+  { text: 'Até 3.000 leads coletados', included: true },
+  { text: 'Gestão e download de leads', included: true },
+  { text: 'Integração com CRM', included: true },
+  { text: 'URLs externas nos CTAs', included: true },
 ];
 
 const PRO_FEATURES = [
-  { text: 'Quizzes ilimitados', included: true },
+  { text: 'Até 10 quizzes publicados', included: true },
   { text: 'Rascunhos ilimitados', included: true },
-  { text: 'Assistente IA ilimitado', included: true },
-  { text: 'Captura de leads', included: true },
-  { text: 'Relatórios de análise completos', included: true },
-  { text: 'Relatório de Leads + download', included: true },
-  { text: 'Personalização de logo e cores', included: true },
+  { text: 'Até 10.000 leads coletados', included: true },
+  { text: 'Gestão e download de leads', included: true },
+  { text: 'Integração com CRM', included: true },
+  { text: 'URLs externas nos CTAs', included: true },
 ];
 
 const cardVariants = {
@@ -46,25 +53,17 @@ export const PricingSection = () => {
   const router = useRouter();
   const { user } = useAuth();
   const [ref, controls] = useScrollAnimation();
-  const [isYearly, setIsYearly] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingTier, setLoadingTier] = useState<'plus' | 'pro' | null>(null);
 
-  const proPrice = isYearly ? 'R$39' : 'R$49';
-  const proFrequency = isYearly ? '/mês (cobrado anualmente)' : '/mês';
-  const yearlyTotal = isYearly ? 'R$468/ano' : null;
-
-  const handleProClick = () => {
-    const period = isYearly ? 'yearly' : 'monthly';
-
+  const handlePaidClick = (tier: 'plus' | 'pro') => {
     if (!user) {
-      // Redirect to login with upgrade intent
-      const redirectUrl = encodeURIComponent(`/pricing?period=${period}`);
-      router.push(`/login?redirect=${redirectUrl}&upgrade=true&period=${period}`);
+      const redirectUrl = encodeURIComponent(`/pricing?tier=${tier}`);
+      router.push(`/login?redirect=${redirectUrl}&upgrade=true&tier=${tier}`);
       return;
     }
 
-    setIsLoading(true);
-    router.push(`/pricing?period=${period}`);
+    setLoadingTier(tier);
+    router.push(`/pricing?tier=${tier}`);
   };
 
   return (
@@ -80,36 +79,15 @@ export const PricingSection = () => {
           <p className="mt-4 text-lg text-muted-foreground">
             Comece grátis, evolua quando precisar. Sem surpresas.
           </p>
-
-          {/* Billing Toggle */}
-          <div className="mt-8 flex items-center justify-center gap-4">
-            <span className={`text-sm font-medium ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Mensal
-            </span>
-            <button
-              onClick={() => setIsYearly(!isYearly)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isYearly ? 'bg-primary' : 'bg-muted'}`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-1'}`}
-              />
-            </button>
-            <span className={`text-sm font-medium ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Anual
-              <span className="ml-1.5 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                Economize 20%
-              </span>
-            </span>
-          </div>
         </div>
 
         <motion.div
           ref={ref}
           initial="hidden"
           animate={controls}
-          className="mt-12 grid max-w-lg gap-8 mx-auto md:max-w-4xl md:grid-cols-2"
+          className="mt-12 grid max-w-sm gap-8 mx-auto lg:max-w-6xl lg:grid-cols-3"
         >
-          {/* Free Tier */}
+          {/* Basic Tier */}
           <motion.div
             custom={0}
             variants={cardVariants}
@@ -117,7 +95,7 @@ export const PricingSection = () => {
           >
             <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
               <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-muted text-muted-foreground">
-                Grátis
+                Basic
               </h3>
               <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
                 R$0
@@ -131,7 +109,7 @@ export const PricingSection = () => {
             </div>
             <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
               <ul className="space-y-4">
-                {FREE_FEATURES.map((feature) => (
+                {BASIC_FEATURES.map((feature) => (
                   <li key={feature.text} className="flex items-start">
                     <div className="flex-shrink-0">
                       {feature.included ? (
@@ -158,7 +136,7 @@ export const PricingSection = () => {
             </div>
           </motion.div>
 
-          {/* Pro Tier */}
+          {/* Plus Tier */}
           <motion.div
             custom={1}
             variants={cardVariants}
@@ -171,19 +149,69 @@ export const PricingSection = () => {
 
             <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
               <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-primary/20 text-primary">
+                Plus
+              </h3>
+              <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
+                <span className="text-2xl font-medium text-muted-foreground mr-1">R$</span>
+                89,90
+                <span className="ml-1 text-xl font-medium text-muted-foreground">
+                  /mês
+                </span>
+              </div>
+              <p className="mt-5 text-base text-muted-foreground">
+                Para quem quer escalar sua captação de leads.
+              </p>
+            </div>
+            <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
+              <ul className="space-y-4">
+                {PLUS_FEATURES.map((feature) => (
+                  <li key={feature.text} className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="ml-3 text-sm text-foreground">{feature.text}</p>
+                  </li>
+                ))}
+              </ul>
+              <div className="rounded-md shadow">
+                <Button
+                  onClick={() => handlePaidClick('plus')}
+                  disabled={loadingTier !== null}
+                  size="lg"
+                  className="w-full font-bold h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {loadingTier === 'plus' ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Carregando...
+                    </>
+                  ) : (
+                    'Começar Agora'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Pro Tier */}
+          <motion.div
+            custom={2}
+            variants={cardVariants}
+            className="flex flex-col rounded-3xl overflow-hidden border border-border bg-card/50"
+          >
+            <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
+              <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-muted text-muted-foreground">
                 Pro
               </h3>
               <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
-                {proPrice}
+                <span className="text-2xl font-medium text-muted-foreground mr-1">R$</span>
+                129,90
                 <span className="ml-1 text-xl font-medium text-muted-foreground">
-                  {proFrequency}
+                  /mês
                 </span>
               </div>
-              {yearlyTotal && (
-                <p className="mt-1 text-sm text-muted-foreground">{yearlyTotal}</p>
-              )}
               <p className="mt-5 text-base text-muted-foreground">
-                Para quem quer escalar e ter acesso total.
+                Para operações maiores com alto volume de leads.
               </p>
             </div>
             <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
@@ -199,12 +227,13 @@ export const PricingSection = () => {
               </ul>
               <div className="rounded-md shadow">
                 <Button
-                  onClick={handleProClick}
-                  disabled={isLoading}
+                  onClick={() => handlePaidClick('pro')}
+                  disabled={loadingTier !== null}
                   size="lg"
-                  className="w-full font-bold h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+                  variant="outline"
+                  className="w-full font-bold h-12 rounded-xl"
                 >
-                  {isLoading ? (
+                  {loadingTier === 'pro' ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Carregando...

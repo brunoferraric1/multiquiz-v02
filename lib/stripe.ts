@@ -102,6 +102,14 @@ export const TIER_LIMITS = {
 
 // Price IDs from environment (accessed lazily)
 export const STRIPE_PRICES = {
+    plus: {
+        get monthly() {
+            return process.env.STRIPE_PRICE_PLUS_MONTHLY || '';
+        },
+        get yearly() {
+            return process.env.STRIPE_PRICE_PLUS_YEARLY || '';
+        },
+    },
     pro: {
         get monthly() {
             return process.env.STRIPE_PRICE_PRO_MONTHLY || '';
@@ -120,7 +128,13 @@ export function getTierFromPriceId(priceId: string): SubscriptionTier {
     ) {
         return 'pro';
     }
-    return 'free';
+    if (
+        priceId === STRIPE_PRICES.plus.monthly ||
+        priceId === STRIPE_PRICES.plus.yearly
+    ) {
+        return 'plus';
+    }
+    return 'basic';
 }
 
 // Check if user can access a feature based on tier

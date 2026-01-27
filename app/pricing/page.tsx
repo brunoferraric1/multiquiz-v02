@@ -36,78 +36,89 @@ import {
   createCheckoutSession,
   createPortalSession,
   isPro,
+  isPlus,
+  isPaidTier,
   useSubscription,
 } from '@/lib/services/subscription-service';
-import { TIER_LIMITS } from '@/lib/stripe';
+import { TIER_LIMITS, SubscriptionTier } from '@/lib/stripe';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-type BillingPeriod = 'monthly' | 'yearly';
+type SelectedTier = 'plus' | 'pro';
 
 type FeatureRow = {
   label: string;
-  free: string | boolean;
+  basic: string | boolean;
+  plus: string | boolean;
   pro: string | boolean;
 };
 
-const FREE_FEATURES = [
+const BASIC_FEATURES = [
   { text: '1 quiz publicado', included: true },
-  { text: 'Até 3 rascunhos ativos', included: true },
-  { text: '20 mensagens IA por mês', included: true },
-  { text: 'Captura de leads', included: true },
-  { text: 'Relatórios de análise completos', included: false },
-  { text: 'Relatório de Leads + download', included: false },
-  { text: 'Personalização de logo e cores', included: false },
+  { text: 'Rascunhos ilimitados', included: true },
+  { text: 'Até 10 leads coletados', included: true },
+  { text: 'Gestão e download de leads', included: false },
+  { text: 'Integração com CRM', included: false },
+  { text: 'URLs externas nos CTAs', included: false },
+];
+
+const PLUS_FEATURES = [
+  { text: 'Até 3 quizzes publicados', included: true },
+  { text: 'Rascunhos ilimitados', included: true },
+  { text: 'Até 3.000 leads coletados', included: true },
+  { text: 'Gestão e download de leads', included: true },
+  { text: 'Integração com CRM', included: true },
+  { text: 'URLs externas nos CTAs', included: true },
 ];
 
 const PRO_FEATURES = [
-  { text: 'Quizzes ilimitados', included: true },
+  { text: 'Até 10 quizzes publicados', included: true },
   { text: 'Rascunhos ilimitados', included: true },
-  { text: 'Assistente IA ilimitado', included: true },
-  { text: 'Captura de leads', included: true },
-  { text: 'Relatórios de análise completos', included: true },
-  { text: 'Relatório de Leads + download', included: true },
-  { text: 'Personalização de logo e cores', included: true },
+  { text: 'Até 10.000 leads coletados', included: true },
+  { text: 'Gestão e download de leads', included: true },
+  { text: 'Integração com CRM', included: true },
+  { text: 'URLs externas nos CTAs', included: true },
 ];
 
 const formatLimit = (value: number) =>
-  value === Infinity ? 'Ilimitado' : `${value}`;
+  value === Infinity ? 'Ilimitado' : value.toLocaleString('pt-BR');
 
 const COMPARISON_ROWS: FeatureRow[] = [
   {
     label: 'Quizzes publicados',
-    free: formatLimit(TIER_LIMITS.free.publishedQuizzes),
+    basic: formatLimit(TIER_LIMITS.basic.publishedQuizzes),
+    plus: formatLimit(TIER_LIMITS.plus.publishedQuizzes),
     pro: formatLimit(TIER_LIMITS.pro.publishedQuizzes),
   },
   {
-    label: 'Rascunhos ativos',
-    free: formatLimit(TIER_LIMITS.free.draftLimit),
-    pro: formatLimit(TIER_LIMITS.pro.draftLimit),
+    label: 'Leads coletados',
+    basic: formatLimit(TIER_LIMITS.basic.leadsLimit),
+    plus: formatLimit(TIER_LIMITS.plus.leadsLimit),
+    pro: formatLimit(TIER_LIMITS.pro.leadsLimit),
   },
   {
-    label: 'Mensagens IA / mês',
-    free: `${TIER_LIMITS.free.aiMessagesPerMonth} mensagens`,
+    label: 'Rascunhos',
+    basic: 'Ilimitado',
+    plus: 'Ilimitado',
     pro: 'Ilimitado',
   },
   {
-    label: 'Captura de leads',
-    free: true,
-    pro: true,
-  },
-  {
-    label: 'Relatórios de análise completos',
-    free: TIER_LIMITS.free.hasReports,
-    pro: TIER_LIMITS.pro.hasReports,
-  },
-  {
-    label: 'Relatório de Leads + download',
-    free: TIER_LIMITS.free.hasLeadsPage,
+    label: 'Gestão e download de leads',
+    basic: TIER_LIMITS.basic.hasLeadsPage,
+    plus: TIER_LIMITS.plus.hasLeadsPage,
     pro: TIER_LIMITS.pro.hasLeadsPage,
   },
   {
-    label: 'Personalização de logo e cores',
-    free: !TIER_LIMITS.free.hasBranding,
-    pro: !TIER_LIMITS.pro.hasBranding,
+    label: 'Integração com CRM',
+    basic: TIER_LIMITS.basic.hasCrmIntegration,
+    plus: TIER_LIMITS.plus.hasCrmIntegration,
+    pro: TIER_LIMITS.pro.hasCrmIntegration,
+  },
+  {
+    label: 'URLs externas nos CTAs',
+    basic: TIER_LIMITS.basic.hasExternalUrls,
+    plus: TIER_LIMITS.plus.hasExternalUrls,
+    pro: TIER_LIMITS.pro.hasExternalUrls,
   },
 ];
 
@@ -135,34 +146,43 @@ function FeatureValue({ value, highlight }: { value: string | boolean; highlight
   );
 }
 
+function getCurrentTierName(subscription: { tier?: SubscriptionTier } | undefined): string {
+  if (!subscription) return 'Basic';
+  switch (subscription.tier) {
+    case 'pro':
+      return 'Pro';
+    case 'plus':
+      return 'Plus';
+    default:
+      return 'Basic';
+  }
+}
+
 function PricingContent() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { subscription, isLoading: subscriptionLoading } = useSubscription(user?.uid);
-  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
+  const [selectedTier, setSelectedTier] = useState<SelectedTier>('plus');
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Consider loading until BOTH auth and subscription are ready
+
   const dataLoading = authLoading || subscriptionLoading;
   const isProUser = isPro(subscription);
+  const isPlusUser = isPlus(subscription);
+  const hasPaidPlan = isPaidTier(subscription);
 
   useEffect(() => {
-    const period = searchParams.get('period');
-    if (period === 'monthly' || period === 'yearly') {
-      setBillingPeriod(period);
+    const tier = searchParams.get('tier');
+    if (tier === 'plus' || tier === 'pro') {
+      setSelectedTier(tier);
     }
   }, [searchParams]);
 
-  const proPrice = billingPeriod === 'yearly' ? 'R$39' : 'R$49';
-  const proFrequency = billingPeriod === 'yearly' ? '/mês (cobrado anualmente)' : '/mês';
-  const yearlyTotal = billingPeriod === 'yearly' ? 'R$468/ano' : null;
-
-  const handleProAction = async () => {
+  const handlePaidAction = async (tier: SelectedTier) => {
     if (!user) return;
 
     setIsProcessing(true);
     try {
-      if (isProUser) {
+      if (hasPaidPlan) {
         const url = await createPortalSession(user.uid);
         if (url) {
           window.location.href = url;
@@ -175,7 +195,8 @@ function PricingContent() {
       const url = await createCheckoutSession(
         user.uid,
         user.email || '',
-        billingPeriod
+        'monthly',
+        tier
       );
 
       if (url) {
@@ -205,22 +226,22 @@ function PricingContent() {
               <div className="max-w-2xl space-y-4">
                 <div>
                   <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                    Compare o gratuito com o Pro
+                    Escolha seu plano
                   </h1>
                   <p className="mt-3 text-muted-foreground">
-                    Tudo o que você precisa para criar quizzes com IA, capturar leads
-                    e escalar com relatórios completos.
+                    Escale sua captação de leads com quizzes interativos.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-10 grid gap-6 md:grid-cols-2">
+            <div className="mt-10 grid gap-6 md:grid-cols-3">
+              {/* Basic Tier */}
               <Card className="relative overflow-hidden border-border bg-card/60">
                 <CardHeader className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
-                    <Badge variant="outline">Grátis</Badge>
-                    {!dataLoading && !isProUser && (
+                    <Badge variant="outline">Basic</Badge>
+                    {!dataLoading && !hasPaidPlan && (
                       <Badge variant="secondary">Plano atual</Badge>
                     )}
                   </div>
@@ -233,12 +254,12 @@ function PricingContent() {
                     </CardTitle>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Ideal para começar e publicar o primeiro quiz.
+                    Perfeito para começar e testar a plataforma.
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-3">
-                    {FREE_FEATURES.map((feature) => (
+                    {BASIC_FEATURES.map((feature) => (
                       <li key={feature.text} className="flex items-start gap-2">
                         {feature.included ? (
                           <Check className="h-5 w-5 text-primary" aria-hidden="true" />
@@ -260,13 +281,13 @@ function PricingContent() {
                 <CardFooter>
                   {dataLoading ? (
                     <div className="h-10 w-full bg-muted/50 rounded animate-pulse" />
-                  ) : !isProUser ? (
+                  ) : !hasPaidPlan ? (
                     <Button
                       asChild
                       variant="secondary"
                       className="w-full cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]"
                     >
-                      <Link href="/dashboard">Continuar no plano gratuito</Link>
+                      <Link href="/dashboard">Continuar no Basic</Link>
                     </Button>
                   ) : (
                     <div className="h-10" />
@@ -274,57 +295,94 @@ function PricingContent() {
                 </CardFooter>
               </Card>
 
+              {/* Plus Tier */}
               <Card className="relative overflow-hidden border-primary/60 bg-card/70">
-                {!dataLoading && !isProUser && (
-                  <div className="absolute right-6 top-6">
-                    <div className="flex flex-wrap items-center gap-1 rounded-full border border-border bg-muted/40 p-1 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => setBillingPeriod('monthly')}
-                        className={cn(
-                          'rounded-full px-3 py-1 font-medium transition-colors cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]',
-                          billingPeriod === 'monthly'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        )}
-                      >
-                        Mensal
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBillingPeriod('yearly')}
-                        className={cn(
-                          'rounded-full px-3 py-1 font-medium transition-colors cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]',
-                          billingPeriod === 'yearly'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        )}
-                      >
-                        Anual (-20%)
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <div className="absolute right-4 top-4">
+                  <Badge className="bg-primary text-primary-foreground">Mais popular</Badge>
+                </div>
                 <CardHeader className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
-                    <Badge variant="secondary">Pro</Badge>
+                    <Badge variant="secondary">Plus</Badge>
+                    {!dataLoading && isPlusUser && (
+                      <Badge variant="secondary">Plano atual</Badge>
+                    )}
+                  </div>
+                  <div>
+                    <CardTitle className="text-3xl">
+                      <span className="text-lg font-medium text-muted-foreground">R$</span>
+                      89,90
+                      <span className="ml-2 text-base font-medium text-muted-foreground">
+                        /mês
+                      </span>
+                    </CardTitle>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Para quem quer escalar sua captação de leads.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-3">
+                    {PLUS_FEATURES.map((feature) => (
+                      <li key={feature.text} className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-primary" aria-hidden="true" />
+                        <span className="text-sm text-foreground">{feature.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+                <CardFooter className="flex flex-col gap-3">
+                  <Button
+                    onClick={() => handlePaidAction('plus')}
+                    disabled={dataLoading || isProcessing}
+                    className="w-full cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]"
+                    variant={!dataLoading && isPlusUser ? 'outline' : 'default'}
+                  >
+                    {dataLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                        Carregando...
+                      </>
+                    ) : isProcessing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                        Redirecionando...
+                      </>
+                    ) : isPlusUser ? (
+                      'Gerenciar assinatura'
+                    ) : hasPaidPlan ? (
+                      'Gerenciar assinatura'
+                    ) : (
+                      'Assinar Plus'
+                    )}
+                  </Button>
+                  {!dataLoading && !hasPaidPlan && (
+                    <p className="text-xs text-center text-muted-foreground">
+                      Pagamento seguro via Stripe.
+                    </p>
+                  )}
+                </CardFooter>
+              </Card>
+
+              {/* Pro Tier */}
+              <Card className="relative overflow-hidden border-border bg-card/60">
+                <CardHeader className="space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="outline">Pro</Badge>
                     {!dataLoading && isProUser && (
                       <Badge variant="secondary">Plano atual</Badge>
                     )}
                   </div>
                   <div>
                     <CardTitle className="text-3xl">
-                      {proPrice}
+                      <span className="text-lg font-medium text-muted-foreground">R$</span>
+                      129,90
                       <span className="ml-2 text-base font-medium text-muted-foreground">
-                        {proFrequency}
+                        /mês
                       </span>
                     </CardTitle>
-                    {yearlyTotal && (
-                      <CardDescription className="mt-1">{yearlyTotal}</CardDescription>
-                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Para quem quer escalar, vender e acompanhar resultados em detalhes.
+                    Para operações maiores com alto volume de leads.
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -339,15 +397,15 @@ function PricingContent() {
                 </CardContent>
                 <CardFooter className="flex flex-col gap-3">
                   <Button
-                    onClick={handleProAction}
+                    onClick={() => handlePaidAction('pro')}
                     disabled={dataLoading || isProcessing}
                     className="w-full cursor-[var(--cursor-interactive)] disabled:cursor-[var(--cursor-not-allowed)]"
-                    variant={!dataLoading && isProUser ? 'outline' : 'default'}
+                    variant={!dataLoading && isProUser ? 'outline' : 'secondary'}
                   >
                     {dataLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                        Carregando plano...
+                        Carregando...
                       </>
                     ) : isProcessing ? (
                       <>
@@ -356,19 +414,15 @@ function PricingContent() {
                       </>
                     ) : isProUser ? (
                       'Gerenciar assinatura'
+                    ) : hasPaidPlan ? (
+                      'Gerenciar assinatura'
                     ) : (
-                      'Fazer upgrade para Pro'
+                      'Assinar Pro'
                     )}
                   </Button>
-                  {dataLoading ? (
-                    <div className="h-4 w-48 mx-auto bg-muted/50 rounded animate-pulse" />
-                  ) : !isProUser ? (
+                  {!dataLoading && !hasPaidPlan && (
                     <p className="text-xs text-center text-muted-foreground">
-                      Pagamento seguro via Stripe. Cancele quando quiser.
-                    </p>
-                  ) : (
-                    <p className="text-xs text-center text-primary/80 font-medium">
-                      Sua assinatura está ativa e segura.
+                      Pagamento seguro via Stripe.
                     </p>
                   )}
                 </CardFooter>
@@ -377,9 +431,9 @@ function PricingContent() {
 
             <Card className="mt-10 border-border/60 bg-card/60">
               <CardHeader>
-                <CardTitle className="text-xl">Comparativo rápido</CardTitle>
+                <CardTitle className="text-xl">Comparativo de planos</CardTitle>
                 <CardDescription>
-                  Veja lado a lado os limites e recursos principais de cada plano.
+                  Veja lado a lado os limites e recursos de cada plano.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -387,7 +441,8 @@ function PricingContent() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Recursos</TableHead>
-                      <TableHead>Gratuito</TableHead>
+                      <TableHead>Basic</TableHead>
+                      <TableHead>Plus</TableHead>
                       <TableHead>Pro</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -398,7 +453,10 @@ function PricingContent() {
                           {row.label}
                         </TableCell>
                         <TableCell>
-                          <FeatureValue value={row.free} />
+                          <FeatureValue value={row.basic} />
+                        </TableCell>
+                        <TableCell>
+                          <FeatureValue value={row.plus} highlight />
                         </TableCell>
                         <TableCell>
                           <FeatureValue value={row.pro} highlight />

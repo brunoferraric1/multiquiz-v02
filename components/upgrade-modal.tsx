@@ -14,24 +14,40 @@ import { cn } from '@/lib/utils';
 import { useLocale } from '@/lib/i18n/context';
 import { localizePathname } from '@/lib/i18n/paths';
 
-type UpgradeReason = 'draft-limit' | 'publish-limit' | 'brand-kit' | 'pro-feature';
+type UpgradeReason = 'draft-limit' | 'publish-limit' | 'brand-kit' | 'pro-feature' | 'external-url' | 'leads-limit' | 'leads-management' | 'crm-integration';
 
 const copy: Record<UpgradeReason, { title: string; description: string }> = {
   'draft-limit': {
     title: 'Limite de rascunhos atingido',
-    description: 'No plano gratuito você pode manter até 3 rascunhos. Faça upgrade para criar quantos quizzes quiser.',
+    description: 'No plano Basic você pode manter rascunhos ilimitados. Verifique seu plano atual.',
   },
   'publish-limit': {
     title: 'Limite de publicação atingido',
-    description: 'Você já publicou 1 quiz no plano gratuito. Faça upgrade para publicar quantos quizzes quiser.',
+    description: 'Você atingiu o limite de quizzes publicados do seu plano. Faça upgrade para publicar mais quizzes.',
   },
   'pro-feature': {
-    title: 'Funcionalidade do Plano Pro',
-    description: 'Esse recurso é exclusivo do plano Pro. Faça upgrade para desbloquear todos os detalhes e exportações.',
+    title: 'Funcionalidade do Plano Pago',
+    description: 'Esse recurso é exclusivo dos planos Plus e Pro. Faça upgrade para desbloquear.',
   },
   'brand-kit': {
-    title: 'Kit da marca disponível no Pro',
-    description: 'Personalize logo e paleta de cores para todos os quizzes com o plano Pro.',
+    title: 'Kit da marca disponível nos planos pagos',
+    description: 'Personalize logo e paleta de cores para todos os quizzes com um plano pago.',
+  },
+  'external-url': {
+    title: 'URLs externas disponíveis nos planos pagos',
+    description: 'Adicione links externos nos CTAs do seu quiz. Faça upgrade para o plano Plus ou Pro.',
+  },
+  'leads-limit': {
+    title: 'Limite de leads atingido',
+    description: 'Você atingiu o limite de leads coletados do seu plano. Faça upgrade para coletar mais leads.',
+  },
+  'leads-management': {
+    title: 'Gestão de leads disponível nos planos pagos',
+    description: 'Gerencie e faça download dos seus leads com um plano Plus ou Pro.',
+  },
+  'crm-integration': {
+    title: 'Integração com CRM disponível nos planos pagos',
+    description: 'Conecte seu quiz ao seu CRM favorito com um plano Plus ou Pro.',
   },
 };
 
@@ -64,7 +80,7 @@ export function UpgradeModal({ open, reason, onOpenChange, className }: UpgradeM
             <Lock className="h-5 w-5" />
           </div>
           <p className="text-sm text-muted-foreground">
-            Desbloqueie publicações e rascunhos ilimitados, acesso a leads e relatórios completos.
+            Desbloqueie mais quizzes, gestão de leads, integrações e URLs externas.
           </p>
         </div>
 
