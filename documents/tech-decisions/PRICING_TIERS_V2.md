@@ -32,15 +32,13 @@ Implement a three-tier pricing structure: **Free** (Grátis), **Plus**, and **Pr
 | Published Quizzes | 1 | 3 | 10 |
 | Leads Collected | 10 | 3,000 | 10,000 |
 | Draft Quizzes | Unlimited | Unlimited | Unlimited |
+| AI-powered Creation | ❌ | ✅ | ✅ |
 | Lead Management & Download | ❌ | ✅ | ✅ |
 | CRM Integration (Webhook) | ❌ | ✅ | ✅ |
-| External URLs in CTAs | ❌ | ✅ | ✅ |
+| External Links in Buttons | ❌ | ✅ | ✅ |
 
-### Removed Features (for initial launch)
-- AI chatbot / AI message limits
-- AI-assisted quiz generation
-
-These features will be added in a future update.
+### Note on AI Feature
+AI-powered creation is included in paid plans. Specific usage limits (messages/tokens) will be defined later based on cost analysis.
 
 ---
 

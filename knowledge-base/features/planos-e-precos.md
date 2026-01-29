@@ -27,6 +27,7 @@ O MultiQuiz oferece três planos para atender diferentes necessidades: **Grátis
 | **Quizzes publicados** | 1 | 3 | 10 |
 | **Leads coletados** | 10 | 3.000 | 10.000 |
 | **Rascunhos** | Ilimitados | Ilimitados | Ilimitados |
+| **Criação com IA** | Não | Sim | Sim |
 | **Gestão de leads** | Não | Sim | Sim |
 | **Download de leads** | Não | Sim | Sim |
 | **Integração com CRM** | Não | Sim | Sim |
@@ -45,6 +46,7 @@ O plano gratuito permite:
 - Testar todas as funcionalidades de criação
 
 **Limitações:**
+- Não é possível usar a criação com IA
 - Não é possível ver ou baixar os dados dos leads coletados
 - Não é possível usar a integração com CRM
 - Links nos botões só podem direcionar para os resultados do quiz
@@ -54,6 +56,7 @@ O plano gratuito permite:
 O plano Plus é o mais popular e permite:
 - Criar e publicar até **3 quizzes**
 - Coletar até **3.000 leads por mês**
+- **Criação com IA** para gerar conteúdo do quiz
 - **Ver e baixar** todos os dados dos leads em formato de planilha
 - **Integrar com seu CRM** via webhook (envio automático de leads)
 - Adicionar **links externos** nos botões do quiz
@@ -63,6 +66,7 @@ O plano Plus é o mais popular e permite:
 O plano Pro é para quem precisa de mais escala:
 - Criar e publicar até **10 quizzes**
 - Coletar até **10.000 leads por mês**
+- **Criação com IA** para gerar conteúdo do quiz
 - Todos os recursos do Plus incluídos
 - Prioridade no suporte
 

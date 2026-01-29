@@ -9,31 +9,34 @@ import Link from 'next/link';
 import { Check, X, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 
-const BASIC_FEATURES = [
+const FREE_FEATURES = [
   { text: '1 quiz publicado', included: true },
   { text: 'Rascunhos ilimitados', included: true },
   { text: 'Até 10 leads coletados', included: true },
+  { text: 'Criação com IA', included: false },
   { text: 'Gestão e download de leads', included: false },
   { text: 'Integração com CRM', included: false },
-  { text: 'URLs externas nos CTAs', included: false },
+  { text: 'Links externos nos botões', included: false },
 ];
 
 const PLUS_FEATURES = [
   { text: 'Até 3 quizzes publicados', included: true },
   { text: 'Rascunhos ilimitados', included: true },
   { text: 'Até 3.000 leads coletados', included: true },
+  { text: 'Criação com IA', included: true },
   { text: 'Gestão e download de leads', included: true },
   { text: 'Integração com CRM', included: true },
-  { text: 'URLs externas nos CTAs', included: true },
+  { text: 'Links externos nos botões', included: true },
 ];
 
 const PRO_FEATURES = [
   { text: 'Até 10 quizzes publicados', included: true },
   { text: 'Rascunhos ilimitados', included: true },
   { text: 'Até 10.000 leads coletados', included: true },
+  { text: 'Criação com IA', included: true },
   { text: 'Gestão e download de leads', included: true },
   { text: 'Integração com CRM', included: true },
-  { text: 'URLs externas nos CTAs', included: true },
+  { text: 'Links externos nos botões', included: true },
 ];
 
 const cardVariants = {
@@ -91,15 +94,18 @@ export const PricingSection = () => {
           <motion.div
             custom={0}
             variants={cardVariants}
-            className="flex flex-col rounded-3xl overflow-hidden border border-border bg-card/50"
+            whileHover={{ y: -8 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="flex flex-col rounded-3xl overflow-hidden border border-border bg-card/50 cursor-pointer"
           >
             <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
               <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-muted text-muted-foreground">
                 Grátis
               </h3>
-              <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
-                R$0
-                <span className="ml-1 text-xl font-medium text-muted-foreground">
+              <div className="mt-4 flex items-baseline text-4xl font-extrabold text-foreground">
+                <span className="text-xl font-medium text-muted-foreground mr-2">R$</span>
+                0
+                <span className="ml-1 text-lg font-medium text-muted-foreground">
                   /mês
                 </span>
               </div>
@@ -109,7 +115,7 @@ export const PricingSection = () => {
             </div>
             <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
               <ul className="space-y-4">
-                {BASIC_FEATURES.map((feature) => (
+                {FREE_FEATURES.map((feature) => (
                   <li key={feature.text} className="flex items-start">
                     <div className="flex-shrink-0">
                       {feature.included ? (
@@ -140,7 +146,9 @@ export const PricingSection = () => {
           <motion.div
             custom={1}
             variants={cardVariants}
-            className="flex flex-col rounded-3xl overflow-hidden border-2 border-primary shadow-xl relative"
+            whileHover={{ y: -8 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="flex flex-col rounded-3xl overflow-hidden border-2 border-primary shadow-xl relative cursor-pointer"
           >
             {/* Popular Badge */}
             <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-bl-xl">
@@ -151,10 +159,10 @@ export const PricingSection = () => {
               <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-primary/20 text-primary">
                 Plus
               </h3>
-              <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
-                <span className="text-2xl font-medium text-muted-foreground mr-1">R$</span>
+              <div className="mt-4 flex items-baseline text-4xl font-extrabold text-foreground">
+                <span className="text-xl font-medium text-muted-foreground mr-2">R$</span>
                 89,90
-                <span className="ml-1 text-xl font-medium text-muted-foreground">
+                <span className="ml-1 text-lg font-medium text-muted-foreground">
                   /mês
                 </span>
               </div>
@@ -197,16 +205,18 @@ export const PricingSection = () => {
           <motion.div
             custom={2}
             variants={cardVariants}
-            className="flex flex-col rounded-3xl overflow-hidden border border-border bg-card/50"
+            whileHover={{ y: -8 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="flex flex-col rounded-3xl overflow-hidden border border-border bg-card/50 cursor-pointer"
           >
             <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
               <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-muted text-muted-foreground">
                 Pro
               </h3>
-              <div className="mt-4 flex items-baseline text-5xl font-extrabold text-foreground">
-                <span className="text-2xl font-medium text-muted-foreground mr-1">R$</span>
+              <div className="mt-4 flex items-baseline text-4xl font-extrabold text-foreground">
+                <span className="text-xl font-medium text-muted-foreground mr-2">R$</span>
                 129,90
-                <span className="ml-1 text-xl font-medium text-muted-foreground">
+                <span className="ml-1 text-lg font-medium text-muted-foreground">
                   /mês
                 </span>
               </div>

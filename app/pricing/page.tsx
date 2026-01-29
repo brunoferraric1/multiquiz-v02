@@ -53,31 +53,34 @@ type FeatureRow = {
   pro: string | boolean;
 };
 
-const BASIC_FEATURES = [
+const FREE_FEATURES = [
   { text: '1 quiz publicado', included: true },
   { text: 'Rascunhos ilimitados', included: true },
   { text: 'Até 10 leads coletados', included: true },
+  { text: 'Criação com IA', included: false },
   { text: 'Gestão e download de leads', included: false },
   { text: 'Integração com CRM', included: false },
-  { text: 'URLs externas nos CTAs', included: false },
+  { text: 'Links externos nos botões', included: false },
 ];
 
 const PLUS_FEATURES = [
   { text: 'Até 3 quizzes publicados', included: true },
   { text: 'Rascunhos ilimitados', included: true },
   { text: 'Até 3.000 leads coletados', included: true },
+  { text: 'Criação com IA', included: true },
   { text: 'Gestão e download de leads', included: true },
   { text: 'Integração com CRM', included: true },
-  { text: 'URLs externas nos CTAs', included: true },
+  { text: 'Links externos nos botões', included: true },
 ];
 
 const PRO_FEATURES = [
   { text: 'Até 10 quizzes publicados', included: true },
   { text: 'Rascunhos ilimitados', included: true },
   { text: 'Até 10.000 leads coletados', included: true },
+  { text: 'Criação com IA', included: true },
   { text: 'Gestão e download de leads', included: true },
   { text: 'Integração com CRM', included: true },
-  { text: 'URLs externas nos CTAs', included: true },
+  { text: 'Links externos nos botões', included: true },
 ];
 
 const formatLimit = (value: number) =>
@@ -103,6 +106,12 @@ const COMPARISON_ROWS: FeatureRow[] = [
     pro: 'Ilimitado',
   },
   {
+    label: 'Criação com IA',
+    free: false,
+    plus: true,
+    pro: true,
+  },
+  {
     label: 'Gestão e download de leads',
     free: TIER_LIMITS.free.hasLeadsPage,
     plus: TIER_LIMITS.plus.hasLeadsPage,
@@ -115,7 +124,7 @@ const COMPARISON_ROWS: FeatureRow[] = [
     pro: TIER_LIMITS.pro.hasCrmIntegration,
   },
   {
-    label: 'URLs externas nos CTAs',
+    label: 'Links externos nos botões',
     free: TIER_LIMITS.free.hasExternalUrls,
     plus: TIER_LIMITS.plus.hasExternalUrls,
     pro: TIER_LIMITS.pro.hasExternalUrls,
@@ -247,7 +256,8 @@ function PricingContent() {
                   </div>
                   <div>
                     <CardTitle className="text-3xl">
-                      R$0
+                      <span className="text-lg font-medium text-muted-foreground mr-1">R$</span>
+                      0
                       <span className="ml-2 text-base font-medium text-muted-foreground">
                         /mês
                       </span>
@@ -259,7 +269,7 @@ function PricingContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-3">
-                    {BASIC_FEATURES.map((feature) => (
+                    {FREE_FEATURES.map((feature) => (
                       <li key={feature.text} className="flex items-start gap-2">
                         {feature.included ? (
                           <Check className="h-5 w-5 text-primary" aria-hidden="true" />
@@ -309,7 +319,7 @@ function PricingContent() {
                   </div>
                   <div>
                     <CardTitle className="text-3xl">
-                      <span className="text-lg font-medium text-muted-foreground">R$</span>
+                      <span className="text-lg font-medium text-muted-foreground mr-1">R$</span>
                       89,90
                       <span className="ml-2 text-base font-medium text-muted-foreground">
                         /mês
@@ -374,7 +384,7 @@ function PricingContent() {
                   </div>
                   <div>
                     <CardTitle className="text-3xl">
-                      <span className="text-lg font-medium text-muted-foreground">R$</span>
+                      <span className="text-lg font-medium text-muted-foreground mr-1">R$</span>
                       129,90
                       <span className="ml-2 text-base font-medium text-muted-foreground">
                         /mês
