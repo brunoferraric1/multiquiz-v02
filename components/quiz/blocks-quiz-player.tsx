@@ -196,6 +196,23 @@ export function BlocksQuizPlayer({
     return currentStep.blocks;
   }, [currentStep, resultOutcomeId, outcomes]);
 
+  // Compute selected price redirect URL for button actions
+  const selectedPriceRedirectUrl = useMemo(() => {
+    // Find price block in current blocks
+    const priceBlock = blocksToRender.find((b) => b.type === 'price' && b.enabled);
+    if (!priceBlock) return undefined;
+
+    const priceConfig = priceBlock.config as PriceConfig;
+    const items = priceConfig.items || [];
+
+    // Get the first selected price's redirect URL
+    const selectedPriceId = currentPriceIds[0];
+    if (!selectedPriceId) return undefined;
+
+    const selectedPrice = items.find((item) => item.id === selectedPriceId);
+    return selectedPrice?.redirectUrl;
+  }, [blocksToRender, currentPriceIds]);
+
   // Handle option selection
   const handleOptionSelect = (optionId: string) => {
     if (!currentStep) return;
@@ -549,6 +566,7 @@ export function BlocksQuizPlayer({
           selectedOptionIds={currentSelectionIds}
           onPriceSelect={handlePriceSelect}
           selectedPriceIds={currentPriceIds}
+          selectedPriceRedirectUrl={selectedPriceRedirectUrl}
           onButtonClick={handleButtonClick}
           fieldValues={currentFieldValues}
           onFieldChange={handleFieldChange}

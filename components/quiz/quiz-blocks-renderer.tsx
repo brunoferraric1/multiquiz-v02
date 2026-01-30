@@ -44,6 +44,8 @@ interface QuizBlocksRendererProps {
   // For price block
   onPriceSelect?: (priceId: string) => void;
   selectedPriceIds?: string[];
+  // For button block (selected_price action)
+  selectedPriceRedirectUrl?: string;
   // For button block
   onButtonClick?: () => void;
   // For fields block
@@ -62,6 +64,7 @@ export function QuizBlocksRenderer({
   selectedOptionIds = [],
   onPriceSelect,
   selectedPriceIds = [],
+  selectedPriceRedirectUrl,
   onButtonClick,
   fieldValues = {},
   onFieldChange,
@@ -86,6 +89,7 @@ export function QuizBlocksRenderer({
           selectedOptionIds={selectedOptionIds}
           onPriceSelect={onPriceSelect}
           selectedPriceIds={selectedPriceIds}
+          selectedPriceRedirectUrl={selectedPriceRedirectUrl}
           onButtonClick={onButtonClick}
           fieldValues={fieldValues}
           onFieldChange={onFieldChange}
@@ -103,6 +107,7 @@ interface BlockRendererProps {
   selectedOptionIds?: string[];
   onPriceSelect?: (priceId: string) => void;
   selectedPriceIds?: string[];
+  selectedPriceRedirectUrl?: string;
   onButtonClick?: () => void;
   fieldValues?: Record<string, string>;
   onFieldChange?: (fieldId: string, value: string) => void;
@@ -116,6 +121,7 @@ function BlockRenderer({
   selectedOptionIds = [],
   onPriceSelect,
   selectedPriceIds = [],
+  selectedPriceRedirectUrl,
   onButtonClick,
   fieldValues = {},
   onFieldChange,
@@ -134,7 +140,7 @@ function BlockRenderer({
     case 'banner':
       return <BannerBlock config={block.config as BannerConfig} />;
     case 'button':
-      return <ButtonBlock config={block.config as ButtonConfig} onClick={onButtonClick} />;
+      return <ButtonBlock config={block.config as ButtonConfig} onClick={onButtonClick} selectedPriceRedirectUrl={selectedPriceRedirectUrl} />;
     case 'options':
       return (
         <OptionsBlock
@@ -558,21 +564,37 @@ function PriceBlock({
   );
 }
 
-function ButtonBlock({ config, onClick }: { config: ButtonConfig; onClick?: () => void }) {
+function ButtonBlock({
+  config,
+  onClick,
+  selectedPriceRedirectUrl
+}: {
+  config: ButtonConfig;
+  onClick?: () => void;
+  selectedPriceRedirectUrl?: string;
+}) {
   const { text, action, url } = config;
 
   if (!text) return null;
 
   const handleClick = () => {
     if (action === 'url' && url) {
-      window.open(url, '_blank');
+      // Ensure URL has a protocol, default to https:// if missing
+      const finalUrl = url.match(/^https?:\/\//) ? url : `https://${url}`;
+      window.open(finalUrl, '_blank');
+    } else if (action === 'selected_price' && selectedPriceRedirectUrl) {
+      // Redirect to the selected price's URL
+      const finalUrl = selectedPriceRedirectUrl.match(/^https?:\/\//)
+        ? selectedPriceRedirectUrl
+        : `https://${selectedPriceRedirectUrl}`;
+      window.open(finalUrl, '_blank');
     } else {
       onClick?.();
     }
   };
 
-  // Show ExternalLink icon for URL action, ArrowRight for navigation actions
-  const Icon = action === 'url' ? ExternalLink : ArrowRight;
+  // Show ExternalLink icon for URL or selected_price action, ArrowRight for navigation actions
+  const Icon = action === 'url' || action === 'selected_price' ? ExternalLink : ArrowRight;
 
   return (
     <Button onClick={handleClick} size="lg" className="w-full justify-center gap-2">
