@@ -101,7 +101,7 @@ Do zero ao quiz publicado em 5 minutos. Sem código, sem designer.
             className="mt-12 w-full max-w-[1100px]"
           >
             <Image
-              src="/landing/visual-builder.png"
+              src="/landing/visual-builder.webp"
               alt="MultiQuiz Visual Builder"
               width={1100}
               height={667}
