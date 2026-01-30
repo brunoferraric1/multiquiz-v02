@@ -74,6 +74,42 @@ function getMediaPreviewUrl(config: MediaConfig | undefined): string | undefined
 }
 
 /**
+ * Media preview data including URL and focal point
+ */
+export interface MediaPreviewData {
+  url: string
+  focalPoint?: { x: number; y: number }
+}
+
+/**
+ * Extract media preview data (URL + focal point) from a media config
+ * For videos: uses videoThumbnailFocalPoint when custom thumbnail is set
+ * For images: uses focalPoint
+ */
+function getMediaPreviewData(config: MediaConfig | undefined): MediaPreviewData | undefined {
+  if (!config?.url) return undefined
+
+  if (config.type === 'image') {
+    return {
+      url: config.url,
+      focalPoint: config.focalPoint,
+    }
+  }
+
+  if (config.type === 'video') {
+    const thumbnailUrl = config.videoThumbnail || getVideoThumbnail(config.url)
+    if (!thumbnailUrl) return undefined
+    return {
+      url: thumbnailUrl,
+      // Only use focal point if there's a custom thumbnail
+      focalPoint: config.videoThumbnail ? config.videoThumbnailFocalPoint : undefined,
+    }
+  }
+
+  return undefined
+}
+
+/**
  * Extract preview media URL from steps for dashboard cards
  * Priority:
  * 1. Intro step media (image or video with thumbnail)
@@ -125,6 +161,60 @@ export function extractIntroMediaPreviewFromVisualBuilderData(
 
   if (!parsedData?.steps || !Array.isArray(parsedData.steps)) return undefined
   return extractIntroMediaPreviewFromSteps(parsedData.steps)
+}
+
+/**
+ * Extract preview media data (URL + focal point) from steps for dashboard cards
+ * Priority:
+ * 1. Intro step media (image or video with thumbnail)
+ * 2. First media found in any other step (fallback)
+ */
+export function extractIntroMediaPreviewDataFromSteps(
+  steps: VisualBuilderStep[]
+): MediaPreviewData | undefined {
+  // First, try to get media from intro step
+  const introStep = steps.find((s) => s.type === 'intro')
+  if (introStep) {
+    const mediaBlock = introStep.blocks.find((b) => b.type === 'media' && b.enabled)
+    const config = mediaBlock?.config as MediaConfig | undefined
+    const previewData = getMediaPreviewData(config)
+    if (previewData) return previewData
+  }
+
+  // Fallback: find first media in any other step (excluding intro and result)
+  for (const step of steps) {
+    if (step.type === 'intro' || step.type === 'result') continue
+
+    const mediaBlock = step.blocks.find((b) => b.type === 'media' && b.enabled)
+    const config = mediaBlock?.config as MediaConfig | undefined
+    const previewData = getMediaPreviewData(config)
+    if (previewData) return previewData
+  }
+
+  return undefined
+}
+
+/**
+ * Extract preview media data (URL + focal point) from visualBuilderData
+ */
+export function extractIntroMediaPreviewDataFromVisualBuilderData(
+  visualBuilderData: VisualBuilderData | string | null | undefined
+): MediaPreviewData | undefined {
+  if (!visualBuilderData) return undefined
+
+  let parsedData: VisualBuilderData | undefined
+  if (typeof visualBuilderData === 'string') {
+    try {
+      parsedData = JSON.parse(visualBuilderData) as VisualBuilderData
+    } catch {
+      return undefined
+    }
+  } else {
+    parsedData = visualBuilderData
+  }
+
+  if (!parsedData?.steps || !Array.isArray(parsedData.steps)) return undefined
+  return extractIntroMediaPreviewDataFromSteps(parsedData.steps)
 }
 
 /**

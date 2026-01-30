@@ -21,6 +21,20 @@ const productFeatures = [
     reverse: true,
   },
   {
+    badge: 'RELATÓRIOS',
+    title: 'Acompanhe o Desempenho em Tempo Real',
+    description: 'Visualize métricas detalhadas de cada quiz: visitas, inícios, conclusões e taxa de conversão. Entenda onde os usuários abandonam e otimize seu funil.',
+    image: '/landing/landing-reports.webp',
+    reverse: false,
+  },
+  {
+    badge: 'GESTÃO DE LEADS',
+    title: 'Capture e Gerencie seus Leads',
+    description: 'Colete dados de contato dos participantes e visualize todos os leads em uma tabela organizada. Exporte para CSV e integre com suas ferramentas de marketing.',
+    image: '/landing/landing-leads.webp',
+    reverse: true,
+  },
+  {
     badge: 'INTEGRAÇÃO',
     title: 'Integração com CRM e Automação',
     description: 'Envie automaticamente os dados de leads para seu CRM quando um quiz for completado. Receba notificações de novos leads diretamente no WhatsApp.',

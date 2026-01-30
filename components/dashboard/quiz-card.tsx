@@ -6,7 +6,7 @@ import { Globe, Lock, Pencil } from 'lucide-react';
 import type { Quiz } from '@/types';
 import { useLocale, useMessages } from '@/lib/i18n/context';
 import { localizePathname } from '@/lib/i18n/paths';
-import { extractIntroMediaPreviewFromVisualBuilderData } from '@/lib/utils/visual-builder-helpers';
+import { extractIntroMediaPreviewDataFromVisualBuilderData } from '@/lib/utils/visual-builder-helpers';
 import {
   Card,
   CardContent,
@@ -37,9 +37,12 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
     router.push(localizePathname(`/visual-builder/${quiz.id}`, locale));
   };
 
-  // Extract preview image dynamically from visual builder data
+  // Extract preview image and focal point dynamically from visual builder data
   // This ensures we always show the current state (with fallback to first media in any step)
-  const previewImageUrl = extractIntroMediaPreviewFromVisualBuilderData(quiz.visualBuilderData);
+  const previewData = extractIntroMediaPreviewDataFromVisualBuilderData(quiz.visualBuilderData);
+  const previewImageUrl = previewData?.url;
+  const focalPoint = previewData?.focalPoint;
+  const objectPosition = focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : 'center';
 
   return (
     <Card onClick={handleEdit} className="flex flex-col h-full group cursor-pointer hover:shadow-lg transition-shadow">
@@ -59,6 +62,7 @@ export function QuizCard({ quiz, onDelete, isDeleting = false }: QuizCardProps) 
                 alt={quiz.title}
                 className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'
                   }`}
+                style={{ objectPosition }}
                 onLoad={() => setImageLoading(false)}
                 onError={() => {
                   setImageError(true);
