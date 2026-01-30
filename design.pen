@@ -6651,7 +6651,7 @@
               "fill": "#94a3b8",
               "textGrowth": "fixed-width",
               "width": 700,
-              "content": "Use IA para criar quizzes interativos que capturam dados dos seus visitantes.\nPersonalize tudo, mantenha o controle total e aumente sua conversão.",
+              "content": "Crie quizzes interativos de forma simples e intuitiva.\nCapture leads qualificados e aumente suas conversões.",
               "lineHeight": 1.6,
               "textAlign": "center",
               "fontFamily": "Inter",
@@ -6751,7 +6751,17 @@
               "stroke": {
                 "align": "outside",
                 "thickness": 1,
-                "fill": "#505050ff"
+                "fill": "#4f4f4fb5"
+              },
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#000000a6",
+                "offset": {
+                  "x": 0,
+                  "y": 14
+                },
+                "blur": 31
               },
               "layout": "none",
               "children": [
@@ -7086,6 +7096,443 @@
         },
         {
           "type": "frame",
+          "id": "MfzWV",
+          "name": "Product Features Section",
+          "width": "fill_container",
+          "fill": "#1a1f2e",
+          "layout": "vertical",
+          "gap": 96,
+          "padding": [
+            96,
+            32
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Ov3J8",
+              "name": "Product Header",
+              "width": 900,
+              "layout": "vertical",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "aMj5C",
+                  "name": "productTitle",
+                  "fill": "#f8fafc",
+                  "content": "Tudo que você precisa para converter",
+                  "textAlign": "center",
+                  "fontFamily": "Fraunces",
+                  "fontSize": 48,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "YqCOf",
+                  "name": "productSubtitle",
+                  "fill": "#94a3b8",
+                  "content": "Recursos poderosos para criar funis de quiz que geram resultados reais.",
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ndeE3",
+              "name": "Feature 1 - Quiz Funnel",
+              "width": 1200,
+              "gap": 64,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "lgEgq",
+                  "name": "Feature 1 Content",
+                  "width": 450,
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "MN0Lm",
+                      "name": "Feature Badge",
+                      "fill": "#fbbf241A",
+                      "cornerRadius": 8,
+                      "padding": [
+                        6,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "N3pub",
+                          "name": "feature1BadgeText",
+                          "fill": "#fbbf24",
+                          "content": "FUNIL COMPLETO",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "eqkJN",
+                      "name": "feature1Title",
+                      "fill": "#f8fafc",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Funil de Quiz Totalmente Personalizável",
+                      "lineHeight": 1.2,
+                      "fontFamily": "Fraunces",
+                      "fontSize": 32,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "cPOML",
+                      "name": "feature1Desc",
+                      "fill": "#94a3b8",
+                      "textGrowth": "fixed-width",
+                      "width": 420,
+                      "content": "Crie quizzes completos com perguntas, resultados e páginas de captura. Controle total sobre cada etapa do funil, desde a primeira pergunta até a conversão final.",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vVM3c",
+                  "name": "Feature 1 Visual",
+                  "width": 650,
+                  "height": 400,
+                  "fill": "#232936",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#3d4454"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "eCCiE",
+                      "name": "feature1Placeholder",
+                      "fill": "#94a3b8",
+                      "content": "Screenshot: Visual Builder",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "JLGcL",
+              "name": "Feature 2 - VSL",
+              "width": 1200,
+              "gap": 64,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "UEL0F",
+                  "name": "Feature 2 Visual",
+                  "width": 650,
+                  "height": 400,
+                  "fill": "#232936",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#3d4454"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "zz1Wp",
+                      "name": "feature2Placeholder",
+                      "fill": "#94a3b8",
+                      "content": "Screenshot: Página VSL",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "eH1TE",
+                  "name": "Feature 2 Content",
+                  "width": 450,
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "QSK6R",
+                      "name": "Feature Badge",
+                      "fill": "#fbbf241A",
+                      "cornerRadius": 8,
+                      "padding": [
+                        6,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "8oYe3",
+                          "name": "feature2BadgeText",
+                          "fill": "#fbbf24",
+                          "content": "CONVERSÃO",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "7VyvG",
+                      "name": "feature2Title",
+                      "fill": "#f8fafc",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Página VSL Integrada ao Quiz",
+                      "lineHeight": 1.2,
+                      "fontFamily": "Fraunces",
+                      "fontSize": 32,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "IpPid",
+                      "name": "feature2Desc",
+                      "fill": "#94a3b8",
+                      "textGrowth": "fixed-width",
+                      "width": 420,
+                      "content": "Monte sua página de vendas diretamente no fluxo do quiz. Apresente vídeos, ofertas e chamadas para ação no momento certo para maximizar conversões.",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "WyViq",
+              "name": "Feature 3 - Leads",
+              "width": 1200,
+              "gap": 64,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "K6vB6",
+                  "name": "Feature 3 Content",
+                  "width": 450,
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "iD8GZ",
+                      "name": "Feature Badge",
+                      "fill": "#fbbf241A",
+                      "cornerRadius": 8,
+                      "padding": [
+                        6,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "cmt2g",
+                          "name": "feature3BadgeText",
+                          "fill": "#fbbf24",
+                          "content": "GESTÃO",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "c0z8Q",
+                      "name": "feature3Title",
+                      "fill": "#f8fafc",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Gestão de Leads Completa",
+                      "lineHeight": 1.2,
+                      "fontFamily": "Fraunces",
+                      "fontSize": 32,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fkh0M",
+                      "name": "feature3Desc",
+                      "fill": "#94a3b8",
+                      "textGrowth": "fixed-width",
+                      "width": 420,
+                      "content": "Visualize, filtre e exporte todos os dados coletados. Baixe planilhas detalhadas e analise o comportamento de cada lead capturado.",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DytWy",
+                  "name": "Feature 3 Visual",
+                  "width": 650,
+                  "height": 400,
+                  "fill": "#232936",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#3d4454"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "a5uGj",
+                      "name": "feature3Placeholder",
+                      "fill": "#94a3b8",
+                      "content": "Screenshot: Dashboard de Leads",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "nmAG5",
+              "name": "Feature 4 - CRM",
+              "width": 1200,
+              "gap": 64,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Q24Y8",
+                  "name": "Feature 4 Visual",
+                  "width": 650,
+                  "height": 400,
+                  "fill": "#232936",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#3d4454"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qWuxR",
+                      "name": "feature4Placeholder",
+                      "fill": "#94a3b8",
+                      "content": "Screenshot: Integração CRM",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ipFRo",
+                  "name": "Feature 4 Content",
+                  "width": 450,
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "QNixj",
+                      "name": "Feature Badge",
+                      "fill": "#fbbf241A",
+                      "cornerRadius": 8,
+                      "padding": [
+                        6,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "H0fGb",
+                          "name": "feature4BadgeText",
+                          "fill": "#fbbf24",
+                          "content": "INTEGRAÇÃO",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "8i6zA",
+                      "name": "feature4Title",
+                      "fill": "#f8fafc",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Sincronização com CRM MultiMeta",
+                      "lineHeight": 1.2,
+                      "fontFamily": "Fraunces",
+                      "fontSize": 32,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ryYiV",
+                      "name": "feature4Desc",
+                      "fill": "#94a3b8",
+                      "textGrowth": "fixed-width",
+                      "width": 420,
+                      "content": "Seus leads são enviados automaticamente para o MultiMeta CRM. Automação completa do funil de vendas sem precisar exportar manualmente.",
+                      "lineHeight": 1.7,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
           "id": "Px4sO",
           "name": "How It Works Section",
           "width": "fill_container",
@@ -7133,38 +7580,68 @@
             },
             {
               "type": "frame",
-              "id": "2fPKy",
-              "name": "Step 1",
+              "id": "WLEYt",
+              "name": "stepsContainer",
               "width": 1100,
-              "gap": 64,
-              "alignItems": "center",
+              "gap": 32,
               "children": [
                 {
                   "type": "frame",
-                  "id": "U75YD",
-                  "name": "step1Text",
+                  "id": "GxOFu",
+                  "name": "card1",
                   "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#232936",
+                  "cornerRadius": 24,
                   "layout": "vertical",
-                  "gap": 16,
+                  "gap": 24,
+                  "padding": 32,
                   "children": [
                     {
                       "type": "frame",
-                      "id": "aJDmG",
-                      "name": "step1Icon",
-                      "width": 48,
-                      "height": 48,
+                      "id": "CjWK9",
+                      "name": "numFrame1",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "2OLSd",
+                          "name": "num1",
+                          "fill": "#fbbf24",
+                          "content": "01",
+                          "fontFamily": "Fraunces",
+                          "fontSize": 64,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "s1f9G",
+                          "name": "line1",
+                          "width": "fill_container",
+                          "height": 2,
+                          "fill": "#fbbf2440"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NUrqu",
+                      "name": "iconFrame1",
+                      "width": 56,
+                      "height": 56,
                       "fill": "#fbbf241A",
-                      "cornerRadius": 12,
+                      "cornerRadius": 16,
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "CBDF1",
-                          "name": "step1IconInner",
-                          "width": 24,
-                          "height": 24,
-                          "iconFontName": "message-square",
+                          "id": "qBttC",
+                          "name": "icon1",
+                          "width": 28,
+                          "height": 28,
+                          "iconFontName": "file-plus",
                           "iconFontFamily": "lucide",
                           "fill": "#fbbf24"
                         }
@@ -7172,141 +7649,86 @@
                     },
                     {
                       "type": "text",
-                      "id": "Ii1Po",
-                      "name": "step1Title",
+                      "id": "aVsel",
+                      "name": "title1",
                       "fill": "#f8fafc",
-                      "content": "Descreva seu quiz",
+                      "content": "Crie seu quiz",
                       "fontFamily": "Inter",
-                      "fontSize": 24,
+                      "fontSize": 22,
                       "fontWeight": "700"
                     },
                     {
                       "type": "text",
-                      "id": "Hgbma",
-                      "name": "step1Desc",
+                      "id": "PWDJc",
+                      "name": "desc1",
                       "fill": "#94a3b8",
                       "textGrowth": "fixed-width",
-                      "width": 420,
-                      "content": "Converse com a IA sobre o que você quer criar. Ela entende o contexto e monta a estrutura completa para você.",
+                      "width": "fill_container",
+                      "content": "Comece do zero ou escolha um template pronto. Adicione perguntas e configure os resultados de forma visual.",
                       "lineHeight": 1.6,
                       "fontFamily": "Inter",
-                      "fontSize": 18,
+                      "fontSize": 16,
                       "fontWeight": "normal"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "BILbw",
-                  "name": "Step 1 Video",
+                  "id": "soZ6O",
+                  "name": "card2",
                   "width": "fill_container",
-                  "height": 300,
-                  "fill": "#23293680",
-                  "cornerRadius": 16,
-                  "stroke": {
-                    "thickness": 2,
-                    "fill": "#94a3b840"
-                  },
-                  "effect": {
-                    "type": "shadow",
-                    "shadowType": "outer",
-                    "color": "#00000040",
-                    "offset": {
-                      "x": 0,
-                      "y": 25
-                    },
-                    "blur": 50
-                  },
+                  "height": "fill_container",
+                  "fill": "#232936",
+                  "cornerRadius": 24,
                   "layout": "vertical",
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "92wFg",
-                      "name": "step1VideoText",
-                      "fill": "#94a3b8",
-                      "content": "Video Placeholder: Descreva seu quiz",
-                      "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "500"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "TfzbR",
-              "name": "Step 2",
-              "width": 1100,
-              "gap": 64,
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "ZWcSv",
-                  "name": "Step 2 Video",
-                  "width": "fill_container",
-                  "height": 300,
-                  "fill": "#23293680",
-                  "cornerRadius": 16,
-                  "stroke": {
-                    "thickness": 2,
-                    "fill": "#94a3b840"
-                  },
-                  "effect": {
-                    "type": "shadow",
-                    "shadowType": "outer",
-                    "color": "#00000040",
-                    "offset": {
-                      "x": 0,
-                      "y": 25
-                    },
-                    "blur": 50
-                  },
-                  "layout": "vertical",
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "qMSQw",
-                      "name": "step2VideoText",
-                      "fill": "#94a3b8",
-                      "content": "Video Placeholder: Edite e personalize",
-                      "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "500"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "MJYeQ",
-                  "name": "step2Text",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 16,
+                  "gap": 24,
+                  "padding": 32,
                   "children": [
                     {
                       "type": "frame",
-                      "id": "nJRQg",
-                      "name": "step2Icon",
-                      "width": 48,
-                      "height": 48,
+                      "id": "cetXI",
+                      "name": "numFrame2",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "w5kto",
+                          "name": "num2",
+                          "fill": "#fbbf24",
+                          "content": "02",
+                          "fontFamily": "Fraunces",
+                          "fontSize": 64,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Eq2QU",
+                          "name": "line2",
+                          "width": "fill_container",
+                          "height": 2,
+                          "fill": "#fbbf2440"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "prIw3",
+                      "name": "iconFrame2",
+                      "width": 56,
+                      "height": 56,
                       "fill": "#fbbf241A",
-                      "cornerRadius": 12,
+                      "cornerRadius": 16,
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "9VYCO",
-                          "name": "step2IconInner",
-                          "width": 24,
-                          "height": 24,
-                          "iconFontName": "settings-2",
+                          "id": "7uBhq",
+                          "name": "icon2",
+                          "width": 28,
+                          "height": 28,
+                          "iconFontName": "sliders-horizontal",
                           "iconFontFamily": "lucide",
                           "fill": "#fbbf24"
                         }
@@ -7314,65 +7736,86 @@
                     },
                     {
                       "type": "text",
-                      "id": "ljZ8h",
-                      "name": "step2Title",
+                      "id": "JjAEu",
+                      "name": "title2",
                       "fill": "#f8fafc",
-                      "content": "Edite e personalize",
+                      "content": "Personalize tudo",
                       "fontFamily": "Inter",
-                      "fontSize": 24,
+                      "fontSize": 22,
                       "fontWeight": "700"
                     },
                     {
                       "type": "text",
-                      "id": "1GtzE",
-                      "name": "step2Desc",
+                      "id": "SRdI0",
+                      "name": "desc2",
                       "fill": "#94a3b8",
                       "textGrowth": "fixed-width",
-                      "width": 420,
-                      "content": "Veja a estrutura surgir em tempo real. Ajuste perguntas, defina resultados e personalize o design com sua marca.",
+                      "width": "fill_container",
+                      "content": "Ajuste cores, fontes e imagens para combinar com sua marca. Adicione páginas de captura e VSL.",
                       "lineHeight": 1.6,
                       "fontFamily": "Inter",
-                      "fontSize": 18,
+                      "fontSize": 16,
                       "fontWeight": "normal"
                     }
                   ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "jyxvt",
-              "name": "Step 3",
-              "width": 1100,
-              "gap": 64,
-              "alignItems": "center",
-              "children": [
+                },
                 {
                   "type": "frame",
-                  "id": "zEd0b",
-                  "name": "step3Text",
+                  "id": "3bTaI",
+                  "name": "card3",
                   "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#232936",
+                  "cornerRadius": 24,
                   "layout": "vertical",
-                  "gap": 16,
+                  "gap": 24,
+                  "padding": 32,
                   "children": [
                     {
                       "type": "frame",
-                      "id": "nPPSR",
-                      "name": "step3Icon",
-                      "width": 48,
-                      "height": 48,
+                      "id": "ebOmM",
+                      "name": "numFrame3",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Vs6Qq",
+                          "name": "num3",
+                          "fill": "#fbbf24",
+                          "content": "03",
+                          "fontFamily": "Fraunces",
+                          "fontSize": 64,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FA4lS",
+                          "name": "line3",
+                          "width": "fill_container",
+                          "height": 2,
+                          "fill": "#fbbf2440"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "WChBq",
+                      "name": "iconFrame3",
+                      "width": 56,
+                      "height": 56,
                       "fill": "#fbbf241A",
-                      "cornerRadius": 12,
+                      "cornerRadius": 16,
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "icon_font",
-                          "id": "zqYl1",
-                          "name": "step3IconInner",
-                          "width": 24,
-                          "height": 24,
-                          "iconFontName": "share-2",
+                          "id": "De2zm",
+                          "name": "icon3",
+                          "width": 28,
+                          "height": 28,
+                          "iconFontName": "rocket",
                           "iconFontFamily": "lucide",
                           "fill": "#fbbf24"
                         }
@@ -7380,64 +7823,26 @@
                     },
                     {
                       "type": "text",
-                      "id": "S5ZCg",
-                      "name": "step3Title",
+                      "id": "lRgdh",
+                      "name": "title3",
                       "fill": "#f8fafc",
-                      "content": "Publique e capture leads",
+                      "content": "Publique e capture",
                       "fontFamily": "Inter",
-                      "fontSize": 24,
+                      "fontSize": 22,
                       "fontWeight": "700"
                     },
                     {
                       "type": "text",
-                      "id": "TFLOD",
-                      "name": "step3Desc",
+                      "id": "c2fw2",
+                      "name": "desc3",
                       "fill": "#94a3b8",
                       "textGrowth": "fixed-width",
-                      "width": 420,
-                      "content": "Compartilhe o link do seu quiz. Cada pessoa que completa o quiz se torna um lead qualificado no seu painel.",
+                      "width": "fill_container",
+                      "content": "Compartilhe o link do seu quiz e capture leads. Acompanhe resultados em tempo real no dashboard.",
                       "lineHeight": 1.6,
                       "fontFamily": "Inter",
-                      "fontSize": 18,
+                      "fontSize": 16,
                       "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "cIJkv",
-                  "name": "Step 3 Video",
-                  "width": "fill_container",
-                  "height": 300,
-                  "fill": "#23293680",
-                  "cornerRadius": 16,
-                  "stroke": {
-                    "thickness": 2,
-                    "fill": "#94a3b840"
-                  },
-                  "effect": {
-                    "type": "shadow",
-                    "shadowType": "outer",
-                    "color": "#00000040",
-                    "offset": {
-                      "x": 0,
-                      "y": 25
-                    },
-                    "blur": 50
-                  },
-                  "layout": "vertical",
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "NrJIU",
-                      "name": "step3VideoText",
-                      "fill": "#94a3b8",
-                      "content": "Video Placeholder: Publique e capture leads",
-                      "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "500"
                     }
                   ]
                 }
@@ -8922,8 +9327,8 @@
                           "type": "icon_font",
                           "id": "UUnGb",
                           "name": "addStepIcon",
-                          "width": 0,
-                          "height": 0,
+                          "width": 16,
+                          "height": 16,
                           "iconFontName": "plus",
                           "iconFontFamily": "lucide",
                           "fill": "#6B5E5E"
@@ -8981,8 +9386,8 @@
                               "type": "icon_font",
                               "id": "ygeNU",
                               "name": "step1IconInner",
-                              "width": 0,
-                              "height": 0,
+                              "width": 16,
+                              "height": 16,
                               "iconFontName": "play",
                               "iconFontFamily": "lucide",
                               "fill": "#FFFFFF"

@@ -28,14 +28,14 @@ const faqs = [
   },
 ];
 
-const AccordionItem = ({ faq }: { faq: typeof faqs[0] }) => {
+const AccordionItem = ({ faq }: { faq: (typeof faqs)[0] }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="border-b border-border py-4">
+    <div className="border-b border-[#3d4454] py-4">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex justify-between items-center w-full py-4 text-lg font-medium text-left text-foreground hover:text-primary transition-colors focus:outline-none"
+        className="flex justify-between items-center w-full py-4 text-lg font-medium text-left text-[#f8fafc] hover:text-[#fbbf24] transition-colors focus:outline-none"
       >
         <span>{faq.question}</span>
         <motion.div
@@ -43,7 +43,7 @@ const AccordionItem = ({ faq }: { faq: typeof faqs[0] }) => {
           transition={{ duration: 0.3 }}
           className="flex-shrink-0 ml-4"
         >
-          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+          <ChevronDown className="h-5 w-5 text-[#94a3b8]" />
         </motion.div>
       </button>
       <AnimatePresence>
@@ -55,23 +55,21 @@ const AccordionItem = ({ faq }: { faq: typeof faqs[0] }) => {
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <p className="pb-4 text-base text-muted-foreground leading-relaxed">
-              {faq.answer}
-            </p>
+            <p className="pb-4 text-base text-[#94a3b8] leading-relaxed">{faq.answer}</p>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
-  )
-}
+  );
+};
 
 const containerVariants = {
   hidden: { opacity: 0, y: 50 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5 }
-  }
+    transition: { duration: 0.5 },
+  },
 };
 
 const itemsVariants = {
@@ -79,25 +77,24 @@ const itemsVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: 0.2 }
-  }
+    transition: { duration: 0.5, delay: 0.2 },
+  },
 };
 
 export const FAQSection = () => {
   const [ref, controls] = useScrollAnimation();
 
   return (
-    <section id="faq" className="py-20 bg-background sm:py-32">
-      <div ref={ref} className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="faq" className="py-20 sm:py-32">
+      <div ref={ref} className="container mx-auto px-8">
         <motion.div
           initial="hidden"
           animate={controls}
           variants={containerVariants}
-          className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-extrabold text-foreground sm:text-5xl">
-            Perguntas Frequentes
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          className="max-w-3xl mx-auto text-center"
+        >
+          <h2 className="text-4xl md:text-5xl font-extrabold text-[#f8fafc]">Perguntas Frequentes</h2>
+          <p className="mt-4 text-lg text-[#94a3b8]">
             Tire suas dúvidas sobre como o MultiQuiz pode ajudar você a vender mais.
           </p>
         </motion.div>
@@ -105,7 +102,7 @@ export const FAQSection = () => {
           initial="hidden"
           animate={controls}
           variants={itemsVariants}
-          className="mt-12 max-w-3xl mx-auto"
+          className="mt-12 max-w-[1200px] mx-auto"
         >
           {faqs.map((faq, i) => (
             <AccordionItem key={i} faq={faq} />
@@ -115,4 +112,3 @@ export const FAQSection = () => {
     </section>
   );
 };
-

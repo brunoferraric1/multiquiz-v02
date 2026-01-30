@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { LandingHeader } from '@/components/landing/Header';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
+import { ProductFeaturesSection } from '@/components/landing/ProductFeaturesSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import { FAQSection } from '@/components/landing/FAQSection';
@@ -26,24 +27,30 @@ export default function LandingPage() {
     // Show spinner while checking auth or redirecting
     // We also show it if 'user' is present because the useEffect will trigger a redirect immediately
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-[#1a1f2e]">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#fbbf24] border-t-transparent" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-background min-h-screen">
-      <LandingHeader />
-      <HeroSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <PricingSection />
-      <FAQSection />
-      <CTASection />
-      <LandingFooter />
+    <div className="bg-[#1a1f2e] min-h-screen relative">
+      {/* Grid pattern overlay */}
+      <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-30" aria-hidden="true" />
+
+      <div className="relative">
+        <LandingHeader />
+        <HeroSection />
+        <FeaturesSection />
+        <ProductFeaturesSection />
+        <HowItWorksSection />
+        <PricingSection />
+        <FAQSection />
+        <CTASection />
+        <LandingFooter />
+      </div>
     </div>
   );
 }

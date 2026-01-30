@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
 export const LandingHeader = () => {
@@ -12,41 +11,45 @@ export const LandingHeader = () => {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50"
+      className="fixed top-0 left-0 right-0 z-50 h-20 bg-[#1a1f2e]/80 backdrop-blur-xl border-b border-[#3d4454]"
     >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between">
-          <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground">
-              <Image
-                src="/multiquiz-logo.svg"
-                alt="MultiQuiz Logo"
-                width={32}
-                height={32}
-                className="rounded-lg"
-              />
-              MultiQuiz
-            </Link>
-          </div>
-          <nav className="hidden md:flex md:space-x-8">
-            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+      <div className="container mx-auto px-8 h-full">
+        <div className="flex h-full items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/multiquiz-logo.svg"
+              alt="MultiQuiz Logo"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
+            <span className="text-xl font-bold text-[#f8fafc] font-serif">MultiQuiz</span>
+          </Link>
+
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center gap-8">
+            <Link href="#features" className="text-sm font-medium text-[#94a3b8] hover:text-[#f8fafc] transition-colors">
               Por que usar
             </Link>
-            <Link href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <Link href="#how-it-works" className="text-sm font-medium text-[#94a3b8] hover:text-[#f8fafc] transition-colors">
               Como funciona
             </Link>
-            <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <Link href="#pricing" className="text-sm font-medium text-[#94a3b8] hover:text-[#f8fafc] transition-colors">
               Planos
             </Link>
-            <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <Link href="#faq" className="text-sm font-medium text-[#94a3b8] hover:text-[#f8fafc] transition-colors">
               Dúvidas
             </Link>
           </nav>
-          <div className="flex items-center">
-            <Button asChild className="bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors">
-              <Link href="/dashboard">Começar Grátis</Link>
-            </Button>
-          </div>
+
+          {/* CTA Button */}
+          <Link
+            href="/dashboard"
+            className="px-4 py-2.5 rounded-full bg-[#fbbf24] text-[#1a1f2e] text-sm font-bold hover:bg-[#fbbf24]/90 transition-colors"
+          >
+            Começar Grátis
+          </Link>
         </div>
       </div>
     </motion.header>

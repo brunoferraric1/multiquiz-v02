@@ -3,40 +3,28 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { useScrollAnimation } from '@/lib/hooks/use-scroll-animation';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 
 const FREE_FEATURES = [
-  { text: '1 quiz publicado', included: true },
-  { text: 'Rascunhos ilimitados', included: true },
-  { text: 'Até 10 leads coletados', included: true },
-  { text: 'Criação com IA', included: false },
-  { text: 'Gestão e download de leads', included: false },
-  { text: 'Integração com CRM', included: false },
-  { text: 'Links externos nos botões', included: false },
+  '1 quiz publicado',
+  '10 leads coletados',
+  'Rascunhos ilimitados',
 ];
 
 const PLUS_FEATURES = [
-  { text: 'Até 3 quizzes publicados', included: true },
-  { text: 'Rascunhos ilimitados', included: true },
-  { text: 'Até 3.000 leads coletados', included: true },
-  { text: 'Criação com IA', included: true },
-  { text: 'Gestão e download de leads', included: true },
-  { text: 'Integração com CRM', included: true },
-  { text: 'Links externos nos botões', included: true },
+  '3 quizzes publicados',
+  '3.000 leads/mês',
+  'Criação com IA',
+  'Gestão e download de leads',
+  'Integração com CRM',
 ];
 
 const PRO_FEATURES = [
-  { text: 'Até 10 quizzes publicados', included: true },
-  { text: 'Rascunhos ilimitados', included: true },
-  { text: 'Até 10.000 leads coletados', included: true },
-  { text: 'Criação com IA', included: true },
-  { text: 'Gestão e download de leads', included: true },
-  { text: 'Integração com CRM', included: true },
-  { text: 'Links externos nos botões', included: true },
+  '10 quizzes publicados',
+  '10.000 leads/mês',
+  'Tudo do Plus incluído',
+  'Suporte prioritário',
 ];
 
 const cardVariants = {
@@ -55,8 +43,12 @@ const cardVariants = {
 export const PricingSection = () => {
   const router = useRouter();
   const { user } = useAuth();
-  const [ref, controls] = useScrollAnimation();
-  const [loadingTier, setLoadingTier] = useState<'plus' | 'pro' | null>(null);
+  const [loadingTier, setLoadingTier] = useState<'free' | 'plus' | 'pro' | null>(null);
+
+  const handleFreeClick = () => {
+    setLoadingTier('free');
+    router.push('/dashboard');
+  };
 
   const handlePaidClick = (tier: 'plus' | 'pro') => {
     if (!user) {
@@ -70,134 +62,103 @@ export const PricingSection = () => {
   };
 
   return (
-    <section id="pricing" className="py-20 bg-background sm:py-32 relative">
-      {/* Background Blob */}
-      <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-primary/5 blur-[120px] rounded-full opacity-50 pointer-events-none" />
-
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center max-w-3xl mx-auto">
-          <h2 className="text-3xl font-extrabold text-foreground sm:text-5xl">
+    <section id="pricing" className="py-20 sm:py-32">
+      <div className="container mx-auto px-8">
+        {/* Header */}
+        <div className="flex flex-col items-center gap-4 text-center mb-12">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-[#f8fafc] font-serif">
             Planos Simples e Transparentes
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="text-lg text-[#94a3b8]">
             Comece grátis, evolua quando precisar. Sem surpresas.
           </p>
         </div>
 
+        {/* Pricing Grid */}
         <motion.div
-          ref={ref}
           initial="hidden"
-          animate={controls}
-          className="mt-12 grid max-w-sm gap-8 mx-auto lg:max-w-6xl lg:grid-cols-3"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-100px' }}
+          className="flex flex-col lg:flex-row items-center justify-center gap-6 max-w-[1100px] mx-auto"
         >
           {/* Free Tier */}
           <motion.div
             custom={0}
             variants={cardVariants}
             whileHover={{ y: -8 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="flex flex-col rounded-3xl overflow-hidden border border-border bg-card/50 cursor-pointer"
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={handleFreeClick}
+            className="w-full max-w-[340px] flex flex-col gap-6 p-8 bg-white rounded-3xl border border-[#E8DDD8] cursor-pointer"
           >
-            <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
-              <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-muted text-muted-foreground">
-                Grátis
-              </h3>
-              <div className="mt-4 flex items-baseline text-4xl font-extrabold text-foreground">
-                <span className="text-xl font-medium text-muted-foreground mr-2">R$</span>
-                0
-                <span className="ml-1 text-lg font-medium text-muted-foreground">
-                  /mês
-                </span>
-              </div>
-              <p className="mt-5 text-base text-muted-foreground">
-                Perfeito para começar e testar a plataforma.
-              </p>
+            <div className="flex flex-col gap-2">
+              <h3 className="text-2xl font-semibold text-[#2D2522] font-serif">Grátis</h3>
+              <p className="text-[15px] text-[#6B5E5E]">Para testar a plataforma</p>
             </div>
-            <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
-              <ul className="space-y-4">
-                {FREE_FEATURES.map((feature) => (
-                  <li key={feature.text} className="flex items-start">
-                    <div className="flex-shrink-0">
-                      {feature.included ? (
-                        <Check className="h-5 w-5 text-primary" />
-                      ) : (
-                        <X className="h-5 w-5 text-muted-foreground/50" />
-                      )}
-                    </div>
-                    <p className={`ml-3 text-sm ${feature.included ? 'text-foreground' : 'text-muted-foreground/70'}`}>
-                      {feature.text}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-              <div className="rounded-md shadow">
-                <Button
-                  asChild
-                  size="lg"
-                  className="w-full font-bold h-12 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                >
-                  <Link href="/dashboard">Começar Grátis</Link>
-                </Button>
-              </div>
+
+            <div className="flex items-end gap-1">
+              <span className="text-[40px] font-semibold text-[#2D2522] font-serif">R$ 0</span>
+              <span className="text-base text-[#6B5E5E] mb-1">/mês</span>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {FREE_FEATURES.map((feature) => (
+                <div key={feature} className="flex items-center gap-2.5">
+                  <Check className="w-[18px] h-[18px] text-[#009120]" />
+                  <span className="text-[15px] text-[#6B5E5E]">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-center h-[52px] rounded-full bg-[#FAF6F3] border border-[#E8DDD8] text-[15px] font-semibold text-[#2D2522]">
+              {loadingTier === 'free' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Começar Grátis'
+              )}
             </div>
           </motion.div>
 
-          {/* Plus Tier */}
+          {/* Plus Tier - Featured */}
           <motion.div
             custom={1}
             variants={cardVariants}
             whileHover={{ y: -8 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="flex flex-col rounded-3xl overflow-hidden border-2 border-primary shadow-xl relative cursor-pointer"
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={() => handlePaidClick('plus')}
+            className="w-full max-w-[360px] flex flex-col gap-6 p-8 bg-white rounded-3xl shadow-[0_20px_60px_0_rgba(45,37,34,0.19)] cursor-pointer"
           >
-            {/* Popular Badge */}
-            <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-bl-xl">
+            <span className="self-start px-3 py-1.5 rounded-xl bg-[#1a1f2e] text-[11px] font-semibold text-white tracking-wide">
               MAIS POPULAR
+            </span>
+
+            <div className="flex flex-col gap-2">
+              <h3 className="text-2xl font-semibold text-[#1a1f2e] font-serif">Plus</h3>
+              <p className="text-[15px] text-[#5e5e5e]">Para profissionais e pequenas empresas</p>
             </div>
 
-            <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
-              <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-primary/20 text-primary">
-                Plus
-              </h3>
-              <div className="mt-4 flex items-baseline text-4xl font-extrabold text-foreground">
-                <span className="text-xl font-medium text-muted-foreground mr-2">R$</span>
-                89,90
-                <span className="ml-1 text-lg font-medium text-muted-foreground">
-                  /mês
-                </span>
-              </div>
-              <p className="mt-5 text-base text-muted-foreground">
-                Para quem quer escalar sua captação de leads.
-              </p>
+            <div className="flex items-end gap-1">
+              <span className="text-[40px] font-semibold text-[#1a1f2e] font-serif">R$ 89,90</span>
+              <span className="text-base text-[#5e5e5e] mb-1">/mês</span>
             </div>
-            <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
-              <ul className="space-y-4">
-                {PLUS_FEATURES.map((feature) => (
-                  <li key={feature.text} className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <Check className="h-5 w-5 text-primary" />
-                    </div>
-                    <p className="ml-3 text-sm text-foreground">{feature.text}</p>
-                  </li>
-                ))}
-              </ul>
-              <div className="rounded-md shadow">
-                <Button
-                  onClick={() => handlePaidClick('plus')}
-                  disabled={loadingTier !== null}
-                  size="lg"
-                  className="w-full font-bold h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  {loadingTier === 'plus' ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Carregando...
-                    </>
-                  ) : (
-                    'Começar Agora'
-                  )}
-                </Button>
-              </div>
+
+            <div className="flex flex-col gap-3">
+              {PLUS_FEATURES.map((feature) => (
+                <div key={feature} className="flex items-center gap-2.5">
+                  <Check className="w-[18px] h-[18px] text-[#009120]" />
+                  <span className="text-[15px] text-[#333333]">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-center h-[52px] rounded-full bg-[#fbbf24] text-[15px] font-semibold text-[#1a1f2e] shadow-[0_8px_20px_0_rgba(251,191,36,0.25)]">
+              {loadingTier === 'plus' ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Carregando...
+                </>
+              ) : (
+                'Assinar Plus'
+              )}
             </div>
           </motion.div>
 
@@ -206,59 +167,44 @@ export const PricingSection = () => {
             custom={2}
             variants={cardVariants}
             whileHover={{ y: -8 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="flex flex-col rounded-3xl overflow-hidden border border-border bg-card/50 cursor-pointer"
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={() => handlePaidClick('pro')}
+            className="w-full max-w-[340px] flex flex-col gap-6 p-8 bg-white rounded-3xl border border-[#E8DDD8] cursor-pointer"
           >
-            <div className="px-6 py-8 bg-card sm:p-10 sm:pb-6">
-              <h3 className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-muted text-muted-foreground">
-                Pro
-              </h3>
-              <div className="mt-4 flex items-baseline text-4xl font-extrabold text-foreground">
-                <span className="text-xl font-medium text-muted-foreground mr-2">R$</span>
-                129,90
-                <span className="ml-1 text-lg font-medium text-muted-foreground">
-                  /mês
-                </span>
-              </div>
-              <p className="mt-5 text-base text-muted-foreground">
-                Para operações maiores com alto volume de leads.
-              </p>
+            <div className="flex flex-col gap-2">
+              <h3 className="text-2xl font-semibold text-[#2D2522] font-serif">Pro</h3>
+              <p className="text-[15px] text-[#6B5E5E]">Para operações maiores</p>
             </div>
-            <div className="flex-1 flex flex-col justify-between px-6 pt-6 pb-8 bg-card/30 space-y-6 sm:p-10 sm:pt-6">
-              <ul className="space-y-4">
-                {PRO_FEATURES.map((feature) => (
-                  <li key={feature.text} className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <Check className="h-5 w-5 text-primary" />
-                    </div>
-                    <p className="ml-3 text-sm text-foreground">{feature.text}</p>
-                  </li>
-                ))}
-              </ul>
-              <div className="rounded-md shadow">
-                <Button
-                  onClick={() => handlePaidClick('pro')}
-                  disabled={loadingTier !== null}
-                  size="lg"
-                  variant="outline"
-                  className="w-full font-bold h-12 rounded-xl"
-                >
-                  {loadingTier === 'pro' ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Carregando...
-                    </>
-                  ) : (
-                    'Começar Agora'
-                  )}
-                </Button>
-              </div>
+
+            <div className="flex items-end gap-1">
+              <span className="text-[40px] font-semibold text-[#2D2522] font-serif">R$ 129,90</span>
+              <span className="text-base text-[#6B5E5E] mb-1">/mês</span>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {PRO_FEATURES.map((feature) => (
+                <div key={feature} className="flex items-center gap-2.5">
+                  <Check className="w-[18px] h-[18px] text-[#009120]" />
+                  <span className="text-[15px] text-[#6B5E5E]">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-center h-[52px] rounded-full bg-[#FAF6F3] border border-[#E8DDD8] text-[15px] font-semibold text-[#2D2522]">
+              {loadingTier === 'pro' ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Carregando...
+                </>
+              ) : (
+                'Assinar Pro'
+              )}
             </div>
           </motion.div>
         </motion.div>
 
         {/* Trust Indicators */}
-        <p className="mt-8 text-center text-sm text-muted-foreground">
+        <p className="mt-12 text-center text-sm text-[#94a3b8]">
           Cancele a qualquer momento • Sem compromisso • Pagamento seguro via Stripe
         </p>
       </div>

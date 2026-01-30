@@ -3,28 +3,23 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useScrollAnimation } from '@/lib/hooks/use-scroll-animation';
-import { BrainCircuit, Settings, Users, Palette } from 'lucide-react';
+import { Settings, Users, Palette } from 'lucide-react';
 
 const features = [
   {
-    name: 'IA que Cria por Você',
-    description: 'Descreva seu quiz e a IA gera perguntas, respostas e resultados. Você só ajusta o que precisar.',
-    icon: <BrainCircuit size={28} className="text-primary" />,
-  },
-  {
     name: 'Controle Total',
-    description: 'Edite textos, reordene perguntas, personalize resultados. A IA ajuda, mas o controle é seu.',
-    icon: <Settings size={28} className="text-primary" />,
+    description: 'Edite textos, reordene perguntas, personalize resultados. O controle é todo seu.',
+    icon: <Settings size={28} className="text-[#fbbf24]" />,
   },
   {
     name: 'Leads Qualificados',
     description: 'Capture nome, email e WhatsApp antes do resultado. Saiba exatamente quem é seu lead.',
-    icon: <Users size={28} className="text-primary" />,
+    icon: <Users size={28} className="text-[#fbbf24]" />,
   },
   {
     name: 'Sua Marca, Seu Estilo',
     description: 'Cores, imagens e textos personalizáveis. Crie quizzes com a identidade do seu negócio.',
-    icon: <Palette size={28} className="text-primary" />,
+    icon: <Palette size={28} className="text-[#fbbf24]" />,
   },
 ];
 
@@ -45,39 +40,40 @@ export const FeaturesSection = () => {
   const [ref, controls] = useScrollAnimation();
 
   return (
-    <section id="features" className="py-20 bg-background sm:py-32">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto">
-          <h2 className="text-3xl font-extrabold text-foreground sm:text-5xl">
+    <section id="features" className="py-20 sm:py-32">
+      <div className="container mx-auto px-8">
+        {/* Features Header */}
+        <div className="flex flex-col items-center gap-4 text-center mb-20">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-[#f8fafc] font-serif">
             Por que quizzes convertem mais?
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="max-w-[700px] text-lg text-[#94a3b8] leading-relaxed">
             Interatividade gera engajamento. MultiQuiz transforma visitantes passivos em leads qualificados.
           </p>
         </div>
-        <div className="mt-20">
-          <motion.div
-            ref={ref}
-            initial="hidden"
-            animate={controls}
-            className="grid gap-8 md:grid-cols-2 lg:grid-cols-4"
-          >
-            {features.map((feature, i) => (
-              <motion.div
-                key={feature.name}
-                custom={i}
-                variants={cardVariants}
-                className="flex flex-col text-center p-8 bg-card rounded-3xl border border-border/50 hover:border-primary/50 transition-colors duration-300"
-              >
-                <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mx-auto mb-6">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold text-foreground mb-3">{feature.name}</h3>
-                <p className="text-base text-muted-foreground leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+
+        {/* Features Grid */}
+        <motion.div
+          ref={ref}
+          initial="hidden"
+          animate={controls}
+          className="grid gap-8 md:grid-cols-3 max-w-[1000px] mx-auto"
+        >
+          {features.map((feature, i) => (
+            <motion.div
+              key={feature.name}
+              custom={i}
+              variants={cardVariants}
+              className="flex flex-col items-center text-center p-8 bg-[#232936]/50 rounded-3xl border border-[#3d4454]/50 hover:border-[#fbbf24]/30 transition-colors duration-300"
+            >
+              <div className="flex items-center justify-center h-16 w-16 rounded-xl bg-[#fbbf24]/10 mb-6">
+                {feature.icon}
+              </div>
+              <h3 className="text-xl font-bold text-[#f8fafc] mb-3">{feature.name}</h3>
+              <p className="text-base text-[#94a3b8] leading-relaxed max-w-[220px]">{feature.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );

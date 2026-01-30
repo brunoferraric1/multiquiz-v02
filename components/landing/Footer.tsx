@@ -3,33 +3,52 @@ import Link from 'next/link';
 
 export const LandingFooter = () => {
   return (
-    <footer className="bg-background border-t border-border">
-      <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="mt-8 border-t border-border pt-8 md:flex md:items-center md:justify-between">
-          <div className="flex flex-col space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">MultiQuiz</h3>
-            <p className="text-muted-foreground max-w-xs">A plataforma mais fácil para criar quizzes que geram leads qualificados em minutos.</p>
+    <footer className="border-t border-[#3d4454]">
+      <div className="container mx-auto px-8 py-12">
+        {/* Main Footer */}
+        <div className="flex flex-col md:flex-row md:justify-between gap-8 pt-8 border-t border-[#3d4454]">
+          {/* Left - Logo & Tagline */}
+          <div className="flex flex-col gap-4 max-w-[320px]">
+            <h3 className="text-lg font-semibold text-[#f8fafc]">MultiQuiz</h3>
+            <p className="text-sm text-[#94a3b8] leading-relaxed">
+              A plataforma mais fácil para criar quizzes que geram leads qualificados em minutos.
+            </p>
           </div>
-          <div className="grid grid-cols-2 gap-8 mt-8 md:mt-0">
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground tracking-wider uppercase">Produto</h3>
-              <ul className="mt-4 space-y-4">
-                <li><Link href="#features" className="text-base text-muted-foreground hover:text-foreground">Recursos</Link></li>
-                <li><Link href="#how-it-works" className="text-base text-muted-foreground hover:text-foreground">Como Funciona</Link></li>
-                <li><Link href="#pricing" className="text-base text-muted-foreground hover:text-foreground">Planos</Link></li>
-              </ul>
+
+          {/* Right - Links */}
+          <div className="flex gap-16">
+            {/* Produto Column */}
+            <div className="flex flex-col gap-4">
+              <h4 className="text-xs font-semibold text-[#94a3b8] tracking-wider uppercase">
+                PRODUTO
+              </h4>
+              <Link href="#features" className="text-sm text-[#94a3b8] hover:text-[#f8fafc] transition-colors">
+                Recursos
+              </Link>
+              <Link href="#how-it-works" className="text-sm text-[#94a3b8] hover:text-[#f8fafc] transition-colors">
+                Como Funciona
+              </Link>
+              <Link href="#pricing" className="text-sm text-[#94a3b8] hover:text-[#f8fafc] transition-colors">
+                Planos
+              </Link>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground tracking-wider uppercase">Sobre</h3>
-              <ul className="mt-4 space-y-4">
-                <li><Link href="#" className="text-base text-muted-foreground hover:text-foreground">Contato</Link></li>
-                <li><Link href="#" className="text-base text-muted-foreground hover:text-foreground">Termos de Uso</Link></li>
-              </ul>
+
+            {/* Sobre Column */}
+            <div className="flex flex-col gap-4">
+              <h4 className="text-xs font-semibold text-[#94a3b8] tracking-wider uppercase">SOBRE</h4>
+              <Link href="#" className="text-sm text-[#94a3b8] hover:text-[#f8fafc] transition-colors">
+                Contato
+              </Link>
+              <Link href="#" className="text-sm text-[#94a3b8] hover:text-[#f8fafc] transition-colors">
+                Termos de Uso
+              </Link>
             </div>
           </div>
         </div>
-        <div className="mt-8 pt-8 border-t border-border">
-          <p className="text-center text-sm text-muted-foreground">
+
+        {/* Bottom - Copyright */}
+        <div className="flex justify-center pt-8 mt-8 border-t border-[#3d4454]">
+          <p className="text-sm text-[#94a3b8]">
             &copy; {new Date().getFullYear()} MultiQuiz. Todos os direitos reservados.
           </p>
         </div>

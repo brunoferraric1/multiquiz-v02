@@ -3,108 +3,90 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useScrollAnimation } from '@/lib/hooks/use-scroll-animation';
-import { MessageSquare, Settings2, Share2 } from 'lucide-react';
+import { FilePlus, SlidersHorizontal, Rocket } from 'lucide-react';
 
 const steps = [
-    {
-        id: 1,
-        title: 'Descreva seu quiz',
-        description: 'Converse com a IA sobre o que você quer criar. Ela entende o contexto e monta a estrutura completa para você.',
-        icon: <MessageSquare className="w-6 h-6 text-primary" />,
-        videoPlaceholder: 'bg-blue-50/50',
-    },
-    {
-        id: 2,
-        title: 'Edite e personalize',
-        description: 'Veja a estrutura surgir em tempo real. Ajuste perguntas, defina resultados e personalize o design com sua marca.',
-        icon: <Settings2 className="w-6 h-6 text-primary" />,
-        videoPlaceholder: 'bg-purple-50/50',
-    },
-    {
-        id: 3,
-        title: 'Publique e capture leads',
-        description: 'Compartilhe o link do seu quiz. Cada pessoa que completa o quiz se torna um lead qualificado no seu painel.',
-        icon: <Share2 className="w-6 h-6 text-primary" />,
-        videoPlaceholder: 'bg-green-50/50',
-    },
+  {
+    num: '01',
+    title: 'Crie seu quiz',
+    description: 'Comece do zero ou escolha um template pronto. Adicione perguntas e configure os resultados de forma visual.',
+    icon: <FilePlus className="w-7 h-7 text-[#fbbf24]" />,
+  },
+  {
+    num: '02',
+    title: 'Personalize tudo',
+    description: 'Ajuste cores, fontes e imagens para combinar com sua marca. Adicione páginas de captura e VSL.',
+    icon: <SlidersHorizontal className="w-7 h-7 text-[#fbbf24]" />,
+  },
+  {
+    num: '03',
+    title: 'Publique e capture',
+    description: 'Compartilhe o link do seu quiz e capture leads. Acompanhe resultados em tempo real no dashboard.',
+    icon: <Rocket className="w-7 h-7 text-[#fbbf24]" />,
+  },
 ];
 
-const itemVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }
-    }
+const cardVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.15,
+      duration: 0.7,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  }),
 };
 
 export const HowItWorksSection = () => {
-    const [ref, controls] = useScrollAnimation();
+  const [ref, controls] = useScrollAnimation();
 
-    return (
-        <section id="how-it-works" className="py-24 bg-background overflow-hidden">
-            <div className="container px-4 md:px-6 mx-auto">
-                <div className="text-center max-w-3xl mx-auto mb-20">
-                    <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl mb-4">
-                        Como funciona
-                    </h2>
-                    <p className="text-lg text-muted-foreground">
-                        Transforme sua ideia em uma máquina de gerar leads em três passos simples.
-                    </p>
-                </div>
+  return (
+    <section id="how-it-works" className="py-24">
+      <div className="container mx-auto px-6">
+        {/* Header */}
+        <div className="flex flex-col items-center gap-4 text-center mb-24">
+          <h2 className="text-4xl md:text-5xl font-bold text-[#f8fafc] font-serif">
+            Como funciona
+          </h2>
+          <p className="text-lg text-[#94a3b8]">
+            Transforme sua ideia em uma máquina de gerar leads em três passos simples.
+          </p>
+        </div>
 
-                <div ref={ref} className="space-y-24">
-                    {steps.map((step, index) => (
-                        <motion.div
-                            key={step.id}
-                            initial="hidden"
-                            animate={controls}
-                            variants={itemVariants}
-                            custom={index}
-                            className={`flex flex-col gap-8 md:gap-16 items-center ${index % 2 === 1 ? 'md:flex-row-reverse' : 'md:flex-row'
-                                }`}
-                        >
-                            {/* Text Content */}
-                            <div className="flex-1 space-y-4 text-center md:text-left">
-                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
-                                    {step.icon}
-                                </div>
-                                <h3 className="text-2xl font-bold">{step.title}</h3>
-                                <p className="text-lg text-muted-foreground leading-relaxed">
-                                    {step.description}
-                                </p>
-                            </div>
+        {/* Steps Grid */}
+        <motion.div
+          ref={ref}
+          initial="hidden"
+          animate={controls}
+          className="grid gap-8 md:grid-cols-3 max-w-[1100px] mx-auto"
+        >
+          {steps.map((step, i) => (
+            <motion.div
+              key={step.num}
+              custom={i}
+              variants={cardVariants}
+              className="flex flex-col gap-6 p-8 bg-[#232936] rounded-3xl h-full"
+            >
+              {/* Number with line */}
+              <div className="flex items-center gap-4">
+                <span className="text-6xl font-bold text-[#fbbf24] font-serif">{step.num}</span>
+                <div className="flex-1 h-0.5 bg-[#fbbf24]/25" />
+              </div>
 
-                            {/* Visual/Video Placeholder */}
-                            <div className="flex-1 w-full relative group">
-                                <div className={`absolute -inset-4 rounded-3xl opacity-20 blur-2xl transition-opacity group-hover:opacity-30 ${step.videoPlaceholder}`} />
-                                <div className="relative aspect-video rounded-2xl border-2 border-dashed border-muted-foreground/25 bg-card/50 shadow-2xl overflow-hidden flex flex-col items-center justify-center p-6 text-center">
-                                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                                        <span className="text-2xl">🎥</span>
-                                    </div>
-                                    <span className="text-sm font-medium text-muted-foreground">
-                                        Video Placeholder: {step.title}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground/70 mt-2">
-                                        (Video showing: {step.description})
-                                    </span>
-                                    {/* 
-                      TODO: Add video element here when files are ready
-                      <video 
-                        src={`/videos/step-${step.id}.mp4`}
-                        autoPlay 
-                        muted 
-                        loop 
-                        playsInline
-                        className="w-full h-full object-cover absolute inset-0"
-                      /> 
-                    */}
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
+              {/* Icon */}
+              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-[#fbbf24]/10">
+                {step.icon}
+              </div>
+
+              {/* Content */}
+              <h3 className="text-[22px] font-bold text-[#f8fafc]">{step.title}</h3>
+              <p className="text-base text-[#94a3b8] leading-relaxed">{step.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
 };
