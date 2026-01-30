@@ -141,14 +141,14 @@ describe('VisualBuilderStore', () => {
   })
 
   describe('Step Management - Duplicate', () => {
-    it('duplicateStep creates a copy of the step', () => {
+    it('duplicateStep creates a copy of the step with incremented number', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1', subtitle: 'Original subtitle', blocks: [] })
+      store.addStep({ id: 'q1', type: 'question', label: 'Pergunta 1', subtitle: 'Original subtitle', blocks: [] })
       store.duplicateStep('q1')
 
       const { steps } = useVisualBuilderStore.getState()
       expect(steps).toHaveLength(4) // intro, q1, duplicated, result
-      const duplicated = steps.find(s => s.label.includes('(cópia)'))
+      const duplicated = steps.find(s => s.label === 'Pergunta 2')
       expect(duplicated).toBeDefined()
       expect(duplicated?.type).toBe('question')
       expect(duplicated?.subtitle).toBe('Original subtitle')
@@ -156,23 +156,23 @@ describe('VisualBuilderStore', () => {
 
     it('duplicateStep inserts the copy after the original', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
-      store.addStep({ id: 'q2', type: 'question', label: 'P2', blocks: [] })
+      store.addStep({ id: 'q1', type: 'question', label: 'Pergunta 1', blocks: [] })
+      store.addStep({ id: 'q2', type: 'question', label: 'Pergunta 2', blocks: [] })
       store.duplicateStep('q1')
 
       const { steps } = useVisualBuilderStore.getState()
       expect(steps[1].id).toBe('q1')
-      expect(steps[2].label).toBe('P1 (cópia)')
+      expect(steps[2].label).toBe('Pergunta 3') // Next available number
       expect(steps[3].id).toBe('q2')
     })
 
     it('duplicateStep sets the duplicated step as active', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
+      store.addStep({ id: 'q1', type: 'question', label: 'Pergunta 1', blocks: [] })
       store.duplicateStep('q1')
 
       const { activeStepId, steps } = useVisualBuilderStore.getState()
-      const duplicated = steps.find(s => s.label.includes('(cópia)'))
+      const duplicated = steps.find(s => s.label === 'Pergunta 2')
       expect(activeStepId).toBe(duplicated?.id)
     })
 
@@ -194,12 +194,12 @@ describe('VisualBuilderStore', () => {
 
     it('duplicateStep generates a unique ID for the copy', () => {
       const store = useVisualBuilderStore.getState()
-      store.addStep({ id: 'q1', type: 'question', label: 'P1', blocks: [] })
+      store.addStep({ id: 'q1', type: 'question', label: 'Pergunta 1', blocks: [] })
       store.duplicateStep('q1')
 
       const { steps } = useVisualBuilderStore.getState()
       const original = steps.find(s => s.id === 'q1')
-      const duplicated = steps.find(s => s.label.includes('(cópia)'))
+      const duplicated = steps.find(s => s.label === 'Pergunta 2')
       expect(original?.id).not.toBe(duplicated?.id)
     })
   })

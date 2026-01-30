@@ -446,9 +446,48 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
             return state
           }
 
-          const suffix = duplicateSuffix ?? '(cópia)'
           const stepIndex = state.steps.findIndex(s => s.id === id)
           const steps = [...state.steps]
+
+          // Helper to generate next available label with incremented number
+          const generateNextLabel = (originalLabel: string): string => {
+            // If duplicateSuffix is explicitly provided, use the old behavior
+            if (duplicateSuffix) {
+              return [originalLabel, duplicateSuffix].filter(Boolean).join(' ').trim()
+            }
+
+            // Remove existing "(cópia)" suffix if present
+            const cleanLabel = originalLabel.replace(/\s*\(cópia\).*$/i, '').trim()
+
+            // Try to extract base name and number (e.g., "Pergunta 1" -> base="Pergunta", num=1)
+            const numberMatch = cleanLabel.match(/^(.+?)\s*(\d+)$/)
+
+            if (numberMatch) {
+              // Label ends with a number - find next available number for this base
+              const baseName = numberMatch[1].trim()
+              const existingNumbers = state.steps
+                .map(s => {
+                  const match = s.label?.match(new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(\\d+)$`))
+                  return match ? parseInt(match[1], 10) : null
+                })
+                .filter((n): n is number => n !== null)
+
+              const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0
+              return `${baseName} ${maxNumber + 1}`
+            } else {
+              // Label doesn't end with a number - add " 2" suffix
+              // First check if there are already numbered versions
+              const existingNumbers = state.steps
+                .map(s => {
+                  const match = s.label?.match(new RegExp(`^${cleanLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(\\d+)$`))
+                  return match ? parseInt(match[1], 10) : null
+                })
+                .filter((n): n is number => n !== null)
+
+              const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 1
+              return `${cleanLabel} ${maxNumber + 1}`
+            }
+          }
 
           // Helper to regenerate item IDs in block config
           const cloneBlockConfig = (config: BlockConfig): BlockConfig => {
@@ -474,7 +513,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           const duplicatedStep: Step = {
             ...stepToDuplicate,
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            label: [stepToDuplicate.label, suffix].filter(Boolean).join(' ').trim(),
+            label: generateNextLabel(stepToDuplicate.label || ''),
             blocks: duplicatedBlocks,
           }
 
@@ -816,9 +855,49 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
             return state
           }
 
-          const suffix = duplicateSuffix ?? '(cópia)'
           const outcomeIndex = state.outcomes.findIndex(o => o.id === id)
           const outcomes = [...state.outcomes]
+
+          // Helper to generate next available name with incremented number
+          const generateNextName = (originalName: string): string => {
+            // If duplicateSuffix is explicitly provided, use the old behavior
+            if (duplicateSuffix) {
+              return [originalName, duplicateSuffix].filter(Boolean).join(' ').trim()
+            }
+
+            if (!originalName) return ''
+
+            // Remove existing "(cópia)" suffix if present
+            const cleanName = originalName.replace(/\s*\(cópia\).*$/i, '').trim()
+
+            // Try to extract base name and number (e.g., "Resultado 1" -> base="Resultado", num=1)
+            const numberMatch = cleanName.match(/^(.+?)\s*(\d+)$/)
+
+            if (numberMatch) {
+              // Name ends with a number - find next available number for this base
+              const baseName = numberMatch[1].trim()
+              const existingNumbers = state.outcomes
+                .map(o => {
+                  const match = o.name?.match(new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(\\d+)$`))
+                  return match ? parseInt(match[1], 10) : null
+                })
+                .filter((n): n is number => n !== null)
+
+              const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0
+              return `${baseName} ${maxNumber + 1}`
+            } else {
+              // Name doesn't end with a number - add " 2" suffix
+              const existingNumbers = state.outcomes
+                .map(o => {
+                  const match = o.name?.match(new RegExp(`^${cleanName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(\\d+)$`))
+                  return match ? parseInt(match[1], 10) : null
+                })
+                .filter((n): n is number => n !== null)
+
+              const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 1
+              return `${cleanName} ${maxNumber + 1}`
+            }
+          }
 
           // Helper to regenerate item IDs in block config
           const cloneBlockConfig = (config: BlockConfig): BlockConfig => {
@@ -844,9 +923,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           const duplicatedOutcome: Outcome = {
             ...outcomeToDuplicate,
             id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            name: outcomeToDuplicate.name
-              ? [outcomeToDuplicate.name, suffix].filter(Boolean).join(' ').trim()
-              : '',
+            name: generateNextName(outcomeToDuplicate.name || ''),
             blocks: duplicatedBlocks,
           }
 
