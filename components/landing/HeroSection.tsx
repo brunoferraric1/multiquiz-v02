@@ -107,6 +107,7 @@ Do zero ao quiz publicado em 5 minutos. Sem código, sem designer.
               height={667}
               className="w-full h-auto"
               priority
+              unoptimized
             />
           </motion.div>
         </div>
