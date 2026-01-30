@@ -24,7 +24,7 @@ import {
   FieldType,
 } from '@/types/blocks';
 import { cn } from '@/lib/utils';
-import { Check, AlertTriangle, AlertCircle, Info, ArrowRight, Square, CheckSquare, Play, Video } from 'lucide-react';
+import { Check, AlertTriangle, AlertCircle, Info, ArrowRight, ExternalLink, Square, CheckSquare, Play, Video } from 'lucide-react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { PhoneInput, getDefaultCountryFromLocale } from './phone-input';
 import { useLocale } from '@/lib/i18n/context';
@@ -571,10 +571,13 @@ function ButtonBlock({ config, onClick }: { config: ButtonConfig; onClick?: () =
     }
   };
 
+  // Show ExternalLink icon for URL action, ArrowRight for navigation actions
+  const Icon = action === 'url' ? ExternalLink : ArrowRight;
+
   return (
     <Button onClick={handleClick} size="lg" className="w-full justify-center gap-2">
       {text}
-      <ArrowRight className="w-4 h-4" />
+      <Icon className="w-4 h-4" />
     </Button>
   );
 }

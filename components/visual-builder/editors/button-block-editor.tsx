@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupOption } from '@/components/ui/toggle-group'
@@ -35,6 +35,14 @@ export function ButtonBlockEditor({
     (config.action === 'next_step' && disableNextStep) ? 'url' :
     (config.action === 'selected_price' && disableSelectedPrice) ? 'next_step' :
     config.action
+
+  // Persist the auto-switched action to the config
+  // This ensures the button actually uses the correct action type
+  useEffect(() => {
+    if (effectiveAction !== config.action) {
+      onChange({ action: effectiveAction })
+    }
+  }, [effectiveAction, config.action, onChange])
 
   // Build options based on what's enabled
   const actionOptions = useMemo(() => {
