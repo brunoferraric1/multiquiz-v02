@@ -102,8 +102,9 @@ function VideoThumbnailPreview({
 export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
   const messages = useMessages()
   const mediaCopy = messages.visualBuilder.mediaEditor
-  const { type, url, alt, orientation, focalPoint } = config as MediaConfig
+  const { type, url, alt, orientation, fit = 'cover', focalPoint } = config as MediaConfig
   const imageOrientation = orientation ?? 'horizontal'
+  const imageFit = fit ?? 'cover'
   const imageWrapperClass = cn(
     'relative rounded-lg overflow-hidden bg-muted',
     imageOrientation === 'vertical'
@@ -155,8 +156,11 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
           key={url}
           src={url}
           alt={alt || mediaCopy.image}
-          className="w-full h-full object-cover"
-          style={{ objectPosition }}
+          className={cn(
+            'w-full h-full',
+            imageFit === 'contain' ? 'object-contain' : 'object-cover'
+          )}
+          style={{ objectPosition: imageFit === 'cover' ? objectPosition : undefined }}
         />
       </div>
     </div>

@@ -35,12 +35,16 @@ export interface FocalPoint {
   y: number // 0-100, percentage from top
 }
 
+// Image fit mode
+export type ImageFit = 'cover' | 'contain'
+
 // Media block configuration
 export interface MediaConfig {
   type: 'image' | 'video'
   url?: string
   alt?: string
   orientation?: 'horizontal' | 'vertical'
+  fit?: ImageFit // 'cover' fills container (may crop), 'contain' shows full image
   videoThumbnail?: string // Custom thumbnail for videos (used when auto-thumbnail is unavailable)
   videoThumbnailOrientation?: 'horizontal' | 'vertical' // Orientation for video thumbnail
   videoThumbnailFocalPoint?: FocalPoint // Focal point for video thumbnail cropping/positioning

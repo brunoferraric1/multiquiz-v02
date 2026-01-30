@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button'
 import { ToggleGroup } from '@/components/ui/toggle-group'
 import { SectionTitle } from '@/components/ui/section-title'
 import { FocalPointSelector } from '@/components/ui/focal-point-selector'
-import { MediaConfig, FocalPoint } from '@/types/blocks'
+import { MediaConfig, FocalPoint, ImageFit } from '@/types/blocks'
 import { cn } from '@/lib/utils'
-import { Image, Video, ImageIcon, UploadCloud, Trash2, RectangleHorizontal, RectangleVertical, Film, Focus } from 'lucide-react'
+import { Image, Video, ImageIcon, UploadCloud, Trash2, RectangleHorizontal, RectangleVertical, Film, Focus, Maximize, Minimize } from 'lucide-react'
 import { useMessages } from '@/lib/i18n/context'
 import {
   Dialog,
@@ -30,6 +30,7 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const thumbnailInputRef = useRef<HTMLInputElement>(null)
   const imageOrientation = config.orientation ?? 'horizontal'
+  const imageFit = config.fit ?? 'cover'
 
   // Focal point dialog state (for images)
   const [focalPointDialogOpen, setFocalPointDialogOpen] = useState(false)
@@ -175,22 +176,27 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
                 <img
                   src={config.url}
                   alt={mediaCopy.previewAlt}
-                  className="w-full h-full object-cover"
+                  className={cn(
+                    'w-full h-full',
+                    imageFit === 'contain' ? 'object-contain' : 'object-cover'
+                  )}
                   style={{
-                    objectPosition: config.focalPoint
+                    objectPosition: imageFit === 'cover' && config.focalPoint
                       ? `${config.focalPoint.x}% ${config.focalPoint.y}%`
-                      : 'center',
+                      : undefined,
                   }}
                 />
                 <div className="absolute top-2 right-2 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleOpenFocalPointDialog}
-                    className="h-8 w-8 rounded-full bg-background/90 text-foreground shadow-sm border border-border/50 flex items-center justify-center hover:bg-background transition-colors"
-                    aria-label={mediaCopy.focalPointSet}
-                  >
-                    <Focus className="h-4 w-4" />
-                  </button>
+                  {imageFit === 'cover' && (
+                    <button
+                      type="button"
+                      onClick={handleOpenFocalPointDialog}
+                      className="h-8 w-8 rounded-full bg-background/90 text-foreground shadow-sm border border-border/50 flex items-center justify-center hover:bg-background transition-colors"
+                      aria-label={mediaCopy.focalPointSet}
+                    >
+                      <Focus className="h-4 w-4" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={handleButtonClick}
@@ -281,6 +287,45 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
                 )}
               >
                 <RectangleVertical className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div className="space-y-2 pt-1">
+            <Label>{mediaCopy.imageFit}</Label>
+            <div
+              role="group"
+              aria-label={mediaCopy.imageFit}
+              className="flex items-center gap-1 bg-muted rounded-lg p-1"
+            >
+              <button
+                type="button"
+                aria-label={mediaCopy.fitCover}
+                aria-pressed={imageFit === 'cover'}
+                onClick={() => onChange({ fit: 'cover' })}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-colors',
+                  imageFit === 'cover'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Maximize className="h-3.5 w-3.5" />
+                {mediaCopy.fitCover}
+              </button>
+              <button
+                type="button"
+                aria-label={mediaCopy.fitContain}
+                aria-pressed={imageFit === 'contain'}
+                onClick={() => onChange({ fit: 'contain' })}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-colors',
+                  imageFit === 'contain'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Minimize className="h-3.5 w-3.5" />
+                {mediaCopy.fitContain}
               </button>
             </div>
           </div>

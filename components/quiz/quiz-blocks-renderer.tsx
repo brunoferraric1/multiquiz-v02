@@ -360,12 +360,14 @@ function MediaBlock({ config }: { config: MediaConfig }) {
     url,
     alt,
     orientation,
+    fit = 'cover',
     videoThumbnail,
     videoThumbnailOrientation,
     videoThumbnailFocalPoint,
     focalPoint,
   } = config;
   const imageOrientation = orientation ?? 'horizontal';
+  const imageFit = fit ?? 'cover';
   const imageWrapperClass = cn(
     'rounded-xl overflow-hidden border border-border/50',
     imageOrientation === 'vertical'
@@ -399,8 +401,11 @@ function MediaBlock({ config }: { config: MediaConfig }) {
         <img
           src={url}
           alt={alt || ''}
-          className="w-full h-full object-cover"
-          style={{ objectPosition }}
+          className={cn(
+            'w-full h-full',
+            imageFit === 'contain' ? 'object-contain' : 'object-cover'
+          )}
+          style={{ objectPosition: imageFit === 'cover' ? objectPosition : undefined }}
         />
       </div>
     </div>

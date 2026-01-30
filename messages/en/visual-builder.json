@@ -217,7 +217,10 @@
     "thumbnailOrientation": "Thumbnail orientation",
     "focalPoint": "Focal point",
     "focalPointHint": "Click or drag to set the image focus point",
-    "focalPointSet": "Set focal point"
+    "focalPointSet": "Set focal point",
+    "imageFit": "Image fit",
+    "fitCover": "Fill",
+    "fitContain": "Fit"
   },
   "optionsEditor": {
     "selectionTitle": "Selection type",

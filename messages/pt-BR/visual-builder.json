@@ -217,7 +217,10 @@
     "thumbnailOrientation": "Orientação do thumbnail",
     "focalPoint": "Ponto focal",
     "focalPointHint": "Clique ou arraste para definir o ponto de foco da imagem",
-    "focalPointSet": "Definir ponto focal"
+    "focalPointSet": "Definir ponto focal",
+    "imageFit": "Ajuste da imagem",
+    "fitCover": "Preencher",
+    "fitContain": "Encaixar"
   },
   "optionsEditor": {
     "selectionTitle": "Tipo de seleção",
