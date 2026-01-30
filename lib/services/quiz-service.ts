@@ -477,6 +477,24 @@ export class QuizService {
             console.warn('[QuizService] Failed to parse published visualBuilderData:', e);
           }
         }
+
+        // Debug: Log video thumbnail data in published version
+        if (publishedVBData?.steps) {
+          for (const step of publishedVBData.steps) {
+            for (const block of step.blocks || []) {
+              if (block.type === 'media' && block.config?.type === 'video') {
+                console.log('[QuizService] getQuizById (published) - Video block found:', {
+                  stepId: step.id,
+                  blockId: block.id,
+                  videoThumbnail: block.config.videoThumbnail?.substring(0, 100),
+                  videoThumbnailOrientation: block.config.videoThumbnailOrientation,
+                  videoThumbnailFocalPoint: block.config.videoThumbnailFocalPoint,
+                });
+              }
+            }
+          }
+        }
+
         return {
           ...baseQuiz,
           ...data.publishedVersion,
@@ -699,6 +717,23 @@ export class QuizService {
       const quiz = await this.getQuizById(quizId, userId);
       if (!quiz || quiz.ownerId !== userId) {
         throw new Error('Unauthorized to publish this quiz');
+      }
+
+      // Debug: Log video thumbnail data in all media blocks
+      if (quiz.visualBuilderData?.steps) {
+        for (const step of quiz.visualBuilderData.steps) {
+          for (const block of step.blocks || []) {
+            if (block.type === 'media' && block.config?.type === 'video') {
+              console.log('[QuizService] publishQuiz - Video block found:', {
+                stepId: step.id,
+                blockId: block.id,
+                videoThumbnail: block.config.videoThumbnail?.substring(0, 100),
+                videoThumbnailOrientation: block.config.videoThumbnailOrientation,
+                videoThumbnailFocalPoint: block.config.videoThumbnailFocalPoint,
+              });
+            }
+          }
+        }
       }
 
       // Fetch subscription to enforce publish limit for free users

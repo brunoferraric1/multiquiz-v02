@@ -714,14 +714,14 @@ export default function QuizReportPage() {
                 )}
             </div>
 
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold truncate">{quiz.title}</h1>
+            <div className="flex flex-col md:flex-row md:items-start justify-between mb-8 gap-4">
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-3xl font-bold">{quiz.title}</h1>
                     <p className="text-muted-foreground mt-1">
                         Análise detalhada de performance
                     </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                     <Button
                         variant="outline"
                         onClick={() => router.push(localizePathname(`/visual-builder/${quizId}`, locale))}

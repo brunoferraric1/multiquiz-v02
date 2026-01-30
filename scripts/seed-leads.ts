@@ -165,7 +165,8 @@ function generateLeadData(
     phoneFieldId?: string;
     companyFieldId?: string;
     stepId: string;
-  }
+  },
+  hasFieldData: boolean = true
 ): LeadData {
   const name = generateName();
   const email = generateEmail(name);
@@ -176,41 +177,51 @@ function generateLeadData(
   const status = Math.random() > 0.15 ? 'completed' : (Math.random() > 0.5 ? 'started' : 'abandoned');
   const completedAt = status === 'completed' ? startedAt + randomInt(60000, 300000) : undefined;
 
-  const fieldResponses: LeadData['fieldResponses'] = [
-    {
-      fieldId: fieldConfig.nameFieldId,
-      label: 'Nome completo',
-      type: 'text',
-      value: name,
-      stepId: fieldConfig.stepId,
-    },
-    {
-      fieldId: fieldConfig.emailFieldId,
-      label: 'E-mail',
-      type: 'email',
-      value: email,
-      stepId: fieldConfig.stepId,
-    },
-  ];
+  // Only generate field responses if hasFieldData is true
+  const fieldResponses: LeadData['fieldResponses'] = [];
+  const lead: LeadData['lead'] = {};
 
-  if (fieldConfig.phoneFieldId && Math.random() > 0.1) {
-    fieldResponses.push({
-      fieldId: fieldConfig.phoneFieldId,
-      label: 'Telefone',
-      type: 'phone',
-      value: phone,
-      stepId: fieldConfig.stepId,
-    });
-  }
+  if (hasFieldData) {
+    fieldResponses.push(
+      {
+        fieldId: fieldConfig.nameFieldId,
+        label: 'Nome',
+        type: 'text',
+        value: name,
+        stepId: fieldConfig.stepId,
+      },
+      {
+        fieldId: fieldConfig.emailFieldId,
+        label: 'Email',
+        type: 'email',
+        value: email,
+        stepId: fieldConfig.stepId,
+      }
+    );
 
-  if (fieldConfig.companyFieldId && Math.random() > 0.3) {
-    fieldResponses.push({
-      fieldId: fieldConfig.companyFieldId,
-      label: 'Empresa',
-      type: 'text',
-      value: company,
-      stepId: fieldConfig.stepId,
-    });
+    lead.name = name;
+    lead.email = email;
+
+    if (fieldConfig.phoneFieldId) {
+      fieldResponses.push({
+        fieldId: fieldConfig.phoneFieldId,
+        label: 'Telefone',
+        type: 'phone',
+        value: phone,
+        stepId: fieldConfig.stepId,
+      });
+      lead.phone = phone;
+    }
+
+    if (fieldConfig.companyFieldId && Math.random() > 0.3) {
+      fieldResponses.push({
+        fieldId: fieldConfig.companyFieldId,
+        label: 'Empresa',
+        type: 'text',
+        value: company,
+        stepId: fieldConfig.stepId,
+      });
+    }
   }
 
   return {
@@ -221,23 +232,23 @@ function generateLeadData(
     completedAt,
     lastUpdatedAt: completedAt || startedAt,
     answers: {},
-    fieldResponses,
-    lead: {
-      name,
-      email,
-      phone: fieldConfig.phoneFieldId ? phone : undefined,
-    },
+    fieldResponses: fieldResponses.length > 0 ? fieldResponses : [],
+    lead: Object.keys(lead).length > 0 ? lead : {},
     resultOutcomeId: status === 'completed' ? randomElement(outcomes).id : undefined,
     status,
     isOwnerAttempt: false,
   };
 }
 
-async function initializeFirebase() {
-  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+async function initializeFirebase(env: 'staging' | 'production') {
+  const envVarName = env === 'staging'
+    ? 'STAGING_FIREBASE_SERVICE_ACCOUNT_KEY'
+    : 'FIREBASE_SERVICE_ACCOUNT_KEY';
+
+  const serviceAccountKey = process.env[envVarName];
 
   if (!serviceAccountKey) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY not found in environment variables');
+    throw new Error(`${envVarName} not found in environment variables`);
   }
 
   // Parse the service account key (handle double-encoding)
@@ -260,6 +271,12 @@ async function initializeFirebase() {
     });
   }
 
+  // Configure Firestore to ignore undefined values
+  admin.firestore().settings({ ignoreUndefinedProperties: true });
+
+  console.log(`   Environment: ${env.toUpperCase()}`);
+  console.log(`   Project ID: ${serviceAccount.project_id || serviceAccount.projectId}`);
+
   return admin.firestore();
 }
 
@@ -272,20 +289,30 @@ async function getQuizData(db: admin.firestore.Firestore, quizId: string) {
 
   const quizData = quizDoc.data();
 
+  // Parse visualBuilderData - it might be stored as a JSON string!
+  let visualBuilderData = quizData?.visualBuilderData;
+  if (typeof visualBuilderData === 'string') {
+    try {
+      visualBuilderData = JSON.parse(visualBuilderData);
+    } catch {
+      console.warn('   Warning: Could not parse visualBuilderData JSON string');
+    }
+  }
+
   // Extract outcomes from visualBuilderData
-  const outcomes = quizData?.visualBuilderData?.outcomes?.map((o: { id: string; name: string }) => ({
+  const outcomes = visualBuilderData?.outcomes?.map((o: { id: string; name: string }) => ({
     id: o.id,
     title: o.name,
   })) || DEFAULT_OUTCOMES;
 
   // Extract field configuration from lead-gen step
-  const steps = quizData?.visualBuilderData?.steps || [];
+  const steps = visualBuilderData?.steps || [];
   const leadGenStep = steps.find((s: { type: string }) => s.type === 'lead-gen');
 
   let fieldConfig = {
     nameFieldId: 'field-name',
     emailFieldId: 'field-email',
-    phoneFieldId: 'field-phone',
+    phoneFieldId: 'field-phone' as string | undefined,
     companyFieldId: undefined as string | undefined,
     stepId: 'lead-gen-step',
   };
@@ -309,14 +336,53 @@ async function getQuizData(db: admin.firestore.Firestore, quizId: string) {
     }
   }
 
-  return { outcomes, fieldConfig, quizData };
+  return { outcomes, fieldConfig, quizData, quizDoc };
+}
+
+async function deleteExistingAttempts(db: admin.firestore.Firestore, quizId: string) {
+  const attemptsRef = db.collection('quiz_attempts');
+  const snapshot = await attemptsRef.where('quizId', '==', quizId).get();
+
+  if (snapshot.empty) {
+    return 0;
+  }
+
+  // Delete in batches of 500 (Firestore limit)
+  const batchSize = 500;
+  let deleted = 0;
+
+  while (deleted < snapshot.docs.length) {
+    const batch = db.batch();
+    const chunk = snapshot.docs.slice(deleted, deleted + batchSize);
+    chunk.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    deleted += chunk.length;
+  }
+
+  return snapshot.docs.length;
+}
+
+async function updateQuizStats(db: admin.firestore.Firestore, quizId: string, stats: { views: number; starts: number; completions: number }) {
+  await db.collection('quizzes').doc(quizId).update({ stats });
 }
 
 async function main() {
-  const quizId = process.argv[2];
+  // Parse arguments
+  const args = process.argv.slice(2);
+  const envFlag = args.find(a => a === '--staging' || a === '--production');
+  const nonFlagArgs = args.filter(a => !a.startsWith('--'));
+
+  const quizId = nonFlagArgs[0];
+  const env: 'staging' | 'production' = envFlag === '--production' ? 'production' : 'staging';
 
   if (!quizId) {
-    console.error('Usage: npx tsx scripts/seed-leads.ts <quizId>');
+    console.error('Usage: npx tsx scripts/seed-leads.ts <quizId> [leadCount] [daysRange] [--staging|--production]');
+    console.error('\nOptions:');
+    console.error('  --staging     Use staging database (default)');
+    console.error('  --production  Use production database');
+    console.error('\nExamples:');
+    console.error('  npx tsx scripts/seed-leads.ts abc123 --staging');
+    console.error('  npx tsx scripts/seed-leads.ts abc123 100 60 --production');
     console.error('\nTo find your quiz ID:');
     console.error('1. Go to your dashboard');
     console.error('2. Click on a quiz');
@@ -324,8 +390,8 @@ async function main() {
     process.exit(1);
   }
 
-  const LEAD_COUNT = parseInt(process.argv[3] || '75', 10);
-  const DAYS_RANGE = parseInt(process.argv[4] || '30', 10);
+  const LEAD_COUNT = parseInt(nonFlagArgs[1] || '75', 10);
+  const DAYS_RANGE = parseInt(nonFlagArgs[2] || '30', 10);
 
   console.log('🌱 Seed Leads Script');
   console.log('====================');
@@ -335,28 +401,43 @@ async function main() {
 
   try {
     console.log('📦 Initializing Firebase...');
-    const db = await initializeFirebase();
+    const db = await initializeFirebase(env);
 
     console.log('🔍 Fetching quiz data...');
     const { outcomes, fieldConfig } = await getQuizData(db, quizId);
     console.log(`   Found ${outcomes.length} outcomes`);
-    console.log(`   Field config: name=${fieldConfig.nameFieldId}, email=${fieldConfig.emailFieldId}`);
+    console.log(`   Field config:`);
+    console.log(`     - stepId: ${fieldConfig.stepId}`);
+    console.log(`     - name: ${fieldConfig.nameFieldId}`);
+    console.log(`     - email: ${fieldConfig.emailFieldId}`);
+    console.log(`     - phone: ${fieldConfig.phoneFieldId || 'N/A'}`);
+
+    // Delete existing attempts
+    console.log('\n🗑️  Deleting existing attempts...');
+    const deletedCount = await deleteExistingAttempts(db, quizId);
+    console.log(`   Deleted ${deletedCount} existing attempts`);
 
     console.log('\n📝 Generating lead data...');
     const leads: LeadData[] = [];
 
     for (let i = 0; i < LEAD_COUNT; i++) {
       const daysAgo = Math.random() * DAYS_RANGE;
-      leads.push(generateLeadData(quizId, outcomes, daysAgo, fieldConfig));
+      // 70% of leads will have field data, 30% won't (simulates drop-off before lead-gen)
+      const hasFieldData = Math.random() < 0.7;
+      leads.push(generateLeadData(quizId, outcomes, daysAgo, fieldConfig, hasFieldData));
     }
 
     // Sort by startedAt descending (newest first)
     leads.sort((a, b) => b.startedAt - a.startedAt);
 
-    console.log(`   Generated ${leads.length} leads`);
-    console.log(`   - Completed: ${leads.filter(l => l.status === 'completed').length}`);
+    const completedCount = leads.filter(l => l.status === 'completed').length;
+    const leadsWithData = leads.filter(l => l.fieldResponses && l.fieldResponses.length > 0).length;
+
+    console.log(`   Generated ${leads.length} attempts`);
+    console.log(`   - Completed: ${completedCount}`);
     console.log(`   - Started: ${leads.filter(l => l.status === 'started').length}`);
     console.log(`   - Abandoned: ${leads.filter(l => l.status === 'abandoned').length}`);
+    console.log(`   - With lead data: ${leadsWithData}`);
 
     console.log('\n💾 Saving to Firestore...');
     const batch = db.batch();
@@ -367,12 +448,28 @@ async function main() {
     }
 
     await batch.commit();
-    console.log('✅ Successfully saved all leads!\n');
+    console.log('✅ Successfully saved all attempts!');
+
+    // Update quiz stats with realistic numbers
+    // Views should be higher than starts (not everyone who views starts)
+    const viewsCount = Math.round(LEAD_COUNT * 1.5); // 150% of leads = views
+    const stats = {
+      views: viewsCount,
+      starts: LEAD_COUNT,
+      completions: completedCount,
+    };
+
+    console.log('\n📊 Updating quiz stats...');
+    await updateQuizStats(db, quizId, stats);
+    console.log(`   Views: ${stats.views}`);
+    console.log(`   Starts: ${stats.starts}`);
+    console.log(`   Completions: ${stats.completions}`);
+    console.log(`   Leads with data: ${leadsWithData}`);
 
     // Show sample data
-    console.log('📊 Sample leads created:');
+    console.log('\n👥 Sample leads created:');
     console.log('------------------------');
-    leads.slice(0, 5).forEach((lead, i) => {
+    leads.filter(l => l.fieldResponses && l.fieldResponses.length > 0).slice(0, 5).forEach((lead, i) => {
       const name = lead.lead.name || lead.fieldResponses.find(f => f.type === 'text')?.value || 'N/A';
       const email = lead.lead.email || lead.fieldResponses.find(f => f.type === 'email')?.value || 'N/A';
       const date = new Date(lead.startedAt).toLocaleDateString('pt-BR');
@@ -380,7 +477,8 @@ async function main() {
     });
     console.log('...\n');
 
-    console.log('🎉 Done! You can now view the leads at:');
+    console.log(`🎉 Done! Data seeded to ${env.toUpperCase()} database.`);
+    console.log('\nView the reports at:');
     console.log(`   http://localhost:3500/dashboard/reports/${quizId}`);
 
   } catch (error) {
