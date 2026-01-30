@@ -171,7 +171,7 @@ export default function PublicQuizPage() {
           Modo Preview — Esta é uma pré-visualização do rascunho
         </div>
       )}
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 overflow-y-auto">
         <BlocksQuizPlayer
           quiz={quiz}
           mode={isPreviewMode ? 'preview' : 'live'}

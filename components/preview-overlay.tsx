@@ -222,16 +222,18 @@ export function PreviewOverlay({
                   </div>
                 </div>
               ) : (
-                <BlocksQuizPlayer
-                  key={playerKey}
-                  quiz={quiz}
-                  mode="preview"
-                  onExit={onClose}
-                  brandKitColors={brandKitColors}
-                  brandKitLogoUrl={brandKitLogoUrl}
-                  initialStepIndex={effectiveStepIndex}
-                  initialOutcomeId={effectiveOutcomeId}
-                />
+                <div className="h-full overflow-y-auto">
+                  <BlocksQuizPlayer
+                    key={playerKey}
+                    quiz={quiz}
+                    mode="preview"
+                    onExit={onClose}
+                    brandKitColors={brandKitColors}
+                    brandKitLogoUrl={brandKitLogoUrl}
+                    initialStepIndex={effectiveStepIndex}
+                    initialOutcomeId={effectiveOutcomeId}
+                  />
+                </div>
               )}
             </main>
           </div>
