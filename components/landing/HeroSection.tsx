@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 const HighlightedText = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
   return (
@@ -27,8 +27,26 @@ const HighlightedText = ({ children, delay = 0 }: { children: React.ReactNode; d
 };
 
 export const HeroSection = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Track scroll progress relative to the section
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start start', 'end start'],
+  });
+
+  // Transform scroll progress to scale (1 → 1.2) and y position (0 → -280px)
+  // The effect happens over the full scroll range for a more dramatic parallax
+  const scale = useTransform(scrollYProgress, [0, 0.7], [1, 1.2]);
+  const y = useTransform(scrollYProgress, [0, 0.7], [0, -280]);
+  const shadow = useTransform(
+    scrollYProgress,
+    [0, 0.4],
+    ['0px 0px 0px rgba(0,0,0,0)', '0px 50px 100px rgba(0,0,0,0.5)']
+  );
+
   return (
-    <section className="relative pt-40 pb-20 lg:pt-48 lg:pb-20 overflow-hidden">
+    <section ref={sectionRef} className="relative pt-40 pb-20 lg:pt-48 lg:pb-20 overflow-visible">
       {/* Yellow glow effect behind title */}
       <div
         className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full blur-[120px]"
@@ -93,21 +111,26 @@ Do zero ao quiz publicado em 5 minutos. Sem código, sem designer.
             </Link>
           </motion.div>
 
-          {/* Screenshot */}
+          {/* Screenshot with parallax scroll effect */}
           <motion.div
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-12 w-full max-w-[1100px]"
+            className="mt-12 w-full max-w-[1100px] relative z-10"
           >
-            <Image
-              src="/landing/visual-builder.webp"
-              alt="MultiQuiz Visual Builder"
-              width={1100}
-              height={667}
-              className="w-full h-auto"
-              priority
-            />
+            <motion.div
+              style={{ scale, y, boxShadow: shadow }}
+              className="rounded-xl overflow-hidden"
+            >
+              <Image
+                src="/landing/visual-builder.webp"
+                alt="MultiQuiz Visual Builder"
+                width={1100}
+                height={667}
+                className="w-full h-auto"
+                priority
+              />
+            </motion.div>
           </motion.div>
         </div>
       </div>
