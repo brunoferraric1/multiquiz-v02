@@ -450,10 +450,24 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           const stepIndex = state.steps.findIndex(s => s.id === id)
           const steps = [...state.steps]
 
-          // Create duplicated blocks with new IDs (handle steps without blocks)
+          // Helper to regenerate item IDs in block config
+          const cloneBlockConfig = (config: BlockConfig): BlockConfig => {
+            const cloned = JSON.parse(JSON.stringify(config))
+            // Regenerate IDs for items arrays (options, fields, list, price)
+            if (cloned.items && Array.isArray(cloned.items)) {
+              cloned.items = cloned.items.map((item: { id?: string }) => ({
+                ...item,
+                id: item.id ? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` : undefined,
+              }))
+            }
+            return cloned
+          }
+
+          // Create duplicated blocks with new IDs AND new item IDs
           const duplicatedBlocks = (stepToDuplicate.blocks || []).map(block => ({
             ...block,
             id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            config: cloneBlockConfig(block.config),
           }))
 
           // Create a duplicate with new ID and updated label
@@ -806,10 +820,24 @@ export const useVisualBuilderStore = create<VisualBuilderState>()(
           const outcomeIndex = state.outcomes.findIndex(o => o.id === id)
           const outcomes = [...state.outcomes]
 
-          // Create duplicated blocks with new IDs
+          // Helper to regenerate item IDs in block config
+          const cloneBlockConfig = (config: BlockConfig): BlockConfig => {
+            const cloned = JSON.parse(JSON.stringify(config))
+            // Regenerate IDs for items arrays (options, fields, list, price)
+            if (cloned.items && Array.isArray(cloned.items)) {
+              cloned.items = cloned.items.map((item: { id?: string }) => ({
+                ...item,
+                id: item.id ? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` : undefined,
+              }))
+            }
+            return cloned
+          }
+
+          // Create duplicated blocks with new IDs AND new item IDs
           const duplicatedBlocks = (outcomeToDuplicate.blocks || []).map(block => ({
             ...block,
             id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            config: cloneBlockConfig(block.config),
           }))
 
           // Create a duplicate with new ID and updated name
