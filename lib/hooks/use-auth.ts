@@ -8,6 +8,7 @@ import {
   onAuthStateChanged,
   updateProfile,
 } from 'firebase/auth';
+import posthog from 'posthog-js';
 import { auth } from '@/lib/firebase';
 import { upsertUserProfile } from '@/lib/services/user-profile-service';
 import type { AuthUser } from '@/types';
@@ -15,6 +16,9 @@ import type { AuthUser } from '@/types';
 // Track which users have been synced this session to prevent repeated writes
 // that would trigger subscription snapshots and cause re-render loops
 const syncedUsersThisSession = new Set<string>();
+
+// Track which users have been identified with PostHog this session
+const identifiedUsersThisSession = new Set<string>();
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -49,6 +53,15 @@ export function useAuth() {
             console.warn('[useAuth] Failed to sync user profile', error);
           });
         }
+
+        // Identify user with PostHog (once per session to avoid duplicate calls)
+        if (!identifiedUsersThisSession.has(firebaseUser.uid)) {
+          identifiedUsersThisSession.add(firebaseUser.uid);
+          posthog.identify(firebaseUser.uid, {
+            email: firebaseUser.email,
+            name: firebaseUser.displayName,
+          });
+        }
       } else {
         setUser(null);
       }
@@ -69,10 +82,17 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
+      // Capture sign out event before resetting
+      posthog.capture('user_signed_out');
+
       await firebaseSignOut(auth);
       // Reset auth state
       setUser(null);
+
+      // Reset PostHog to unlink future events from this user
+      posthog.reset();
     } catch (error: any) {
+      posthog.captureException(error);
       throw new Error(error.message || 'Failed to sign out');
     }
   };

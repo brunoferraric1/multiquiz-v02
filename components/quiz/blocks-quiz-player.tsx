@@ -9,6 +9,7 @@
  */
 
 import { useMemo, useState, useEffect, useRef, type CSSProperties } from 'react';
+import posthog from 'posthog-js';
 import type { BrandKitColors, Quiz, QuizDraft, VisualBuilderData, FieldResponse, LogoSize } from '@/types';
 import type { Block, OptionsConfig, FieldsConfig, FieldItem, PriceConfig, FieldType } from '@/types/blocks';
 import { QuizBlocksRenderer, validateField } from './quiz-blocks-renderer';
@@ -156,6 +157,14 @@ export function BlocksQuizPlayer({
       AnalyticsService.createAttempt(quiz.id, user?.uid, isOwner)
         .then((id) => {
           setAttemptId(id);
+          // Track quiz start event
+          posthog.capture('quiz_started', {
+            quiz_id: quiz.id,
+            quiz_title: quiz.title,
+            attempt_id: id,
+            steps_count: steps.length,
+            questions_count: steps.filter((s) => s.type === 'question').length,
+          });
         })
         .catch((e) => console.error(e));
     }
@@ -418,6 +427,23 @@ export function BlocksQuizPlayer({
       fieldResponses,
       lead: Object.keys(legacyLead).length > 0 ? legacyLead : undefined,
     });
+
+    // Track lead capture event (only if we have meaningful field data)
+    if (fieldResponses.length > 0) {
+      const hasContactInfo = fieldResponses.some(
+        (r) => r.type === 'email' || r.type === 'phone'
+      );
+      posthog.capture('lead_captured', {
+        quiz_id: quiz.id,
+        quiz_title: quiz.title,
+        attempt_id: attemptId,
+        has_email: !!legacyLead.email,
+        has_phone: !!legacyLead.phone,
+        has_name: !!legacyLead.name,
+        fields_count: fieldResponses.length,
+        has_contact_info: hasContactInfo,
+      });
+    }
   };
 
   // Calculate result outcome
@@ -453,6 +479,17 @@ export function BlocksQuizPlayer({
         status: 'completed',
         resultOutcomeId: winningOutcomeId,
         quizId: quiz.id, // Pass quizId to ensure stats are updated even if attempt doc fetch fails
+      });
+
+      // Track quiz completion event
+      const winningOutcome = outcomes.find((o) => o.id === winningOutcomeId);
+      posthog.capture('quiz_completed', {
+        quiz_id: quiz.id,
+        quiz_title: quiz.title,
+        attempt_id: attemptId,
+        outcome_id: winningOutcomeId,
+        outcome_name: winningOutcome?.name,
+        questions_answered: Object.keys(selectedOptions).length,
       });
     }
   };

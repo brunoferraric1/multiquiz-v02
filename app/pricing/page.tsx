@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import posthog from 'posthog-js';
 import {
   Check,
   Loader2,
@@ -209,12 +210,19 @@ function PricingContent() {
       );
 
       if (url) {
+        // Track checkout initiated event before redirecting
+        posthog.capture('checkout_initiated', {
+          tier: tier,
+          billing_period: 'monthly',
+          current_tier: subscription?.tier || 'free',
+        });
         window.location.href = url;
       } else {
         toast.error('Erro ao iniciar checkout.');
       }
     } catch (error) {
       console.error('Subscription action error:', error);
+      posthog.captureException(error);
       toast.error('Ocorreu um erro. Tente novamente.');
     } finally {
       setIsProcessing(false);

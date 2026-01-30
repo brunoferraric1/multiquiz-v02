@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import posthog from 'posthog-js'
 import { useAuth } from '@/lib/hooks/use-auth'
 import {
   useVisualBuilderStore,
@@ -310,6 +311,12 @@ function VisualBuilderEditor() {
       showSavedStatus()
       // After first save of new quiz, it's no longer "new"
       if (isNewQuiz) {
+        // Track quiz creation event
+        posthog.capture('quiz_created', {
+          quiz_id: id as string,
+          steps_count: storeSteps.length,
+          outcomes_count: storeOutcomes.length,
+        })
         setIsNewQuiz(false)
         // Invalidate query so it fetches the saved quiz
         queryClient.invalidateQueries({ queryKey: ['quiz', id] })
@@ -501,11 +508,22 @@ function VisualBuilderEditor() {
       queryClient.invalidateQueries({ queryKey: ['quiz', id] })
       queryClient.invalidateQueries({ queryKey: ['quizzes', user.uid] })
 
+      // Track publish event (using currentState from above)
+      posthog.capture('quiz_published', {
+        quiz_id: id as string,
+        quiz_title: quizRef.current?.title,
+        is_first_publish: !wasUpdate,
+        steps_count: currentState.steps.length,
+        questions_count: currentState.steps.filter((s) => s.type === 'question').length,
+        outcomes_count: currentState.outcomes.length,
+      })
+
       // Show success modal with quiz URL
       setPublishWasUpdate(wasUpdate)
       setShowPublishModal(true)
     } catch (err) {
       console.error('[VisualBuilder] Publish error:', err)
+      posthog.captureException(err)
       toast.error(copy.toast.publishError)
     } finally {
       setIsPublishing(false)

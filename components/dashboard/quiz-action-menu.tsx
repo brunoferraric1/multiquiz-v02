@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import posthog from 'posthog-js';
 import {
     MoreVertical,
     Share2,
@@ -91,9 +92,16 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
         setIsDeletingInternal(true);
         try {
             await onDelete(quiz.id);
+            // Track quiz deletion
+            posthog.capture('quiz_deleted', {
+                quiz_id: quiz.id,
+                quiz_title: quiz.title,
+                was_published: quiz.isPublished,
+            });
             setShowDeleteDialog(false);
         } catch (error) {
             console.error('Delete failed', error);
+            posthog.captureException(error);
             setIsDeletingInternal(false);
         }
     };
@@ -141,6 +149,12 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
                 setUpgradeModalState({ open: true, reason: 'publish-limit' });
                 return;
             }
+            // Track successful quiz publish
+            posthog.capture('quiz_published', {
+                quiz_id: quiz.id,
+                quiz_title: quiz.title,
+                is_first_publish: !quiz.publishedAt,
+            });
             setMobileMenuOpen(false);
             // Show the success modal immediately
             setShowPublishModal(true);
@@ -149,6 +163,7 @@ export function QuizActionMenu({ quiz, onDelete, isDeleting = false }: QuizActio
             queryClient.invalidateQueries({ queryKey: ['quizzes', user.uid] });
         } catch (error) {
             console.error('Publish failed', error);
+            posthog.captureException(error);
             toast.error(dashboard.toast.publishError);
         } finally {
             setIsPublishing(false);

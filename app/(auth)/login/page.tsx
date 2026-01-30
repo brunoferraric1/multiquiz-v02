@@ -1,8 +1,9 @@
 
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import posthog from 'posthog-js';
 import { Sparkles, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ function LoginContent() {
   const { user, loading, signInWithGoogle } = useAuth();
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const hasTrackedSignIn = useRef(false);
 
   // Get query parameters
   const redirect = searchParams.get('redirect');
@@ -32,6 +34,15 @@ function LoginContent() {
       }
     }
 
+    // Track user sign-in event (only once per login flow)
+    if (!loading && user && !hasTrackedSignIn.current) {
+      hasTrackedSignIn.current = true;
+      posthog.capture('user_signed_in', {
+        auth_provider: 'google',
+        upgrade_flow: upgrade,
+      });
+    }
+
     handlePostLoginUpgrade();
   }, [user, loading, upgrade, period, redirect, router]);
 
@@ -44,6 +55,7 @@ function LoginContent() {
       // Redirect will be handled by useEffect after user state updates
     } catch (err: any) {
       console.error('Login Error:', err);
+      posthog.captureException(err);
 
       if (err.message.includes('popup-closed-by-user')) {
         setError('A janela de login foi fechada antes da conclusão.');

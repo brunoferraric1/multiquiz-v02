@@ -5,6 +5,7 @@ import {
     findUserByStripeCustomerId,
     UserSubscription
 } from '@/lib/firebase-admin';
+import { getPostHogClient } from '@/lib/posthog-server';
 import Stripe from 'stripe';
 
 // Disable body parsing, we need raw body for webhook signature verification
@@ -161,6 +162,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     await updateUserSubscription(userId, subscriptionData);
     console.log(`Subscription activated for user ${userId}`);
+
+    // Track checkout completed event
+    const posthog = getPostHogClient();
+    posthog.capture({
+        distinctId: userId,
+        event: 'checkout_completed',
+        properties: {
+            tier: subscriptionData.tier,
+            price_id: priceId,
+            subscription_id: subscriptionId,
+            customer_id: customerId,
+        },
+    });
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice) {
@@ -208,6 +222,17 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     });
 
     console.log(`Payment failed for user ${userId}`);
+
+    // Track payment failed event
+    const posthog = getPostHogClient();
+    posthog.capture({
+        distinctId: userId,
+        event: 'payment_failed',
+        properties: {
+            invoice_id: invoice.id,
+            customer_id: customerId,
+        },
+    });
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -258,4 +283,15 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     });
 
     console.log(`Subscription canceled for user ${userId}, reverted to free tier`);
+
+    // Track subscription canceled event
+    const posthog = getPostHogClient();
+    posthog.capture({
+        distinctId: userId,
+        event: 'subscription_canceled',
+        properties: {
+            subscription_id: subscription.id,
+            customer_id: customerId,
+        },
+    });
 }

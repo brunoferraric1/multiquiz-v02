@@ -10,6 +10,21 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  // Required for PostHog reverse proxy
+  skipTrailingSlashRedirect: true,
+  // PostHog reverse proxy rewrites to avoid ad blockers
+  async rewrites() {
+    return [
+      {
+        source: '/ingest/static/:path*',
+        destination: 'https://eu-assets.i.posthog.com/static/:path*',
+      },
+      {
+        source: '/ingest/:path*',
+        destination: 'https://eu.i.posthog.com/:path*',
+      },
+    ];
+  },
   serverExternalPackages: [
     'firebase-admin',
     'firebase-admin/app',
