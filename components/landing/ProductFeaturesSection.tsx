@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useScrollAnimation } from '@/lib/hooks/use-scroll-animation';
 
@@ -9,29 +10,22 @@ const productFeatures = [
     badge: 'FUNIL COMPLETO',
     title: 'Funil de Quiz Totalmente Personalizável',
     description: 'Crie quizzes completos com perguntas, resultados e páginas de captura. Controle total sobre cada etapa do funil, desde a primeira pergunta até a conversão final.',
-    placeholder: 'Screenshot: Visual Builder',
+    image: '/landing/landing-blocks.jpeg',
     reverse: false,
   },
   {
     badge: 'CONVERSÃO',
     title: 'Página VSL Integrada ao Quiz',
     description: 'Monte sua página de vendas diretamente no fluxo do quiz. Apresente vídeos, ofertas e chamadas para ação no momento certo para maximizar conversões.',
-    placeholder: 'Screenshot: Página VSL',
+    image: '/landing/landing-VSL.jpeg',
     reverse: true,
-  },
-  {
-    badge: 'GESTÃO',
-    title: 'Gestão de Leads Completa',
-    description: 'Visualize, filtre e exporte todos os dados coletados. Baixe planilhas detalhadas e analise o comportamento de cada lead capturado.',
-    placeholder: 'Screenshot: Dashboard de Leads',
-    reverse: false,
   },
   {
     badge: 'INTEGRAÇÃO',
-    title: 'Sincronização com CRM MultiMeta',
-    description: 'Seus leads são enviados automaticamente para o MultiMeta CRM. Automação completa do funil de vendas sem precisar exportar manualmente.',
-    placeholder: 'Screenshot: Integração CRM',
-    reverse: true,
+    title: 'Integração com CRM e Automação',
+    description: 'Envie automaticamente os dados de leads para seu CRM quando um quiz for completado. Receba notificações de novos leads diretamente no WhatsApp.',
+    image: '/landing/landing-integrations.jpeg',
+    reverse: false,
   },
 ];
 
@@ -86,10 +80,17 @@ export const ProductFeaturesSection = () => {
                 </p>
               </div>
 
-              {/* Visual Placeholder */}
+              {/* Feature Image */}
               <div className="flex-1 w-full max-w-[650px]">
-                <div className="flex items-center justify-center h-[400px] rounded-2xl bg-[#232936] border border-[#3d4454]">
-                  <span className="text-sm text-[#94a3b8]">{feature.placeholder}</span>
+                <div className="relative overflow-hidden rounded-2xl bg-[#232936] border border-[#3d4454] shadow-2xl">
+                  <Image
+                    src={feature.image}
+                    alt={feature.title}
+                    width={650}
+                    height={400}
+                    className="w-full h-auto object-cover"
+                    quality={90}
+                  />
                 </div>
               </div>
             </motion.div>
