@@ -7,7 +7,6 @@ import { LandingHeader } from '@/components/landing/Header';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
 import { ProductFeaturesSection } from '@/components/landing/ProductFeaturesSection';
-import { TemplatesSection } from '@/components/landing/TemplatesSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import { FAQSection } from '@/components/landing/FAQSection';
@@ -46,7 +45,6 @@ export default function LandingPage() {
         <HeroSection />
         <FeaturesSection />
         <ProductFeaturesSection />
-        <TemplatesSection />
         <HowItWorksSection />
         <PricingSection />
         <FAQSection />

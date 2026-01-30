@@ -3,43 +3,49 @@
 import React from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { useScrollAnimation } from '@/lib/hooks/use-scroll-animation';
 
 const productFeatures = [
+  {
+    badge: 'TEMPLATES',
+    title: 'Comece em Segundos com Templates Prontos',
+    description: 'Escolha entre diferentes tipos de etapas: páginas em branco, perguntas, promoções, captura de dados e mais. Monte seu funil de quiz arrastando e soltando blocos.',
+    image: '/landing/landing-templates.jpeg',
+    reverse: false,
+  },
   {
     badge: 'FUNIL COMPLETO',
     title: 'Funil de Quiz Totalmente Personalizável',
     description: 'Crie quizzes completos com perguntas, resultados e páginas de captura. Controle total sobre cada etapa do funil, desde a primeira pergunta até a conversão final.',
     image: '/landing/landing-blocks.jpeg',
-    reverse: false,
+    reverse: true,
   },
   {
     badge: 'CONVERSÃO',
     title: 'Página VSL Integrada ao Quiz',
     description: 'Monte sua página de vendas diretamente no fluxo do quiz. Apresente vídeos, ofertas e chamadas para ação no momento certo para maximizar conversões.',
     image: '/landing/landing-VSL.jpeg',
-    reverse: true,
+    reverse: false,
   },
   {
     badge: 'RELATÓRIOS',
     title: 'Acompanhe o Desempenho em Tempo Real',
     description: 'Visualize métricas detalhadas de cada quiz: visitas, inícios, conclusões e taxa de conversão. Entenda onde os usuários abandonam e otimize seu funil.',
     image: '/landing/landing-reports.webp',
-    reverse: false,
+    reverse: true,
   },
   {
     badge: 'GESTÃO DE LEADS',
     title: 'Capture e Gerencie seus Leads',
     description: 'Colete dados de contato dos participantes e visualize todos os leads em uma tabela organizada. Exporte para CSV e integre com suas ferramentas de marketing.',
     image: '/landing/landing-leads.webp',
-    reverse: true,
+    reverse: false,
   },
   {
     badge: 'INTEGRAÇÃO',
     title: 'Integração com CRM e Automação',
     description: 'Envie automaticamente os dados de leads para seu CRM quando um quiz for completado. Receba notificações de novos leads diretamente no WhatsApp.',
     image: '/landing/landing-integrations.jpeg',
-    reverse: false,
+    reverse: true,
   },
 ];
 
@@ -53,8 +59,6 @@ const itemVariants = {
 };
 
 export const ProductFeaturesSection = () => {
-  const [ref, controls] = useScrollAnimation();
-
   return (
     <section className="py-24">
       <div className="container mx-auto px-8">
@@ -69,14 +73,14 @@ export const ProductFeaturesSection = () => {
         </div>
 
         {/* Features */}
-        <div ref={ref} className="flex flex-col gap-24 max-w-[1200px] mx-auto">
-          {productFeatures.map((feature, index) => (
+        <div className="flex flex-col gap-40 max-w-[1200px] mx-auto">
+          {productFeatures.map((feature) => (
             <motion.div
               key={feature.badge}
               initial="hidden"
-              animate={controls}
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
               variants={itemVariants}
-              custom={index}
               className={`flex flex-col gap-16 items-center ${
                 feature.reverse ? 'md:flex-row-reverse' : 'md:flex-row'
               }`}
