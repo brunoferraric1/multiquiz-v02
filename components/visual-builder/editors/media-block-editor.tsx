@@ -31,11 +31,18 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
   const thumbnailInputRef = useRef<HTMLInputElement>(null)
   const imageOrientation = config.orientation ?? 'horizontal'
 
-  // Focal point dialog state
+  // Focal point dialog state (for images)
   const [focalPointDialogOpen, setFocalPointDialogOpen] = useState(false)
   const [tempFocalPoint, setTempFocalPoint] = useState<FocalPoint>(
     config.focalPoint ?? { x: 50, y: 50 }
   )
+
+  // Focal point dialog state (for video thumbnails)
+  const [thumbnailFocalPointDialogOpen, setThumbnailFocalPointDialogOpen] = useState(false)
+  const [tempThumbnailFocalPoint, setTempThumbnailFocalPoint] = useState<FocalPoint>(
+    config.videoThumbnailFocalPoint ?? { x: 50, y: 50 }
+  )
+  const thumbnailOrientation = config.videoThumbnailOrientation ?? 'horizontal'
 
   const handleOpenFocalPointDialog = () => {
     setTempFocalPoint(config.focalPoint ?? { x: 50, y: 50 })
@@ -45,6 +52,17 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
   const handleSaveFocalPoint = () => {
     onChange({ focalPoint: tempFocalPoint })
     setFocalPointDialogOpen(false)
+  }
+
+  // Thumbnail focal point handlers
+  const handleOpenThumbnailFocalPointDialog = () => {
+    setTempThumbnailFocalPoint(config.videoThumbnailFocalPoint ?? { x: 50, y: 50 })
+    setThumbnailFocalPointDialogOpen(true)
+  }
+
+  const handleSaveThumbnailFocalPoint = () => {
+    onChange({ videoThumbnailFocalPoint: tempThumbnailFocalPoint })
+    setThumbnailFocalPointDialogOpen(false)
   }
 
   const handleFileSelect = (files: FileList | null) => {
@@ -91,7 +109,16 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
       const reader = new FileReader()
       reader.onloadend = () => {
         const dataUrl = reader.result as string
-        onChange({ videoThumbnail: dataUrl })
+        // Auto-detect orientation from image dimensions
+        const img = new window.Image()
+        img.onload = () => {
+          const orientation = img.height > img.width ? 'vertical' : 'horizontal'
+          onChange({ videoThumbnail: dataUrl, videoThumbnailOrientation: orientation })
+        }
+        img.onerror = () => {
+          onChange({ videoThumbnail: dataUrl })
+        }
+        img.src = dataUrl
       }
       reader.readAsDataURL(file)
     }
@@ -284,11 +311,23 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
             {config.videoThumbnail ? (
               <div className="space-y-2">
                 {/* Thumbnail preview */}
-                <div className="relative aspect-video w-full rounded-lg overflow-hidden border border-border">
+                <div
+                  className={cn(
+                    'relative rounded-lg overflow-hidden border border-border',
+                    thumbnailOrientation === 'vertical'
+                      ? 'aspect-[3/4] w-full max-w-[var(--media-portrait-max-width)] mx-auto'
+                      : 'aspect-video w-full'
+                  )}
+                >
                   <img
                     src={config.videoThumbnail}
                     alt={mediaCopy.previewAlt}
                     className="w-full h-full object-cover"
+                    style={{
+                      objectPosition: config.videoThumbnailFocalPoint
+                        ? `${config.videoThumbnailFocalPoint.x}% ${config.videoThumbnailFocalPoint.y}%`
+                        : 'center',
+                    }}
                   />
                   {/* Play icon overlay */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -297,6 +336,14 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
                     </div>
                   </div>
                   <div className="absolute top-2 right-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleOpenThumbnailFocalPointDialog}
+                      className="h-8 w-8 rounded-full bg-background/90 text-foreground shadow-sm border border-border/50 flex items-center justify-center hover:bg-background transition-colors"
+                      aria-label={mediaCopy.focalPointSet}
+                    >
+                      <Focus className="h-4 w-4" />
+                    </button>
                     <button
                       type="button"
                       onClick={handleThumbnailButtonClick}
@@ -312,6 +359,45 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
                       aria-label={mediaCopy.remove}
                     >
                       <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Thumbnail orientation toggle */}
+                <div className="space-y-2 pt-1">
+                  <Label>{mediaCopy.thumbnailOrientation}</Label>
+                  <div
+                    role="group"
+                    aria-label={mediaCopy.thumbnailOrientation}
+                    className="flex items-center gap-1 bg-muted rounded-lg p-1"
+                  >
+                    <button
+                      type="button"
+                      aria-label={mediaCopy.orientationHorizontal}
+                      aria-pressed={thumbnailOrientation === 'horizontal'}
+                      onClick={() => onChange({ videoThumbnailOrientation: 'horizontal' })}
+                      className={cn(
+                        'flex-1 flex items-center justify-center rounded-md px-3 py-1.5 text-xs transition-colors',
+                        thumbnailOrientation === 'horizontal'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <RectangleHorizontal className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={mediaCopy.orientationVertical}
+                      aria-pressed={thumbnailOrientation === 'vertical'}
+                      onClick={() => onChange({ videoThumbnailOrientation: 'vertical' })}
+                      className={cn(
+                        'flex-1 flex items-center justify-center rounded-md px-3 py-1.5 text-xs transition-colors',
+                        thumbnailOrientation === 'vertical'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <RectangleVertical className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -357,7 +443,7 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
         </div>
       )}
 
-      {/* Focal Point Dialog */}
+      {/* Focal Point Dialog (for images) */}
       <Dialog open={focalPointDialogOpen} onOpenChange={setFocalPointDialogOpen}>
         <DialogContent className="sm:max-w-2xl overflow-hidden">
           <DialogHeader>
@@ -384,6 +470,39 @@ export function MediaBlockEditor({ config, onChange }: MediaBlockEditorProps) {
               {messages.common?.buttons?.cancel || 'Cancel'}
             </Button>
             <Button onClick={handleSaveFocalPoint}>
+              {messages.common?.buttons?.save || 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Focal Point Dialog (for video thumbnails) */}
+      <Dialog open={thumbnailFocalPointDialogOpen} onOpenChange={setThumbnailFocalPointDialogOpen}>
+        <DialogContent className="sm:max-w-2xl overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>{mediaCopy.focalPoint}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {mediaCopy.focalPointHint}
+            </p>
+            {config.videoThumbnail && (
+              <FocalPointSelector
+                imageUrl={config.videoThumbnail}
+                focalPoint={tempThumbnailFocalPoint}
+                onChange={setTempThumbnailFocalPoint}
+                className="w-full h-[50vh] bg-muted/50 rounded-lg"
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setThumbnailFocalPointDialogOpen(false)}
+            >
+              {messages.common?.buttons?.cancel || 'Cancel'}
+            </Button>
+            <Button onClick={handleSaveThumbnailFocalPoint}>
               {messages.common?.buttons?.save || 'Save'}
             </Button>
           </DialogFooter>

@@ -36,23 +36,50 @@ function getVideoThumbnail(url: string): string | null {
   return null
 }
 
+interface VideoThumbnailPreviewProps {
+  url: string
+  alt: string
+  customThumbnail?: string
+  orientation?: 'horizontal' | 'vertical'
+  focalPoint?: { x: number; y: number }
+}
+
 /**
  * Static video thumbnail preview for the visual builder
  * Shows thumbnail + play icon, clicking selects the block (not plays video)
  * Priority: customThumbnail > auto-generated thumbnail > placeholder
  */
-function VideoThumbnailPreview({ url, alt, customThumbnail }: { url: string; alt: string; customThumbnail?: string }) {
+function VideoThumbnailPreview({
+  url,
+  alt,
+  customThumbnail,
+  orientation = 'horizontal',
+  focalPoint,
+}: VideoThumbnailPreviewProps) {
   const autoThumbnailUrl = getVideoThumbnail(url)
   const thumbnailUrl = customThumbnail || autoThumbnailUrl
+  const objectPosition = focalPoint
+    ? `${focalPoint.x}% ${focalPoint.y}%`
+    : 'center'
+
+  // Only use custom orientation if there's a custom thumbnail
+  const useOrientation = customThumbnail ? orientation : 'horizontal'
+  const wrapperClass = cn(
+    'relative rounded-lg overflow-hidden bg-muted',
+    useOrientation === 'vertical'
+      ? 'aspect-[3/4] w-full max-w-[var(--media-portrait-max-width)] mx-auto'
+      : 'aspect-video w-full'
+  )
 
   return (
-    <div key={url} className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
+    <div key={url} className={wrapperClass}>
       {thumbnailUrl ? (
         <img
           key={thumbnailUrl}
           src={thumbnailUrl}
           alt={alt}
           className="w-full h-full object-cover"
+          style={{ objectPosition: customThumbnail ? objectPosition : 'center' }}
         />
       ) : (
         <div className="w-full h-full bg-gray-800 flex items-center justify-center">
@@ -106,14 +133,16 @@ export function MediaBlockPreview({ config, enabled }: MediaBlockPreviewProps) {
   }
 
   if (type === 'video') {
-    const videoThumbnail = (config as MediaConfig).videoThumbnail
+    const { videoThumbnail, videoThumbnailOrientation, videoThumbnailFocalPoint } = config as MediaConfig
     return (
       <div className={cn('p-4', !enabled && 'opacity-50')}>
         <VideoThumbnailPreview
-          key={`${url}-${videoThumbnail || ''}`}
+          key={`${url}-${videoThumbnail || ''}-${videoThumbnailOrientation || ''}`}
           url={url}
           alt={mediaCopy.previewAlt}
           customThumbnail={videoThumbnail}
+          orientation={videoThumbnailOrientation}
+          focalPoint={videoThumbnailFocalPoint}
         />
       </div>
     )

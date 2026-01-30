@@ -214,6 +214,7 @@
     "thumbnailSection": "Thumbnail do vídeo",
     "thumbnailHint": "Adicione uma imagem de capa para vídeos do Vimeo, Vturb ou outras plataformas que não geram thumbnail automático.",
     "thumbnailDrop": "Arraste a imagem de capa aqui",
+    "thumbnailOrientation": "Orientação do thumbnail",
     "focalPoint": "Ponto focal",
     "focalPointHint": "Clique ou arraste para definir o ponto de foco da imagem",
     "focalPointSet": "Definir ponto focal"

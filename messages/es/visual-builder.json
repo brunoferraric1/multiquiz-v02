@@ -214,6 +214,7 @@
     "thumbnailSection": "Miniatura del video",
     "thumbnailHint": "Agrega una imagen de portada para videos de Vimeo, Vturb u otras plataformas que no generan miniaturas automáticas.",
     "thumbnailDrop": "Arrastra la imagen de portada aquí",
+    "thumbnailOrientation": "Orientación de la miniatura",
     "focalPoint": "Punto focal",
     "focalPointHint": "Haz clic o arrastra para definir el punto de enfoque de la imagen",
     "focalPointSet": "Definir punto focal"

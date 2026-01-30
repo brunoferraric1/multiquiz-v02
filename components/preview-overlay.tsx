@@ -191,7 +191,7 @@ export function PreviewOverlay({
               </div>
             )}
 
-            <main className="flex-1 overflow-auto bg-muted/40">
+            <main className="flex-1 overflow-hidden bg-muted/40">
               {device === 'mobile' ? (
                 <div className="flex min-h-full items-center justify-center px-4 py-10">
                   <div

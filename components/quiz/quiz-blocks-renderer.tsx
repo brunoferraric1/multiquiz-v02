@@ -240,23 +240,48 @@ function getVideoThumbnail(url: string): string | null {
   return null;
 }
 
+interface VideoPlayerProps {
+  url: string;
+  customThumbnail?: string;
+  thumbnailOrientation?: 'horizontal' | 'vertical';
+  thumbnailFocalPoint?: { x: number; y: number };
+}
+
 /**
  * Clean video player with minimal UI
  * Shows static thumbnail first, then embeds video iframe when clicked
  * Priority: customThumbnail > auto-generated thumbnail > placeholder
  */
-function VideoPlayer({ url, customThumbnail }: { url: string; customThumbnail?: string }) {
+function VideoPlayer({
+  url,
+  customThumbnail,
+  thumbnailOrientation = 'horizontal',
+  thumbnailFocalPoint,
+}: VideoPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const autoThumbnailUrl = getVideoThumbnail(url);
   const thumbnailUrl = customThumbnail || autoThumbnailUrl;
   const youtubeId = getYouTubeVideoId(url);
   const vimeoId = getVimeoVideoId(url);
 
+  // Only use custom orientation/focal point if there's a custom thumbnail
+  const useOrientation = customThumbnail ? thumbnailOrientation : 'horizontal';
+  const objectPosition = customThumbnail && thumbnailFocalPoint
+    ? `${thumbnailFocalPoint.x}% ${thumbnailFocalPoint.y}%`
+    : 'center';
+
+  const wrapperClass = cn(
+    'relative rounded-xl overflow-hidden bg-muted cursor-[var(--cursor-interactive)] group',
+    useOrientation === 'vertical'
+      ? 'aspect-[3/4] w-full max-w-[var(--media-portrait-max-width)] mx-auto'
+      : 'aspect-video w-full'
+  );
+
   // Show static thumbnail with play button before user clicks
   if (!isPlaying) {
     return (
       <div
-        className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted cursor-[var(--cursor-interactive)] group"
+        className={wrapperClass}
         onClick={() => setIsPlaying(true)}
       >
         {thumbnailUrl ? (
@@ -264,6 +289,7 @@ function VideoPlayer({ url, customThumbnail }: { url: string; customThumbnail?: 
             src={thumbnailUrl}
             alt="Video thumbnail"
             className="w-full h-full object-cover"
+            style={{ objectPosition }}
           />
         ) : (
           <div className="w-full h-full bg-gray-800 flex items-center justify-center">
@@ -323,7 +349,16 @@ function VideoPlayer({ url, customThumbnail }: { url: string; customThumbnail?: 
 }
 
 function MediaBlock({ config }: { config: MediaConfig }) {
-  const { type, url, alt, orientation, videoThumbnail, focalPoint } = config;
+  const {
+    type,
+    url,
+    alt,
+    orientation,
+    videoThumbnail,
+    videoThumbnailOrientation,
+    videoThumbnailFocalPoint,
+    focalPoint,
+  } = config;
   const imageOrientation = orientation ?? 'horizontal';
   const imageWrapperClass = cn(
     'rounded-xl overflow-hidden border border-border/50',
@@ -341,7 +376,12 @@ function MediaBlock({ config }: { config: MediaConfig }) {
   if (type === 'video') {
     return (
       <div className="w-full">
-        <VideoPlayer url={url} customThumbnail={videoThumbnail} />
+        <VideoPlayer
+          url={url}
+          customThumbnail={videoThumbnail}
+          thumbnailOrientation={videoThumbnailOrientation}
+          thumbnailFocalPoint={videoThumbnailFocalPoint}
+        />
       </div>
     );
   }

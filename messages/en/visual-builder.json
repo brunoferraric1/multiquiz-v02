@@ -214,6 +214,7 @@
     "thumbnailSection": "Video thumbnail",
     "thumbnailHint": "Add a cover image for videos from Vimeo, Vturb, or other platforms that don't generate automatic thumbnails.",
     "thumbnailDrop": "Drag the cover image here",
+    "thumbnailOrientation": "Thumbnail orientation",
     "focalPoint": "Focal point",
     "focalPointHint": "Click or drag to set the image focus point",
     "focalPointSet": "Set focal point"

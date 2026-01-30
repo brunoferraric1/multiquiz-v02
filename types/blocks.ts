@@ -42,6 +42,8 @@ export interface MediaConfig {
   alt?: string
   orientation?: 'horizontal' | 'vertical'
   videoThumbnail?: string // Custom thumbnail for videos (used when auto-thumbnail is unavailable)
+  videoThumbnailOrientation?: 'horizontal' | 'vertical' // Orientation for video thumbnail
+  videoThumbnailFocalPoint?: FocalPoint // Focal point for video thumbnail cropping/positioning
   focalPoint?: FocalPoint // Focal point for image cropping/positioning
 }
 
