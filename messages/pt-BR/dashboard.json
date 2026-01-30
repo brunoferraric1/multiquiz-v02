@@ -81,8 +81,8 @@
   },
   "empty": {
     "title": "Nenhum quiz criado ainda",
-    "description": "Comece uma conversa com nossa IA para criar seu primeiro quiz.",
-    "createButton": "Criar com IA"
+    "description": "Crie seu primeiro quiz e comece a capturar leads.",
+    "createButton": "Criar meu primeiro quiz"
   },
   "errors": {
     "authRequiredDelete": "Você precisa estar autenticado para excluir um quiz."

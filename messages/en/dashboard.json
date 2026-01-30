@@ -81,8 +81,8 @@
   },
   "empty": {
     "title": "No quizzes yet",
-    "description": "Start a conversation with our AI to create your first quiz.",
-    "createButton": "Create with AI"
+    "description": "Create your first quiz and start capturing leads.",
+    "createButton": "Create my first quiz"
   },
   "errors": {
     "authRequiredDelete": "You must be signed in to delete a quiz."
