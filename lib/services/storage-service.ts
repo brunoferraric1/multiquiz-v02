@@ -4,7 +4,49 @@ import {
     getDownloadURL,
     deleteObject,
 } from 'firebase/storage';
+import imageCompression from 'browser-image-compression';
 import { storage } from '@/lib/firebase';
+
+/**
+ * Default options for image compression
+ * - maxSizeMB: Target file size (will compress until this is reached)
+ * - maxWidthOrHeight: Resize if larger than this
+ * - useWebWorker: Process in background thread for better UX
+ * - fileType: Convert to WebP for better compression
+ */
+const DEFAULT_COMPRESSION_OPTIONS = {
+    maxSizeMB: 0.5, // 500KB max
+    maxWidthOrHeight: 1920, // Max dimension
+    useWebWorker: true,
+    fileType: 'image/webp' as const,
+};
+
+/**
+ * Compress an image file before upload
+ * Automatically resizes, compresses, and converts to WebP
+ */
+export async function compressImage(
+    file: File | Blob,
+    options?: Partial<typeof DEFAULT_COMPRESSION_OPTIONS>
+): Promise<Blob> {
+    const compressionOptions = { ...DEFAULT_COMPRESSION_OPTIONS, ...options };
+
+    // Convert Blob to File if needed (library requires File)
+    const fileToCompress = file instanceof File
+        ? file
+        : new File([file], 'image.png', { type: file.type });
+
+    console.log('[StorageService] Original size:', (file.size / 1024).toFixed(1), 'KB');
+
+    try {
+        const compressedFile = await imageCompression(fileToCompress, compressionOptions);
+        console.log('[StorageService] Compressed size:', (compressedFile.size / 1024).toFixed(1), 'KB');
+        return compressedFile;
+    } catch (error) {
+        console.warn('[StorageService] Compression failed, using original:', error);
+        return file;
+    }
+}
 
 /**
  * Check if a URL is a base64 data URL
@@ -55,23 +97,32 @@ export function dataUrlToBlob(dataUrl: string): Blob {
 
 /**
  * Upload an image blob to Firebase Storage
+ * Automatically compresses and converts to WebP before upload
  * @param path - The storage path (e.g., 'quizzes/{quizId}/cover')
  * @param blob - The image blob to upload
+ * @param skipCompression - Skip compression (for already optimized images)
  * @returns The download URL of the uploaded image
  */
-export async function uploadImage(path: string, blob: Blob): Promise<string> {
+export async function uploadImage(
+    path: string,
+    blob: Blob,
+    skipCompression = false
+): Promise<string> {
     if (!storage) {
         throw new Error('Firebase Storage not initialized');
     }
 
-    const extension = getExtensionFromMimeType(blob.type);
+    // Compress image before upload (converts to WebP)
+    const optimizedBlob = skipCompression ? blob : await compressImage(blob);
+
+    const extension = getExtensionFromMimeType(optimizedBlob.type);
     const fullPath = `${path}.${extension}`;
     const storageRef = ref(storage, fullPath);
 
     console.log('[StorageService] Uploading image to:', fullPath);
 
-    await uploadBytes(storageRef, blob, {
-        contentType: blob.type,
+    await uploadBytes(storageRef, optimizedBlob, {
+        contentType: optimizedBlob.type,
     });
 
     const downloadUrl = await getDownloadURL(storageRef);

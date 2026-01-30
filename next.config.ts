@@ -6,6 +6,10 @@ const withStaging = (primary?: string, staging?: string) =>
 const nextConfig: NextConfig = {
   // Empty turbopack config allows both Turbopack (dev) and webpack (prod) to coexist
   turbopack: {},
+  // Firebase Hosting doesn't support Next.js image optimization API
+  images: {
+    unoptimized: true,
+  },
   serverExternalPackages: [
     'firebase-admin',
     'firebase-admin/app',
