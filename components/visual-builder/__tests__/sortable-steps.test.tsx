@@ -141,8 +141,8 @@ describe('SortableStepsList', () => {
       const { steps, activeStepId } = useVisualBuilderStore.getState()
       // Should have one more step
       expect(steps.length).toBe(6)
-      // The new step should be after q1 and have "(cópia)" in the label
-      const duplicatedStep = steps.find(s => s.label.includes('(cópia)'))
+      // The new step should be after q1 with incremented number (P1, P2, P3 exist, so new is P 4)
+      const duplicatedStep = steps.find(s => s.label === 'P 4')
       expect(duplicatedStep).toBeDefined()
       expect(activeStepId).toBe(duplicatedStep?.id)
     })
