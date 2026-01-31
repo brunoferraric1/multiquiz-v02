@@ -61,7 +61,7 @@ export function SortableOutcomesList() {
             isActive={isOutcomeActive}
             onSelect={() => handleOutcomeSelect(outcome.id)}
             onDelete={() => deleteOutcome(outcome.id)}
-            onDuplicate={() => duplicateOutcome(outcome.id, copy.duplicateSuffix)}
+            onDuplicate={() => duplicateOutcome(outcome.id)}
             canDelete={outcomes.length > 1}
             icon={letter}
             title={outcome.name || `${copy.sidebar.outcomeLabel} ${index + 1}`}
