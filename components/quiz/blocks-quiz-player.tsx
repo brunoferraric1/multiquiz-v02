@@ -179,6 +179,7 @@ export function BlocksQuizPlayer({
   const [fieldValues, setFieldValues] = useState<FieldValuesState>({});
   const [resultOutcomeId, setResultOutcomeId] = useState<string | null>(initialOutcomeId);
   const [showFieldErrors, setShowFieldErrors] = useState(false);
+  const [showOptionsError, setShowOptionsError] = useState(false);
 
   const currentStep = steps[currentStepIndex];
 
@@ -225,6 +226,9 @@ export function BlocksQuizPlayer({
   // Handle option selection
   const handleOptionSelect = (optionId: string) => {
     if (!currentStep) return;
+
+    // Clear options error when user makes a selection
+    setShowOptionsError(false);
 
     // Find options block to check if multi-select
     const optionsBlock = currentStep.blocks.find((b) => b.type === 'options' && b.enabled);
@@ -304,9 +308,19 @@ export function BlocksQuizPlayer({
     }));
   };
 
-  // Handle button click
-  const handleButtonClick = () => {
-    if (!currentStep) return;
+  // Handle button click - returns true if validation passes, false otherwise
+  const handleButtonClick = (): boolean => {
+    if (!currentStep) return false;
+
+    // Validate options in current step - require selection if Options block exists
+    const optionsBlock = currentStep.blocks.find((b) => b.type === 'options' && b.enabled);
+    if (optionsBlock) {
+      const hasSelection = currentSelectionIds.length > 0;
+      if (!hasSelection) {
+        setShowOptionsError(true);
+        return false;
+      }
+    }
 
     // Validate fields in current step before advancing
     const fieldsBlock = currentStep.blocks.find((b) => b.type === 'fields' && b.enabled);
@@ -323,11 +337,12 @@ export function BlocksQuizPlayer({
     if (hasValidationErrors) {
       // Show all validation errors
       setShowFieldErrors(true);
-      return;
+      return false;
     }
 
     // Reset error display for next step
     setShowFieldErrors(false);
+    setShowOptionsError(false);
 
     // Collect field data from current step if any
     if (mode === 'live' && attemptId && fieldsConfig?.items?.length) {
@@ -335,6 +350,7 @@ export function BlocksQuizPlayer({
     }
 
     goToNextStep();
+    return true;
   };
 
   // Navigate to next step
@@ -608,6 +624,7 @@ export function BlocksQuizPlayer({
           fieldValues={currentFieldValues}
           onFieldChange={handleFieldChange}
           showFieldErrors={showFieldErrors}
+          showOptionsError={showOptionsError}
           onLoadingComplete={goToNextStep}
         />
 

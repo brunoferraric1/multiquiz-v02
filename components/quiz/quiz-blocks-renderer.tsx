@@ -41,13 +41,14 @@ interface QuizBlocksRendererProps {
   // For options block
   onOptionSelect?: (optionId: string) => void;
   selectedOptionIds?: string[];
+  showOptionsError?: boolean;
   // For price block
   onPriceSelect?: (priceId: string) => void;
   selectedPriceIds?: string[];
   // For button block (selected_price action)
   selectedPriceRedirectUrl?: string;
-  // For button block
-  onButtonClick?: () => void;
+  // For button block - returns true if validation passes, false otherwise
+  onButtonClick?: () => boolean;
   // For fields block
   fieldValues?: Record<string, string>;
   onFieldChange?: (fieldId: string, value: string) => void;
@@ -62,6 +63,7 @@ export function QuizBlocksRenderer({
   blocks,
   onOptionSelect,
   selectedOptionIds = [],
+  showOptionsError = false,
   onPriceSelect,
   selectedPriceIds = [],
   selectedPriceRedirectUrl,
@@ -87,6 +89,7 @@ export function QuizBlocksRenderer({
           block={block}
           onOptionSelect={onOptionSelect}
           selectedOptionIds={selectedOptionIds}
+          showOptionsError={showOptionsError}
           onPriceSelect={onPriceSelect}
           selectedPriceIds={selectedPriceIds}
           selectedPriceRedirectUrl={selectedPriceRedirectUrl}
@@ -105,10 +108,11 @@ interface BlockRendererProps {
   block: Block;
   onOptionSelect?: (optionId: string) => void;
   selectedOptionIds?: string[];
+  showOptionsError?: boolean;
   onPriceSelect?: (priceId: string) => void;
   selectedPriceIds?: string[];
   selectedPriceRedirectUrl?: string;
-  onButtonClick?: () => void;
+  onButtonClick?: () => boolean;
   fieldValues?: Record<string, string>;
   onFieldChange?: (fieldId: string, value: string) => void;
   showFieldErrors?: boolean;
@@ -119,6 +123,7 @@ function BlockRenderer({
   block,
   onOptionSelect,
   selectedOptionIds = [],
+  showOptionsError = false,
   onPriceSelect,
   selectedPriceIds = [],
   selectedPriceRedirectUrl,
@@ -147,6 +152,7 @@ function BlockRenderer({
           config={block.config as OptionsConfig}
           onSelect={onOptionSelect}
           selectedIds={selectedOptionIds}
+          showError={showOptionsError}
         />
       );
     case 'fields':
@@ -575,7 +581,7 @@ function ButtonBlock({
   selectedPriceRedirectUrl
 }: {
   config: ButtonConfig;
-  onClick?: () => void;
+  onClick?: () => boolean;
   selectedPriceRedirectUrl?: string;
 }) {
   const { text, action, url } = config;
@@ -583,6 +589,14 @@ function ButtonBlock({
   if (!text) return null;
 
   const handleClick = () => {
+    // Always run validation first if onClick is provided
+    // onClick returns true if validation passes, false if it fails
+    if (onClick) {
+      const isValid = onClick();
+      if (!isValid) return; // Stop if validation failed
+    }
+
+    // Proceed with action after validation passes
     if (action === 'url' && url) {
       // Ensure URL has a protocol, default to https:// if missing
       const finalUrl = url.match(/^https?:\/\//) ? url : `https://${url}`;
@@ -593,9 +607,8 @@ function ButtonBlock({
         ? selectedPriceRedirectUrl
         : `https://${selectedPriceRedirectUrl}`;
       window.open(finalUrl, '_blank');
-    } else {
-      onClick?.();
     }
+    // For 'next' action, onClick already handles navigation via goToNextStep
   };
 
   // Show ExternalLink icon for URL or selected_price action, ArrowRight for navigation actions
@@ -613,14 +626,18 @@ function OptionsBlock({
   config,
   onSelect,
   selectedIds,
+  showError = false,
 }: {
   config: OptionsConfig;
   onSelect?: (optionId: string) => void;
   selectedIds: string[];
+  showError?: boolean;
 }) {
   const { items, selectionType, layout = 'vertical', showImages } = config;
   const isMultiple = selectionType === 'multiple';
   const isImageOnTop = layout === 'horizontal' || layout === 'grid';
+  const hasSelection = selectedIds.length > 0;
+  const displayError = showError && !hasSelection;
 
   if (!items || items.length === 0) return null;
 
@@ -644,35 +661,69 @@ function OptionsBlock({
   };
 
   return (
-    <div className={getGridClasses()}>
-      {items.map((item) => {
-        const isSelected = selectedIds.includes(item.id);
-        const hasImage = showImages && item.imageUrl;
+    <div className="space-y-2">
+      <div className={getGridClasses()}>
+        {items.map((item) => {
+          const isSelected = selectedIds.includes(item.id);
+          const hasImage = showImages && item.imageUrl;
 
-        // Card layout for horizontal/grid with image on top
-        if (isImageOnTop && hasImage) {
+          // Card layout for horizontal/grid with image on top
+          if (isImageOnTop && hasImage) {
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSelect?.(item.id)}
+                className={cn(
+                  'flex flex-col rounded-xl overflow-hidden border-2 text-left transition-all',
+                  'hover:border-primary hover:ring-1 hover:ring-primary',
+                  isSelected
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                    : displayError
+                      ? 'border-destructive/50 bg-card'
+                      : 'border-border bg-card'
+                )}
+              >
+                {/* Image on top */}
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+                  <img
+                    src={item.imageUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Content below */}
+                <div className="flex items-center gap-3 p-4">
+                  {isMultiple ? (
+                    isSelected ? (
+                      <CheckSquare className="w-5 h-5 text-primary shrink-0" />
+                    ) : (
+                      <Square className="w-5 h-5 text-muted-foreground shrink-0" />
+                    )
+                  ) : null}
+                  {item.emoji && <span className="text-xl">{item.emoji}</span>}
+                  <span className="font-medium">{item.text}</span>
+                </div>
+              </button>
+            );
+          }
+
+          // Default vertical layout (or horizontal/grid without image)
           return (
             <button
               key={item.id}
               onClick={() => onSelect?.(item.id)}
               className={cn(
-                'flex flex-col rounded-xl overflow-hidden border-2 text-left transition-all',
-                'hover:border-primary hover:ring-1 hover:ring-primary',
+                'w-full p-4 rounded-xl border-2 text-left transition-all',
+                'hover:border-primary hover:bg-[var(--quiz-card-hover,hsl(var(--muted)))] hover:ring-1 hover:ring-primary',
                 isSelected
                   ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                  : 'border-border bg-card'
+                  : displayError
+                    ? 'border-destructive/50 bg-card'
+                    : 'border-border bg-card'
               )}
             >
-              {/* Image on top */}
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-                <img
-                  src={item.imageUrl}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* Content below */}
-              <div className="flex items-center gap-3 p-4">
+              <div className="flex items-center gap-3">
+                {/* Show checkbox for multiple selection, radio for single */}
                 {isMultiple ? (
                   isSelected ? (
                     <CheckSquare className="w-5 h-5 text-primary shrink-0" />
@@ -680,51 +731,26 @@ function OptionsBlock({
                     <Square className="w-5 h-5 text-muted-foreground shrink-0" />
                   )
                 ) : null}
+                {/* Inline image for vertical layout - positioned after checkbox */}
+                {hasImage && !isImageOnTop && (
+                  <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
+                    <img
+                      src={item.imageUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 {item.emoji && <span className="text-xl">{item.emoji}</span>}
                 <span className="font-medium">{item.text}</span>
               </div>
             </button>
           );
-        }
-
-        // Default vertical layout (or horizontal/grid without image)
-        return (
-          <button
-            key={item.id}
-            onClick={() => onSelect?.(item.id)}
-            className={cn(
-              'w-full p-4 rounded-xl border-2 text-left transition-all',
-              'hover:border-primary hover:bg-[var(--quiz-card-hover,hsl(var(--muted)))] hover:ring-1 hover:ring-primary',
-              isSelected
-                ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                : 'border-border bg-card'
-            )}
-          >
-            <div className="flex items-center gap-3">
-              {/* Show checkbox for multiple selection, radio for single */}
-              {isMultiple ? (
-                isSelected ? (
-                  <CheckSquare className="w-5 h-5 text-primary shrink-0" />
-                ) : (
-                  <Square className="w-5 h-5 text-muted-foreground shrink-0" />
-                )
-              ) : null}
-              {/* Inline image for vertical layout - positioned after checkbox */}
-              {hasImage && !isImageOnTop && (
-                <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
-                  <img
-                    src={item.imageUrl}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              {item.emoji && <span className="text-xl">{item.emoji}</span>}
-              <span className="font-medium">{item.text}</span>
-            </div>
-          </button>
-        );
-      })}
+        })}
+      </div>
+      {displayError && (
+        <p className="text-sm text-destructive">{getOptionsErrorMessage()}</p>
+      )}
     </div>
   );
 }
@@ -771,6 +797,19 @@ const FIELD_ERROR_MESSAGES: Record<string, Record<string, string>> = {
     'es': 'Ingrese un número de teléfono válido',
   },
 };
+
+const OPTIONS_ERROR_MESSAGES: Record<string, string> = {
+  'pt-BR': 'Selecione uma opção para continuar',
+  'en': 'Select an option to continue',
+  'es': 'Seleccione una opción para continuar',
+};
+
+function getOptionsErrorMessage(): string {
+  const locale = typeof navigator !== 'undefined'
+    ? (navigator.language.startsWith('en') ? 'en' : navigator.language.startsWith('es') ? 'es' : 'pt-BR')
+    : 'pt-BR';
+  return OPTIONS_ERROR_MESSAGES[locale] || OPTIONS_ERROR_MESSAGES['pt-BR'];
+}
 
 function getErrorMessage(errorKey: string): string {
   // Try to detect locale from navigator, fallback to pt-BR
